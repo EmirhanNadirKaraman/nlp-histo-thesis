@@ -49,14 +49,14 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-027 | Partial (2026-05-15) | High | PDF extraction, `PipelineRunner` runtime knobs | `RuntimeConfig` exposes `num_workers`, `log_level`, `seed`, `skip_existing_outputs`. **Wired 2026-05-15**: `num_workers` (forwarded to `ParallelBatchRunner` in `runner.py:564`), `log_level` (`runner.py` `main()` calls `logging.basicConfig(level=cfg.runtime.log_level.value, …)`). **Still dead**: `seed` (no `random/np/torch` seed call sites), `skip_existing_outputs` (per-stage output-cache check unimplemented). | [Bug 27](#bug-27--runtimeconfig-knobs-num_workers-log_level-seed-skip_existing_outputs-not-consumed) |
 | B-028 | Observed (2026-05-15) | High | PDF extraction, DB ingester | `DatabaseConfig.{schema, create_tables_if_missing, batch_size, connect_timeout_sec}` (`config.py:181-184`) are dataclass fields with no consumers. `runner.py:178` constructs `PostgresDatabaseIngester(db_url=self._cfg.database.db_url)` — the ingester signature (`outputs/db_ingester.py:35`) only accepts `db` and `db_url`. A user setting a non-default `schema` or tuning `batch_size` gets silent no-op behaviour. | [Bug 28](#bug-28--databaseconfig-sub-fields-never-propagated-to-postgresdatabaseingester) |
 | B-029 | Fixed (2026-05-15) | High | PDF extraction, scispaCy loader | `PipelineRunner._get_nlp` (`runner.py:199`) called `spacy.load("en_core_sci_sm")` directly, bypassing the documented `umls_resources.get_nlp()` singleton. If the PDF extraction and summarisation pipelines ran in the same process the small scispaCy model loaded twice (once here, once via `umls_resources` which loads `en_core_sci_lg`). Fixed by adding `umls_resources.get_small_nlp(model_name)` (process-wide per-model cache; honours `$NLP_HISTO_DISABLE_UMLS`) and routing `PipelineRunner._get_nlp` through it. Co-fixed with B-038. | [Bug 29](#bug-29--pipelinerunner_get_nlp-bypasses-umls_resources-singleton) |
-| B-030 | Observed (2026-05-15) | Medium | PDF extraction, filtering config | `FilteringConfig.{fix_ligatures, remove_reference_markers, min_paragraph_chars}` (`config.py:134-136`) have no consumers. `parsers/layout_utils.fix_ligatures` is hardcoded ON wherever it runs (`layout_utils.py:206,423,481`); `remove_reference_markers` and `min_paragraph_chars` are dead knobs. Users tuning these get no behavioural change, only false confidence. | [Bug 30](#bug-30--filteringconfig-dead-knobs-fix_ligatures-remove_reference_markers-min_paragraph_chars) |
-| B-031 | Observed (2026-05-15) | Medium | PDF extraction, text assembly config | `TextAssemblyConfig.{enabled, baseline_mode, use_hierarchical_extraction, use_context_aware_stitching, compare_combinations, save_combination_outputs}` (`config.py:159-164`) all have no consumers. `HierarchicalTextAssembler` reads only `pre_filter_relevance`; `runner.py` reads only `write_raw_text`. Hierarchical extraction + stitching are hardcoded behaviours; baseline-mode comparison is dead. | [Bug 31](#bug-31--textassemblyconfig-six-of-eight-fields-unread) |
-| B-032 | Observed (2026-05-15) | Low | PDF extraction, cropping config | `CroppingConfig.{include_captions_in_metadata, panel_counting_enabled}` (`config.py:146-147`) have no consumers. `panel_counting_enabled` is wholly unimplemented; caption inclusion in metadata is hardcoded ON. | [Bug 32](#bug-32--croppingconfig-dead-knobs-include_captions_in_metadata-panel_counting_enabled) |
+| B-030 | Fixed (2026-05-15, deleted) | Medium | PDF extraction, filtering config | `FilteringConfig.{fix_ligatures, remove_reference_markers, min_paragraph_chars}` had no consumers. Dropped all three from the dataclass — current behaviour is "always fix ligatures, always strip citations, no minimum-length filter". Inverting any default would silently change extraction output across the corpus, so wiring was rejected in favour of deletion. `FilteringConfig` now exposes only the three knobs that actually drive code (`enabled`, `apply_ner_filtering`, `apply_paragraph_relevance_filtering`). | [Bug 30](#bug-30--filteringconfig-dead-knobs-fix_ligatures-remove_reference_markers-min_paragraph_chars) |
+| B-031 | Fixed (2026-05-15, deleted) | Medium | PDF extraction, text assembly config | Six unread `TextAssemblyConfig` fields removed: `enabled`, `baseline_mode`, `use_hierarchical_extraction`, `use_context_aware_stitching`, `compare_combinations`, `save_combination_outputs`. Hierarchical extraction + stitching are hardcoded; the baseline-mode A/B harness is dead. `BaselineMode` enum and its package-level export also dropped. `TextAssemblyConfig` now exposes only `write_raw_text` and `pre_filter_relevance`. `tests/test_config_loader.py::test_enum_coerced_from_string` rewritten to use `LogLevel` instead of `BaselineMode`. | [Bug 31](#bug-31--textassemblyconfig-six-of-eight-fields-unread) |
+| B-032 | Fixed (2026-05-15, deleted) | Low | PDF extraction, cropping config | `CroppingConfig.{include_captions_in_metadata, panel_counting_enabled}` removed — captions are unconditionally included in metadata, panel counting was wholly unimplemented. Remaining fields are all consumed by `PyMuPDFMediaCropper`. | [Bug 32](#bug-32--croppingconfig-dead-knobs-include_captions_in_metadata-panel_counting_enabled) |
 | B-033 | Fixed (2026-05-15, deleted) | Low | PDF extraction, masking config | `MaskingConfig.merge_iou_threshold` was a leftover from a different algorithm — `merge_rects` (`parsers/layout_utils.py:103`) merges on any-intersection (`Rect.intersects`), not on IOU. Field deleted from `MaskingConfig` and `merge_rects` docstring tightened to clarify the semantics. | [Bug 33](#bug-33--maskingconfigmerge_iou_threshold-never-passed-to-merge_rects) |
-| B-034 | Observed (2026-05-15) | Medium | PDF extraction, TATR detector | `TATRConfig.{enabled, max_detections_per_page, batch_size_pages, structure_model_name}` (`config.py:109-115`) are not consumed by `TATRTableDetector` — it reads `model_name`, `device`, `threshold` only. `_RENDER_DPI = 150` is hardcoded at `tatr_detector.py:30` instead of being a TATR config field. `enabled=False` would not actually disable the detector at runner level. | [Bug 34](#bug-34--tatrconfig-dead-knobs-render-dpi-hardcoded) |
+| B-034 | Fixed (2026-05-15) | Medium | PDF extraction, TATR detector | Promoted hardcoded `_RENDER_DPI = 150` (`tatr_detector.py`) to a real `TATRConfig.render_dpi: int = 150` field consumed in `detect()`. Deleted four dead `TATRConfig` fields: `enabled` (redundant — `PipelineConfig.table_detector` already gates the detector), `max_detections_per_page`, `batch_size_pages`, `structure_model_name`. DPI is the load-bearing knob for the thesis recall sweep. | [Bug 34](#bug-34--tatrconfig-dead-knobs-render-dpi-hardcoded) |
 | B-035 | Fixed (2026-05-15) | Medium | PDF extraction, Docling timeout | `DoclingConfig.timeout_sec=300` was documented but `DoclingLayoutExtractor` never wrapped the conversion. Pathological PDFs (very large / OCR-heavy / corrupt) hung the entire batch indefinitely. Fixed by routing the `converter.convert(...)` call through a new `_convert_with_timeout` helper that submits the work to a single-worker `ThreadPoolExecutor` and raises `TimeoutError` on `future.result(timeout=)`. The runner's per-paper try/except in `PipelineRunner.run_document` already blacklists the pmcid on exception, so a timeout naturally moves the batch on. `timeout_sec <= 0` disables the guard. The runaway thread is abandoned — acceptable trade-off for batch resilience. Regression test in `tests/pdf_text_extraction/test_docling_timeout.py`. | [Bug 35](#bug-35--doclingconfigtimeout_sec-never-enforced-by-doclinglayoutextractor) |
 | B-036 | Fixed (2026-05-15) | Low | Summarisation, NLI helpers config surface | `GroundingFilter.__init__` (`helpers/grounding_filter.py:68`) accepts `model_name`, `batch_size`, `device`; `RelateStage.__init__` (`current_stages/relate_stage.py:268`) accepts the same trio. `GroundingConfig` exposes only `threshold`; `RelateConfig` exposes only the two thresholds. `runner.py:258` instantiates `GroundingFilter(cfg.grounding.threshold)` and `runner.py:251` instantiates `RelateStage(entailment_threshold=…, contradiction_threshold=…)` — model / batch / device always fall back to module defaults regardless of caller intent. No way to switch the NLI model or move it to GPU via `SummarizationConfig`. | [Bug 36](#bug-36--groundingfilter--relatestage-modelbatchdevice-not-exposed-via-summarizationconfig) |
-| B-037 | Observed (2026-05-15) | Low | Summarisation, normalize stage | `NormalizeStage.__init__` (`current_stages/normalize_stage.py:387`) accepts `extra_synonyms: dict[str, str] \| None`. `runner.py:247` calls `NormalizeStage()` with no args; there is no `SummarizationConfig` field for caller-supplied synonyms. Overrides to `synonyms.yaml` cannot be plumbed through the runner. | [Bug 37](#bug-37--normalizestageextra_synonyms-not-exposed-via-summarizationconfig) |
+| B-037 | Fixed (2026-05-15) | Low | Summarisation, normalize stage | Added `NormalizeConfig.extra_synonyms: dict[str, str] \| None` to `SummarizationConfig`; both sync and batch runners now pass `cfg.normalize.extra_synonyms` to `NormalizeStage(...)`. Side fix in the YAML loader: `_unwrap_optional` now also handles PEP-604 `X \| None` (was only matching `typing.Union`), and `_coerce` skips the nested-dataclass branch when the field type is a `dict[...]` mapping — without this, `extra_synonyms: {acme: ACME}` crashed with `Field type dict[str, str] \| None does not resolve to a dataclass`. New tests in `tests/test_config_loader.py`: `test_normalize_extra_synonyms_loaded_as_mapping`, `test_tatr_render_dpi_overridable`. | [Bug 37](#bug-37--normalizestageextra_synonyms-not-exposed-via-summarizationconfig) |
 | B-038 | Fixed (2026-05-15) | Medium | Summarisation, sentence loader | `SummarizationRunner.load_paper_from_db` (`runner.py:905`) called `spacy.load("en_core_sci_sm")` on every invocation — bypassed the `umls_resources.get_nlp()` singleton. In batch mode (`process_batch([load_paper_from_db(p) for p in pmcids])`) the small model deserialised once per paper. Same class as B-029. Fixed by routing through `umls_resources.get_small_nlp("en_core_sci_sm")`; raises a clear error when the model isn't installed. Regression test `tests/summarization/test_scispacy_singleton.py` asserts no `spacy.load(...)` call sites exist outside `umls_resources.py` under `pipeline/stages/`. | [Bug 38](#bug-38--summarizationrunnerload_paper_from_db-bypasses-scispacy-singleton) |
 | B-039 | Fixed (2026-05-15) | High | Summarisation, sentence ordering | `SummarizationRunner.load_paper_from_db` (`runner.py:912-916`) orders `TextElement` rows by `position_in_section` alone — but per `database/models.py:79` + the composite index `idx_document_path_position`, `position_in_section` is *local to each `path_string`*. Single-column sort interleaves sections: every section's position-0 paragraph emits first, then every section's position-1, etc. `MapStage._make_chunks` then packs adjacent sentences from unrelated sections into the same chunk, destroying topical locality and depressing voter agreement. Affects every paper on every sync + batch run today. Compounds with B-040 once those rows have already been written out-of-order to `TextElement`. | [Bug 39](#bug-39--load_paper_from_db-orders-by-position_in_section-only-interleaves-sections) |
 | B-040 | Fixed (2026-05-15) | Medium | PDF extraction, text assembly | `parsers/layout_utils.extract_text` (`layout_utils.py:469-524`) accumulates paragraphs into `by_path = defaultdict(list)` keyed by `path_string`, then emits `rows` by iterating `by_path` in *insertion order*. Sections that get revisited after a sub-section (parent text → sub-section text → more parent text) have their later paragraphs appended at the parent's first-emit position; the sub-section's content ends up emitted *after* the entire parent block. Output `HierarchicalRow` order is "path-first-appearance" order, not document order, and the bug compounds with B-039 once those rows are written to `TextElement` and re-read by `load_paper_from_db`. | [Bug 40](#bug-40--extract_text-emits-paragraphs-in-path-first-appearance-order-not-document-order) |
@@ -2053,7 +2053,19 @@ Added `umls_resources.get_small_nlp(model_name: str)` — a per-model singleton 
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Medium · PDF extraction, filtering config.
+Fixed (2026-05-15, deleted) · Medium · PDF extraction, filtering config.
+
+### Resolution
+
+All three fields removed from `FilteringConfig`. Each has only one possible
+behaviour today: `fix_ligatures(...)` is unconditional in
+`parsers/layout_utils.py`, `remove_citations(...)` is unconditional in
+`extract_text`, and there is no minimum-paragraph-length filter at all. Adding
+the wiring would have made every default a behaviour change for any user who
+had been treating the dataclass as authoritative — deletion keeps the surface
+honest with what the code actually does. The remaining `FilteringConfig`
+fields (`enabled`, `apply_ner_filtering`, `apply_paragraph_relevance_filtering`)
+are all consumed by `ArtifactFilter` / `extract_text`.
 
 ### Symptom
 
@@ -2093,7 +2105,23 @@ Pending.
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Medium · PDF extraction, text assembly config.
+Fixed (2026-05-15, deleted) · Medium · PDF extraction, text assembly config.
+
+### Resolution
+
+Six fields removed: `enabled`, `baseline_mode`, `use_hierarchical_extraction`,
+`use_context_aware_stitching`, `compare_combinations`,
+`save_combination_outputs`. The runner no longer routes around any of these —
+hierarchical extraction + stitching are the production behaviour, the
+masked-vs-unmasked A/B harness is gone, and the `compare_combinations` /
+`save_combination_outputs` knobs targeted a research workflow that doesn't
+exist anymore. The `BaselineMode` enum and its `pipeline.stages.pdf_text_extraction`
+re-export were dropped at the same time. `TextAssemblyConfig` now exposes
+only the two fields that drive code: `write_raw_text` (toggles
+`out/text_raw/` dump in `runner.py`) and `pre_filter_relevance` (passed
+through to `extract_text`). `tests/test_config_loader.py::test_enum_coerced_from_string`
+was rewritten to use `LogLevel` instead of `BaselineMode` for its
+enum-coercion smoke test.
 
 ### Symptom
 
@@ -2138,7 +2166,14 @@ Pending.
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Low · PDF extraction, cropping config.
+Fixed (2026-05-15, deleted) · Low · PDF extraction, cropping config.
+
+### Resolution
+
+Both fields removed from `CroppingConfig`. Captions are unconditionally
+included in `CroppedMedia.caption` by `PyMuPDFMediaCropper`, and panel
+counting was wholly unimplemented (no detector, no metadata field). All
+remaining `CroppingConfig` fields are consumed by the cropper.
 
 ### Symptom
 
@@ -2212,7 +2247,26 @@ Rejected alternative: adding IOU logic to `merge_rects`. Would be a behaviour ch
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Medium · PDF extraction, TATR detector.
+Fixed (2026-05-15) · Medium · PDF extraction, TATR detector.
+
+### Resolution
+
+Promoted the hardcoded `_RENDER_DPI = 150` (was at module level in
+`tatr_detector.py`) to a real `TATRConfig.render_dpi: int = 150` field.
+`TATRTableDetector.detect()` now reads `self._config.render_dpi` and computes
+the `pixel → PDF points` scale per call, so a thesis-time DPI sweep is a
+config change rather than a code edit.
+
+Deleted four dead `TATRConfig` fields:
+* `enabled` — redundant; `PipelineConfig.table_detector` already gates the
+  detector via the `TableDetectorType` enum.
+* `max_detections_per_page` — not used (TATR confidence threshold already
+  keeps per-page counts in the single digits).
+* `batch_size_pages` — TATR processes one page at a time; multi-page
+  batching is unimplemented.
+* `structure_model_name` — table structure recognition was never wired.
+
+Regression coverage in `tests/test_config_loader.py::test_tatr_render_dpi_overridable`.
 
 ### Symptom
 
@@ -2361,7 +2415,33 @@ Trade-off vs. lifting fields into `SummarizationConfig`: the YAML path keeps NLI
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Low · Summarisation, normalize stage.
+Fixed (2026-05-15) · Low · Summarisation, normalize stage.
+
+### Resolution
+
+Added `NormalizeConfig` dataclass to
+`pipeline/stages/summarization/config.py` with one field,
+`extra_synonyms: dict[str, str] | None = None`, and wired it through
+`SummarizationConfig.normalize`. Both `SummarizationRunner` (sync) and
+`BatchSummarizationRunner` now construct `NormalizeStage(extra_synonyms=cfg.normalize.extra_synonyms)`.
+
+Side fix in `pipeline/config_loader.py` discovered while writing the
+regression test:
+* `_unwrap_optional` only matched `typing.Union[X, None]`; PEP-604
+  `X | None` (origin `types.UnionType`) fell through unchanged. So the
+  union wrapper around `dict[str, str] | None` was never stripped.
+* `_coerce` then routed any dict-typed YAML value through the
+  nested-dataclass branch, which crashed with
+  `Field type dict[str, str] | None does not resolve to a dataclass`.
+
+Both addressed in one pass: `_unwrap_optional` now also accepts
+`types.UnionType`, and `_coerce` early-returns the raw dict when the
+field type is a `dict[...]` mapping (new helper `_is_mapping_type`).
+
+Regression tests in `tests/test_config_loader.py`:
+* `test_normalize_extra_synonyms_loaded_as_mapping` — exercises the YAML
+  → `dict[str, str]` path end-to-end.
+* `test_tatr_render_dpi_overridable` — pairs nicely with the B-034 fix.
 
 ### Symptom
 

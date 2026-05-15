@@ -244,7 +244,7 @@ class SummarizationRunner:
             escalation_spec=escalation_spec,
             cascade_profile=cascade_profile,
         )
-        self._normalize = NormalizeStage()
+        self._normalize = NormalizeStage(extra_synonyms=cfg.normalize.extra_synonyms)
         self._group = GroupStage()
         self._canonicalize = CanonicalizeStage()
         self._relate = RelateStage(

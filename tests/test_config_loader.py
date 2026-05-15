@@ -9,7 +9,6 @@ import yaml
 
 from pipeline.config_loader import load_config
 from pipeline.stages.pdf_text_extraction.config import (
-    BaselineMode,
     LogLevel,
     TableDetectorType,
 )
@@ -49,12 +48,12 @@ def test_enum_coerced_from_string(tmp_path: Path):
     p = _write(tmp_path, """
         pdf_extraction:
           table_detector: tatr
-          text:
-            baseline_mode: unmasked
+          runtime:
+            log_level: DEBUG
     """)
     pdf, _ = load_config(p)
     assert pdf.table_detector == TableDetectorType.TATR
-    assert pdf.text.baseline_mode == BaselineMode.UNMASKED
+    assert pdf.runtime.log_level == LogLevel.DEBUG
 
 
 def test_path_field_wrapped(tmp_path: Path):
@@ -91,3 +90,29 @@ def test_summarization_section_independent(tmp_path: Path):
     assert sumcfg.resolve.grounding_weight == 0.7
     # untouched defaults survive
     assert sumcfg.map.reject_theta == 0.2
+
+
+def test_normalize_extra_synonyms_loaded_as_mapping(tmp_path: Path):
+    """B-037: NormalizeConfig.extra_synonyms is a `dict[str, str]` and must
+    pass through the loader without being mistaken for a nested dataclass."""
+    p = _write(tmp_path, """
+        summarization:
+          normalize:
+            extra_synonyms:
+              acme corp: ACME
+              foo bar: FOO
+    """)
+    _, sumcfg = load_config(p)
+    assert sumcfg.normalize.extra_synonyms == {"acme corp": "ACME", "foo bar": "FOO"}
+
+
+def test_tatr_render_dpi_overridable(tmp_path: Path):
+    """B-034: TATRConfig.render_dpi is now a real config knob (was hardcoded
+    `_RENDER_DPI = 150` at module level)."""
+    p = _write(tmp_path, """
+        pdf_extraction:
+          tatr:
+            render_dpi: 300
+    """)
+    pdf, _ = load_config(p)
+    assert pdf.tatr.render_dpi == 300

@@ -15,6 +15,7 @@ Usage::
 """
 from __future__ import annotations
 
+import types
 import typing
 from dataclasses import fields, is_dataclass
 from enum import Enum
@@ -58,6 +59,11 @@ def _coerce(current, value, field_type):
     if value is None:
         return None
     if isinstance(value, dict):
+        # Plain mapping field (e.g. `dict[str, str]`) — pass through as-is.
+        # Without this, every dict YAML node is treated as a nested-dataclass
+        # override and `extra_synonyms: {acme: ACME}` would crash.
+        if _is_mapping_type(field_type):
+            return value
         nested = current if is_dataclass(current) else _instantiate_dataclass(field_type)
         if nested is None:
             raise TypeError(
@@ -82,7 +88,12 @@ def _get_type_hints(cls) -> dict:
 
 
 def _unwrap_optional(t):
-    if typing.get_origin(t) is typing.Union:
+    # Handle both `typing.Union[X, None]` and PEP-604 `X | None`. The latter
+    # has origin `types.UnionType`, not `typing.Union`, so the original check
+    # silently failed for `dict[str, str] | None` — extra_synonyms then got
+    # routed through the dataclass branch and crashed.
+    origin = typing.get_origin(t)
+    if origin is typing.Union or origin is types.UnionType:
         non_none = [a for a in typing.get_args(t) if a is not type(None)]
         if len(non_none) == 1:
             return non_none[0]
@@ -106,3 +117,11 @@ def _instantiate_dataclass(t):
     if isinstance(inner, type) and is_dataclass(inner):
         return inner()
     return None
+
+
+def _is_mapping_type(t) -> bool:
+    inner = _unwrap_optional(t)
+    origin = typing.get_origin(inner)
+    if origin in (dict, typing.Dict):
+        return True
+    return isinstance(inner, type) and issubclass(inner, dict)

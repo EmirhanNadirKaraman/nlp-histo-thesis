@@ -32,7 +32,6 @@ from pipeline.stages.pdf_text_extraction.config import (
     DatabaseConfig,
     RuntimeConfig,
     TableDetectorType,
-    BaselineMode,
 )
 from pipeline.stages.pdf_text_extraction.runner import PipelineRunner
 from pipeline.stages.pdf_text_extraction.batch import ParallelBatchRunner
@@ -52,7 +51,6 @@ __all__ = [
     "DatabaseConfig",
     "RuntimeConfig",
     "TableDetectorType",
-    "BaselineMode",
     # Runtime
     "PipelineRunner",
     "ParallelBatchRunner",

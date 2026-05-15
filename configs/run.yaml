@@ -26,6 +26,7 @@ pdf_extraction:
     threshold: 0.99
     device: cpu
     model_name: microsoft/table-transformer-detection
+    render_dpi: 150             # raise for small/faint tables, drop for speed (B-034)
 
   masking:
     enabled: true
@@ -38,8 +39,6 @@ pdf_extraction:
   filtering:
     apply_ner_filtering: true
     apply_paragraph_relevance_filtering: true
-    # NOTE: fix_ligatures / remove_reference_markers / min_paragraph_chars are
-    # currently dead knobs (B-030). Leaving them out of this template until wired.
 
   cropping:
     save_figure_crops: true
@@ -51,7 +50,6 @@ pdf_extraction:
   text:
     write_raw_text: true
     pre_filter_relevance: true
-    # Other fields in TextAssemblyConfig are dead (B-031); omitted.
 
   visualization:
     enabled: true
@@ -82,6 +80,9 @@ summarization:
     chunk_size: 10
     chunk_overlap: 2
     chunk_workers: 5
+
+  normalize:
+    extra_synonyms: {}          # surface → canonical overrides on top of synonyms.yaml (B-037)
 
   grounding:
     threshold: null             # null disables the entailment filter

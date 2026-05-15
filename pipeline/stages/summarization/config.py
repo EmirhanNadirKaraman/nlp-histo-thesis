@@ -45,6 +45,17 @@ class MapConfig:
 
 
 @dataclass
+class NormalizeConfig:
+    """NORMALIZE-stage knobs."""
+
+    extra_synonyms: dict[str, str] | None = None
+    """Caller-supplied surface-form → canonical overrides merged on top of
+    `synonyms.yaml` at NormalizeStage construction. Lower-cased keys win over
+    the bundled dict; lets callers patch a misclassification without editing
+    the shipped YAML. None → no overrides."""
+
+
+@dataclass
 class GroundingConfig:
     """NLI entailment filter applied after MAP."""
 
@@ -138,6 +149,7 @@ class SummarizationConfig:
     """
 
     map: MapConfig = field(default_factory=MapConfig)
+    normalize: NormalizeConfig = field(default_factory=NormalizeConfig)
     grounding: GroundingConfig = field(default_factory=GroundingConfig)
     relate: RelateConfig = field(default_factory=RelateConfig)
     resolve: ResolveConfig = field(default_factory=ResolveConfig)

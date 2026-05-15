@@ -203,7 +203,7 @@ class BatchSummarizationRunner:
         self._cfg_full = cfg
         self._run_modern_pipeline = run_modern_pipeline
         self._run_reduce = run_reduce
-        self._normalize = NormalizeStage()
+        self._normalize = NormalizeStage(extra_synonyms=cfg.normalize.extra_synonyms)
         self._group = GroupStage()
         self._canonicalize = CanonicalizeStage()
         self._relate = RelateStage(

@@ -14,12 +14,6 @@ class TableDetectorType(str, Enum):
     VLM = "vlm"
 
 
-class BaselineMode(str, Enum):
-    MASKED = "masked"
-    UNMASKED = "unmasked"
-    BOTH = "both"
-
-
 class LogLevel(str, Enum):
     DEBUG = "DEBUG"
     INFO = "INFO"
@@ -106,13 +100,12 @@ class DoclingConfig:
 
 @dataclass(slots=True)
 class TATRConfig:
-    enabled: bool = True
     threshold: float = 0.99
-    max_detections_per_page: int = 200
     device: str = "cpu"  # "cpu", "cuda", "mps"
     model_name: str = "microsoft/table-transformer-detection"
-    structure_model_name: Optional[str] = None  # optional if you later want structure extraction
-    batch_size_pages: int = 1
+    render_dpi: int = 150
+    """DPI used when rasterising PDF pages for the TATR detector. Recall is
+    DPI-sensitive — bump for small / faint tables, drop for speed."""
 
 
 @dataclass(slots=True)
@@ -130,9 +123,6 @@ class FilteringConfig:
     enabled: bool = True
     apply_ner_filtering: bool = True
     apply_paragraph_relevance_filtering: bool = True
-    fix_ligatures: bool = True
-    remove_reference_markers: bool = False
-    min_paragraph_chars: int = 20
 
 
 @dataclass(slots=True)
@@ -142,8 +132,6 @@ class CroppingConfig:
     save_table_crops: bool = True
     image_format: str = "png"
     dpi: int = 200
-    include_captions_in_metadata: bool = True
-    panel_counting_enabled: bool = False
     min_figure_pts: int = 50        # minimum width AND height in PDF points; smaller figures are skipped
     merge_figures_by_caption: bool = False  # merge PICTURE elements sharing the same caption number
     merge_tables_by_caption: bool = False   # merge TABLE/detection regions sharing the same caption number
@@ -155,12 +143,6 @@ class CroppingConfig:
 
 @dataclass(slots=True)
 class TextAssemblyConfig:
-    enabled: bool = True
-    baseline_mode: BaselineMode = BaselineMode.MASKED
-    use_hierarchical_extraction: bool = True
-    use_context_aware_stitching: bool = True
-    compare_combinations: bool = False
-    save_combination_outputs: bool = False
     write_raw_text: bool = False  # dump pre-assembly elements to out/text_raw/
     pre_filter_relevance: bool = True  # False → skip is_relevant_para; use post-stitch boilerplate filter instead
 

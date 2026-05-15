@@ -25,10 +25,10 @@ _LOAD_LOCK = threading.Lock()
 _SHARED_PROCESSOR = None
 _SHARED_MODEL = None
 
-# Points-per-inch for PDF coordinates, and the DPI we render pages at for TATR
+# Points-per-inch for PDF coordinates. Render DPI is now configurable via
+# TATRConfig.render_dpi (B-034) — recall is DPI-sensitive, so the knob is
+# exposed for the thesis sweep.
 _PDF_PPI = 72
-_RENDER_DPI = 150
-_SCALE = _PDF_PPI / _RENDER_DPI   # pixel → PDF points
 
 
 class TATRTableDetector:
@@ -96,6 +96,9 @@ class TATRTableDetector:
 
         self._load_model()
 
+        render_dpi = self._config.render_dpi
+        scale = _PDF_PPI / render_dpi   # pixel → PDF points
+
         doc = fitz.open(str(pdf_path))
         regions = []
         page_dims: dict = {}
@@ -105,7 +108,7 @@ class TATRTableDetector:
             page_no = page_num + 1
             page_dims[page_no] = {"width": page.rect.width, "height": page.rect.height}
 
-            mat = fitz.Matrix(_RENDER_DPI / _PDF_PPI, _RENDER_DPI / _PDF_PPI)
+            mat = fitz.Matrix(render_dpi / _PDF_PPI, render_dpi / _PDF_PPI)
             pix = page.get_pixmap(matrix=mat)
             img = PILImage.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
@@ -124,7 +127,7 @@ class TATRTableDetector:
             for score, label_id, box in zip(
                 results["scores"], results["labels"], results["boxes"]
             ):
-                x1, y1_screen, x2, y2_screen = [v * _SCALE for v in box.tolist()]
+                x1, y1_screen, x2, y2_screen = [v * scale for v in box.tolist()]
                 # Convert from screen coords to Docling PDF coords
                 bbox = BoundingBox(
                     x1=x1,
