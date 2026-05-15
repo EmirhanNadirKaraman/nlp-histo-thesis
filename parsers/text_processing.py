@@ -139,8 +139,11 @@ class ContextAwareStitcher:
              sentence-final (e.g., "Fig.", "et al.", "vs.", "approx.")
 
         Deliberately excluded from triggering:
-          • Ends with a period, question mark, exclamation mark, closing bracket,
-            or closing quote — those are unambiguously sentence-final.
+          • Ends with `?`, `!`, closing bracket, or closing quote — unambiguously
+            sentence-final.
+          • Ends with a period AND the trailing token is not a known abbreviation —
+            treated as sentence-final (the abbreviation check below runs first
+            so `fig.`, `et al.`, `e.g.`, etc. still stitch).
           • Ends with ANY lowercase letter — this was the original rule and it is
             far too broad: it fires on abbreviations, gene names, inline refs,
             and almost every English sentence that ends with "et al." or similar.
@@ -149,35 +152,45 @@ class ContextAwareStitcher:
         if not t:
             return False
 
-        # Sentence-final punctuation → definitely complete
-        if t[-1] in '.?!)]"\'»':
-            return False
-
-        # Ends with a hyphen → word broken across a column/page boundary
+        # Hyphen → word broken across a column/page boundary
         if t.endswith('-'):
             return True
 
-        # Ends with a comma → clause continues
+        # Comma → clause continues
         if t.endswith(','):
             return True
 
-        last_word = t.split()[-1].lower().rstrip('.,;:')
+        tokens = t.split()
+        last_word = tokens[-1].lower().rstrip('.,;:')
+        last_two = (
+            tokens[-2].lower().rstrip('.,;:') + ' ' + last_word
+            if len(tokens) >= 2
+            else None
+        )
 
-        # Ends on a connector word (no terminal punctuation already caught above)
+        # B-042: abbreviation check must run BEFORE the period early-return below;
+        # every entry here ends with a period in the wild ("fig.", "et al.",
+        # "e.g."), so a period-terminal early-return shadowed this rule.
+        _MID_SENTENCE_ABBREVS = frozenset({
+            'fig', 'figs', 'et al', 'vs', 'approx', 'dept', 'no', 'nos',
+            'e.g', 'i.e', 'cf', 'ref', 'refs',
+        })
+        if last_word in _MID_SENTENCE_ABBREVS or (
+            last_two is not None and last_two in _MID_SENTENCE_ABBREVS
+        ):
+            return True
+
+        # Sentence-final punctuation → complete
+        if t[-1] in '.?!)]"\'»':
+            return False
+
+        # Connector word with no terminal punctuation
         _CONNECTORS = frozenset({
             'and', 'or', 'but', 'the', 'a', 'an',
             'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by',
             'that', 'which', 'who', 'as', 'if', 'than',
         })
         if last_word in _CONNECTORS:
-            return True
-
-        # Ends on a mid-sentence abbreviation that is never sentence-final
-        _MID_SENTENCE_ABBREVS = frozenset({
-            'fig', 'figs', 'et al', 'vs', 'approx', 'dept', 'no', 'nos',
-            'e.g', 'i.e', 'cf', 'approx', 'ref', 'refs',
-        })
-        if last_word in _MID_SENTENCE_ABBREVS:
             return True
 
         return False
@@ -294,6 +307,8 @@ def remove_citations(text: str) -> str:
         "The study found. These results"
         >>> remove_citations("14. Smith et al. 2020")
         "14. Smith et al. 2020"  # Start-of-line numbers preserved
+        >>> remove_citations("Smith et al. 2020 reported X")
+        "Smith et al. 2020 reported X"  # 4-digit years preserved
     """
     # URLs (http/https)
     cleaned = re.sub(r'https?://\S+', '', text)
@@ -303,15 +318,19 @@ def remove_citations(text: str) -> str:
     cleaned = re.sub(r'\[\d+(?:[,–\-]\d+)*\]', '', cleaned)
 
     # After period: ". 1 ", ". 19,20 ", ". 4,5" (with or without trailing space/text)
-    # Use negative lookbehind to avoid matching start of line
-    cleaned = re.sub(r'(?<!\n)\.\s+\d+(?:[,–\-]\d+)*(?=\s|$)', '. ', cleaned)
+    # Use negative lookbehind to avoid matching start of line.
+    # Digit-length capped at 3 so 4-digit publication years (19xx / 20xx)
+    # in mid-prose mentions like "Smith et al. 2020 reported …" survive
+    # — citation indices in pathology papers are practically never ≥1000.
+    cleaned = re.sub(r'(?<!\n)\.\s+\d{1,3}(?:[,–\-]\d{1,3})*(?=\s|$)', '. ', cleaned)
 
-    # After comma: ", 5 ", ", 1,2 "
-    cleaned = re.sub(r',\s+\d+(?:[,–\-]\d+)*(?=\s|$)', ', ', cleaned)
+    # After comma: ", 5 ", ", 1,2 " — same digit-length cap as above.
+    cleaned = re.sub(r',\s+\d{1,3}(?:[,–\-]\d{1,3})*(?=\s|$)', ', ', cleaned)
 
-    # Standalone citations in middle of text: " 1 ", " 19,20 "
-    # (preceded by space and followed by space or end)
-    cleaned = re.sub(r'(?<=\s)\d+(?:[,–\-]\d+)+(?=\s|$)', '', cleaned)
+    # Standalone citations in middle of text: " 1,2 ", " 19,20 "
+    # (preceded by space and followed by space or end). Requires at least one
+    # separator so bare years aren't matched; digit cap applies to each run.
+    cleaned = re.sub(r'(?<=\s)\d{1,3}(?:[,–\-]\d{1,3})+(?=\s|$)', '', cleaned)
 
     # Clean up whitespace artifacts left by citation removal.
     # A space immediately before . , ; is never valid in English prose.

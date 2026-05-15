@@ -140,10 +140,43 @@ class DoclingLayoutExtractor:
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
+    def _convert_with_timeout(self, converter, pdf_path: Path):
+        """Run ``converter.convert()`` under ``DoclingConfig.timeout_sec``.
+
+        Pathological PDFs (very large / OCR-heavy / corrupt) can hang the
+        Docling pipeline indefinitely. We isolate the call in a single-worker
+        thread pool and raise TimeoutError on the configured deadline — the
+        runner's per-paper try/except blacklists the pmcid and the batch
+        moves on. The runaway thread is abandoned; this is acceptable for
+        short batches and far better than a hung run.
+
+        Setting ``timeout_sec <= 0`` disables the guard.
+        """
+        timeout_sec = self._config.timeout_sec
+        if timeout_sec is None or timeout_sec <= 0:
+            return converter.convert(str(pdf_path))
+
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=1,
+            thread_name_prefix=f"docling-{pdf_path.stem}",
+        ) as ex:
+            future = ex.submit(converter.convert, str(pdf_path))
+            try:
+                return future.result(timeout=timeout_sec)
+            except concurrent.futures.TimeoutError as exc:
+                logger.error(
+                    "Docling timed out on %s after %ds — abandoning worker thread",
+                    pdf_path.name, timeout_sec,
+                )
+                raise TimeoutError(
+                    f"Docling exceeded {timeout_sec}s on {pdf_path.name}"
+                ) from exc
+
     def _run_docling(self, pdf_path: Path) -> LayoutResult:
         logger.info("Running Docling on %s", pdf_path.name)
         converter = self._get_converter()
-        doc_result = converter.convert(str(pdf_path))
+        doc_result = self._convert_with_timeout(converter, pdf_path)
         doc = doc_result.document
 
         raw_elements = []

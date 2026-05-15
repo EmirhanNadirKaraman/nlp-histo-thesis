@@ -54,15 +54,15 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-032 | Observed (2026-05-15) | Low | PDF extraction, cropping config | `CroppingConfig.{include_captions_in_metadata, panel_counting_enabled}` (`config.py:146-147`) have no consumers. `panel_counting_enabled` is wholly unimplemented; caption inclusion in metadata is hardcoded ON. | [Bug 32](#bug-32--croppingconfig-dead-knobs-include_captions_in_metadata-panel_counting_enabled) |
 | B-033 | Fixed (2026-05-15, deleted) | Low | PDF extraction, masking config | `MaskingConfig.merge_iou_threshold` was a leftover from a different algorithm — `merge_rects` (`parsers/layout_utils.py:103`) merges on any-intersection (`Rect.intersects`), not on IOU. Field deleted from `MaskingConfig` and `merge_rects` docstring tightened to clarify the semantics. | [Bug 33](#bug-33--maskingconfigmerge_iou_threshold-never-passed-to-merge_rects) |
 | B-034 | Observed (2026-05-15) | Medium | PDF extraction, TATR detector | `TATRConfig.{enabled, max_detections_per_page, batch_size_pages, structure_model_name}` (`config.py:109-115`) are not consumed by `TATRTableDetector` — it reads `model_name`, `device`, `threshold` only. `_RENDER_DPI = 150` is hardcoded at `tatr_detector.py:30` instead of being a TATR config field. `enabled=False` would not actually disable the detector at runner level. | [Bug 34](#bug-34--tatrconfig-dead-knobs-render-dpi-hardcoded) |
-| B-035 | Observed (2026-05-15) | Medium | PDF extraction, Docling timeout | `DoclingConfig.timeout_sec=300` (`config.py:90`) is documented as a timeout but `DoclingLayoutExtractor` never wraps the conversion in a timeout. Pathological PDFs (very large / OCR-heavy) can hang the entire batch indefinitely; the documented safety knob does nothing. | [Bug 35](#bug-35--doclingconfigtimeout_sec-never-enforced-by-doclinglayoutextractor) |
+| B-035 | Fixed (2026-05-15) | Medium | PDF extraction, Docling timeout | `DoclingConfig.timeout_sec=300` was documented but `DoclingLayoutExtractor` never wrapped the conversion. Pathological PDFs (very large / OCR-heavy / corrupt) hung the entire batch indefinitely. Fixed by routing the `converter.convert(...)` call through a new `_convert_with_timeout` helper that submits the work to a single-worker `ThreadPoolExecutor` and raises `TimeoutError` on `future.result(timeout=)`. The runner's per-paper try/except in `PipelineRunner.run_document` already blacklists the pmcid on exception, so a timeout naturally moves the batch on. `timeout_sec <= 0` disables the guard. The runaway thread is abandoned — acceptable trade-off for batch resilience. Regression test in `tests/pdf_text_extraction/test_docling_timeout.py`. | [Bug 35](#bug-35--doclingconfigtimeout_sec-never-enforced-by-doclinglayoutextractor) |
 | B-036 | Fixed (2026-05-15) | Low | Summarisation, NLI helpers config surface | `GroundingFilter.__init__` (`helpers/grounding_filter.py:68`) accepts `model_name`, `batch_size`, `device`; `RelateStage.__init__` (`current_stages/relate_stage.py:268`) accepts the same trio. `GroundingConfig` exposes only `threshold`; `RelateConfig` exposes only the two thresholds. `runner.py:258` instantiates `GroundingFilter(cfg.grounding.threshold)` and `runner.py:251` instantiates `RelateStage(entailment_threshold=…, contradiction_threshold=…)` — model / batch / device always fall back to module defaults regardless of caller intent. No way to switch the NLI model or move it to GPU via `SummarizationConfig`. | [Bug 36](#bug-36--groundingfilter--relatestage-modelbatchdevice-not-exposed-via-summarizationconfig) |
 | B-037 | Observed (2026-05-15) | Low | Summarisation, normalize stage | `NormalizeStage.__init__` (`current_stages/normalize_stage.py:387`) accepts `extra_synonyms: dict[str, str] \| None`. `runner.py:247` calls `NormalizeStage()` with no args; there is no `SummarizationConfig` field for caller-supplied synonyms. Overrides to `synonyms.yaml` cannot be plumbed through the runner. | [Bug 37](#bug-37--normalizestageextra_synonyms-not-exposed-via-summarizationconfig) |
 | B-038 | Fixed (2026-05-15) | Medium | Summarisation, sentence loader | `SummarizationRunner.load_paper_from_db` (`runner.py:905`) called `spacy.load("en_core_sci_sm")` on every invocation — bypassed the `umls_resources.get_nlp()` singleton. In batch mode (`process_batch([load_paper_from_db(p) for p in pmcids])`) the small model deserialised once per paper. Same class as B-029. Fixed by routing through `umls_resources.get_small_nlp("en_core_sci_sm")`; raises a clear error when the model isn't installed. Regression test `tests/summarization/test_scispacy_singleton.py` asserts no `spacy.load(...)` call sites exist outside `umls_resources.py` under `pipeline/stages/`. | [Bug 38](#bug-38--summarizationrunnerload_paper_from_db-bypasses-scispacy-singleton) |
 | B-039 | Fixed (2026-05-15) | High | Summarisation, sentence ordering | `SummarizationRunner.load_paper_from_db` (`runner.py:912-916`) orders `TextElement` rows by `position_in_section` alone — but per `database/models.py:79` + the composite index `idx_document_path_position`, `position_in_section` is *local to each `path_string`*. Single-column sort interleaves sections: every section's position-0 paragraph emits first, then every section's position-1, etc. `MapStage._make_chunks` then packs adjacent sentences from unrelated sections into the same chunk, destroying topical locality and depressing voter agreement. Affects every paper on every sync + batch run today. Compounds with B-040 once those rows have already been written out-of-order to `TextElement`. | [Bug 39](#bug-39--load_paper_from_db-orders-by-position_in_section-only-interleaves-sections) |
 | B-040 | Fixed (2026-05-15) | Medium | PDF extraction, text assembly | `parsers/layout_utils.extract_text` (`layout_utils.py:469-524`) accumulates paragraphs into `by_path = defaultdict(list)` keyed by `path_string`, then emits `rows` by iterating `by_path` in *insertion order*. Sections that get revisited after a sub-section (parent text → sub-section text → more parent text) have their later paragraphs appended at the parent's first-emit position; the sub-section's content ends up emitted *after* the entire parent block. Output `HierarchicalRow` order is "path-first-appearance" order, not document order, and the bug compounds with B-039 once those rows are written to `TextElement` and re-read by `load_paper_from_db`. | [Bug 40](#bug-40--extract_text-emits-paragraphs-in-path-first-appearance-order-not-document-order) |
 | B-041 | Fixed (2026-05-15) | High | Summarisation, MAP cascade attribution | `MapStage._run_voters` (`current_stages/map_stage.py:1183`) returns the API-survivor list with `[r for r in results if r is not None]` — the original-voter-index → survivor-index mapping is dropped at return. `agreement.compute(voters)` then assigns `bundle.best_index` over the survivor list, and `producer_from_outcome` (`agreement/decision.py:210-211`) / `make_decision_record` (`decision.py:255-267`) use that index as if it referred to the original `voter_specs`. Router path is also affected: `_classify_voters` (`routing/router.py:271`) re-indexes from 0 over the survivor list, so its `valid_voter_indices` are survivor-list indices that `voter_specs[global_idx]` then treats as original indices. Whenever ≥1 voter fails an API call (or the router strips a voter as UNUSABLE before MAP sees the failure), MAP cache metadata, cost report, and cascade decision log all carry the wrong `(provider, model)` for the kept chunk. Dormant when zero voters fail. | [Bug 41](#bug-41--producer-attribution-mis-indexed-when-any-voter-fails) |
-| B-042 | Observed (2026-05-15) | Low | PDF extraction, text stitching | `ContextAwareStitcher._is_cut_off` (`parsers/text_processing.py:152-181`) returns `False` on any terminal `.`/`?`/`!`/`)`/`]`/`"`/`'`/`»` early-return at lines 152-154, *before* the `_MID_SENTENCE_ABBREVS` check at lines 175-181. Every abbreviation in that frozenset (`fig.`, `et al.`, `vs.`, `approx.`, `e.g.`, `i.e.`, `cf.`, `ref.`, `refs.`, `dept.`, `no.`, `nos.`) ends in a period, so the abbrev rule is dead code. Paragraphs ending in those abbreviations are treated as sentence-final and never stitched with the next narrative paragraph — sentences get fragmented at abbreviation boundaries, biasing both MAP input and downstream NLI grounding (`verbatim_support` mismatches the cited paragraph). | [Bug 42](#bug-42--is_cut_off-mid-sentence-abbreviation-rule-is-dead-code) |
-| B-043 | Observed (2026-05-15) | Low | PDF extraction, citation removal | `parsers/text_processing.remove_citations` (`text_processing.py:307`) regex `(?<!\n)\.\s+\d+(?:[,–\-]\d+)*(?=\s|$)` strips any `". <digits> "` pattern after a period — including 4-digit years. "Smith et al. 2020 reported …" becomes "Smith et al. reported …". Reference-style paragraphs are usually killed earlier by `is_reference_entry` so the worst case (mangling actual references) is averted, but in-text narrative mentions of years lose context that was material to the claim. | [Bug 43](#bug-43--remove_citations-strips-publication-years) |
+| B-042 | Fixed (2026-05-15) | Low | PDF extraction, text stitching | `ContextAwareStitcher._is_cut_off` (`parsers/text_processing.py:152-181`) returned `False` on any terminal `.`/`?`/`!`/`)`/`]`/`"`/`'`/`»` early-return at lines 152-154, *before* the `_MID_SENTENCE_ABBREVS` check at lines 175-181. Every abbreviation in that frozenset (`fig.`, `et al.`, `vs.`, `approx.`, `e.g.`, `i.e.`, `cf.`, `ref.`, `refs.`, `dept.`, `no.`, `nos.`) ends in a period, so the abbrev rule was dead code. Paragraphs ending in those abbreviations were treated as sentence-final and never stitched with the next narrative paragraph — sentences got fragmented at abbreviation boundaries, biasing both MAP input and downstream NLI grounding. Fix moved the abbreviation check ahead of the period early-return and added a multi-token form so "et al." (two tokens) also triggers. | [Bug 42](#bug-42--is_cut_off-mid-sentence-abbreviation-rule-is-dead-code) |
+| B-043 | Fixed (2026-05-15) | Low | PDF extraction, citation removal | `parsers/text_processing.remove_citations` regex `(?<!\n)\.\s+\d+(?:[,–\-]\d+)*(?=\s|$)` stripped any `". <digits> "` pattern after a period — including 4-digit years. "Smith et al. 2020 reported …" became "Smith et al. reported …", losing claim context. Fixed by capping the citation-index run at 1–3 digits in all three after-period / after-comma / standalone branches: `\d+` → `\d{1,3}`. Citation indices in pathology papers are practically never ≥1000 (one bracket-style branch was left as `\d+` because brackets disambiguate years from indices). Regression tests in `tests/parsers/test_remove_citations.py` cover year preservation + citation stripping. | [Bug 43](#bug-43--remove_citations-strips-publication-years) |
 | B-044 | Mitigated (2026-05-15) | Medium | Summarisation, MAP relation_type | MAP voters bleed `category` values (`morphology`, `IHC`, `molecular_genetics`, `prognosis`, `treatment`, `staging`) into the `relation_type` field. Prior coercion mapped only `prognosis → prognostic` and `treatment → treatment_response`; the rest fell through to `unclear` and got dropped at GROUP (relation_type is part of the grouping key and `unclear` is non-groupable). Net effect: 10+ findings silently lost per run on the calibration set, concentrated in `molecular_genetics` and `IHC` claims. Mitigation: prompt anti-pattern line + prognostic-crossover example + extended `_RELATION_TYPE_ALIASES` (`morphology→has_feature`, `ihc→expression`, `molecular_genetics→expression`) + new `reason="cross_field_bleed"` JSONL counter for measurement. `staging` left unaliased (descriptive vs prognostic crossover needs claim context). | [Bug 44](#bug-44--map-relation_type-bleeds-category-names-and-loses-findings-at-group) |
 | B-045 | Fixed (2026-05-15) | Low | Summarisation, MAP `FindingScope.scope_parsed` | `scope_parsed` is trivially derivable (`any(sub_field is not None)`) but was being computed by the LLM. One more thing it could get wrong, and output tokens spent reasoning about it. Fixed by `@model_validator(mode="after")` on `FindingScope` (`models.py:148-159`) that overrides whatever the LLM emitted; prompt instruction updated to "always emit false — computed automatically" (`prompts.py:213`). Field stays in the schema because OpenAI strict mode requires every property to be present. Bumped `MAP_SCHEMA_VERSION` → `"map_v7_scope_parsed_autocompute"`. Regression test in `tests/summarization/test_scope_parsed_autocompute.py`. From [MAP_PROMPT_AUDIT Issue 5](MAP_PROMPT_AUDIT.md#issue-5--scopescope_parsed-is-llm-set-but-trivially-derivable-low). | [Bug 45](#bug-45--scope_parsed-is-llm-set-but-trivially-derivable) |
 
@@ -2256,42 +2256,62 @@ Pending.
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Medium · PDF extraction, Docling timeout.
+Fixed (2026-05-15) · Medium · PDF extraction, Docling timeout.
 
 ### Symptom
 
 A pathological PDF (huge page count, malformed embedded fonts, OCR
-fallback triggered on every page) can wedge `Docling.convert(...)` for
-indefinite minutes. The documented `timeout_sec = 300` knob does nothing
-to stop it.
+fallback triggered on every page) could wedge `Docling.convert(...)` for
+indefinite minutes. The documented `timeout_sec = 300` knob did nothing
+to stop it — silent batch hang.
 
 ### Evidence
 
 * `config.py:90` — `timeout_sec: int = 300`.
-* `grep -rn "timeout_sec" pipeline parsers` returns only the declaration
-  and one docstring; no consumers.
+* Pre-fix `grep -rn "timeout_sec" pipeline parsers` returned only the
+  declaration and one docstring; no consumers.
 * `pipeline/stages/pdf_text_extraction/components/layout_extractor.py`
-  wraps the Docling call directly with no timeout.
+  wrapped the Docling call directly with no timeout.
 
 ### Diagnosis
 
-Docling does not natively support a per-document timeout. Enforcing one
-requires either (a) running the conversion in a subprocess with
-`subprocess.run(..., timeout=...)`, or (b) running it in a thread and
-joining with timeout (which leaks the worker on timeout — bad). Subprocess
-isolation is the correct fix but is a non-trivial refactor.
+Docling does not natively support a per-document timeout. Two options:
 
-### Fix (proposed)
+* **Subprocess isolation** — clean, but requires pickling the
+  `LayoutResult` (and any nested Docling objects) across the boundary;
+  the converter also has model state we'd lose per call.
+* **Thread + `Future.result(timeout=)`** — leaks the worker thread on
+  timeout, but the GIL holds the runaway in check and the pmcid lands on
+  the blacklist for next-run skip. Acceptable trade-off for batch
+  resilience; the alternative (hung run) costs more.
 
-* Phase 1 (cheap): change `timeout_sec` docstring to "advisory; not
-  enforced today" so users don't rely on it.
-* Phase 2 (real): move the per-document Docling call into a subprocess
-  worker; enforce timeout there; serialise the LayoutResult back via
-  pickle.
+Picked the thread path because the runner already runs papers in parallel
+via `ParallelBatchRunner` — each per-paper worker spawning its own
+single-worker executor is bounded and the leaked thread dies with the
+process when the batch finishes.
+
+### Fix
+
+* `pipeline/stages/pdf_text_extraction/components/layout_extractor.py`
+  — new `_convert_with_timeout(converter, pdf_path)` helper. Submits
+  `converter.convert(...)` to a `ThreadPoolExecutor(max_workers=1)` and
+  calls `future.result(timeout=self._config.timeout_sec)`. Raises
+  `TimeoutError` with a `Docling exceeded {N}s on {name}` message on
+  expiry; logs an error line before re-raising. `timeout_sec <= 0`
+  disables the guard (bypasses the executor entirely).
+* `_run_docling` now calls `self._convert_with_timeout(converter, pdf_path)`
+  instead of `converter.convert(...)` directly.
+* `PipelineRunner.run_document`'s existing per-paper try/except
+  (`runner.py:265`) catches the `TimeoutError`, logs `❌ {pmcid} — failed: …`,
+  and adds the pmcid to the blacklist with the timeout message as reason.
 
 ### Verification
 
-Pending.
+`pytest tests/pdf_text_extraction/test_docling_timeout.py` — 3 cases:
+work-under-budget succeeds, sleep-past-budget raises with the expected
+message, `timeout_sec=0` disables the guard and runs in the calling
+thread. Uses a `_SleepConverter` stand-in (no real Docling) so the test
+is hermetic and ~6 s.
 
 ---
 
@@ -2716,7 +2736,7 @@ Full summarization test suite (541 tests including the 6 above) passes.
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Low · `parsers/text_processing.py:152-181` (`ContextAwareStitcher._is_cut_off`).
+Fixed (2026-05-15) · Low · `parsers/text_processing.py:127-184` (`ContextAwareStitcher._is_cut_off`).
 
 ### Symptom
 
@@ -2784,19 +2804,13 @@ def _is_cut_off(self, text: str) -> bool:
 
 ### Verification
 
-Add a regression test in `tests/test_text_processing.py`:
+Applied 2026-05-15. Reorder + multi-token `last_two` check landed in `parsers/text_processing.py:127-184`. Regression coverage in `tests/parsers/test_text_processing_cutoff.py` (21 cases): every entry in `_MID_SENTENCE_ABBREVS` now triggers stitching ("fig.", "et al.", "e.g.", "i.e.", "cf.", "ref.", "refs.", "vs.", "approx.", "dept.", "no.", "nos."), real sentence-final cases (`. ? ! ) ] " »`) still return `False`, and the existing connector / hyphen / comma branches are unchanged. `python -m pytest tests/parsers/test_text_processing_cutoff.py -q` → 21 passed.
 
-```python
-def test_abbrev_triggers_stitch():
-    s = ContextAwareStitcher()
-    assert s._is_cut_off("see Fig.") is True
-    assert s._is_cut_off("Smith et al.") is True
-    assert s._is_cut_off("compared vs.") is True
-```
+Note: the multi-token check was added because `"Smith et al."` splits into two tokens (`"et"`, `"al."`), and only the final token (`"al"`) was being looked up against `_MID_SENTENCE_ABBREVS`. Joining the last two tokens (sans trailing punctuation) recovers the `"et al"` entry.
 
 ### Follow-up
 
-* Quantify impact: walk `out/text/*.txt` from a recent batch and grep for paragraphs ending in any abbrev. Each such line is a stitching opportunity the current code misses. Likely small in absolute terms but compounds with the document-order bugs (B-039, B-040) for thesis-grade reproducibility.
+* Quantify impact: walk `out/text/*.txt` from a recent batch and grep for paragraphs ending in any abbrev. Each such line was a stitching opportunity the pre-fix code missed. Likely small in absolute terms but compounds with the document-order bugs (B-039, B-040) for thesis-grade reproducibility.
 
 ---
 
@@ -2804,7 +2818,7 @@ def test_abbrev_triggers_stitch():
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Low · `parsers/text_processing.py:307` (`remove_citations`).
+Fixed (2026-05-15) · Low · `parsers/text_processing.py:320` (`remove_citations`).
 
 ### Symptom
 
@@ -2847,14 +2861,7 @@ A more aggressive fix: add a negative lookahead `(?!19\d{2}|20\d{2})` to the dig
 
 ### Verification
 
-Regression test:
-
-```python
-def test_does_not_strip_year_after_period():
-    assert remove_citations("Smith et al. 2020 reported.") == "Smith et al. 2020 reported."
-def test_still_strips_citation_after_period():
-    assert remove_citations("…in fig 4. 12 patients had…") == "…in fig 4. patients had…"
-```
+`pytest tests/parsers/test_remove_citations.py` — 9/9 pass. Covers year-after-period, year-after-comma, year-range with en-dash, citation-after-period still stripped, citation-range still stripped, citation-list still stripped, bracket-style citations still stripped (unchanged `\d+` branch), standalone-citation-run still stripped, and bare-year survival.
 
 ### Follow-up
 
