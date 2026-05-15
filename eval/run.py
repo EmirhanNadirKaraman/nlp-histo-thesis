@@ -117,21 +117,13 @@ def main() -> None:
         if min_bytes <= p.stat().st_size <= max_bytes
     ]
     logging.getLogger(__name__).info(
-<<<<<<< Updated upstream
         "Eligible PDFs: %d / %d (%.1f–%.1f MB)",
         len(eligible), len(all_pdfs), MIN_FILE_MB, MAX_FILE_MB,
-=======
-        "Eligible PDFs: %d / %d (≤ %.1f MB)", len(eligible), len(all_pdfs), MAX_FILE_MB,
->>>>>>> Stashed changes
     )
     rng    = random.Random(cfg.runtime.seed)
     sample = rng.sample(eligible, min(N_SAMPLES, len(eligible)))
     sample.sort()  # stable order within the sample for readable logs
 
-<<<<<<< Updated upstream
-    logging.getLogger(__name__).info(
-        "Eval batch: %d PDFs (seed=%d)", len(sample), cfg.runtime.seed
-=======
     # ── Skip already-completed documents ─────────────────────────────────────
     json_dir   = OUT / "json"
     remaining  = [p for p in sample if not (json_dir / f"{p.stem}_media.json").exists()]
@@ -143,7 +135,6 @@ def main() -> None:
 
     log.info(
         "Eval batch: %d / %d PDFs (seed=%d)", len(sample), len(all_pdfs), cfg.runtime.seed
->>>>>>> Stashed changes
     )
 
     ParallelBatchRunner(cfg, max_workers=4).run_paths(sample)

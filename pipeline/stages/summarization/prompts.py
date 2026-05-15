@@ -109,6 +109,14 @@ direction
   no_direction  : direction does not apply to this relation
                   (e.g. demographic age statements, neutral counts, narrative facts)
 
+  Disambiguating absent vs negative (relation_type=expression only):
+    "negative staining" / "no expression detected" / "BCL2 negative"
+                                      → direction: absent
+    "decreased intensity" / "reduced expression" / "lower expression than control"
+                                      → direction: negative
+  For other relation_types prefer `negative`; reserve `absent` for
+  text that says "absent" / "not present" / "lacking".
+
 BAD vs GOOD examples (claim field):
 
   BAD  — patient narrative, not a generalizable fact:
@@ -210,7 +218,7 @@ scope            : A structured object with the following sub-fields (all nullab
   treatment_context : Treatment regimen in scope, e.g. "R-CHOP", "CHOP". null if not stated.
   endpoint          : Clinical endpoint, e.g. "5-year OS", "PFS", "complete remission rate". null if not stated.
   study_design      : Study design, e.g. "cohort", "RCT", "case_series", "meta-analysis". null if not determinable.
-  scope_parsed      : Set to true if at least one scope sub-field above is non-null; false otherwise.
+  scope_parsed      : Always emit false. Computed automatically from sub-fields downstream; any value you provide is overridden.
 </StructuredFields>
 
 <OutputFormat>
@@ -341,7 +349,7 @@ AUDIT REQUIREMENTS:
   "rules": [
     {{
       "rule_id": "R1",
-      "type": "Diagnostic|Prognostic|Management",
+      "type": "diagnostic|prognostic|management",
       "condition": "IF <observation>",
       "action": "THEN <conclusion>",
       "confidence": "high|medium|low",
@@ -358,7 +366,7 @@ AUDIT REQUIREMENTS:
   ],
   "audit_summary": {{
     "total_rules": <count>,
-    "rules_by_type": {{"Diagnostic": N, "Prognostic": N, "Management": N}},
+    "rules_by_type": {{"diagnostic": N, "prognostic": N, "management": N}},
     "pmcids_supporting_rules": [<list>],
     "average_evidence_per_rule": <float>
   }}

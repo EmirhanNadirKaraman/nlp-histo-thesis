@@ -110,15 +110,8 @@ class DetectionVisualizer:
         if detection:
             for region in detection.regions:
                 pg = region.bbox.page
-<<<<<<< Updated upstream:pipeline/stages/pdf_text_extraction/components/visualizer.py
                 if 1 <= pg <= len(doc):
                     detection_rects_by_page.setdefault(pg, []).append(
-=======
-                if pg not in detection_rects_by_page:
-                    detection_rects_by_page[pg] = []
-                if 1 <= pg <= len(doc):
-                    detection_rects_by_page[pg].append(
->>>>>>> Stashed changes:pipeline/stages/visualizer.py
                         region.bbox.to_fitz_rect(doc[pg - 1].rect.height)
                     )
 
@@ -134,31 +127,20 @@ class DetectionVisualizer:
                 if rect.is_empty:
                     continue
 
-<<<<<<< Updated upstream:pipeline/stages/pdf_text_extraction/components/visualizer.py
-=======
                 # Check if this element overlaps any detection region
->>>>>>> Stashed changes:pipeline/stages/visualizer.py
                 will_be_masked = any(
                     rect.intersects(dr)
                     for dr in detection_rects_by_page.get(el.page, [])
                 )
 
                 if will_be_masked:
-<<<<<<< Updated upstream:pipeline/stages/pdf_text_extraction/components/visualizer.py
-                    page.draw_rect(rect, color=(1, 0.7, 0), fill=(1, 1, 0.6), width=1.5)
-=======
                     # Yellow filled highlight for elements that will be masked
                     page.draw_rect(rect, color=(1, 0.8, 0), fill=(1, 1, 0.6), width=1.5)
->>>>>>> Stashed changes:pipeline/stages/visualizer.py
                     page.insert_text(
                         (rect.x0 + 1, rect.y0 + 8),
                         f"MASK:{el.type[:3]}",
                         fontsize=6,
-<<<<<<< Updated upstream:pipeline/stages/pdf_text_extraction/components/visualizer.py
-                        color=(0.7, 0.4, 0),
-=======
                         color=(0.6, 0.4, 0),
->>>>>>> Stashed changes:pipeline/stages/visualizer.py
                     )
                 else:
                     color = _ELEMENT_COLORS.get(el.type, _ELEMENT_COLORS["UNKNOWN"])

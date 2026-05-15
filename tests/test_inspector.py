@@ -128,7 +128,7 @@ def _minimal_data(pmcid: str = "PMC1234567", run_id: str = "run-1") -> dict:
                 "rules": [
                     {
                         "rule_id": "R1",
-                        "type": "Diagnostic",
+                        "type": "diagnostic",
                         "condition": "IF CEAN",
                         "action": "benign diagnosis",
                         "confidence": "High",

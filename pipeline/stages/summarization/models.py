@@ -20,8 +20,8 @@ _log = logging.getLogger(__name__)
 # Bump these whenever the MAP output schema or prompt changes in a
 # behaviour-affecting way. They are included in cache keys / run metadata so
 # stale outputs don't collide with new ones.
-MAP_SCHEMA_VERSION: str = "map_v6_cross_field_bleed_aliases"
-MAP_PROMPT_VERSION: str = "map_prompt_v4_relation_type_anti_pattern"
+MAP_SCHEMA_VERSION: str = "map_v8_direction_alias_repair"
+MAP_PROMPT_VERSION: str = "map_prompt_v5_expression_absent_vs_negative"
 MAP_STAGE_NAME:     str = "map"
 
 
@@ -156,6 +156,19 @@ class FindingScope(BaseModel):
             return None
         return v
 
+    @model_validator(mode="after")
+    def _compute_scope_parsed(self) -> "FindingScope":
+        # scope_parsed is trivially derivable: true iff any sub-field is non-null.
+        # Overriding whatever the LLM emitted removes one more thing it can get
+        # wrong; the field stays in the schema only because OpenAI strict mode
+        # requires every property to be present.
+        self.scope_parsed = any(
+            getattr(self, k) is not None
+            for k in _SCOPE_FIELDS_DEFAULTS
+            if k != "scope_parsed"
+        )
+        return self
+
 
 # ── MAP output ─────────────────────────────────────────────────────────────────
 
@@ -217,6 +230,23 @@ _CONFIDENCE_ALIASES: dict[str, str] = {
     "very low":       "low",
     "v_low":          "low",
     "vlow":           "low",
+}
+
+# LLMs occasionally reach for hedging words outside the DirectionEnum vocabulary
+# ("maybe", "possibly", "perhaps"). Without an alias map these silently coerce
+# to `unclear` via the unknown-value branch and lose the hedging signal in the
+# raw_direction column (still preserved on `_raw_direction` per B-015).
+# Mapping them all to `unclear` is the conservative read — they signal
+# uncertainty, not polarity. Keys are lowercased so the case-fold branch matches.
+_DIRECTION_ALIASES: dict[str, str] = {
+    "maybe":    "unclear",
+    "possibly": "unclear",
+    "perhaps":  "unclear",
+    "likely":   "unclear",
+    "unknown":  "unclear",
+    "none":     "no_direction",  # LLMs occasionally emit the literal word "none"
+    "n/a":      "no_direction",
+    "na":       "no_direction",
 }
 
 
@@ -435,6 +465,17 @@ class Finding(BaseModel):
                 coerced_value=lowered, reason="case_repair",
             )
             return lowered
+        # Hedging-word alias repair ("maybe"/"possibly"/… → "unclear",
+        # "none"/"n/a" → "no_direction"). Runs after case repair so the alias
+        # table is case-insensitive without each entry needing both casings.
+        if lowered in _DIRECTION_ALIASES:
+            repaired = _DIRECTION_ALIASES[lowered]
+            _log.warning("Repaired direction alias %r → %r", v, repaired)
+            log_enum_observation(
+                field_name="direction", raw_value=v, valid_values=valid,
+                coerced_value=repaired, reason="alias_repair",
+            )
+            return repaired
         _log.warning("Unknown direction %r — coercing to 'unclear'", v)
         log_enum_observation(
             field_name="direction", raw_value=v, valid_values=valid,
@@ -585,18 +626,28 @@ class EvidenceChainItem(BaseModel):
 
 class Rule(BaseModel):
     rule_id: str
-    type: Literal["Diagnostic", "Prognostic", "Management"]
+    type: Literal["diagnostic", "prognostic", "management"]
     condition: str = Field(description="IF <observation>")
     action: str = Field(description="THEN <conclusion>")
     confidence: Literal["high", "medium", "low"]
     evidence_chain: List[EvidenceChainItem]
     contraindications: List[str]
 
+    @field_validator("type", mode="before")
+    @classmethod
+    def _lowercase_type(cls, v: object) -> object:
+        # Align with `Finding.confidence` / `Finding.category` lowercase
+        # convention. Pre-2026-05-15 caches and LLM outputs may emit Title-Case
+        # ("Diagnostic"/"Prognostic"/"Management"); case-fold rather than drop.
+        if isinstance(v, str):
+            return v.lower()
+        return v
+
 
 class RuleCounts(BaseModel):
-    Diagnostic: int
-    Prognostic: int
-    Management: int
+    diagnostic: int
+    prognostic: int
+    management: int
 
 
 class RuleAuditSummary(BaseModel):
@@ -760,8 +811,11 @@ class Relation(BaseModel):
     rule_id_a:       str
     rule_id_b:       str
     relation_type:   RelationTypeLabel
-    nli_score_a_to_b: float   # entailment score from A→B direction
-    nli_score_b_to_a: float   # entailment score from B→A direction
+    # Label-conditional NLI projection: entailment score when relation_type ==
+    # SUPPORT, contradiction score when relation_type == CONTRADICT. For
+    # unambiguous per-direction entailment/contradiction values, see RawNLIPair.
+    nli_score_a_to_b: float
+    nli_score_b_to_a: float
 
 
 class RawNLIPair(BaseModel):

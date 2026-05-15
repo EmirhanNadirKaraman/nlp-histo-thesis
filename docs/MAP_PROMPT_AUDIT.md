@@ -109,13 +109,13 @@ Prompt invites null: "Output null only when no subject can be identified" (`prom
 
 Prompt change requires `MAP_PROMPT_VERSION` bump.
 
-### Issue 5 — `scope.scope_parsed` is LLM-set but trivially derivable (LOW)
+### Issue 5 — `scope.scope_parsed` is LLM-set but trivially derivable (LOW) — **FIXED 2026-05-15 ([B-045](BUGS.md#bug-45--scope_parsed-is-llm-set-but-trivially-derivable))**
 
 `prompts.py:159` asks the LLM to compute "true if at least one sub-field is non-null". This is a one-line `any(...)` in Python — putting it in the LLM prompt adds one more thing the model can get wrong (and one more reason to use up output tokens).
 
 **Recommended fix:** add a `@model_validator(mode="after")` on `FindingScope` that sets `scope_parsed = any(v is not None for k, v in self if k != "scope_parsed")`. Remove the `scope_parsed` line from the prompt schema-as-instructions block. Cache invalidation: `MAP_SCHEMA_VERSION` bump.
 
-### Issue 6 — `direction=absent` vs `direction=negative` ambiguity in expression contexts (LOW)
+### Issue 6 — `direction=absent` vs `direction=negative` ambiguity in expression contexts (LOW) — **FIXED 2026-05-15 ([B-047](BUGS.md#bug-47--direction-absent-vs-negative-ambiguity-on-expression-claims))**
 
 Prompt example for `"BCL2 was negative"` → `direction=absent` (`prompts.py:138`), but:
 
@@ -136,13 +136,13 @@ For other relation_types:
 
 Defer until you can mine the frequency of `direction=absent` and `direction=negative` co-occurring on expression findings — if both labels appear in the same FindingGroup with different polarity, RELATE will misfire.
 
-### Issue 7 — `Rule.type` is Title-Case (`"Diagnostic"|"Prognostic"|"Management"`); everything else lowercase (LOW)
+### Issue 7 — `Rule.type` is Title-Case (`"Diagnostic"|"Prognostic"|"Management"`); everything else lowercase (LOW) — **FIXED 2026-05-15 ([B-048](BUGS.md#bug-48--ruletype-title-case-inconsistent-with-lowercase-convention))**
 
 `models.py:422`. Inconsistent with `Finding.confidence` (lowercase, post-B-016). Different stage, separate prompt — so bleed risk is low — but the inconsistency invites the next refactor to reintroduce a casing alias map.
 
 **Recommended fix:** align with the lowercase convention used by `Finding.confidence` and `Finding.category`. Touches RULE prompt + RULE persistence; defer until the optional REDUCE+RULES block is next exercised.
 
-### Issue 8 — `direction="maybe"` (single occurrence) (LOW)
+### Issue 8 — `direction="maybe"` (single occurrence) (LOW) — **FIXED 2026-05-15 ([B-046](BUGS.md#bug-46--direction-hedging-words-coerce-to-unclear-instead-of-alias-repair))**
 
 Telemetry signal: the model reaches for "maybe" when it can't find `unclear`. One occurrence is below the action threshold, but if it recurs:
 

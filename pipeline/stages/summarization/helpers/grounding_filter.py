@@ -437,9 +437,9 @@ def _recompute_audit(rules: list[Rule]) -> RuleAuditSummary:
     return RuleAuditSummary(
         total_rules=len(rules),
         rules_by_type=RuleCounts(
-            Diagnostic=counts["Diagnostic"],
-            Prognostic=counts["Prognostic"],
-            Management=counts["Management"],
+            diagnostic=counts["diagnostic"],
+            prognostic=counts["prognostic"],
+            management=counts["management"],
         ),
         pmcids_supporting_rules=sorted(all_pmcids),
         average_evidence_per_rule=round(avg_evidence, 2),

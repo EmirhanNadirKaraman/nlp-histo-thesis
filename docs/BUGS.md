@@ -40,32 +40,37 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-019 | Fixed (2026-05-15) | High | Summarisation, `MapOutputRouter` citation regex | `_CITATION_RE = r"^S\d+\|PMC\d+\|\d+$"` in both `routing/schema_validator.py:23` and `routing/provenance_validator.py:27` requires the PMC token to be `PMC` followed by *digits only*. The pipeline uses suffixed document IDs as opaque doc keys (`PMC10100421_HIS-82-393`, `PMC7150310_main`, `PMC4329418_his0066-0409`, …). Every citation emitted by every voter on such a paper contained an underscore-suffix, failed the regex, raised `ReasonCode.INVALID_SENTENCE_ID` for the voter, which sits in `_HARD_CODES` so the voter was classified UNUSABLE and dropped from the agreement matrix. Net effect on calibration_set_v1 (verified via `out/summaries/cascade_decisions/PMC6635746_HIS-73-68.jsonl`): every chunk ran with `voter_count=1` instead of 3 — the cheap-profile 3-voter consensus design was silently bypassed on every suffixed-pmcid paper since the router became default-on (2026-05-14). L1 acceptance rate looks artificially high because single-voter agreement gates pass trivially. Fixed by relaxing the PMC token to `[\w\-]+`: `_CITATION_RE = r"^S\d+\|PMC[\w\-]+\|\d+$"` (schema) and `r"^S(\d+)\|(PMC[\w\-]+)\|(\d+)$"` (provenance). Bumped `MAP_SCHEMA_VERSION` → `"map_v4_citation_regex_suffixed_pmcids"` to invalidate cached AuditableSummary results selected under single-voter routing. Cross-document equality check at `provenance_validator.py:116` unchanged — still exact comparison against `self._pmcid`, so the broader regex doesn't widen the safety net. | [Bug 19](#bug-19--mapoutputrouter-citation-regex-rejects-suffixed-pmcids-silently-strips-voters) |
 | B-020 | Fixed (2026-05-15) | High | Summarisation, batch dispatch grouping | `dispatch.submit_level` groups requests by `provider` only (`dispatch.py:300-302`) before calling `provider.submit(reqs, …)`. OpenAI's Batch API requires **all requests in a single batch to use the same model** — any batch mixing models is rejected per-line with `BatchError(code='mismatched_model')`, leaving the batch status=`failed` with `output_file_id=None`. `openai_batch.OpenAIBatchProvider.check()` correctly detects this case and sets `job.status='failed'`, but the runner silently moves on. The cheap-profile L1 cascade has TWO OpenAI voters (`gpt-4o-mini`, `gpt-4.1-nano`) plus one Gemini voter; the OpenAI half-batch failed on every run since multi-model OpenAI L1 was introduced. Net effect: every batch run silently degraded to **single-voter L1 (Gemini only)**, the cheap-profile 3-voter consensus was bypassed, escalation reports under-stated cost by ~67% (no OpenAI tokens recorded), and OpenAI dashboard showed no charge because all requests were rejected pre-execution. Discovered when user noticed missing OpenAI cost; confirmed by inspecting `out/summaries/batch_handles/PMC4329418_his0066-0409.batch.json` (jobs: openai=failed with 30 requests, gemini=completed with 15) and pulling the OpenAI error file directly (`BatchError code='mismatched_model'`). Fixed by grouping requests by `(provider, model)` instead of `provider` in `dispatch.submit_level`. Conservative — works for every provider; adds at most one extra batch submission per profile. Bumped `MAP_SCHEMA_VERSION` → `"map_v5_batch_group_by_provider_model"` so cached batch handles with the broken job set re-submit cleanly. | [Bug 20](#bug-20--batch-dispatch-groups-by-provider-only-not-provider--model--openai-multi-model-batches-rejected-silently) |
 
-| B-021 | Observed | High | Summarisation, CANONICALIZE direction split | `_split_by_direction` and `_compute_scope_fields` in `canonicalize_stage.py` exclude the literal string `"None"` from the polarity-bearing set, but `DirectionEnum` has no such value — the real "doesn't apply" value is `"no_direction"`. MAP coerces missing direction to `no_direction` (`models.py:401`), so those findings get split into their own canonical bin, counted toward `is_conflicted`, and surface as rules with `direction=no_direction`. Replace `"None"` with `"no_direction"` in both functions. | [Bug 21](#bug-21--canonicalize-no_direction-treated-as-real-polarity-due-to-none-string-typo) |
-| B-022 | Observed | High | Summarisation, GROUP bucket key | `group_stage._group_id` mixes namespaces: `subj_key = subject_cui if subject_cui else subject`. Two NormalFindings with identical normalized subject (e.g. `"CD30"`) where one has `subject_cui` populated and the other does not (intermittent UMLS link miss, or the synonym-dict path in `_resolve_entity` returning canonical name without CUI) land in different buckets — dedup defeated and downstream CanonicalRule count inflated. | [Bug 22](#bug-22--group_id-mixes-cui-and-string-keys-when-cui-population-is-partial) |
-| B-023 | Observed | Medium | Summarisation, NORMALIZE dedup | `_dedup_key` keys on `(text_element_id, subject, outcome, relation_type)` but not on `direction`. Findings extracted from the same sentence with opposing directions (positive vs. negative) collapse into one `NormalFinding`; `_merge` picks `rep.direction` (highest grounding wins) and the opposite-direction finding is silently absorbed. Docstring defends this as "contradictions surface at RELATE", but RELATE only ever sees the surviving direction so they cannot surface. Either include `direction` in the dedup key or carry per-direction histograms onto `NormalFinding` so CANONICALIZE can split. | [Bug 23](#bug-23--normalize-dedup-collapses-opposite-direction-findings-from-the-same-sentence) |
-| B-024 | Observed | Low | Summarisation, RELATE → Relation schema | `Relation.nli_score_a_to_b` / `nli_score_b_to_a` field docstring says "entailment score from A→B direction", but `relate_stage._classify_pair` stores **contradiction** score for CONTRADICT and **entailment** for SUPPORT (`relate_stage.py:400-405`). DB columns and inspector scripts surface the field without label context (`scripts/run_paper_single_model.py:405` prints as `A→B={:.2f}`). Downstream readers cannot tell which score they're looking at. Either rename to a label-neutral name or update the schema doc — `RawNLIPair` already stores entailment and contradiction separately so no information loss either way. | [Bug 24](#bug-24--relationnli_score_-field-doc-disagrees-with-relate_stage-write-path) |
+| B-021 | Fixed (2026-05-15) | High | Summarisation, CANONICALIZE direction split | `_split_by_direction` and `_compute_scope_fields` in `canonicalize_stage.py` excluded the literal string `"None"` from the polarity-bearing set, but `DirectionEnum` has no such value — the real "doesn't apply" value is `"no_direction"`. MAP coerces missing direction to `no_direction` (`models.py:401`), so those findings got split into their own canonical bin, counted toward `is_conflicted`, and surfaced as rules with `direction=no_direction`. Fixed by replacing `"None"` with `"no_direction"` in both helpers + 9 new regression tests in `tests/summarization/test_canonicalize_direction_split.py`. | [Bug 21](#bug-21--canonicalize-no_direction-treated-as-real-polarity-due-to-none-string-typo) |
+| B-022 | Fixed (2026-05-15) | High | Summarisation, GROUP bucket key | `group_stage._group_id` mixes namespaces: `subj_key = subject_cui if subject_cui else subject`. Two NormalFindings with identical normalized subject (e.g. `"CD30"`) where one has `subject_cui` populated and the other does not (intermittent UMLS link miss, or the synonym-dict path in `_resolve_entity` returning canonical name without CUI) land in different buckets — dedup defeated and downstream CanonicalRule count inflated. | [Bug 22](#bug-22--group_id-mixes-cui-and-string-keys-when-cui-population-is-partial) |
+| B-023 | Fixed (2026-05-15) | Medium | Summarisation, NORMALIZE dedup | `_dedup_key` keys on `(text_element_id, subject, outcome, relation_type)` but not on `direction`. Findings extracted from the same sentence with opposing directions (positive vs. negative) collapse into one `NormalFinding`; `_merge` picks `rep.direction` (highest grounding wins) and the opposite-direction finding is silently absorbed. Docstring defends this as "contradictions surface at RELATE", but RELATE only ever sees the surviving direction so they cannot surface. Either include `direction` in the dedup key or carry per-direction histograms onto `NormalFinding` so CANONICALIZE can split. | [Bug 23](#bug-23--normalize-dedup-collapses-opposite-direction-findings-from-the-same-sentence) |
+| B-024 | Mitigated (2026-05-15) | Low | Summarisation, RELATE → Relation schema | `Relation.nli_score_a_to_b` / `nli_score_b_to_a` field docstring says "entailment score from A→B direction", but `relate_stage._classify_pair` stores **contradiction** score for CONTRADICT and **entailment** for SUPPORT (`relate_stage.py:400-405`). DB columns and inspector scripts surface the field without label context (`scripts/run_paper_single_model.py:405` prints as `A→B={:.2f}`). Downstream readers cannot tell which score they're looking at. Either rename to a label-neutral name or update the schema doc — `RawNLIPair` already stores entailment and contradiction separately so no information loss either way. | [Bug 24](#bug-24--relationnli_score_-field-doc-disagrees-with-relate_stage-write-path) |
 | B-025 | Observed | Low | Summarisation, RELATE polarity guard | `relate_stage._classify_pair` groups `DirectionEnum.partial` with `_POSITIVE_DIRECTIONS` for the same-polarity guard. `partial` sits between positive and unclear — bundling it with positive means a `partial`-vs-`negative` pair can never emit CONTRADICT even with high bidirectional contradiction scores. Worth a calibration sweep against the gold set before flipping. | [Bug 25](#bug-25--relate-polarity-guard-treats-partial-as-positive-blocking-partial-vs-negative-contradictions) |
 | B-026 | Observed | Low | Summarisation, CANONICALIZE tie-break | `_split_by_direction` picks `largest_dir = max(non_unclear, key=lambda d: len(non_unclear[d]))`. When two directions tie on count, Python's `max` returns the first key encountered, and dict iteration order traces back to `_direction_counts(members)` which iterates members in arrival order. The "majority direction" assignment is therefore input-order-dependent for ties — non-deterministic across re-runs if upstream stages ever reorder members. Sort the keys or break the tie explicitly. | [Bug 26](#bug-26--canonicalize-split_by_direction-tie-break-is-member-order-dependent) |
-| B-027 | Observed (2026-05-15) | High | PDF extraction, `PipelineRunner` runtime knobs | `RuntimeConfig` exposes `num_workers`, `log_level`, `seed`, `skip_existing_outputs` — all defined and (for `num_workers`) validated by `PipelineConfig.validate`, none consumed. `PipelineRunner.run_batch` is sequential; `ParallelBatchRunner.__init__` takes its own `max_workers` kwarg defaulting to `cpu_count // 2`; `runner.py:556` hardcodes `ParallelBatchRunner(cfg, max_workers=4)`. `runner.py:527` calls `logging.basicConfig(level=logging.INFO, …)` ignoring `cfg.runtime.log_level`. `seed` and `skip_existing_outputs` have zero consumers across the pipeline. | [Bug 27](#bug-27--runtimeconfig-knobs-num_workers-log_level-seed-skip_existing_outputs-not-consumed) |
+| B-027 | Partial (2026-05-15) | High | PDF extraction, `PipelineRunner` runtime knobs | `RuntimeConfig` exposes `num_workers`, `log_level`, `seed`, `skip_existing_outputs`. **Wired 2026-05-15**: `num_workers` (forwarded to `ParallelBatchRunner` in `runner.py:564`), `log_level` (`runner.py` `main()` calls `logging.basicConfig(level=cfg.runtime.log_level.value, …)`). **Still dead**: `seed` (no `random/np/torch` seed call sites), `skip_existing_outputs` (per-stage output-cache check unimplemented). | [Bug 27](#bug-27--runtimeconfig-knobs-num_workers-log_level-seed-skip_existing_outputs-not-consumed) |
 | B-028 | Observed (2026-05-15) | High | PDF extraction, DB ingester | `DatabaseConfig.{schema, create_tables_if_missing, batch_size, connect_timeout_sec}` (`config.py:181-184`) are dataclass fields with no consumers. `runner.py:178` constructs `PostgresDatabaseIngester(db_url=self._cfg.database.db_url)` — the ingester signature (`outputs/db_ingester.py:35`) only accepts `db` and `db_url`. A user setting a non-default `schema` or tuning `batch_size` gets silent no-op behaviour. | [Bug 28](#bug-28--databaseconfig-sub-fields-never-propagated-to-postgresdatabaseingester) |
-| B-029 | Observed (2026-05-15) | High | PDF extraction, scispaCy loader | `PipelineRunner._get_nlp` (`runner.py:199`) calls `spacy.load("en_core_sci_sm")` directly. Project-wide convention (CLAUDE.md, MEMORY.md, `pipeline/stages/summarization/umls_resources.py`) is "always go through `umls_resources.get_nlp()` — double-loading the KB OOM-kills the pipeline". If the PDF extraction and summarisation pipelines run in the same process the small scispaCy model loads twice (once here, once via `umls_resources` which loads `en_core_sci_lg`). | [Bug 29](#bug-29--pipelinerunner_get_nlp-bypasses-umls_resources-singleton) |
+| B-029 | Fixed (2026-05-15) | High | PDF extraction, scispaCy loader | `PipelineRunner._get_nlp` (`runner.py:199`) called `spacy.load("en_core_sci_sm")` directly, bypassing the documented `umls_resources.get_nlp()` singleton. If the PDF extraction and summarisation pipelines ran in the same process the small scispaCy model loaded twice (once here, once via `umls_resources` which loads `en_core_sci_lg`). Fixed by adding `umls_resources.get_small_nlp(model_name)` (process-wide per-model cache; honours `$NLP_HISTO_DISABLE_UMLS`) and routing `PipelineRunner._get_nlp` through it. Co-fixed with B-038. | [Bug 29](#bug-29--pipelinerunner_get_nlp-bypasses-umls_resources-singleton) |
 | B-030 | Observed (2026-05-15) | Medium | PDF extraction, filtering config | `FilteringConfig.{fix_ligatures, remove_reference_markers, min_paragraph_chars}` (`config.py:134-136`) have no consumers. `parsers/layout_utils.fix_ligatures` is hardcoded ON wherever it runs (`layout_utils.py:206,423,481`); `remove_reference_markers` and `min_paragraph_chars` are dead knobs. Users tuning these get no behavioural change, only false confidence. | [Bug 30](#bug-30--filteringconfig-dead-knobs-fix_ligatures-remove_reference_markers-min_paragraph_chars) |
 | B-031 | Observed (2026-05-15) | Medium | PDF extraction, text assembly config | `TextAssemblyConfig.{enabled, baseline_mode, use_hierarchical_extraction, use_context_aware_stitching, compare_combinations, save_combination_outputs}` (`config.py:159-164`) all have no consumers. `HierarchicalTextAssembler` reads only `pre_filter_relevance`; `runner.py` reads only `write_raw_text`. Hierarchical extraction + stitching are hardcoded behaviours; baseline-mode comparison is dead. | [Bug 31](#bug-31--textassemblyconfig-six-of-eight-fields-unread) |
 | B-032 | Observed (2026-05-15) | Low | PDF extraction, cropping config | `CroppingConfig.{include_captions_in_metadata, panel_counting_enabled}` (`config.py:146-147`) have no consumers. `panel_counting_enabled` is wholly unimplemented; caption inclusion in metadata is hardcoded ON. | [Bug 32](#bug-32--croppingconfig-dead-knobs-include_captions_in_metadata-panel_counting_enabled) |
-| B-033 | Observed (2026-05-15) | Low | PDF extraction, masking config | `MaskingConfig.merge_iou_threshold` (`config.py:125`) is a dead knob. `region_masker.py:234` checks the boolean `merge_overlapping_boxes` and calls `merge_rects` without forwarding any IOU threshold, so the documented default `0.3` is never used. | [Bug 33](#bug-33--maskingconfigmerge_iou_threshold-never-passed-to-merge_rects) |
+| B-033 | Fixed (2026-05-15, deleted) | Low | PDF extraction, masking config | `MaskingConfig.merge_iou_threshold` was a leftover from a different algorithm — `merge_rects` (`parsers/layout_utils.py:103`) merges on any-intersection (`Rect.intersects`), not on IOU. Field deleted from `MaskingConfig` and `merge_rects` docstring tightened to clarify the semantics. | [Bug 33](#bug-33--maskingconfigmerge_iou_threshold-never-passed-to-merge_rects) |
 | B-034 | Observed (2026-05-15) | Medium | PDF extraction, TATR detector | `TATRConfig.{enabled, max_detections_per_page, batch_size_pages, structure_model_name}` (`config.py:109-115`) are not consumed by `TATRTableDetector` — it reads `model_name`, `device`, `threshold` only. `_RENDER_DPI = 150` is hardcoded at `tatr_detector.py:30` instead of being a TATR config field. `enabled=False` would not actually disable the detector at runner level. | [Bug 34](#bug-34--tatrconfig-dead-knobs-render-dpi-hardcoded) |
 | B-035 | Observed (2026-05-15) | Medium | PDF extraction, Docling timeout | `DoclingConfig.timeout_sec=300` (`config.py:90`) is documented as a timeout but `DoclingLayoutExtractor` never wraps the conversion in a timeout. Pathological PDFs (very large / OCR-heavy) can hang the entire batch indefinitely; the documented safety knob does nothing. | [Bug 35](#bug-35--doclingconfigtimeout_sec-never-enforced-by-doclinglayoutextractor) |
-| B-036 | Observed (2026-05-15) | Low | Summarisation, NLI helpers config surface | `GroundingFilter.__init__` (`helpers/grounding_filter.py:68`) accepts `model_name`, `batch_size`, `device`; `RelateStage.__init__` (`current_stages/relate_stage.py:268`) accepts the same trio. `GroundingConfig` exposes only `threshold`; `RelateConfig` exposes only the two thresholds. `runner.py:258` instantiates `GroundingFilter(cfg.grounding.threshold)` and `runner.py:251` instantiates `RelateStage(entailment_threshold=…, contradiction_threshold=…)` — model / batch / device always fall back to module defaults regardless of caller intent. No way to switch the NLI model or move it to GPU via `SummarizationConfig`. | [Bug 36](#bug-36--groundingfilter--relatestage-modelbatchdevice-not-exposed-via-summarizationconfig) |
+| B-036 | Fixed (2026-05-15) | Low | Summarisation, NLI helpers config surface | `GroundingFilter.__init__` (`helpers/grounding_filter.py:68`) accepts `model_name`, `batch_size`, `device`; `RelateStage.__init__` (`current_stages/relate_stage.py:268`) accepts the same trio. `GroundingConfig` exposes only `threshold`; `RelateConfig` exposes only the two thresholds. `runner.py:258` instantiates `GroundingFilter(cfg.grounding.threshold)` and `runner.py:251` instantiates `RelateStage(entailment_threshold=…, contradiction_threshold=…)` — model / batch / device always fall back to module defaults regardless of caller intent. No way to switch the NLI model or move it to GPU via `SummarizationConfig`. | [Bug 36](#bug-36--groundingfilter--relatestage-modelbatchdevice-not-exposed-via-summarizationconfig) |
 | B-037 | Observed (2026-05-15) | Low | Summarisation, normalize stage | `NormalizeStage.__init__` (`current_stages/normalize_stage.py:387`) accepts `extra_synonyms: dict[str, str] \| None`. `runner.py:247` calls `NormalizeStage()` with no args; there is no `SummarizationConfig` field for caller-supplied synonyms. Overrides to `synonyms.yaml` cannot be plumbed through the runner. | [Bug 37](#bug-37--normalizestageextra_synonyms-not-exposed-via-summarizationconfig) |
-| B-038 | Observed (2026-05-15) | Medium | Summarisation, sentence loader | `SummarizationRunner.load_paper_from_db` (`pipeline/stages/summarization/runner.py:905`) calls `spacy.load("en_core_sci_sm")` on every invocation — bypasses the `umls_resources.get_nlp()` process-wide singleton documented in `CLAUDE.md`. Same class of bug as B-029 (which covers the PDF-extraction site) but at the summarisation entry-point. Aggravated by model mismatch: `umls_resources.get_nlp()` loads `en_core_sci_lg` while this site loads `en_core_sci_sm`, so a process that touches both surfaces ends up with two scispaCy pipelines resident in RAM with no caching. Per-paper RAM hit + linear growth in batch mode. | [Bug 38](#bug-38--summarizationrunnerload_paper_from_db-bypasses-scispacy-singleton) |
-| B-039 | Observed (2026-05-15) | High | Summarisation, sentence ordering | `SummarizationRunner.load_paper_from_db` (`runner.py:912-916`) orders `TextElement` rows by `position_in_section` alone — but per `database/models.py:79` + the composite index `idx_document_path_position`, `position_in_section` is *local to each `path_string`*. Single-column sort interleaves sections: every section's position-0 paragraph emits first, then every section's position-1, etc. `MapStage._make_chunks` then packs adjacent sentences from unrelated sections into the same chunk, destroying topical locality and depressing voter agreement. Affects every paper on every sync + batch run today. Compounds with B-040 once those rows have already been written out-of-order to `TextElement`. | [Bug 39](#bug-39--load_paper_from_db-orders-by-position_in_section-only-interleaves-sections) |
-| B-040 | Observed (2026-05-15) | Medium | PDF extraction, text assembly | `parsers/layout_utils.extract_text` (`layout_utils.py:469-524`) accumulates paragraphs into `by_path = defaultdict(list)` keyed by `path_string`, then emits `rows` by iterating `by_path` in *insertion order*. Sections that get revisited after a sub-section (parent text → sub-section text → more parent text) have their later paragraphs appended at the parent's first-emit position; the sub-section's content ends up emitted *after* the entire parent block. Output `HierarchicalRow` order is "path-first-appearance" order, not document order, and the bug compounds with B-039 once those rows are written to `TextElement` and re-read by `load_paper_from_db`. | [Bug 40](#bug-40--extract_text-emits-paragraphs-in-path-first-appearance-order-not-document-order) |
-| B-041 | Observed (2026-05-15) | High | Summarisation, MAP cascade attribution | `MapStage._run_voters` (`current_stages/map_stage.py:1183`) returns the API-survivor list with `[r for r in results if r is not None]` — the original-voter-index → survivor-index mapping is dropped at return. `agreement.compute(voters)` then assigns `bundle.best_index` over the survivor list, and `producer_from_outcome` (`agreement/decision.py:210-211`) / `make_decision_record` (`decision.py:255-267`) use that index as if it referred to the original `voter_specs`. Router path is also affected: `_classify_voters` (`routing/router.py:271`) re-indexes from 0 over the survivor list, so its `valid_voter_indices` are survivor-list indices that `voter_specs[global_idx]` then treats as original indices. Whenever ≥1 voter fails an API call (or the router strips a voter as UNUSABLE before MAP sees the failure), MAP cache metadata, cost report, and cascade decision log all carry the wrong `(provider, model)` for the kept chunk. Dormant when zero voters fail. | [Bug 41](#bug-41--producer-attribution-mis-indexed-when-any-voter-fails) |
+| B-038 | Fixed (2026-05-15) | Medium | Summarisation, sentence loader | `SummarizationRunner.load_paper_from_db` (`runner.py:905`) called `spacy.load("en_core_sci_sm")` on every invocation — bypassed the `umls_resources.get_nlp()` singleton. In batch mode (`process_batch([load_paper_from_db(p) for p in pmcids])`) the small model deserialised once per paper. Same class as B-029. Fixed by routing through `umls_resources.get_small_nlp("en_core_sci_sm")`; raises a clear error when the model isn't installed. Regression test `tests/summarization/test_scispacy_singleton.py` asserts no `spacy.load(...)` call sites exist outside `umls_resources.py` under `pipeline/stages/`. | [Bug 38](#bug-38--summarizationrunnerload_paper_from_db-bypasses-scispacy-singleton) |
+| B-039 | Fixed (2026-05-15) | High | Summarisation, sentence ordering | `SummarizationRunner.load_paper_from_db` (`runner.py:912-916`) orders `TextElement` rows by `position_in_section` alone — but per `database/models.py:79` + the composite index `idx_document_path_position`, `position_in_section` is *local to each `path_string`*. Single-column sort interleaves sections: every section's position-0 paragraph emits first, then every section's position-1, etc. `MapStage._make_chunks` then packs adjacent sentences from unrelated sections into the same chunk, destroying topical locality and depressing voter agreement. Affects every paper on every sync + batch run today. Compounds with B-040 once those rows have already been written out-of-order to `TextElement`. | [Bug 39](#bug-39--load_paper_from_db-orders-by-position_in_section-only-interleaves-sections) |
+| B-040 | Fixed (2026-05-15) | Medium | PDF extraction, text assembly | `parsers/layout_utils.extract_text` (`layout_utils.py:469-524`) accumulates paragraphs into `by_path = defaultdict(list)` keyed by `path_string`, then emits `rows` by iterating `by_path` in *insertion order*. Sections that get revisited after a sub-section (parent text → sub-section text → more parent text) have their later paragraphs appended at the parent's first-emit position; the sub-section's content ends up emitted *after* the entire parent block. Output `HierarchicalRow` order is "path-first-appearance" order, not document order, and the bug compounds with B-039 once those rows are written to `TextElement` and re-read by `load_paper_from_db`. | [Bug 40](#bug-40--extract_text-emits-paragraphs-in-path-first-appearance-order-not-document-order) |
+| B-041 | Fixed (2026-05-15) | High | Summarisation, MAP cascade attribution | `MapStage._run_voters` (`current_stages/map_stage.py:1183`) returns the API-survivor list with `[r for r in results if r is not None]` — the original-voter-index → survivor-index mapping is dropped at return. `agreement.compute(voters)` then assigns `bundle.best_index` over the survivor list, and `producer_from_outcome` (`agreement/decision.py:210-211`) / `make_decision_record` (`decision.py:255-267`) use that index as if it referred to the original `voter_specs`. Router path is also affected: `_classify_voters` (`routing/router.py:271`) re-indexes from 0 over the survivor list, so its `valid_voter_indices` are survivor-list indices that `voter_specs[global_idx]` then treats as original indices. Whenever ≥1 voter fails an API call (or the router strips a voter as UNUSABLE before MAP sees the failure), MAP cache metadata, cost report, and cascade decision log all carry the wrong `(provider, model)` for the kept chunk. Dormant when zero voters fail. | [Bug 41](#bug-41--producer-attribution-mis-indexed-when-any-voter-fails) |
 | B-042 | Observed (2026-05-15) | Low | PDF extraction, text stitching | `ContextAwareStitcher._is_cut_off` (`parsers/text_processing.py:152-181`) returns `False` on any terminal `.`/`?`/`!`/`)`/`]`/`"`/`'`/`»` early-return at lines 152-154, *before* the `_MID_SENTENCE_ABBREVS` check at lines 175-181. Every abbreviation in that frozenset (`fig.`, `et al.`, `vs.`, `approx.`, `e.g.`, `i.e.`, `cf.`, `ref.`, `refs.`, `dept.`, `no.`, `nos.`) ends in a period, so the abbrev rule is dead code. Paragraphs ending in those abbreviations are treated as sentence-final and never stitched with the next narrative paragraph — sentences get fragmented at abbreviation boundaries, biasing both MAP input and downstream NLI grounding (`verbatim_support` mismatches the cited paragraph). | [Bug 42](#bug-42--is_cut_off-mid-sentence-abbreviation-rule-is-dead-code) |
 | B-043 | Observed (2026-05-15) | Low | PDF extraction, citation removal | `parsers/text_processing.remove_citations` (`text_processing.py:307`) regex `(?<!\n)\.\s+\d+(?:[,–\-]\d+)*(?=\s|$)` strips any `". <digits> "` pattern after a period — including 4-digit years. "Smith et al. 2020 reported …" becomes "Smith et al. reported …". Reference-style paragraphs are usually killed earlier by `is_reference_entry` so the worst case (mangling actual references) is averted, but in-text narrative mentions of years lose context that was material to the claim. | [Bug 43](#bug-43--remove_citations-strips-publication-years) |
 | B-044 | Mitigated (2026-05-15) | Medium | Summarisation, MAP relation_type | MAP voters bleed `category` values (`morphology`, `IHC`, `molecular_genetics`, `prognosis`, `treatment`, `staging`) into the `relation_type` field. Prior coercion mapped only `prognosis → prognostic` and `treatment → treatment_response`; the rest fell through to `unclear` and got dropped at GROUP (relation_type is part of the grouping key and `unclear` is non-groupable). Net effect: 10+ findings silently lost per run on the calibration set, concentrated in `molecular_genetics` and `IHC` claims. Mitigation: prompt anti-pattern line + prognostic-crossover example + extended `_RELATION_TYPE_ALIASES` (`morphology→has_feature`, `ihc→expression`, `molecular_genetics→expression`) + new `reason="cross_field_bleed"` JSONL counter for measurement. `staging` left unaliased (descriptive vs prognostic crossover needs claim context). | [Bug 44](#bug-44--map-relation_type-bleeds-category-names-and-loses-findings-at-group) |
+| B-045 | Fixed (2026-05-15) | Low | Summarisation, MAP `FindingScope.scope_parsed` | `scope_parsed` is trivially derivable (`any(sub_field is not None)`) but was being computed by the LLM. One more thing it could get wrong, and output tokens spent reasoning about it. Fixed by `@model_validator(mode="after")` on `FindingScope` (`models.py:148-159`) that overrides whatever the LLM emitted; prompt instruction updated to "always emit false — computed automatically" (`prompts.py:213`). Field stays in the schema because OpenAI strict mode requires every property to be present. Bumped `MAP_SCHEMA_VERSION` → `"map_v7_scope_parsed_autocompute"`. Regression test in `tests/summarization/test_scope_parsed_autocompute.py`. From [MAP_PROMPT_AUDIT Issue 5](MAP_PROMPT_AUDIT.md#issue-5--scopescope_parsed-is-llm-set-but-trivially-derivable-low). | [Bug 45](#bug-45--scope_parsed-is-llm-set-but-trivially-derivable) |
 
-Add new rows here when you discover something. Bump the ID monotonically (`B-045`, `B-046`, …). Put the long write-up in a new `## Bug N — …` section below.
+| B-046 | Fixed (2026-05-15) | Low | Summarisation, MAP direction enum | Hedging words (`maybe`, `possibly`, `none`, `n/a`) outside `DirectionEnum` fell through to the unknown-value branch and coerced to `unclear`, losing the polarity-vs-uncertainty distinction in the live enum (raw still on `_raw_direction` per B-015). Added `_DIRECTION_ALIASES` mapping hedging → `unclear` and `none`/`n/a` → `no_direction`; alias-repair branch in `_coerce_invalid_direction` logs `reason="alias_repair"`. Bumped `MAP_SCHEMA_VERSION` → `"map_v8_direction_alias_repair"`. Tests in `tests/summarization/test_enum_alias_repair.py`. From [MAP_PROMPT_AUDIT Issue 8](MAP_PROMPT_AUDIT.md#issue-8--directionmaybe-single-occurrence-low). | [Bug 46](#bug-46--direction-hedging-words-coerce-to-unclear-instead-of-alias-repair) |
+| B-047 | Fixed (2026-05-15) | Low | Summarisation, MAP direction prompt | Prompt example mapped `"BCL2 was negative"` to `direction=absent` but both `negative` and `absent` plausibly applied for expression-context negation. Same FindingGroup could end up with both labels on opposite-polarity findings, blocking RELATE's CONTRADICT signal. Added a disambiguating rule under the `direction` definition (`expression`-only: `negative staining`/`no expression` → `absent`; `decreased`/`reduced` → `negative`; other relation_types: prefer `negative`, reserve `absent` for literal "absent"/"not present"/"lacking"). Bumped `MAP_PROMPT_VERSION` → `"map_prompt_v5_expression_absent_vs_negative"`. From [MAP_PROMPT_AUDIT Issue 6](MAP_PROMPT_AUDIT.md#issue-6--directionabsent-vs-directionnegative-ambiguity-in-expression-contexts-low). | [Bug 47](#bug-47--direction-absent-vs-negative-ambiguity-on-expression-claims) |
+| B-048 | Fixed (2026-05-15) | Low | Summarisation, optional RULE block enums | `Rule.type` was `Literal["Diagnostic", "Prognostic", "Management"]` (Title-Case) and `RuleCounts` mirrored the casing in field names — inconsistent with the lowercase `Finding.confidence` / `Finding.category` convention. Lowered all three; added a `mode="before"` validator on `Rule.type` so legacy Title-Case payloads round-trip. Updated MAP RULE OutputFormat prompt + `_recompute_audit` helper. RULE block is off by default, no DB rows to backfill. Tests in `tests/summarization/test_enum_alias_repair.py`. From [MAP_PROMPT_AUDIT Issue 7](MAP_PROMPT_AUDIT.md#issue-7--ruletype-is-title-case-diagnosticprognosticmanagement-everything-else-lowercase-low). | [Bug 48](#bug-48--ruletype-title-case-inconsistent-with-lowercase-convention) |
+
+Add new rows here when you discover something. Bump the ID monotonically (`B-049`, `B-050`, …). Put the long write-up in a new `## Bug N — …` section below.
 
 ---
 
@@ -1431,8 +1436,8 @@ Either alone would have produced `voter_count=1`. Together they made the symptom
 
 ### Status / Severity / Surface
 
-* **Status:** Observed
-* **Severity:** High — silently corrupts every CanonicalRule whose underlying findings carry `direction=no_direction`, which is the value MAP assigns when the LLM emits `null`/`""`/`"null"` for direction (see `models.py:_coerce_invalid_direction`, line 401).
+* **Status:** Fixed (2026-05-15)
+* **Severity:** High — silently corrupted every CanonicalRule whose underlying findings carry `direction=no_direction`, which is the value MAP assigns when the LLM emits `null`/`""`/`"null"` for direction (see `models.py:_coerce_invalid_direction`, line 401).
 * **Surface:** `pipeline/stages/summarization/current_stages/canonicalize_stage.py`
 
 ### Symptom
@@ -1498,7 +1503,21 @@ Both spots are self-contained — no schema or DB migration needed. Bump no vers
 
 ### Verification
 
-Unit test: construct a `FindingGroup` whose `direction_counts={"positive": 2, "no_direction": 1}`. Pre-fix: `canonicalize()` returns two `CanonicalRule`s (one with `direction=positive`, one with `direction=no_direction`). Post-fix: one `CanonicalRule` with `direction=positive`, three member NFs, `is_conflicted=False`.
+Shipped 9 regression tests in `tests/summarization/test_canonicalize_direction_split.py`:
+
+* `test_no_direction_alone_is_not_conflicted` — pure-`no_direction` bin keeps `is_conflicted=False`.
+* `test_no_direction_plus_positive_is_not_conflicted` — the original bug case. Pre-fix returned `True` because `no_direction` was counted as a distinct polarity alongside `positive`; post-fix returns `False`.
+* `test_unclear_plus_positive_is_not_conflicted` — guards that the pre-existing `unclear` handling is preserved.
+* `test_positive_plus_negative_is_conflicted` — guards that genuine polarity contradictions still flip `is_conflicted=True`.
+* `test_split_no_direction_only_collapses_to_unclear_bin` — all-`no_direction` group falls to the single `"unclear"` bin path instead of emitting a CanonicalRule with `direction="no_direction"`.
+* `test_split_no_direction_joins_single_polarity_bin` — `no_direction` finding in a positive-dominant group joins the `positive` bin (no second CanonicalRule).
+* `test_split_no_direction_attaches_to_largest_polarity_in_mixed_group` — in a mixed `(positive=2, negative=1, no_direction=1)` group the `no_direction` attaches to the largest polarity bin, not a third bin.
+* `test_split_real_polarity_split_preserved` — guardrail against an over-aggressive fix that would also collapse genuine `positive`/`negative` contradictions.
+* `test_study_coverage_multi_study` — guards that the `study_coverage` computation is independent of the `is_conflicted` change.
+
+Full file: `pytest tests/summarization/test_canonicalize_direction_split.py` → 9 passed.
+
+Docstrings for both helpers were updated to spell out the orthogonality (`unclear` = "model couldn't decide", `no_direction` = "polarity doesn't apply"; both bypass the polarity split).
 
 ---
 
@@ -1506,8 +1525,8 @@ Unit test: construct a `FindingGroup` whose `direction_counts={"positive": 2, "n
 
 ### Status / Severity / Surface
 
-* **Status:** Observed
-* **Severity:** High — defeats the per-paper dedup that GROUP exists to perform, and inflates CanonicalRule count for any paper where UMLS linkage is intermittent. Affects every run unless `NLP_HISTO_DISABLE_UMLS=1` is set (which forces all CUIs to `None` and keeps the namespace consistent at the cost of cross-paper matching).
+* **Status:** Fixed (2026-05-15)
+* **Severity:** High — defeated the per-paper dedup that GROUP exists to perform, and inflated CanonicalRule count for any paper where UMLS linkage was intermittent.
 * **Surface:** `pipeline/stages/summarization/current_stages/group_stage.py`
 
 ### Symptom
@@ -1557,24 +1576,30 @@ That follow-up runs scispaCy NER on the bare canonical token (e.g. `"OS"`, `"CD3
 
 Same root cause for the UMLS-only path: `_umls_canonical_with_cui` returns `(canonical, None)` whenever `_best_cui` filters the link out for low score or junk-CUI status. Surface forms inside one paper that hit different scispaCy spans can therefore land with and without a CUI.
 
-### Fix options
+### Fix
 
-**Option A — drop CUI from the per-paper key.** GROUP is per-paper; the CUI exists primarily to allow cross-paper matching at corpus-relate time. Bucketing on the normalized string is enough at GROUP. CUI can still ride along on the bucket members for downstream use:
+**Shipped 2026-05-15** — Option A. Dropped CUI from `_group_id` entirely. GROUP is per-paper; `NormalizeStage._resolve_entity` already canonicalises `subject_entity` deterministically. The CUI rides along on `NormalFinding.{subject,outcome}_cui` for downstream use (`corpus_relate` cross-paper matching) but no longer participates in the per-paper bucket key. New signature:
 
 ```python
-return (
-    f"GRP_{_sha8(pmcid)}_{_sha8(subject)}_{_sha8(outcome)}"
-    f"_{relation_type}_{_sha8(category)}"
-)
+def _group_id(
+    subject: str,
+    outcome: str,
+    relation_type: str,
+    category: str = "",
+    pmcid: str = "",
+) -> str:
+    return (
+        f"GRP_{_sha8(pmcid)}_{_sha8(subject)}_{_sha8(outcome)}"
+        f"_{relation_type}_{_sha8(category)}"
+    )
 ```
 
-**Option B — require CUI on both sides.** Skip the CUI substitution unless both members of a bucket-merge attempt have a CUI. Implementation-wise this means doing a two-pass merge (CUI-keyed first, then string-keyed for the remainder). Heavier.
-
-Recommendation: Option A. The string-key invariant is `subject_entity` after `_resolve_entity`, which is already deterministic given the synonym dict; CUI drift cannot then split buckets.
+Rejected Option B (require CUI on both sides → two-pass merge): heavier change, same end result given that `_resolve_entity` is already string-deterministic.
 
 ### Verification
 
-Unit test: construct two NFs with identical `subject_entity="CD30"`, `outcome_entity="prognosis"`, `relation_type=prognostic`, but `subject_cui` set on one and `None` on the other. Pre-fix: `GroupStage.group()` returns two `FindingGroup`s with `finding_count=1` each. Post-fix: one `FindingGroup` with `member_ids=[both]`.
+* Regression test `tests/summarization/test_phase3_group.py::test_b022_partial_cui_population_still_same_bucket` constructs two NFs with identical `subject_entity="CD30"` where one has `subject_cui="C0XXXXXX"` and the other has `None`. Post-fix: one `FindingGroup` with `member_ids={"NF_a","NF_b"}`. Pre-fix would have produced two singleton groups.
+* `tests/summarization/test_phase3_group.py::test_b022_group_id_independent_of_cui` asserts the helper-level invariant — same inputs return the same key.
 
 ---
 
@@ -1582,8 +1607,8 @@ Unit test: construct two NFs with identical `subject_entity="CD30"`, `outcome_en
 
 ### Status / Severity / Surface
 
-* **Status:** Observed — flagged as a design-vs-defect question; do not silent-fix without a calibration check.
-* **Severity:** Medium — affects every paper that has voter disagreement on direction within the same sentence; bounded by the rarity of that case but unbounded in semantic damage when it fires (the contradiction signal disappears).
+* **Status:** Fixed (2026-05-15) — Option A applied (add `direction` to the dedup key).
+* **Severity:** Medium — affected every paper that had voter disagreement on direction within the same sentence; bounded by the rarity of that case but unbounded in semantic damage when it fired (the contradiction signal disappeared).
 * **Surface:** `pipeline/stages/summarization/current_stages/normalize_stage.py`
 
 ### Symptom
@@ -1640,19 +1665,31 @@ The dedup key was designed under the assumption that "same sentence + same entit
 
 The intended contradiction signal is therefore unreachable from this code path. The only way it surfaces today is when the opposing finding lives in a *different* text element — but the moment two voters disagree on direction for the same sentence (which is exactly the case that should be most informative), the disagreement is laundered.
 
-### Fix options
+### Fix
 
-**Option A — add `direction` to the dedup key.** Keeps merge semantics simple. Cost: opposing findings stay distinct all the way to RELATE, which can then label them CONTRADICT. Risk: voter noise that should have been collapsed (e.g. one voter emitting `positive`, another emitting `unclear` for the same claim) now produces two `NormalFinding`s and inflates the downstream rule count.
+**Shipped 2026-05-15** — Option A. Added `direction` to `_dedup_key`:
 
-**Option B — direction-aware merge.** Group by `(te_id, subject, outcome, relation_type)` as today, but emit one `NormalFinding` per direction within the bucket. The provenance list still unions across voters who agreed on direction. Keeps the "voter agreement" semantic intact while preserving disagreement.
+```python
+def _dedup_key(
+    text_element_id: int | None,
+    subject: str | None,
+    outcome: str | None,
+    relation_type: RelationTypeEnum,
+    direction: DirectionEnum | None,
+) -> str | None:
+    ...
+    dir_key = direction.value if direction is not None else "none"
+    return f"{text_element_id}|{subject}|{outcome}|{relation_type.value}|{dir_key}"
+```
 
-**Option C — won't-fix, documented.** Argument: if two voters disagree on direction for the same sentence, neither is reliable enough to keep. Set policy explicitly. Cost: every such case is silently discarded.
+Caller (`normalize_stage.py:410`) passes `f.direction` from the post-`_normalize_entities` finding (where the direction-from-claim heuristic has already fired for null/unclear), so two findings that the heuristic resolves to the same direction still merge.
 
-Recommendation: Option B if the calibration set shows direction disagreement is common; Option A as a simpler fallback. Defer to user.
+`_merge` semantics unchanged: a homogeneous-direction cluster trivially preserves the direction. Picked Option A over the direction-aware-merge variant (Option B from the old design notes) because the calibration risk is contained — the inflation hazard the original docstring flagged ("voter noise collapsed") only triggers when voters genuinely emit *different* concrete directions, which is exactly the disagreement we want to preserve.
 
 ### Verification
 
-Unit test: feed two `Finding`s with identical evidence string, identical subject/outcome/relation_type, opposite directions. Pre-fix: `normalize()` returns one `NormalFinding` with the higher-scored direction. Post-fix (Option B): two `NormalFinding`s, one per direction, both with the source span list deduped within their direction.
+* `tests/summarization/test_phase2_normalize.py::test_b023_opposing_directions_same_sentence_kept_separate` — positive + negative on same `te_id` produce 2 NormalFindings (pre-fix: 1).
+* `tests/summarization/test_phase2_normalize.py::test_b023_same_direction_same_sentence_still_merges` — guard that the fix narrows the dedup rather than disabling it.
 
 ---
 
@@ -1660,7 +1697,7 @@ Unit test: feed two `Finding`s with identical evidence string, identical subject
 
 ### Status / Severity / Surface
 
-* **Status:** Observed
+* **Status:** Mitigated (2026-05-15) — Option C (docstring-only) applied. Doc/code contradiction resolved, but the user-facing symptom ("downstream readers cannot tell which score they're looking at") persists: field names, DB column names, and inspector labels are unchanged. Full fix (Option B — split into `nli_entailment_*` / `nli_contradiction_*` columns + Alembic migration + inspector relabel) is the carry-forward; tracked in `docs/THESIS.md ##TODOs`.
 * **Severity:** Low — no algorithmic effect on RESOLVE (which only reads `relation_type`, not the score), but every downstream reader sees mis-labelled numbers.
 * **Surface:** `pipeline/stages/summarization/models.py:740-741`, `pipeline/stages/summarization/current_stages/relate_stage.py:397-413`, `scripts/run_paper_single_model.py:405`, `scripts/inspect_pipeline_output.py:127-128, 409-410, 798`.
 
@@ -1716,9 +1753,18 @@ f"(A→B={rel['nli_score_a_to_b']:.2f}, B→A={rel['nli_score_b_to_a']:.2f})"
 
 Recommendation: Option C now, schedule Option B for a future schema bump.
 
+### Mitigation (vs Fix)
+
+This is a **mitigation**, not a fix, and the distinction matters for thesis accounting:
+
+* **Mitigation applied:** `pipeline/stages/summarization/models.py:776-779` — replaced the inline `# entailment score from A→B direction` comments on `Relation.nli_score_a_to_b` / `nli_score_b_to_a` with a label-conditional docstring (entailment for SUPPORT, contradiction for CONTRADICT, pointing readers at `RawNLIPair` for unambiguous per-direction values). Resolves the doc/code contradiction so future maintainers don't write code against the wrong contract.
+* **Symptom still live:** the bug's stated symptom — *"downstream readers cannot tell which score they're looking at"* — is unchanged. Field names (`nli_score_a_to_b` / `nli_score_b_to_a`), DB column names (`sum_relations.nli_score_*`, `sum_corpus_relations.nli_score_*`), and inspector labels (`scripts/run_paper_single_model.py:405` prints `A→B={:.2f}`; `scripts/inspect_pipeline_output.py:127-128, 409-410, 798` likewise) all still surface the value without label context.
+* **Safety condition not verified:** Option C's recommendation note — *"acceptable if no consumer is treating the field as a pure entailment score for offline analysis"* — was not audited. A grep across `scripts/`, `eval/`, and notebook code is required before declaring this fully resolved.
+* **Full fix (Option B), deferred:** split into `nli_entailment_a_to_b` / `nli_contradiction_a_to_b` (and the `b_to_a` pair); deprecate the polysemic field; Alembic migration to add columns and backfill; relabel inspector callers. Tracked as a TODO in `docs/THESIS.md ##TODOs`.
+
 ### Verification
 
-Unit test: construct two CanonicalRules whose NLI scores force CONTRADICT (`con_ab=0.9, con_ba=0.9, ent_ab=0.2, ent_ba=0.2`). Assert `relation.nli_score_a_to_b == pytest.approx(0.9)`. Force the docstring to match.
+Mitigation is doc-only and intentionally untested. The Option B follow-up's verification (per the original recommendation) remains: construct two CanonicalRules whose NLI scores force CONTRADICT (`con_ab=0.9, con_ba=0.9, ent_ab=0.2, ent_ba=0.2`); assert the new `nli_contradiction_a_to_b` column receives `0.9` and the new `nli_entailment_a_to_b` column receives `0.2`.
 
 ---
 
@@ -1848,7 +1894,7 @@ purely operational characteristics (Low).
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · High · PDF extraction, `PipelineRunner` runtime knobs.
+Partial (2026-05-15) · High · PDF extraction, `PipelineRunner` runtime knobs.
 
 ### Symptom
 
@@ -1879,17 +1925,22 @@ defaulted to `cpu_count // 2` before the field existed). `log_level` was
 likely meant to be applied in `main()` but `basicConfig` was left
 hardcoded.
 
-### Fix (proposed)
+### Fix
 
-* `ParallelBatchRunner.__init__`: `self._max_workers = max_workers or self._cfg.runtime.num_workers`.
-* `PipelineRunner.main`: `logging.basicConfig(level=cfg.runtime.log_level.value, …)`.
-* Decide `seed` and `skip_existing_outputs`: either implement (seed all
-  RNG entry points; have writers/croppers skip when output files exist)
-  or delete the fields. Half-wired knobs are worse than missing ones.
+**Shipped 2026-05-15** (partial):
+
+* `runner.py:564` — `ParallelBatchRunner(cfg, max_workers=cfg.runtime.num_workers)` (was hardcoded `4`).
+* `runner.py` `main()` — `logging.basicConfig(level=cfg.runtime.log_level.value, …)` after `cfg.prepare()` so the field actually drives the level.
+
+**Still open**:
+
+* `seed` — no RNG entry points seed yet. Would need `random.seed`, `np.random.seed`, and (for torch-backed table detectors) `torch.manual_seed` called once at `PipelineRunner.__init__`.
+* `skip_existing_outputs` — per-stage output-cache check. Substantial: each component (layout extractor, masker, cropper, writer) needs to honour the flag. Defer behind a "config audit" cycle.
 
 ### Verification
 
-Pending — fix not yet implemented; this row records the find.
+* `python -c "from pipeline.stages.pdf_text_extraction.config import PipelineConfig; c = PipelineConfig(); c.prepare(); print(c.runtime.num_workers, c.runtime.log_level.value)"` runs clean.
+* Bumping `cfg.runtime.num_workers` propagates through `runner.main()` → `ParallelBatchRunner.__init__` (which now uses the passed kwarg).
 
 ---
 
@@ -1947,7 +1998,7 @@ Pending.
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · High · PDF extraction, scispaCy loader.
+Fixed (2026-05-15) · High · PDF extraction, scispaCy loader.
 
 ### Symptom
 
@@ -1987,15 +2038,14 @@ is duplication of unrelated objects rather than the double-KB OOM the
 docs warn about — but it would become a real OOM the moment anyone bumps
 the PDF runner to `en_core_sci_lg`.
 
-### Fix (proposed)
+### Fix
 
-Extend `umls_resources.get_nlp(model_name: str = "en_core_sci_lg")` to
-accept a model name and cache one singleton per model. Route
-`PipelineRunner._get_nlp` through it.
+Added `umls_resources.get_small_nlp(model_name: str)` — a per-model singleton cache that honours `$NLP_HISTO_DISABLE_UMLS`. `PipelineRunner._get_nlp` (`pipeline/stages/pdf_text_extraction/runner.py:202`) now delegates to it instead of calling `spacy.load` directly. Co-fixed B-038 (the summarisation-side site).
 
 ### Verification
 
-Pending.
+* `grep -n "spacy.load" pipeline/` returns zero hits outside `pipeline/stages/summarization/umls_resources.py`.
+* `runner.py:202` calls `get_small_nlp(...)` from the summarisation singleton module.
 
 ---
 
@@ -2123,7 +2173,7 @@ Pending.
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Low · PDF extraction, masking config.
+Fixed (2026-05-15, deleted) · Low · PDF extraction, masking config.
 
 ### Symptom
 
@@ -2132,32 +2182,29 @@ overlapping regions get merged.
 
 ### Evidence
 
-* `config.py:125` — declaration with default `0.3`.
+* `config.py:125` (pre-fix) — declaration with default `0.3`.
 * `pipeline/stages/pdf_text_extraction/components/region_masker.py:234`:
   ```python
   if self._config.merge_overlapping_boxes:
       rects = merge_rects(rects)
   ```
   No threshold forwarded.
-* `parsers/layout_utils.merge_rects` — check whether it accepts an IOU
-  threshold today; if not, the field is doubly dead.
+* `parsers/layout_utils.merge_rects:103` — uses `Rect.intersects()` (boolean any-overlap), no IOU concept at all.
 
 ### Diagnosis
 
-The merge logic predates the configurability. `merge_rects` likely uses a
-fixed internal heuristic (touch-or-overlap), and the threshold field was
-added speculatively.
+The field was misnamed-and-aspirational from the start. `merge_rects` was always an intersection-union algorithm (any non-zero overlap absorbs the smaller rect into the union). Adding IOU logic would change behaviour for *every* `merge_rects` caller — masking, table reconstruction, hybrid detection — not a configurable knob, a different algorithm. The field implied a threshold-based merge that the codebase doesn't implement.
 
-### Fix (proposed)
+### Fix
 
-Either (a) thread the threshold through `merge_rects` (and into the
-shared helper in `parsers/layout_utils.py`) so the knob is real, or
-(b) delete it. Recommendation: (a) — the boolean already exists, so
-making the threshold meaningful is a small extension.
+Deleted `MaskingConfig.merge_iou_threshold` from `pipeline/stages/pdf_text_extraction/config.py`. Tightened `merge_rects` docstring (`parsers/layout_utils.py:103`) to spell out the any-intersection semantics so future readers don't reach for the same field name.
+
+Rejected alternative: adding IOU logic to `merge_rects`. Would be a behaviour change to multiple consumers under the guise of a config wire-up.
 
 ### Verification
 
-Pending.
+* `grep -rn "merge_iou_threshold" pipeline parsers configs scripts` returns no hits.
+* `python -c "from pipeline.stages.pdf_text_extraction.config import MaskingConfig; print(hasattr(MaskingConfig, 'merge_iou_threshold'))"` → `False`.
 
 ---
 
@@ -2252,7 +2299,7 @@ Pending.
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Low · Summarisation, NLI helpers config surface.
+Fixed (2026-05-15) · Low · Summarisation, NLI helpers config surface.
 
 ### Symptom
 
@@ -2277,15 +2324,16 @@ The model / batch / device knobs predate `SummarizationConfig`. When the
 config dataclass was introduced, only the calibration-relevant thresholds
 were lifted into it.
 
-### Fix (proposed)
+### Fix
 
-Add `model_name`, `batch_size`, `device` fields to `GroundingConfig` and
-`RelateConfig` (all `Optional` so module defaults still work), forward
-them in the runner.
+Externalised NLI configuration to `configs/nli_models.yaml` with `pipeline/stages/summarization/nli_config.py:get_active_spec()` as the loader. `helpers/grounding_filter.py:72-78` and `current_stages/relate_stage.py:52-67` both consume `model_name`, `batch_size`, and `device` from the active spec rather than module defaults.
+
+Trade-off vs. lifting fields into `SummarizationConfig`: the YAML path keeps NLI-specific knobs out of the calibration-thresholds dataclass and lets a corpus run pin a specific NLI build alongside model versions, without re-running Python config construction. If a future need to override per-run from Python emerges, layer it on top — pass `model_name=` through `runner.py:251/258` and let it take precedence over the YAML.
 
 ### Verification
 
-Pending.
+* `grep -n "get_active_spec\|nli_models.yaml" pipeline/stages/summarization/` confirms both `grounding_filter.py` and `relate_stage.py` read from the YAML.
+* Switching `configs/nli_models.yaml` `active:` key changes the model used by both stages at next run; no Python edits required.
 
 ---
 
@@ -2391,7 +2439,7 @@ After fix, a smoke run of `SummarizationRunner.process_batch([...])` with `trace
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · High · `pipeline/stages/summarization/runner.py:912-916` (`load_paper_from_db`).
+Fixed (2026-05-15) · High · `pipeline/stages/summarization/runner.py:912-916` (`load_paper_from_db`).
 
 ### Symptom
 
@@ -2428,24 +2476,26 @@ The interaction with B-041 (producer attribution mis-indexed) and B-019 (citatio
 
 ### Fix
 
-Add `path_string` as the primary sort key:
+Switched the read site to autoincrement `id`:
 
 ```python
-.order_by(TextElement.path_string, TextElement.position_in_section)
+.order_by(TextElement.id)
 ```
 
-This restores within-section locality and pins sections to alphabetic order on `path_string`. **It does *not* restore true document order** — for that, a `document_order: Integer` column on `TextElement` populated at ingest time is needed. Tracked as a follow-up TODO.
+This works because `db_ingester.write` iterates `rows` in order and `session.flush()` produces `id` in iteration order — so `id` reflects insertion order, and (once B-040 is fixed so `rows` is emitted in document order) `id` reflects document order. Whole-paper contiguous ingest plus the no-partial-reingest invariant (`PostgresDatabaseIngester.write` short-circuits if `Document` exists) make `id`-based ordering robust without a new schema column.
+
+Rejected alternative: adding a `document_order: Integer` column + Alembic migration. The cheaper read-side flip closes the same gap given B-040 is fixed in the same change.
 
 ### Verification
 
-* Pre-fix: dump `[s["text_element_id"] for s in file_data["sentences_with_provenance"]]` for a real paper and confirm the te_id sequence cycles through path_strings rather than monotonically advancing within each path.
-* Post-fix: same dump should show all te_ids from one path_string before moving to the next.
-* B-040 (extract_text path-first-appearance order) compounds this — even after the load-side fix, the ingest pipeline writes rows in scrambled order so `path_string`-alphabetic ≠ document-order. Both fixes are needed for true doc-order.
+* Pre-fix: dump `[s["text_element_id"] for s in file_data["sentences_with_provenance"]]` for a paper ingested pre-B-040-fix — te_id sequence cycles through path_strings instead of monotonically advancing within each path.
+* Post-fix (read flip only, pre-B-040-fix data): improved but still scrambled since `id` reflects path-first-appearance order at ingest.
+* Post-fix (read flip + B-040 fix + re-ingest): te_ids monotonically advance in document order; `MapStage._make_chunks` packs topically coherent sentences.
+* Requires re-ingesting any papers whose `TextElement` rows were written pre-B-040-fix; existing rows have `id`s aligned with the (scrambled) ingest order, not document order.
 
 ### Follow-up
 
-* Magnitude check: I did *not* dump a real paper's `sentences_with_provenance` before filing this — the bug is structural but the empirical magnitude could be smaller than expected if Postgres heap-order on this table happens to align with insertion order via the autoincrement `id`. Worth confirming on one paper before promoting the severity.
-* Longer-term: persist a `document_order` integer at ingest. Trivial Alembic migration; eliminates the entire class of cross-section ordering bugs.
+* Long-term: persist a `document_order` integer if any partial-reingest workflow ever lands (e.g. re-ingest just figures without re-ingesting text). Currently no such path; the column would be maintenance overhead without payoff.
 
 ---
 
@@ -2453,7 +2503,7 @@ This restores within-section locality and pins sections to alphabetic order on `
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Medium · `parsers/layout_utils.py:469-524` (`extract_text`).
+Fixed (2026-05-15) · Medium · `parsers/layout_utils.py:469-524` (`extract_text`).
 
 ### Symptom
 
@@ -2507,31 +2557,42 @@ Output rows feed `HierarchicalTextAssembler.assemble`, which forwards them to `T
 
 ### Fix
 
-Track first-emit index per path and stable-sort `by_path.items()` by it before the emit loop:
+Replaced the global `by_path` accumulator with arrival-order traversal. Elements stream into a flat `ordered: list[(path_str, text)]` in document walk order (dedup still applied per path via `path_seen`). The emit loop scans contiguous same-`path_str` runs and stitches each run independently:
 
 ```python
-first_emit_idx = {}
+ordered: list = []
 …
 elif etype not in SKIP_TYPES:
     …
-    if path_str not in first_emit_idx:
-        first_emit_idx[path_str] = idx
-    by_path[path_str].append(text)
+    path_seen[path_str].add(text)
+    ordered.append((path_str, text))
+
 …
-for path_str in sorted(by_path, key=first_emit_idx.get):
-    texts = by_path[path_str]
+i = 0
+while i < len(ordered):
+    path_str = ordered[i][0]
+    j = i
+    texts: list = []
+    while j < len(ordered) and ordered[j][0] == path_str:
+        texts.append(ordered[j][1])
+        j += 1
     …
+    i = j
 ```
 
-This is still "first-appearance order" rather than true document order, but it's stable and at least matches how a reader would skim the document linearly. A true fix requires emitting rows in element-walk order rather than re-grouping by path.
+Rows now emit in true document order. Side effect: when a parent section is interleaved with a sub-section, the parent's first half and second half stitch independently (they're no longer adjacent in `ordered`). That's the correct behavior — non-adjacent paragraphs should not stitch.
 
 ### Verification
 
-A regression test under `tests/pdf_text_extraction/test_extract_text.py` should construct a synthetic element list with a parent-sub-parent-sub pattern (e.g. Methods → 2.1 → Methods → 2.2) and assert the output rows preserve the original document order.
+* Unit test added at `tests/pdf_text_extraction/test_extract_text_ordering.py`:
+  * `test_subsection_return_preserves_document_order` — Methods → Sub1 → Methods (parent repeated as level-1 header); asserts output paths are `["Methods", "Methods > Sub1", "Methods"]` and text contents arrive in document order.
+  * `test_simple_sequential_sections_ordered` — two flat top-level sections emit in order.
+  * `test_dedup_drops_duplicate_text_within_path` — same-text dedup still fires.
+* All three pass against the new implementation.
 
 ### Follow-up
 
-* Better long-term fix: emit rows in document walk order, keyed only by hierarchical path for display. Then `position_in_section` is computed as a sub-index without needing a re-grouping step.
+* Combined with the B-039 read-side flip (`ORDER BY id`), papers re-ingested post-fix have `TextElement.id` aligned with document order, restoring topical locality in `MapStage._make_chunks` input.
 
 ---
 
@@ -2539,7 +2600,7 @@ A regression test under `tests/pdf_text_extraction/test_extract_text.py` should 
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · High · `pipeline/stages/summarization/current_stages/map_stage.py:1183` (`_run_voters`), `agreement/decision.py:186-212` (`producer_from_outcome`), `agreement/decision.py:255-267` (`make_decision_record`), `routing/router.py:271` (`_classify_voters`).
+Fixed (2026-05-15) · High · `pipeline/stages/summarization/current_stages/map_stage.py:1183` (`_run_voters`), `agreement/decision.py:186-212` (`producer_from_outcome`), `agreement/decision.py:255-267` (`make_decision_record`), `routing/router.py:271` (`_classify_voters`), `pipeline/stages/summarization/batch/runner.py:1414-1445` (batch parse loop).
 
 ### Symptom
 
@@ -2619,23 +2680,35 @@ The root cause is `_run_voters` returning a filtered list while every downstream
 
 ### Fix
 
-Make `_run_voters` return a structure that preserves the original-index mapping. Two shapes work:
+**Shipped 2026-05-15** — Option 1 (None-padded list) + plumbing through to `evaluate_chunk`.
 
-1. `list[AuditableSummary | None]` of length N (original) with `None` where a voter failed. Callers downstream filter explicitly.
-2. `dict[int, AuditableSummary]` from original-voter-index → summary. Empty dict on total failure.
+* `MapStage._run_voters` now returns `list[AuditableSummary | None]` of length N (original voter count). Failed voters leave `None` at their slot.
+* `_cascade` builds `survivor_indices = [i for i, v in enumerate(voters_full) if v is not None]` and `voters = [voters_full[i] for i in survivor_indices]`, then passes both to `evaluate_chunk(..., voter_indices=survivor_indices)`. Same for the L2 escalation branch.
+* `evaluate_chunk` (`agreement/decision.py`) gains a `voter_indices: list[int] | None` parameter. Router path: maps `decision.valid_voter_indices` (survivor-indexed) back through `voter_indices` to original-spec indices. No-router path: populates `ChunkOutcome.valid_voter_indices` directly from `voter_indices`. `ChunkOutcome.valid_voter_indices` is now the **single source of truth** for downstream producer attribution — always original-spec-indexed when populated.
+* `producer_from_outcome` and `make_decision_record` rewritten to read from `outcome.valid_voter_indices` instead of `outcome.routing_decision.valid_voter_indices`. `CascadeDecisionRecord.best_voter_index` now records the original-spec index (was previously the bundle's survivor-indexed `best_index` — silently wrong per its own docstring).
+* Batch runner (`batch/runner.py:_process_level`) builds `chunk_voters[chunk_id]` as a length-N None-padded list, slot `vi` populated from `custom_id`. At evaluate-time the same `survivor_indices` + `voters` split runs, with `voter_indices=survivor_indices` passed to `evaluate_chunk`.
 
-Then `producer_from_outcome` and `make_decision_record` need updates so `best_idx` and `valid_voter_indices` consistently refer to original positions. The router's `_classify_voters` should also accept original-index input and propagate it through `VoterClassification.voter_index`.
+Router internals unchanged: `_classify_voters` still enumerates the survivor list and returns survivor-indexed `valid_voter_indices`. The mapping back to original indices happens inside `evaluate_chunk` — keeps the router's `RoutingDecision` as a "router-internal view" and `ChunkOutcome` as the public "original-spec view".
 
-Cache key shape is unaffected — `PipelineCache._map_key` doesn't include producer metadata, only `cascade_signature`. So the fix is contained to the per-call metadata write at `_cascade` line 401.
+Cache key shape unaffected — `PipelineCache._map_key` doesn't include producer metadata.
 
 ### Verification
 
-* Add a unit test that constructs a `MapStage` with 3 voters where voter 0 deliberately raises an exception, runs one chunk, and asserts the per-chunk MAP cache metadata records the provider/model of either voter 1 or voter 2 (whichever the agreement picked) — never voter 0's spec.
-* Add the same test for the router path.
+Six regression tests in `tests/summarization/agreement/test_voter_index_alignment.py`:
+
+* `test_b041_no_router_voter_0_failure_attributes_to_correct_survivor` — voter 0 fails, KEEP picks survivor[0] = original voter 1. Asserts `producer_from_outcome → ('google', 'gemini-flash-lite')` (pre-fix would have returned voter 0's spec).
+* `test_b041_no_router_voter_1_failure_attributes_correctly` — voter 1 fails, survivors [v0, v2], KEEP picks survivor[0] = original voter 0.
+* `test_b041_no_router_identity_when_voter_indices_none` — back-compat path with implicit identity mapping.
+* `test_b041_no_router_all_voters_failed` — empty survivor list short-circuits cleanly.
+* `test_b041_make_decision_record_records_original_index` — asserts `CascadeDecisionRecord.best_voter_index` matches the original voter spec index.
+* `test_b041_router_path_maps_back_to_original_indices` — router strips a survivor as UNUSABLE; `ChunkOutcome.valid_voter_indices` contains the original-spec index of the kept voter.
+
+Full summarization test suite (541 tests including the 6 above) passes.
 
 ### Follow-up
 
-* Once fixed, sweep `out/summaries/runs/*/cascade_decisions/*.jsonl` from the calibration_set_v1 batch run for any row where `selected_provider/model` disagrees with the cost report's tokens-per-model breakdown — those rows are evidence of how often this fired in practice. If non-zero, the cost figures for that calibration run need a regen footnote.
+* Sweep `out/summaries/runs/*/cascade_decisions/*.jsonl` from pre-fix calibration runs for rows where `selected_provider/model` disagrees with the cost report's tokens-per-model breakdown — those rows are evidence of how often this fired in practice.
+* `_record_chunk_trace` (`map_stage.py:816-846`) still keys `voter_timings.get(i)` by survivor-indexed `i` while `voter_timings` is original-indexed. Pre-existing bug, not regressed by this fix. Tracked separately.
 
 ---
 
@@ -2858,4 +2931,129 @@ Layered fix (kept narrow because the cleaner refactor — enum collapse — is d
 
 * After the next calibration run, grep `enum_observations.jsonl` for `reason="cross_field_bleed"` and report counts split by `coerced_value`. If "staging" appears frequently in the `coerced_value="unclear"` bucket, escalate to a context-aware aliasing pass (or a small post-MAP repair stage that looks at the claim text).
 * Bigger refactor on the table: collapse `expression` and `has_feature` into one `relation_type` bucket. `category` already carries the assay-type signal, so no information is lost — but cache invalidation + downstream GROUP/CANONICALIZE audit makes it a separate change. Track under `docs/THESIS.md ##TODOs`.
+
+---
+
+## Bug 45 — `scope_parsed` is LLM-set but trivially derivable
+
+**Status / Severity / Surface:** Fixed (2026-05-15) / Low / Summarisation, MAP `FindingScope.scope_parsed`.
+
+### Symptom
+
+`scope_parsed: bool` was a required field on `FindingScope` that the prompt asked the LLM to compute as "true if at least one sub-field is non-null; false otherwise" (`prompts.py:213`). One more thing the model could get wrong, and output tokens spent reasoning about a one-line boolean. No downstream consumer cared what *the LLM* answered — only whether the boolean matched the actual sub-field state.
+
+### Evidence
+
+* Cataloged as Issue 5 in [MAP_PROMPT_AUDIT.md](MAP_PROMPT_AUDIT.md#issue-5--scopescope_parsed-is-llm-set-but-trivially-derivable-low).
+* No bad-value telemetry hit (Pydantic `bool` parses `true`/`false` correctly) — so the bug was pure compute-waste, not data-loss.
+
+### Diagnosis
+
+Field is trivially derivable from the other sub-fields. The audit's recommended fix: validator overrides the LLM-emitted value after parse.
+
+### Fix
+
+* `pipeline/stages/summarization/models.py`
+  * New `@model_validator(mode="after") _compute_scope_parsed` on `FindingScope`. Sets `scope_parsed = any(getattr(self, k) is not None for k in _SCOPE_FIELDS_DEFAULTS if k != "scope_parsed")`, overriding the LLM-emitted value.
+  * Bumped `MAP_SCHEMA_VERSION` → `"map_v7_scope_parsed_autocompute"` so cached `AuditableSummary` payloads re-validate. In every existing case where the LLM was correct the stored boolean matches the new computation, but a fresh pass formalises the invariant.
+* `pipeline/stages/summarization/prompts.py`
+  * Line 213: changed instruction from "Set to true if at least one scope sub-field above is non-null; false otherwise" to "Always emit false. Computed automatically from sub-fields downstream; any value you provide is overridden." The field stays in the schema-as-instructions and `OutputFormat` JSON template because OpenAI strict mode requires every property to be present in the emitted object.
+* `tests/summarization/test_scope_parsed_autocompute.py` — four cases covering empty scope, non-null sub-field with `scope_parsed=False` (LLM under-reports), all-null with `scope_parsed=True` (LLM over-reports), and `cohort_n=0` (numeric falsy ≠ null).
+
+### Verification
+
+`pytest tests/summarization/test_scope_parsed_autocompute.py` — 4/4 pass. Adjacent suites (`test_batch_persistence`, `test_canonicalize_direction_split`, `test_enum_alias_repair`, `test_demographics`, `test_phase1_schema`) — 83/83 pass; no existing call site constructed a `FindingScope` whose `scope_parsed` value disagreed with the derived boolean.
+
+---
+
+## Bug 46 — Direction hedging words coerce to `unclear` instead of alias-repair
+
+**Status / Severity / Surface:** Fixed (2026-05-15) / Low / Summarisation, MAP `direction` enum coercion.
+
+### Symptom
+
+LLM voters occasionally emitted hedging strings outside `DirectionEnum` (`"maybe"`, `"possibly"`, `"perhaps"`, `"likely"`, `"unknown"`) or natural-language nulls (`"none"`, `"n/a"`, `"NA"`). Each fell through to the unknown-value branch of `_coerce_invalid_direction` and was silently coerced to `DirectionEnum.unclear` with `reason="unknown_value"` — the in-enum value still carried the right semantics, but the alias category was bucketed as "unknown" telemetry instead of "alias_repair", so the operator could not distinguish a model that was confidently wrong from a model that hedged.
+
+### Evidence
+
+* [MAP_PROMPT_AUDIT.md Issue 8](MAP_PROMPT_AUDIT.md#issue-8--directionmaybe-single-occurrence-low) — single observed occurrence of `direction="maybe"`. Audit said defer; we shipped anyway because the fix is a 5-line dict + branch matching the well-trusted `_RELATION_TYPE_ALIASES` pattern.
+
+### Diagnosis
+
+Pure observability gap: in-enum behaviour unchanged, but `enum_observations.jsonl` couldn't distinguish hedging from unknown. Same class as B-018 / B-044 (cross-field bleed) — the alias map turns silent telemetry into a labelled bucket.
+
+### Fix
+
+* `pipeline/stages/summarization/models.py`
+  * New `_DIRECTION_ALIASES` dict: `maybe`/`possibly`/`perhaps`/`likely`/`unknown` → `unclear`; `none`/`n/a`/`na` → `no_direction`.
+  * Alias-repair branch in `_coerce_invalid_direction` runs after case-fold (so the alias table is implicitly case-insensitive). Logs `reason="alias_repair"`.
+  * Bumped `MAP_SCHEMA_VERSION` → `"map_v8_direction_alias_repair"`.
+* `tests/summarization/test_enum_alias_repair.py` — parametrised `test_direction_alias_repair` covers all alias entries including case-fold variants; `test_direction_unknown_value_still_coerces_to_unclear` guards against the alias map silently over-firing.
+
+### Verification
+
+`pytest tests/summarization/test_enum_alias_repair.py` — 39 → 53 tests passing (14 new direction-alias cases). `_raw_direction` PrivateAttr (B-015 contract) still preserves the original hedging string for offline analysis.
+
+---
+
+## Bug 47 — Direction `absent` vs `negative` ambiguity on expression claims
+
+**Status / Severity / Surface:** Fixed (2026-05-15) / Low / Summarisation, MAP prompt.
+
+### Symptom
+
+Prompt example mapped `"BCL2 was negative in GCB-DLBCL"` → `direction: absent` (`prompts.py:148`), but the `direction` definition allowed both `absent` ("explicitly not present / lacking / **negative staining**") and `negative` ("not expressed / decreased"). Two voters extracting the same expression claim could legitimately disagree on which label to emit, and the GROUP/RELATE polarity guard treats them as different polarities — blocking RELATE's CONTRADICT signal even on findings that downstream consumers would consider semantically identical.
+
+### Evidence
+
+* [MAP_PROMPT_AUDIT.md Issue 6](MAP_PROMPT_AUDIT.md#issue-6--directionabsent-vs-directionnegative-ambiguity-in-expression-contexts-low) — flagged as a latent split before downstream measurement could quantify it.
+
+### Diagnosis
+
+Two valid mappings, no disambiguator. The cleanest fix is to constrain the rubric by relation_type: for `expression` claims, "negative staining" / "no expression detected" is the standard pathology readout and is best captured by `absent`; "decreased / reduced expression" implies a continuous-axis comparison and is best captured by `negative`. Other relation_types don't have the staining-readout idiom, so they default to `negative` unless the text literally says "absent" / "not present" / "lacking".
+
+### Fix
+
+Prompt-only:
+
+* `pipeline/stages/summarization/prompts.py` — added a "Disambiguating absent vs negative (relation_type=expression only)" block immediately under the `direction` definition, with concrete patterns for each label. Other relation_types pick up the explicit fallback.
+* Bumped `MAP_PROMPT_VERSION` → `"map_prompt_v5_expression_absent_vs_negative"`.
+
+### Verification
+
+No regression test (prompt-only change to the rubric, no validator logic to assert against). Empirical verification deferred to the next calibration run: grep `enum_observations.jsonl` and `sum_canonical_rules` for `(relation_type=expression, direction ∈ {absent, negative})` co-occurrence within the same `FindingGroup`. If the post-fix count drops materially, the rubric tightening worked.
+
+---
+
+## Bug 48 — `Rule.type` Title-Case inconsistent with lowercase convention
+
+**Status / Severity / Surface:** Fixed (2026-05-15) / Low / Summarisation, optional RULE block enums.
+
+### Symptom
+
+`Rule.type` declared `Literal["Diagnostic", "Prognostic", "Management"]` and `RuleCounts` mirrored the casing in field names (`Diagnostic: int`, `Prognostic: int`, `Management: int`). Every other enum in the summarisation pipeline is lowercase post-B-016 (`Finding.category`, `Finding.confidence`, `RelationTypeEnum`, `DirectionEnum`). The inconsistency invited any future refactor to (a) accidentally lowercase the Rule fields and break legacy payloads, or (b) re-introduce a casing alias map to paper over the lower-vs-Title-Case bleed.
+
+### Evidence
+
+* [MAP_PROMPT_AUDIT.md Issue 7](MAP_PROMPT_AUDIT.md#issue-7--ruletype-is-title-case-diagnosticprognosticmanagement-everything-else-lowercase-low) — flagged as a latent inconsistency, deferred until the optional RULE block was next exercised.
+
+### Diagnosis
+
+The audit deferred this because the optional REDUCE+RULES block is off by default — no production cost. We lifted the deferral once the rest of the audit was being addressed in the same pass; the casing migration is mechanical and the back-compat shim is a single `mode="before"` validator.
+
+### Fix
+
+* `pipeline/stages/summarization/models.py`
+  * `Rule.type: Literal["diagnostic", "prognostic", "management"]`.
+  * New `Rule._lowercase_type` `field_validator(mode="before")` so any legacy Title-Case payload (cached LLM output, hand-authored test fixtures) round-trips cleanly.
+  * `RuleCounts` field names lowercased to `diagnostic`, `prognostic`, `management`.
+* `pipeline/stages/summarization/helpers/grounding_filter.py` — `_recompute_audit` reads `counts["diagnostic"]` etc., matching the new `Rule.type` casing.
+* `pipeline/stages/summarization/prompts.py` — RULE OutputFormat block now shows `"type": "diagnostic|prognostic|management"` and `"rules_by_type": {{"diagnostic": N, "prognostic": N, "management": N}}`.
+* `tests/summarization/test_enum_alias_repair.py` — `test_rule_type_lowercase_validates`, `test_rule_type_case_repair` (parametrised over Title-Case / UPPERCASE legacy variants), `test_rule_counts_uses_lowercase_field_names`.
+* `tests/test_inspector.py` fixture updated (the only in-tree consumer that hand-wrote a Title-Case `Rule.type` payload).
+
+### Verification
+
+`pytest tests/summarization/test_enum_alias_repair.py` — all 60 tests pass (5 new). RULE block is off by default; no production payloads to migrate. If the block is ever re-enabled, the back-compat validator on `Rule.type` ensures legacy cached `ExtractedRules` JSONs still parse.
+
 

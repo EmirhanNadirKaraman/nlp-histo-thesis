@@ -224,3 +224,78 @@ def test_confidence_unknown_value_still_drops_finding():
     from pydantic import ValidationError
     with pytest.raises(ValidationError):
         Finding.model_validate(_make(confidence="definitely_high"))
+
+
+# ── direction alias repair (Issue 8, MAP_PROMPT_AUDIT) ───────────────────────
+
+@pytest.mark.parametrize("raw, expected", [
+    ("maybe",    DirectionEnum.unclear),
+    ("possibly", DirectionEnum.unclear),
+    ("perhaps",  DirectionEnum.unclear),
+    ("likely",   DirectionEnum.unclear),
+    ("unknown",  DirectionEnum.unclear),
+    ("Maybe",    DirectionEnum.unclear),  # case-fold path
+    ("POSSIBLY", DirectionEnum.unclear),
+    ("none",     DirectionEnum.no_direction),
+    ("None",     DirectionEnum.no_direction),
+    ("n/a",      DirectionEnum.no_direction),
+    ("NA",       DirectionEnum.no_direction),
+])
+def test_direction_alias_repair(raw, expected):
+    f = Finding.model_validate(_make(direction=raw))
+    assert f.direction is expected
+    # Raw value still captured per B-015.
+    assert f._raw_direction == raw
+
+
+def test_direction_unknown_value_still_coerces_to_unclear():
+    """Values outside both the enum and the alias map fall through to
+    `unclear` with reason='unknown_value' — preserves measurement surface."""
+    f = Finding.model_validate(_make(direction="sideways"))
+    assert f.direction is DirectionEnum.unclear
+    assert f._raw_direction == "sideways"
+
+
+# ── Rule.type lowercase + case repair (Issue 7, MAP_PROMPT_AUDIT) ────────────
+
+def test_rule_type_lowercase_validates():
+    from pipeline.stages.summarization.models import Rule, EvidenceChainItem
+    r = Rule.model_validate({
+        "rule_id": "R1",
+        "type": "diagnostic",
+        "condition": "IF X",
+        "action": "THEN Y",
+        "confidence": "high",
+        "evidence_chain": [{"sentence_id": "S1", "pmcid": "PMC1", "text_element_id": 1, "verbatim": "q"}],
+        "contraindications": [],
+    })
+    assert r.type == "diagnostic"
+    assert isinstance(r.evidence_chain[0], EvidenceChainItem)
+
+
+@pytest.mark.parametrize("raw, expected", [
+    ("Diagnostic", "diagnostic"),
+    ("PROGNOSTIC", "prognostic"),
+    ("Management", "management"),
+])
+def test_rule_type_case_repair(raw, expected):
+    """Legacy Title-Case payloads must round-trip cleanly; the lowercase
+    convention was aligned with `Finding.confidence`/`Finding.category` in
+    MAP_PROMPT_AUDIT Issue 7."""
+    from pipeline.stages.summarization.models import Rule
+    r = Rule.model_validate({
+        "rule_id": "R1",
+        "type": raw,
+        "condition": "IF X",
+        "action": "THEN Y",
+        "confidence": "high",
+        "evidence_chain": [{"sentence_id": "S1", "pmcid": "PMC1", "text_element_id": 1, "verbatim": "q"}],
+        "contraindications": [],
+    })
+    assert r.type == expected
+
+
+def test_rule_counts_uses_lowercase_field_names():
+    from pipeline.stages.summarization.models import RuleCounts
+    c = RuleCounts(diagnostic=1, prognostic=2, management=3)
+    assert c.model_dump() == {"diagnostic": 1, "prognostic": 2, "management": 3}
