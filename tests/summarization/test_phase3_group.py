@@ -242,6 +242,37 @@ def test_group_id_differs_across_pmcids():
     )
 
 
+# ── B-022 regression: CUI population must not split otherwise-identical buckets ─
+
+
+def _nf_with_cui(normal_id: str, subject_cui: str | None) -> NormalFinding:
+    nf = _nf(normal_id=normal_id)
+    return nf.model_copy(update={"subject_cui": subject_cui})
+
+
+def test_b022_partial_cui_population_still_same_bucket():
+    """Two findings with identical normalized subject/outcome/relation/category
+    must land in the same FindingGroup, regardless of whether subject_cui is
+    populated on one and missing on the other. Pre-fix: `subject_cui if subject_cui
+    else subject` mixed namespaces; the CUI-bearing finding and the CUI-missing
+    finding produced different keys and split into two singleton groups.
+    """
+    a = _nf_with_cui("NF_a", subject_cui="C0XXXXXX")
+    b = _nf_with_cui("NF_b", subject_cui=None)
+    groups = GroupStage().group([a, b], PMCID)
+    assert len(groups) == 1
+    assert set(groups[0].member_ids) == {"NF_a", "NF_b"}
+
+
+def test_b022_group_id_independent_of_cui():
+    """Helper-level: the same _group_id is returned whether or not a caller
+    passes CUI hints (the signature no longer accepts them).
+    """
+    base = _group_id("CD30", "OS", "prognostic", pmcid=PMCID)
+    # Same inputs → same key, regardless of which finding had a CUI upstream.
+    assert _group_id("CD30", "OS", "prognostic", pmcid=PMCID) == base
+
+
 # ── FindingGroup model ────────────────────────────────────────────────────────
 
 def test_finding_group_subject_outcome_are_str():

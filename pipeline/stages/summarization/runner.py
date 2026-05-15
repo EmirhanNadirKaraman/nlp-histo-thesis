@@ -914,10 +914,20 @@ class SummarizationRunner:
         Returns:
             dict with keys ``pmcid`` and ``sentences_with_provenance``.
         """
-        import spacy  # type: ignore
         from database import get_db_connection, Document, TextElement  # type: ignore
+        from .umls_resources import get_small_nlp
 
-        nlp = spacy.load("en_core_sci_sm")
+        # B-038 fix: route through the process-wide small-model singleton so
+        # every call (especially in batch mode where this runs once per paper)
+        # reuses the same loaded pipeline. Direct `spacy.load(...)` calls
+        # bypass the cache and re-deserialise the model from disk per paper.
+        nlp = get_small_nlp("en_core_sci_sm")
+        if nlp is None:
+            raise RuntimeError(
+                "en_core_sci_sm not available for sentence segmentation in "
+                "load_paper_from_db. Install with: "
+                "pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz"
+            )
         db = get_db_connection(database_url=db_url)
 
         with db.session_scope() as session:
@@ -927,7 +937,7 @@ class SummarizationRunner:
             rows = (
                 session.query(TextElement)
                 .filter_by(document_id=doc.id)
-                .order_by(TextElement.position_in_section)
+                .order_by(TextElement.id)
                 .all()
             )
             sentences = []

@@ -1,6 +1,13 @@
 """
 Phase 2 smoke tests — NormalizeStage: entity normalization + conditional dedup.
 No LLM or NLI model required.
+
+The autouse `_disable_umls` fixture sets `NLP_HISTO_DISABLE_UMLS=1` and resets
+the scispaCy/UMLS singleton + per-process surface cache before/after each test.
+Without this, every `normalize_entity` / `NormalizeStage.normalize` call would
+trigger a one-time multi-GB UMLS KB load (~30–90s) plus per-surface linker
+calls — the synonym path also hits the linker to fill the CUI on the
+canonical form. Disabling UMLS keeps these "smoke tests" actually fast.
 """
 import pytest
 
@@ -16,6 +23,19 @@ from pipeline.stages.summarization.current_stages.normalize_stage import Normali
 
 
 PMCID = "PMC12345"
+
+
+@pytest.fixture(autouse=True)
+def _disable_umls(monkeypatch):
+    from pipeline.stages.summarization import umls_resources
+    from pipeline.stages.summarization.current_stages import normalize_stage
+
+    monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
+    umls_resources._reset_for_tests()
+    normalize_stage._UMLS_CACHE.clear()
+    yield
+    umls_resources._reset_for_tests()
+    normalize_stage._UMLS_CACHE.clear()
 
 
 def _finding(
@@ -57,12 +77,11 @@ def test_normalize_entity_known_synonym():
 
 
 def test_normalize_entity_unknown_passes_through():
-    # Surfaces not in the synonym dict go through the UMLS linker.  For
-    # "some novel marker" the linker returns its top concept "New" at the
-    # current 0.85 threshold.  This locks in the observed behaviour — if
-    # the UMLS singleton is later disabled, the surface would pass through
-    # unchanged instead.
-    assert normalize_entity("some novel marker") == "New"
+    # With UMLS disabled (autouse `_disable_umls` fixture), surfaces not in
+    # the synonym dict pass through unchanged via the identity branch in
+    # `_resolve_entity`. Linker-on behaviour (e.g. "some novel marker" →
+    # "New" at the 0.85 threshold) is exercised in `test_scispacy_singleton`.
+    assert normalize_entity("some novel marker") == "some novel marker"
 
 
 def test_normalize_entity_none_returns_none():
@@ -245,3 +264,40 @@ def test_normal_finding_roundtrip():
     nf2 = NormalFinding(**data)
     assert nf2.normal_id == nf.normal_id
     assert nf2.direction == DirectionEnum.negative
+
+
+# ── B-023 regression: dedup must not collapse opposing directions ─────────────
+
+
+def test_b023_opposing_directions_same_sentence_kept_separate():
+    """Positive and negative claims from one sentence stay as two NormalFindings.
+
+    Pre-fix: _dedup_key omitted `direction`, so a positive + negative claim on
+    the same te_id collapsed into one merged finding (rep.direction wins),
+    silently erasing the contradiction before RELATE could see it.
+    """
+    pos = _finding(
+        claim="High CD30 correlates with better OS",
+        direction=DirectionEnum.positive,
+        grounding_score=0.9,
+    )
+    neg = _finding(
+        claim="High CD30 correlates with worse OS",
+        direction=DirectionEnum.negative,
+        grounding_score=0.8,
+    )
+    out = NormalizeStage().normalize([pos, neg], PMCID)
+    directions = {nf.direction for nf in out}
+    assert DirectionEnum.positive in directions
+    assert DirectionEnum.negative in directions
+    assert len(out) == 2
+
+
+def test_b023_same_direction_same_sentence_still_merges():
+    """Two findings with same (te_id, subject, outcome, relation, direction)
+    should still collapse — the fix narrows the dedup, doesn't break it."""
+    a = _finding(grounding_score=0.7)
+    b = _finding(grounding_score=0.9)
+    out = NormalizeStage().normalize([a, b], PMCID)
+    assert len(out) == 1
+    assert out[0].direction == DirectionEnum.negative

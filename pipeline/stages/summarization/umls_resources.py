@@ -35,6 +35,15 @@ _LINKER = None
 _AVAILABLE: bool | None = None       # None = not probed; True/False after
 _LOAD_LOCK = threading.Lock()
 
+# Small-model singleton — separate cache from the linker-attached `_NLP`.
+# Used for sentence segmentation and biomedical-entity presence detection
+# (no UMLS linking). Loading scispaCy `en_core_sci_sm` is cheap (~40MB) but
+# repeating it once per paper still costs O(N) seconds in batch mode, and
+# allowing direct `spacy.load(...)` calls fragments the cache across
+# call sites. See B-029 (PDF extraction) and B-038 (summarisation loader).
+_SMALL_NLP_BY_NAME: dict[str, object] = {}
+_SMALL_NLP_LOCK = threading.Lock()
+
 # Disable scispaCy/UMLS entirely without uninstalling it. Useful for low-RAM
 # machines and for the new --skip-umls-* CLI flags, which set this env var
 # before calling into the pipeline.
@@ -161,6 +170,71 @@ def get_linker():
 
 def is_available() -> bool:
     return bool(_AVAILABLE)
+
+
+def get_small_nlp(model_name: str = "en_core_sci_sm"):
+    """Return the cached small scispaCy model (no UMLS linker attached).
+
+    Use this for sentence segmentation, entity-presence checks, and other
+    lightweight NLP work that doesn't need the UMLS knowledge base.
+    The full linker-attached `get_nlp()` loads `en_core_sci_lg` plus the
+    multi-GB UMLS KB; routing every site through that would waste memory.
+
+    One singleton per model name. Thread-safe; concurrent first-callers
+    block on the load lock. Returns ``None`` and logs a warning when the
+    model is not installed (callers should treat as opt-out — see
+    `PipelineRunner._get_nlp` for the falsy-sentinel pattern).
+
+    Disable kill-switch: `NLP_HISTO_DISABLE_UMLS=1` also disables this
+    loader so memory-constrained environments stay consistent across all
+    scispaCy entry-points.
+    """
+    if umls_disabled():
+        logger.info(
+            "Small scispaCy loader disabled via $%s — returning None",
+            _DISABLE_ENV,
+        )
+        return None
+
+    cached = _SMALL_NLP_BY_NAME.get(model_name)
+    if cached is not None:
+        return cached
+
+    with _SMALL_NLP_LOCK:
+        cached = _SMALL_NLP_BY_NAME.get(model_name)
+        if cached is not None:                # raced another loader
+            return cached
+        _log_memory(f"before small scispaCy load ({model_name})")
+        try:
+            import spacy  # type: ignore
+            # No linker pipe attached — `get_small_nlp` is the cheap variant.
+            # Disable parser/attribute_ruler/lemmatizer to match the heavy
+            # `get_nlp()` config so sentence segmentation behaviour stays
+            # consistent across the two singletons.
+            nlp = spacy.load(
+                model_name,
+                disable=["parser", "attribute_ruler", "lemmatizer"],
+            )
+            # Re-enable the sentencizer explicitly — without the parser
+            # spaCy needs a senter component to produce `.sents`.
+            if "senter" not in nlp.pipe_names and "sentencizer" not in nlp.pipe_names:
+                nlp.add_pipe("sentencizer")
+            _SMALL_NLP_BY_NAME[model_name] = nlp
+            logger.info("Small scispaCy loaded: %s (one-time, all sites reuse)", model_name)
+            _log_memory(f"after small scispaCy load ({model_name})")
+            return nlp
+        except OSError as exc:
+            logger.warning(
+                "Small scispaCy model %r not installed — callers will fall back: %s",
+                model_name, exc,
+            )
+            return None
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "Small scispaCy load failed for %r — callers will fall back: %s",
+                model_name, exc,
+            )
+            return None
 
 
 # Test / reset hook (do not call from production code).

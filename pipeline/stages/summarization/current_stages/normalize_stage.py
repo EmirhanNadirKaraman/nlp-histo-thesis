@@ -283,6 +283,7 @@ def _dedup_key(
     subject: str | None,
     outcome: str | None,
     relation_type: RelationTypeEnum,
+    direction: DirectionEnum | None,
 ) -> str | None:
     """
     Return a grouping key for conditional dedup, or None if any field that
@@ -291,6 +292,11 @@ def _dedup_key(
     text_element_id=None means the evidence string was missing or malformed;
     treat as ungroupable to avoid merging unrelated findings under a shared
     sentinel value.
+
+    direction is part of the key so opposite-polarity findings extracted from
+    the same sentence stay separate — otherwise a positive and negative claim
+    on the same te_id collapse silently and CONTRADICT can never surface at
+    RELATE.
     """
     if (
         subject is None
@@ -299,7 +305,8 @@ def _dedup_key(
         or text_element_id is None
     ):
         return None
-    return f"{text_element_id}|{subject}|{outcome}|{relation_type.value}"
+    dir_key = direction.value if direction is not None else "none"
+    return f"{text_element_id}|{subject}|{outcome}|{relation_type.value}|{dir_key}"
 
 
 # ── Source span extraction ─────────────────────────────────────────────────────
@@ -407,7 +414,7 @@ class NormalizeStage:
         ungroupable: list[tuple[Finding, str | None, str | None]] = []
 
         for f, te_id, subj_cui, out_cui in normalized:
-            key = _dedup_key(te_id, f.subject_entity, f.outcome_entity, f.relation_type)
+            key = _dedup_key(te_id, f.subject_entity, f.outcome_entity, f.relation_type, f.direction)
             if key is None:
                 ungroupable.append((f, subj_cui, out_cui))
             else:

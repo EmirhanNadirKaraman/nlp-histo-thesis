@@ -348,13 +348,15 @@ def main():
              "UMLS KB — useful on memory-constrained machines."
     )
     parser.add_argument(
-        "--health-check", action="store_true",
+        "--health-check", default="yes", choices=["yes", "no"],
+        metavar="yes|no",
         help="Run startup health checks before any LLM call: NLI model load, "
-             "UMLS singleton, embedding provider, and (if --no-db unset) a "
-             "trivial DB query. Logs an aggregated OK/FAIL summary. Adds "
-             "~30-60s on first run while the NLI model downloads. Useful to "
-             "diagnose silent fallbacks (Issue G) before paying for a "
-             "calibration cascade."
+             "UMLS singleton, embedding provider, and a trivial DB query. "
+             "Logs an aggregated OK/FAIL summary so silent fallbacks (Issue G, "
+             "B-019/B-020-class) surface before paying for a cascade. Adds "
+             "~90s on first run (UMLS + NLI model load); subsequent runs in "
+             "the same process are fast. Default 'yes' for safety; set 'no' "
+             "for fast single-paper dev iteration."
     )
     parser.add_argument(
         "--profile", required=True, metavar="NAME",
@@ -387,10 +389,10 @@ def main():
         _os.environ["NLP_HISTO_SKIP_UMLS_ENRICHMENT"] = "1"
         logger.info("UMLS enrichment (post-CANONICALIZE) skipped via --skip-umls-enrichment")
 
-    if args.health_check:
+    if args.health_check == "yes":
         # Run BEFORE any LLM call so operators see component-level health
-        # before paying for a cascade. Skipped by default to keep cheap
-        # smoke runs lightweight.
+        # before paying for a cascade. Default-on for safety; pass
+        # `--health-check no` for fast single-paper dev iteration.
         from pipeline.stages.summarization.health_checks import run_health_checks
         # DB probe needs a real connection; reuse the run-side helper.
         try:
@@ -401,9 +403,12 @@ def main():
         if any(not r.ok for r in results):
             logger.warning(
                 "Health checks reported %d failure(s) — proceeding anyway. "
-                "Inspect the WARNING block above to decide whether to abort.",
+                "Inspect the WARNING block above to decide whether to abort. "
+                "Use --health-check no to skip this on future runs.",
                 sum(1 for r in results if not r.ok),
             )
+    else:
+        logger.info("Skipping startup health checks (--health-check no)")
 
     if args.from_selection:
         pmcids = _load_selection_yaml(Path(args.from_selection))

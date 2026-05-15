@@ -101,7 +101,11 @@ def build_picture_pages(elements) -> set:
 
 
 def merge_rects(rects) -> list:
-    """Iteratively union overlapping fitz.Rect objects into minimal covering rectangles."""
+    """Iteratively union any-intersecting fitz.Rect objects into minimal covering rectangles.
+
+    Merges on `Rect.intersects` (boolean overlap), not on IOU threshold. Any
+    non-zero overlap absorbs the smaller rect into the union.
+    """
     if not rects:
         return []
     merged = [r for r in rects if not r.is_empty]
@@ -466,10 +470,14 @@ def extract_text(
     ref_list_skip = _reference_list_skip_set(elements)
 
     hierarchy  = {}
-    by_path    = defaultdict(list)
     # Per-path set of already-seen texts used to drop Docling duplicates and
     # same-named-section collisions before the stitcher ever sees them.
     path_seen: dict = defaultdict(set)
+    # Arrival-order log of (path_str, text). Output rows are emitted by walking
+    # this list and stitching only contiguous same-path runs — re-grouping by
+    # path globally would reorder a section's second half to follow its first
+    # (B-040: sub-section returns to parent get teleported into one block).
+    ordered: list = []
     n_skipped  = 0
     n_deduped  = 0
 
@@ -504,11 +512,18 @@ def extract_text(
                 n_deduped += 1
                 continue
             path_seen[path_str].add(text)
-            by_path[path_str].append(text)
+            ordered.append((path_str, text))
 
     stitcher = ContextAwareStitcher()
     rows = []
-    for path_str, texts in by_path.items():
+    i = 0
+    while i < len(ordered):
+        path_str = ordered[i][0]
+        j = i
+        texts: list = []
+        while j < len(ordered) and ordered[j][0] == path_str:
+            texts.append(ordered[j][1])
+            j += 1
         path_list = [] if path_str == 'Root' else [p.strip() for p in path_str.split(' > ')]
         depth     = len(path_list)
         filtered  = [t for t in texts if is_relevant_para(t, nlp)] if pre_filter else texts
@@ -521,6 +536,7 @@ def extract_text(
             for para in stitcher.reconstruct_paragraphs(inputs):
                 if para.strip():
                     rows.append((path_str, path_list, depth, para))
+        i = j
     return rows, n_skipped + n_deduped
 
 

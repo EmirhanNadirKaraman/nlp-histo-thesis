@@ -47,14 +47,18 @@ def _compute_scope_fields(
     Returns
     -------
     (is_conflicted, study_coverage) where:
-      is_conflicted  — True if the bin contains ≥2 distinct non-'unclear' directions.
+      is_conflicted  — True if the bin contains ≥2 distinct polarity-bearing
+                       directions. 'unclear' (model couldn't decide) and
+                       'no_direction' (polarity doesn't apply — demographic
+                       facts, neutral counts) are both excluded, matching the
+                       semantic split established in MAP enum coercion.
       study_coverage — "single_study" | "multi_study" | "unknown" based on PMCID coverage,
                        computed independently of is_conflicted so both signals are preserved.
     """
     bin_directions: set[str] = set()
     for nf in member_nfs:
         d = nf.direction.value if nf.direction is not None else "unclear"
-        if d not in ("unclear", "None"):
+        if d not in ("unclear", "no_direction"):
             bin_directions.add(d)
     is_conflicted = len(bin_directions) >= 2
 
@@ -89,13 +93,16 @@ def _split_by_direction(
     """
     Split member NormalFindings by direction.
 
-    If the group has only one direction (or all 'unclear'), return one bin.
-    If multiple directions exist, return one bin per non-'unclear' direction
-    (findings with direction=None/'unclear' are added to the largest bin).
+    Polarity-bearing directions (`positive`, `negative`, `absent`, `partial`)
+    each get their own bin. `unclear` (model couldn't decide) and
+    `no_direction` (polarity doesn't apply) are both treated as non-polarity:
+    if no polarity-bearing direction exists they collapse into a single
+    `"unclear"` bin; if one polarity-bearing direction exists they join it;
+    if several polarity-bearing directions exist they join the largest.
     """
     non_unclear = {
         d: [] for d, c in group.direction_counts.items()
-        if d not in ("unclear", "None") and c > 0
+        if d not in ("unclear", "no_direction") and c > 0
     }
     unclear_nfs: list[NormalFinding] = []
 

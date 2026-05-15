@@ -458,8 +458,14 @@ class MapStage:
             "text": _format_sentences(chunk),
         }
 
-        # Level 1: all voter chains in parallel (one thread per chain)
-        voters, voter_timings = self._run_voters(inp)
+        # Level 1: all voter chains in parallel (one thread per chain).
+        # _run_voters returns a length-N list aligned to voter_specs, with
+        # None for any voter that failed its API call. The survivor list
+        # below filters Nones but keeps a survivor → original-index map so
+        # downstream producer attribution stays correct (B-041).
+        voters_full, voter_timings = self._run_voters(inp)
+        survivor_indices = [i for i, v in enumerate(voters_full) if v is not None]
+        voters: list[AuditableSummary] = [voters_full[i] for i in survivor_indices]
 
         # Slot to hold the agreement bundle and grounding contexts for trace building
         _trace_bundle = None
@@ -477,6 +483,7 @@ class MapStage:
             source_text=inp["text"],
             agreement=self._agreement,
             router=self._router,
+            voter_indices=survivor_indices,
         )
         _trace_bundle = l1_outcome.agreement_bundle
         if l1_outcome.routing_decision is not None:
@@ -513,9 +520,11 @@ class MapStage:
             # evaluate_chunk for the L2 decision so the sync/batch surface
             # stays identical at each level.
             logger.debug("Chunk %s: L1 escalating to L2 (no router)", chunk_id)
-            l2_voters, l2_timings = self._run_voters(
+            l2_full, l2_timings = self._run_voters(
                 inp, self._level2_voter_chains, level="L2",
             )
+            l2_survivor_indices = [i for i, v in enumerate(l2_full) if v is not None]
+            l2_voters: list[AuditableSummary] = [l2_full[i] for i in l2_survivor_indices]
             l2_outcome = evaluate_chunk(
                 l2_voters,
                 chunk=chunk,
@@ -523,6 +532,7 @@ class MapStage:
                 source_text=inp["text"],
                 agreement=self._agreement,
                 router=None,
+                voter_indices=l2_survivor_indices,
             )
             _trace_bundle = l2_outcome.agreement_bundle
             voters = l2_voters
@@ -1001,12 +1011,15 @@ class MapStage:
 
     def _run_voters(
         self, inp: dict, chains: list | None = None, level: str = "L1"
-    ) -> tuple[list[AuditableSummary], dict[int, float | None]]:
-        """Invoke each voter chain concurrently; return results and per-voter latency.
+    ) -> tuple[list[AuditableSummary | None], dict[int, float | None]]:
+        """Invoke each voter chain concurrently; return per-voter results + latency.
 
-        A single voter chain exception is logged and that voter is excluded
-        from the result list.  The router handles the reduced count correctly
-        (N_eligible < 2 → ESCALATE or REJECT as appropriate).
+        Returns a length-N list aligned to the input ``chains`` (original voter
+        index): a successful call lands at its slot, a failed call leaves ``None``.
+        Preserving the original-index mapping is load-bearing for downstream
+        producer attribution — see B-041. The caller filters Nones when handing
+        the list to agreement / router, but tracks the survivor → original
+        mapping alongside.
 
         Parameters
         ----------
@@ -1180,7 +1193,7 @@ class MapStage:
                 pmcid, chunk_id, level,
             )
 
-        return [r for r in results if r is not None], timings  # type: ignore[return-value]
+        return results, timings
 
     @property
     def last_escalation_counts(self) -> dict[str, int]:

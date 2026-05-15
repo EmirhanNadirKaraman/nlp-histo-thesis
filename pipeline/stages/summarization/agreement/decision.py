@@ -50,21 +50,20 @@ def evaluate_chunk(
     source_text: str,
     agreement,                          # AgreementChecker
     router=None,                        # MapOutputRouter | None
+    voter_indices: list[int] | None = None,
 ) -> ChunkOutcome:
     """Decide whether one cascade level's voters agree, and select the best.
 
-    When ``router`` is provided, it runs schema + provenance validation per
-    voter, drops UNUSABLE voters, and runs the agreement gate only over the
-    eligible subset. Otherwise the agreement scorer is invoked directly over
-    all voters.
+    ``voters`` is the survivor list (no None slots). ``voter_indices`` maps
+    each survivor back to its original voter-spec index — `voter_indices[i]`
+    is the spec index of `voters[i]`. When None, identity mapping is assumed
+    (caller passed all voters in original order with no drops).
 
-    Returns a ``ChunkOutcome`` with:
-      - keep=True and best populated when the gate decides KEEP;
-      - keep=False and best=None otherwise (the caller is responsible for
-        whatever escalation makes sense at its level).
-
-    An empty ``voters`` list short-circuits to keep=False with no bundle
-    so callers don't have to special-case it.
+    ``ChunkOutcome.valid_voter_indices`` is always populated in
+    ORIGINAL-index space (router maps its internal survivor-indices back
+    through ``voter_indices`` before returning). This makes
+    ``ChunkOutcome.valid_voter_indices`` the single source of truth for
+    downstream producer attribution — see B-041.
     """
     if not voters:
         return ChunkOutcome(
@@ -74,6 +73,13 @@ def evaluate_chunk(
             routing_decision=None,
         )
 
+    if voter_indices is None:
+        voter_indices = list(range(len(voters)))
+    elif len(voter_indices) != len(voters):
+        raise ValueError(
+            f"voter_indices length {len(voter_indices)} != voters length {len(voters)}"
+        )
+
     if router is not None:
         decision = router.route(
             voters,
@@ -81,26 +87,26 @@ def evaluate_chunk(
             pmcid=pmcid,
             source_text=source_text,
         )
+        # decision.valid_voter_indices are SURVIVOR-list indices from the router's
+        # perspective; map back to original-spec indices via voter_indices.
+        router_survivor_indices = decision.valid_voter_indices or list(range(len(voters)))
+        mapped_indices = [voter_indices[i] for i in router_survivor_indices]
         if decision.decision == ChunkDecision.KEEP:
-            valid = (
-                [voters[i] for i in decision.valid_voter_indices]
-                if decision.valid_voter_indices
-                else voters
-            )
+            valid = [voters[i] for i in router_survivor_indices]
             best = agreement.best(valid, bundle=decision.agreement_details)
             return ChunkOutcome(
                 keep=True,
                 best=best,
                 agreement_bundle=decision.agreement_details,
                 routing_decision=decision,
-                valid_voter_indices=decision.valid_voter_indices,
+                valid_voter_indices=mapped_indices,
             )
         return ChunkOutcome(
             keep=False,
             best=None,
             agreement_bundle=decision.agreement_details,
             routing_decision=decision,
-            valid_voter_indices=decision.valid_voter_indices,
+            valid_voter_indices=mapped_indices,
         )
 
     bundle = agreement.compute(voters, source_text=source_text)
@@ -111,12 +117,14 @@ def evaluate_chunk(
             best=best,
             agreement_bundle=bundle,
             routing_decision=None,
+            valid_voter_indices=list(voter_indices),
         )
     return ChunkOutcome(
         keep=False,
         best=None,
         agreement_bundle=bundle,
         routing_decision=None,
+        valid_voter_indices=list(voter_indices),
     )
 
 
@@ -189,26 +197,28 @@ def producer_from_outcome(
 ) -> tuple[str, str] | None:
     """Resolve the (provider, model) of the voter selected by ``outcome``.
 
-    Handles both router (best_index indexes the eligible subset) and
-    direct-agreement (best_index indexes the original voter list) paths.
-    Returns None when the outcome did not select a best voter or when
-    ``voter_specs`` is missing/short.
+    Uses ``outcome.valid_voter_indices`` as the single source of truth — these
+    are always ORIGINAL voter-spec indices (router maps its survivor-indices
+    back inside ``evaluate_chunk``). ``bundle.best_index`` indexes into
+    ``valid_voter_indices``; one lookup gives the original spec index.
     """
     if voter_specs is None:
         return None
     bundle = outcome.agreement_bundle
-    rd = outcome.routing_decision
     best_idx = bundle.best_index if bundle is not None else None
     if best_idx is None:
         return None
-    if rd is not None and rd.valid_voter_indices is not None:
-        if 0 <= best_idx < len(rd.valid_voter_indices):
-            global_idx = rd.valid_voter_indices[best_idx]
-            if 0 <= global_idx < len(voter_specs):
-                return voter_specs[global_idx]
+    vvi = outcome.valid_voter_indices
+    if vvi is None:
+        # Legacy callers that didn't supply voter_indices to evaluate_chunk —
+        # best_idx is then already in original-spec space.
+        if 0 <= best_idx < len(voter_specs):
+            return voter_specs[best_idx]
         return None
-    if 0 <= best_idx < len(voter_specs):
-        return voter_specs[best_idx]
+    if 0 <= best_idx < len(vvi):
+        global_idx = vvi[best_idx]
+        if 0 <= global_idx < len(voter_specs):
+            return voter_specs[global_idx]
     return None
 
 
@@ -255,16 +265,21 @@ def make_decision_record(
     best_idx = bundle.best_index if bundle is not None else None
     selected_provider: str | None = None
     selected_model: str | None = None
-    if outcome.keep and best_idx is not None and voter_specs is not None:
-        # Router path: best_idx indexes into the eligible subset; map back
-        # to the original voter index so the provider/model is accurate.
-        if rd is not None and rd.valid_voter_indices is not None:
-            if 0 <= best_idx < len(rd.valid_voter_indices):
-                global_idx = rd.valid_voter_indices[best_idx]
-                if 0 <= global_idx < len(voter_specs):
-                    selected_provider, selected_model = voter_specs[global_idx]
-        elif 0 <= best_idx < len(voter_specs):
-            selected_provider, selected_model = voter_specs[best_idx]
+    # Original-spec index that bundle.best_index resolves to. Used both for the
+    # producer/model lookup and for the best_voter_index record field (which is
+    # documented as "index into the original voter list").
+    best_voter_index_original: int | None = None
+    vvi = outcome.valid_voter_indices
+    if best_idx is not None:
+        if vvi is not None and 0 <= best_idx < len(vvi):
+            best_voter_index_original = vvi[best_idx]
+        elif vvi is None:
+            # Legacy path: caller didn't supply voter_indices; best_idx is
+            # already original-spec.
+            best_voter_index_original = best_idx
+    if outcome.keep and best_voter_index_original is not None and voter_specs is not None:
+        if 0 <= best_voter_index_original < len(voter_specs):
+            selected_provider, selected_model = voter_specs[best_voter_index_original]
 
     eligible_count: int | None = None
     if rd is not None and rd.valid_voter_indices is not None:
@@ -281,7 +296,7 @@ def make_decision_record(
         gate_origin=gate_origin,
         reason_codes=reason_codes,
         deferral_score=deferral_score,
-        best_voter_index=best_idx,
+        best_voter_index=best_voter_index_original,
         selected_provider=selected_provider,
         selected_model=selected_model,
         cascade_signature=cascade_signature,

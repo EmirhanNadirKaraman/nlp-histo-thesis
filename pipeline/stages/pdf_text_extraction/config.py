@@ -122,7 +122,6 @@ class MaskingConfig:
     mask_figures: bool = True
     mask_header_footer_sidebar: bool = True
     merge_overlapping_boxes: bool = True
-    merge_iou_threshold: float = 0.3
     expand_box_px: int = 2  # small padding to avoid glyph remnants
 
 

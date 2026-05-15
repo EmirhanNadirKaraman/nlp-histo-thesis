@@ -1,0 +1,111 @@
+# Unified pipeline configuration.
+#
+# Two top-level keys map onto PipelineConfig (PDF extraction) and
+# SummarizationConfig (summarisation). Any field omitted here falls back
+# to the dataclass default in:
+#   - pipeline/stages/pdf_text_extraction/config.py
+#   - pipeline/stages/summarization/config.py
+#
+# Load with:
+#   from pipeline.config_loader import load_config
+#   pdf_cfg, sum_cfg = load_config("configs/run.yaml")
+
+pdf_extraction:
+  paths:
+    output_root: out
+    files_root: files
+
+  docling:
+    do_table_structure: true
+    do_ocr: false
+    images_scale: 2.0
+    accelerator_device: cpu
+    timeout_sec: 300            # advisory only — not enforced today (B-035)
+
+  tatr:
+    threshold: 0.99
+    device: cpu
+    model_name: microsoft/table-transformer-detection
+
+  masking:
+    enabled: true
+    mask_tables: true
+    mask_figures: true
+    mask_header_footer_sidebar: true
+    merge_overlapping_boxes: true
+    expand_box_px: 2
+
+  filtering:
+    apply_ner_filtering: true
+    apply_paragraph_relevance_filtering: true
+    # NOTE: fix_ligatures / remove_reference_markers / min_paragraph_chars are
+    # currently dead knobs (B-030). Leaving them out of this template until wired.
+
+  cropping:
+    save_figure_crops: true
+    save_table_crops: true
+    image_format: png
+    dpi: 200
+    min_figure_pts: 50
+
+  text:
+    write_raw_text: true
+    pre_filter_relevance: true
+    # Other fields in TextAssemblyConfig are dead (B-031); omitted.
+
+  visualization:
+    enabled: true
+    save_tatr_visualization: true
+    save_combined_visualization: true
+
+  database:
+    enabled: false              # set true to ingest; db_url auto-loaded from .env
+    # db_url: postgresql://...  # uncomment to override
+
+  runtime:
+    log_level: INFO             # DEBUG | INFO | WARNING | ERROR
+    num_workers: 1              # used by ParallelBatchRunner via runner.main
+    skip_blacklisted: true
+    skip_existing_in_db: true
+    save_error_traces: true
+    seed: 42                    # not yet consumed (B-027 follow-up)
+
+  two_pass:
+    enabled: true               # pixel-render ghost-text detection
+
+  table_detector: hybrid        # tatr | docling | hybrid | vlm
+
+summarization:
+  map:
+    theta: 0.8
+    reject_theta: 0.2
+    chunk_size: 10
+    chunk_overlap: 2
+    chunk_workers: 5
+
+  grounding:
+    threshold: null             # null disables the entailment filter
+
+  relate:
+    entailment_threshold: 0.50
+    contradiction_threshold: 0.50
+
+  resolve:
+    grounding_weight: 0.60
+    grounding_default: 0.50
+    finding_bonus_max: 0.10
+    finding_bonus_scale: 5
+    support_boost_per_rel: 0.08
+    support_boost_cap: 0.20
+    single_study_pen: 0.10
+    contradict_pen_per_rel: 0.15
+    contradict_pen_cap: 0.30
+    no_rel_grounding_weight: 0.80
+    no_rel_finding_bonus_max: 0.15
+    no_rel_single_study_pen: 0.05
+
+  cost:
+    enable_cost_report: true
+    write_usage_jsonl: true
+
+  contradiction_similarity_threshold: 0.7

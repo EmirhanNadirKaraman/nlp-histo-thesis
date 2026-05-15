@@ -1411,14 +1411,21 @@ class BatchSummarizationRunner:
             m["output"] += res.output_tokens
 
         # ── Pass 1: parse all voter outputs for every chunk ───────────────────
-        chunk_voters: dict[str, list[AuditableSummary]] = {}
+        # chunk_voters[chunk_id] is a length-N list aligned to current_voters
+        # (original voter-spec index): slot vi holds the parsed result for that
+        # voter, or None when the batch job for that voter was missing/unparseable.
+        # Preserving the index mapping is load-bearing for producer attribution
+        # at evaluate_chunk time — see B-041.
+        chunk_voters: dict[str, list[AuditableSummary | None]] = {}
         for chunk_id in targets:
             results = by_chunk.get(chunk_id, [])
             results_sorted = sorted(results, key=lambda r: r.custom_id)
-            voters: list[AuditableSummary] = []
+            voters_full: list[AuditableSummary | None] = [None] * len(current_voters)
             for res in results_sorted:
                 vi_part = res.custom_id.split("__")[-1]
                 vi = int(vi_part) if vi_part.isdigit() else 0
+                if not (0 <= vi < len(voters_full)):
+                    continue
                 strip = strip_flags[vi] if vi < len(strip_flags) else False
                 parsed = parse_result(res, strip_thinking=strip)
                 if parsed is not None:
@@ -1441,8 +1448,8 @@ class BatchSummarizationRunner:
                             },
                         )
                         parsed = parsed.model_copy(update={"chunk_id": chunk_id})
-                    voters.append(parsed)
-            chunk_voters[chunk_id] = voters
+                    voters_full[vi] = parsed
+            chunk_voters[chunk_id] = voters_full
 
         # ── Pass 2: batch-embed all unique claims upfront ─────────────────────
         from ..agreement.embedding import _claims as _extract_claims
@@ -1516,7 +1523,9 @@ class BatchSummarizationRunner:
         escalated: list[str] = []
 
         for chunk_id in targets:
-            voters = chunk_voters[chunk_id]
+            voters_full = chunk_voters[chunk_id]
+            survivor_indices = [i for i, v in enumerate(voters_full) if v is not None]
+            voters: list[AuditableSummary] = [voters_full[i] for i in survivor_indices]
 
             if not voters:
                 logger.warning("[%s] Chunk %s: all %s voters failed — escalating", pmcid, chunk_id, level)
@@ -1534,6 +1543,7 @@ class BatchSummarizationRunner:
                 source_text=source_text,
                 agreement=agreement,
                 router=router,
+                voter_indices=survivor_indices,
             )
 
             # Voter-count regression guard — see B-019/B-020. A shortfall

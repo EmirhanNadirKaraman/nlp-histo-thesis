@@ -59,14 +59,14 @@ def _group_id(
     outcome: str,
     relation_type: str,
     category: str = "",
-    subject_cui: str | None = None,
-    outcome_cui: str | None = None,
     pmcid: str = "",
 ) -> str:
-    subj_key = subject_cui if subject_cui else subject
-    out_key = outcome_cui if outcome_cui else outcome
+    # Keyed on the normalized entity STRING only — never the CUI. `NormalizeStage`
+    # canonicalises subject/outcome to a stable string regardless of whether UMLS
+    # linking produced a CUI; mixing CUI with string here split otherwise-identical
+    # findings into separate buckets whenever CUI population was partial (B-022).
     return (
-        f"GRP_{_sha8(pmcid)}_{_sha8(subj_key)}_{_sha8(out_key)}"
+        f"GRP_{_sha8(pmcid)}_{_sha8(subject)}_{_sha8(outcome)}"
         f"_{relation_type}_{_sha8(category)}"
     )
 
@@ -137,7 +137,6 @@ class GroupStage:
                 )
             key = _group_id(  # type: ignore[arg-type]
                 nf.subject_entity, nf.outcome_entity, nf.relation_type.value, nf.category,
-                subject_cui=nf.subject_cui, outcome_cui=nf.outcome_cui,
                 pmcid=pmcid,
             )
             buckets[key].append(nf)

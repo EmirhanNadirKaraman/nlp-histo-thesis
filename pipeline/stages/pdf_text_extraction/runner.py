@@ -194,13 +194,21 @@ class PipelineRunner:
             or self._cfg.filtering.apply_paragraph_relevance_filtering
         )
         if self._nlp is None and needs_nlp:
+            # B-029 fix: route through the process-wide small-model singleton
+            # in summarization/umls_resources rather than calling spacy.load
+            # directly. Prevents double-loading when this pipeline runs in the
+            # same process as the summarisation pipeline.
             try:
-                import spacy  # type: ignore
-                self._nlp = spacy.load("en_core_sci_sm")
-                logger.info("scispaCy model loaded.")
-            except (ImportError, OSError) as exc:
-                logger.warning("scispaCy not available — NER features disabled: %s", exc)
-                self._nlp = False  # falsy sentinel so we don't retry
+                from pipeline.stages.summarization.umls_resources import get_small_nlp
+                self._nlp = get_small_nlp("en_core_sci_sm")
+                if self._nlp is None:
+                    logger.warning("scispaCy not available — NER features disabled")
+                    self._nlp = False  # falsy sentinel so we don't retry
+                else:
+                    logger.info("scispaCy small model in use (via shared singleton).")
+            except ImportError as exc:
+                logger.warning("scispaCy not importable — NER features disabled: %s", exc)
+                self._nlp = False
         return self._nlp or None
 
     def _get_visualizer(self):
@@ -524,8 +532,6 @@ class PipelineRunner:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-
     from pipeline.stages.pdf_text_extraction.config import PipelineConfig
 
     # ── Configuration ──────────────────────────────────────────────────────────
@@ -536,6 +542,8 @@ def main() -> None:
     cfg.two_pass.enabled = True  # use two-pass ghost-text detection instead of standard masking
     cfg.runtime.skip_existing_in_db = True
     cfg.prepare()
+
+    logging.basicConfig(level=cfg.runtime.log_level.value, format="%(asctime)s [%(levelname)s] %(message)s")
 
     # ── Single document ────────────────────────────────────────────────────────
     # PipelineRunner(cfg).run_document(
@@ -553,7 +561,7 @@ def main() -> None:
 
     # ── Parallel batch (use pipeline/stages/pdf_text_extraction/batch.py instead) ────────
     from pipeline.stages.pdf_text_extraction.batch import ParallelBatchRunner
-    ParallelBatchRunner(cfg, max_workers=4).run(
+    ParallelBatchRunner(cfg, max_workers=cfg.runtime.num_workers).run(
         pdf_dir=Path("files/organized_pdfs"),
     )
 
