@@ -42,6 +42,12 @@ logging.basicConfig(
 logger = logging.getLogger("run_paper")
 
 
+# Single source of truth for the batch-poll interval default. Used by the
+# argparse default and by both batch-runner function signatures so they
+# cannot drift apart again (see B-028 / Tier 1 config audit, 2026-05-15).
+DEFAULT_POLL_INTERVAL_SEC: int = 60
+
+
 # ── Sync runner ────────────────────────────────────────────────────────────────
 
 
@@ -328,8 +334,8 @@ def main():
                         help="Process at most N MAP chunks (useful for cheap iteration)")
     parser.add_argument("--start-chunk",   type=int, default=0, metavar="K",
                         help="Start processing from chunk K (0-based, default 0)")
-    parser.add_argument("--poll-interval", type=int, default=60, metavar="S",
-                        help="Seconds between batch status polls (default: 60)")
+    parser.add_argument("--poll-interval", type=int, default=DEFAULT_POLL_INTERVAL_SEC, metavar="S",
+                        help=f"Seconds between batch status polls (default: {DEFAULT_POLL_INTERVAL_SEC})")
     parser.add_argument("--artifact-root", default=None, metavar="PATH",
                         help="Enable filesystem persistence under this directory "
                              "(sync mode only). Disabled when omitted.")
@@ -784,7 +790,7 @@ def _save_escalation_report(stats: list[dict], output_dir: Path) -> None:
 
 def _run_all_batch(
     pmcids: list[str],
-    poll_interval: int = 20,
+    poll_interval: int = DEFAULT_POLL_INTERVAL_SEC,
     *,
     profile_name: str | None = None,
     artifact_root: Path | None = None,
@@ -882,7 +888,7 @@ def _run_all_batch(
 
 def _run_batch(
     pmcid: str,
-    poll_interval: int = 60,
+    poll_interval: int = DEFAULT_POLL_INTERVAL_SEC,
     *,
     profile_name: str | None = None,
     artifact_root: Path | None = None,

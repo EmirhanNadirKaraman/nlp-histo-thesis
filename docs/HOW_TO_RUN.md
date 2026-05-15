@@ -194,3 +194,74 @@ SELECT canonical_id, subject_entity, outcome_entity, relation_type, predicate_te
 FROM sum_canonical_rules
 WHERE pmcid LIKE 'PMC7150310%';"
 ```
+
+---
+
+## 9. Per-stage output cache (B-027)
+
+`runtime.skip_existing_outputs` reuses cached outputs for the three
+expensive non-Docling stages of the PDF pipeline:
+
+* **Stage 2** — table detection (`out/stage_cache/table_detection/<pmcid>.json`)
+* **Stage 5** — artifact filtering (`out/stage_cache/filtering/<pmcid>.json`)
+* **Stage 6** — text assembly (`out/stage_cache/text_assembly/<pmcid>.json`)
+
+Each artifact has a `<pmcid>.hash` sidecar carrying the pipeline-config
+hash. A cache hit requires both files to exist AND the sidecar to match
+the current hash AND the loader to parse cleanly. Final writers (steps
+7/8) and Docling extraction (steps 1/4 — already cached at the Docling
+layer) always run.
+
+```yaml
+# configs/run.yaml
+pdf_extraction:
+  runtime:
+    skip_existing_outputs: true   # opt in
+    seed: 42                      # int | None — None opts out of seeding
+```
+
+### Clearing the stage cache
+
+The stage cache survives most output deletions. Removing
+`out/text/<pmcid>.txt`, `out/json/<pmcid>_media.json`, `out/figures/`,
+`out/tables/`, `out/docling_full/`, or `out/summaries/` does **not**
+invalidate the per-stage cache for stages 2/5/6. To force those stages
+to recompute, either flip the knob:
+
+```bash
+# In configs/run.yaml or PipelineConfig
+runtime.skip_existing_outputs: false
+```
+
+…or wipe the cache directory:
+
+```bash
+rm -rf out/stage_cache/
+```
+
+### When you MUST clear the stage cache
+
+The pipeline-config hash captures the dataclass-shaped config surface
+(Docling, TATR, masking, filtering, text assembly, two-pass, table
+detector, scispaCy model name). It does **not** capture:
+
+* **scispaCy / spaCy package or model-weights versions.** A
+  `pip install --upgrade scispacy` or a model upgrade can change
+  `nlp(text)` output without changing the model name string. After
+  any such upgrade, run `rm -rf out/stage_cache/`.
+* **Module-level constants** in cached stages (e.g.
+  `_NON_BIO_ENT_LABELS`, `_SIDEBAR_METADATA`, `MIN_ANCHOR_H` in
+  `parsers/layout_utils.py`). Contributors changing those should bump
+  `STAGE_CACHE_VERSION[<stage>]` in
+  `pipeline/stages/pdf_text_extraction/stage_cache.py` so the cache
+  invalidates automatically. The constant's docstring lists the
+  triggers.
+
+### Reproducibility scope
+
+`runtime.seed` initialises pipeline-owned RNGs (`random`, `numpy`,
+`torch`, `torch.cuda`) for any work the pipeline recomputes. Existing
+cache hits are reused as-is when the content config hash matches —
+seed does not affect deterministic cached artifacts. Determinism for
+external libraries (Docling, TATR, OCR engines, scispaCy) is not
+promised.

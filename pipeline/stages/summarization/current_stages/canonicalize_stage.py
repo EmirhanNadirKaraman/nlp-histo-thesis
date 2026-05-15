@@ -23,6 +23,8 @@ from ..models import (
     DirectionEnum,
     FindingGroup,
     NormalFinding,
+    POLARITY_BEARING_DIRS,
+    direction_value,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,42 +40,16 @@ def _canonical_rule_id(group_id: str, direction: str) -> str:
     return f"CR_{_sha8(group_id)}_{direction}"
 
 
-def _compute_scope_fields(
-    member_nfs: list[NormalFinding],
-) -> tuple[bool, str]:
-    """
-    Compute the two scope fields for a direction-bin.
-
-    Returns
-    -------
-    (is_conflicted, study_coverage) where:
-      is_conflicted  — True if the bin contains ≥2 distinct polarity-bearing
-                       directions. 'unclear' (model couldn't decide) and
-                       'no_direction' (polarity doesn't apply — demographic
-                       facts, neutral counts) are both excluded, matching the
-                       semantic split established in MAP enum coercion.
-      study_coverage — "single_study" | "multi_study" | "unknown" based on PMCID coverage,
-                       computed independently of is_conflicted so both signals are preserved.
-    """
-    bin_directions: set[str] = set()
-    for nf in member_nfs:
-        d = nf.direction.value if nf.direction is not None else "unclear"
-        if d not in ("unclear", "no_direction"):
-            bin_directions.add(d)
-    is_conflicted = len(bin_directions) >= 2
-
+def _study_coverage(member_nfs: list[NormalFinding]) -> str:
+    """Return ``"single_study" | "multi_study" | "unknown"`` for a direction bin."""
     all_pmcids: set[str] = set()
     for nf in member_nfs:
         all_pmcids.update(nf.pmcids)
-
     if len(all_pmcids) >= 2:
-        study_coverage = "multi_study"
-    elif len(all_pmcids) == 1:
-        study_coverage = "single_study"
-    else:
-        study_coverage = "unknown"
-
-    return is_conflicted, study_coverage
+        return "multi_study"
+    if len(all_pmcids) == 1:
+        return "single_study"
+    return "unknown"
 
 
 def _pick_best_predicate_deterministic(
@@ -87,44 +63,21 @@ def _pick_best_predicate_deterministic(
 
 
 def _split_by_direction(
-    group: FindingGroup,
     member_nfs: list[NormalFinding],
 ) -> list[tuple[str, list[NormalFinding]]]:
-    """
-    Split member NormalFindings by direction.
+    """Split member NormalFindings by direction — one bin per observed direction.
 
-    Polarity-bearing directions (`positive`, `negative`, `absent`, `partial`)
-    each get their own bin. `unclear` (model couldn't decide) and
-    `no_direction` (polarity doesn't apply) are both treated as non-polarity:
-    if no polarity-bearing direction exists they collapse into a single
-    `"unclear"` bin; if one polarity-bearing direction exists they join it;
-    if several polarity-bearing directions exist they join the largest.
+    B-049 redesign: no folding. Every direction observed in the group gets its
+    own bin, including ``unclear`` and ``no_direction``. RELATE / corpus_relate
+    skip pairs where either side's direction is non-polarity (`NON_POLARITY_DIRS`),
+    so emitting these bins as full CanonicalRules is lossless but inert in the
+    relation graph. Bin order is sorted for determinism — supersedes B-026.
     """
-    non_unclear = {
-        d: [] for d, c in group.direction_counts.items()
-        if d not in ("unclear", "no_direction") and c > 0
-    }
-    unclear_nfs: list[NormalFinding] = []
-
+    bins: dict[str, list[NormalFinding]] = {}
     for nf in member_nfs:
-        d = nf.direction.value if nf.direction is not None else "unclear"
-        if d in non_unclear:
-            non_unclear[d].append(nf)
-        else:
-            unclear_nfs.append(nf)
-
-    if not non_unclear:
-        # All findings are 'unclear' — single bin
-        return [("unclear", member_nfs)]
-
-    if len(non_unclear) == 1:
-        direction = next(iter(non_unclear))
-        return [(direction, member_nfs)]  # keep unclear in same bucket
-
-    # Mixed directions — assign unclear nfs to the largest direction bin
-    largest_dir = max(non_unclear, key=lambda d: len(non_unclear[d]))
-    non_unclear[largest_dir].extend(unclear_nfs)
-    return list(non_unclear.items())
+        d = direction_value(nf.direction)  # handles None → "unclear"
+        bins.setdefault(d, []).append(nf)
+    return sorted(bins.items())
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
@@ -179,8 +132,18 @@ class CanonicalizeStage:
                 )
                 continue
 
-            # Split by direction (may yield multiple bins)
-            direction_bins = _split_by_direction(group, member_nfs)
+            # Split by direction (B-049: one bin per observed direction, no folding)
+            direction_bins = _split_by_direction(member_nfs)
+
+            # Group-level is_conflicted (B-049): True iff this group emitted
+            # ≥2 polarity-bearing direction bins. Computed once per group and
+            # stamped on every CanonicalRule the group produces — this is NOT
+            # a within-rule property (within a bin the direction is uniform
+            # by construction). `partial` counts as polarity-bearing here per
+            # the current `POLARITY_BEARING_DIRS`; semantic question on
+            # `partial` is owned by B-025.
+            polarity_count = sum(1 for (d, _) in direction_bins if d in POLARITY_BEARING_DIRS)
+            group_is_conflicted = polarity_count >= 2
 
             for direction, bin_nfs in direction_bins:
                 if not bin_nfs:
@@ -197,7 +160,7 @@ class CanonicalizeStage:
                     candidates, group, direction, pmcid
                 )
 
-                is_conflicted, study_coverage = _compute_scope_fields(bin_nfs)
+                study_coverage = _study_coverage(bin_nfs)
 
                 # Aggregate evidence and PMCID lists
                 all_pmcids: list[str] = sorted(
@@ -217,7 +180,7 @@ class CanonicalizeStage:
                     relation_type=group.relation_type,
                     direction=DirectionEnum(direction) if direction in DirectionEnum._value2member_map_ else None,
                     predicate_text=predicate_text,
-                    is_conflicted=is_conflicted,
+                    is_conflicted=group_is_conflicted,
                     study_coverage=study_coverage,
                     category=group.category,
                     supporting_pmcids=all_pmcids,

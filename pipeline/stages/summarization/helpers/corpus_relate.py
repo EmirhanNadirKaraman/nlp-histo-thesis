@@ -71,7 +71,13 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ..models import CanonicalRule, CorpusRelation, Relation
+from ..models import (
+    CanonicalRule,
+    CorpusRelation,
+    NON_POLARITY_DIRS,
+    Relation,
+    direction_value,
+)
 from ..current_stages.relate_stage import (
     RelateStage,
     _norm_outcome,
@@ -119,6 +125,16 @@ def _should_compare_cross_paper(
          let unrelated outcomes through for has_feature / causes / etc.).
     """
     from ..models import RelationTypeEnum  # noqa: PLC0415
+
+    # B-049: skip any pair where either side carries a non-polarity direction
+    # (unclear / no_direction). Cross-paper rules can arrive from JSON-loaded
+    # metadata where direction is a raw string, or from legacy rows where
+    # direction is None — `direction_value` normalises both paths.
+    if (
+        direction_value(a.direction) in NON_POLARITY_DIRS
+        or direction_value(b.direction) in NON_POLARITY_DIRS
+    ):
+        return False, "non_polarity_direction"
 
     if a.category != b.category:
         return False, "category_mismatch"

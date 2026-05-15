@@ -1688,7 +1688,12 @@ class SummarizationRunner:
         runners agree on what counts as a config change (cascade composition,
         thresholds, schema/prompt versions). Any drift here re-opens B-007.
         """
-        from .models import MAP_SCHEMA_VERSION, MAP_PROMPT_VERSION  # noqa: PLC0415
+        from .models import (  # noqa: PLC0415
+            CANONICALIZE_DIRECTION_POLICY_VERSION,
+            MAP_AGREEMENT_POLICY_VERSION,
+            MAP_PROMPT_VERSION,
+            MAP_SCHEMA_VERSION,
+        )
         from .persistence import compute_pipeline_config_hash  # noqa: PLC0415
         cfg = self._cfg
         map_meta = self._map.run_metadata_summary() or {}
@@ -1711,6 +1716,14 @@ class SummarizationRunner:
             "router_single_voter_policy": (
                 self._router_single_voter_policy if self._enable_router else None
             ),
+            # B-049 behavioural stamp — bumps invalidate cached summaries when
+            # canonicalization semantics change.
+            "canonicalize_direction_policy_version": CANONICALIZE_DIRECTION_POLICY_VERSION,
+            # B-051 behavioural stamp — bumps invalidate cached summaries when
+            # the MAP agreement-gate hard-fail policy changes (e.g. polarity
+            # set widened). Companion to MAP_SCHEMA_VERSION which invalidates
+            # the chunk-level PipelineCache; both must move together.
+            "map_agreement_policy_version": MAP_AGREEMENT_POLICY_VERSION,
         }
         models = {
             "voter_models":        self._config_snapshot.get("voter_models"),

@@ -54,7 +54,9 @@ from ..interfaces.scoring import ChunkDecision
 from ..current_stages.map_stage import _format_sentences
 from ..models import (
     AuditableSummary,
+    CANONICALIZE_DIRECTION_POLICY_VERSION,
     Finding,
+    MAP_AGREEMENT_POLICY_VERSION,
     MAP_PROMPT_VERSION,
     MAP_SCHEMA_VERSION,
     MAP_STAGE_NAME,
@@ -860,6 +862,14 @@ class BatchSummarizationRunner:
             "router_single_voter_policy": (
                 self._router_single_voter_policy if self._enable_router else None
             ),
+            # B-049 behavioural stamp — bumps invalidate cached summaries when
+            # canonicalization semantics change.
+            "canonicalize_direction_policy_version": CANONICALIZE_DIRECTION_POLICY_VERSION,
+            # B-051 behavioural stamp — bumps invalidate cached summaries when
+            # the MAP agreement-gate hard-fail policy changes. Companion to
+            # MAP_SCHEMA_VERSION (chunk-level PipelineCache); both must move
+            # together to fully invalidate stale KEEP decisions.
+            "map_agreement_policy_version": MAP_AGREEMENT_POLICY_VERSION,
         }
         models = {
             "voter_models":        [v.model for v in self._l1],

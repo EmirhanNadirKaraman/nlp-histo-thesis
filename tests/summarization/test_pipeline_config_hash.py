@@ -141,3 +141,76 @@ def test_all_none_inputs_hash_deterministically():
     assert h1 == h2
     # And differs from anything with real content.
     assert h1 != compute_pipeline_config_hash(schema_version="x")
+
+
+# ── B-049: CANONICALIZE_DIRECTION_POLICY_VERSION participates in the hash ──────
+
+def test_canonicalize_direction_policy_version_changes_hash():
+    """The B-049 stamp must invalidate the cached summary hash when bumped.
+
+    Both runners (`runner.py`, `batch/runner.py`) include the constant under
+    the `thresholds["canonicalize_direction_policy_version"]` key. If a future
+    refactor accidentally drops the key, this test catches it.
+    """
+    base = _base_kwargs()
+    base["thresholds"]["canonicalize_direction_policy_version"] = (
+        "per_direction_no_folding_v2"
+    )
+    bumped = _base_kwargs()
+    bumped["thresholds"]["canonicalize_direction_policy_version"] = (
+        "fold_majority_v1"  # imaginary old/new value to prove sensitivity
+    )
+    assert compute_pipeline_config_hash(**base) != compute_pipeline_config_hash(**bumped)
+
+
+def test_canonicalize_direction_policy_constant_is_defined():
+    """The constant must live at the documented import location."""
+    from pipeline.stages.summarization.models import (
+        CANONICALIZE_DIRECTION_POLICY_VERSION,
+    )
+    assert isinstance(CANONICALIZE_DIRECTION_POLICY_VERSION, str)
+    assert CANONICALIZE_DIRECTION_POLICY_VERSION  # non-empty
+
+
+def test_map_agreement_policy_version_changes_hash():
+    """B-051 stamp must invalidate the cached summary hash when bumped.
+
+    Both runners (`runner.py`, `batch/runner.py`) include the constant under
+    the `thresholds["map_agreement_policy_version"]` key. This test pins the
+    contract so a future refactor that removes the key gets caught.
+    """
+    base = _base_kwargs()
+    base["thresholds"]["map_agreement_policy_version"] = "polarity_hard_fail_v1"
+    bumped = _base_kwargs()
+    bumped["thresholds"]["map_agreement_policy_version"] = (
+        "polarity_hard_fail_v2_with_absent"  # imaginary future value
+    )
+    assert compute_pipeline_config_hash(**base) != compute_pipeline_config_hash(**bumped)
+
+
+def test_map_agreement_policy_constant_is_defined():
+    """The constant must live at the documented import location."""
+    from pipeline.stages.summarization.models import MAP_AGREEMENT_POLICY_VERSION
+
+    assert isinstance(MAP_AGREEMENT_POLICY_VERSION, str)
+    assert MAP_AGREEMENT_POLICY_VERSION  # non-empty
+
+
+def test_both_runners_include_map_agreement_policy_version_in_thresholds():
+    """Regression guard: a runner that quietly drops the policy-version key
+    re-opens the stale-cache hole that B-051 cache-invalidation closes.
+    Greps the runner source for the literal key to enforce parity.
+    """
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[2]
+    sync_src = (repo / "pipeline/stages/summarization/runner.py").read_text()
+    batch_src = (repo / "pipeline/stages/summarization/batch/runner.py").read_text()
+    assert '"map_agreement_policy_version"' in sync_src, (
+        "SummarizationRunner._pipeline_config_hash must include "
+        "'map_agreement_policy_version' in the thresholds dict (B-051)."
+    )
+    assert '"map_agreement_policy_version"' in batch_src, (
+        "BatchSummarizationRunner._pipeline_config_hash must include "
+        "'map_agreement_policy_version' in the thresholds dict (B-051)."
+    )

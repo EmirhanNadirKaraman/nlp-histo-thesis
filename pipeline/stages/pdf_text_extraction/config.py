@@ -159,10 +159,6 @@ class VisualizationConfig:
 class DatabaseConfig:
     enabled: bool = False
     db_url: Optional[str] = None
-    schema: str = "public"
-    create_tables_if_missing: bool = False
-    batch_size: int = 100
-    connect_timeout_sec: int = 15
 
 
 @dataclass(slots=True)
@@ -177,7 +173,11 @@ class RuntimeConfig:
     skip_existing_outputs: bool = False     # skip individual stages whose output files already exist
     multi_source_crops: bool = False        # produce three media JSONs (docling / docling_recon / full)
     save_error_traces: bool = True
-    seed: int = 42
+    seed: int | None = 42
+    """Seed used by `PipelineRunner._seed_pipeline()` for `random`, `numpy`,
+    and (when installed) `torch` / `torch.cuda`. Set to ``None`` to opt out
+    of seeding entirely. Does not guarantee deterministic output from
+    external libraries (Docling, TATR, OCR, scispaCy)."""
     num_workers: int = 1
 
 

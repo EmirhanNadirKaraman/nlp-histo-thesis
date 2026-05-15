@@ -40,6 +40,12 @@ class ReasonCode(str, Enum):
     HIGH_AGREEMENT = "high_agreement"
     INSUFFICIENT_AGREEMENT = "insufficient_agreement"
     ESCALATED_DUE_TO_LOW_AGREEMENT = "escalated_due_to_low_agreement"
+    # B-051: structural hard-fail — comparable findings with opposite polarities.
+    # Emitted INSTEAD of the low-agreement codes when the embedding score was
+    # high but a polarity contradiction was detected; never emitted alongside
+    # them, so the audit trail unambiguously distinguishes "the voters agreed
+    # numerically but contradicted structurally" from "the voters disagreed".
+    POLARITY_CONFLICT = "polarity_conflict"
 
 
 class GateOrigin(str, Enum):

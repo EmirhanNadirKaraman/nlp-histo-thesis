@@ -206,3 +206,83 @@ def test_persist_empty_skipped_list_writes_empty_file(tmp_path):
     path = tmp_path / "r1" / "relate" / "PMC9000777" / "skipped_pairs.jsonl"
     assert path.exists()
     assert path.read_text().strip() == ""
+
+
+# ── B-049: non-polarity direction skip ───────────────────────────────────────
+
+def _rule_with_direction(
+    canonical_id: str,
+    direction,
+    *,
+    subject: str = "CD30",
+    outcome: str = "OS",
+) -> CanonicalRule:
+    """Variant of _rule() that lets the test set the direction explicitly."""
+    return CanonicalRule(
+        canonical_id=canonical_id,
+        group_id=f"GRP_{canonical_id}",
+        subject_entity=subject,
+        outcome_entity=outcome,
+        relation_type=RelationTypeEnum.prognostic,
+        direction=direction,
+        predicate_text=f"{subject} predicts {outcome}",
+        is_conflicted=False,
+        study_coverage="single_study",
+        category="IHC",
+        supporting_pmcids=["PMC1"],
+        member_normal_ids=[f"NF_{canonical_id}"],
+        mean_grounding_score=0.8,
+        finding_count=1,
+    )
+
+
+def test_unclear_direction_skips_pair():
+    a = _rule_with_direction("CR_a", DirectionEnum.unclear)
+    b = _rule_with_direction("CR_b", DirectionEnum.negative)
+    _, _, skipped = _stage().relate([a, b], pmcid="PMC1")
+    assert len(skipped) == 1
+    assert skipped[0].reason == "non_polarity_direction"
+
+
+def test_no_direction_skips_pair():
+    a = _rule_with_direction("CR_a", DirectionEnum.positive)
+    b = _rule_with_direction("CR_b", DirectionEnum.no_direction)
+    _, _, skipped = _stage().relate([a, b], pmcid="PMC1")
+    assert len(skipped) == 1
+    assert skipped[0].reason == "non_polarity_direction"
+
+
+def test_direction_none_skips_pair():
+    """B-049 S1 normalizer: direction=None must be treated as 'unclear'.
+    Pre-fix a naive `direction in {DirectionEnum.unclear, ...}` would have
+    returned False on None, letting the pair through to NLI."""
+    a = _rule_with_direction("CR_a", None)
+    b = _rule_with_direction("CR_b", DirectionEnum.positive)
+    _, _, skipped = _stage().relate([a, b], pmcid="PMC1")
+    assert len(skipped) == 1
+    assert skipped[0].reason == "non_polarity_direction"
+
+
+def test_non_polarity_skip_runs_before_other_gates():
+    """Even if the rules also differ on category, the non-polarity skip
+    should fire first — preserves consistent telemetry."""
+    a = _rule_with_direction("CR_a", DirectionEnum.unclear)
+    b = CanonicalRule(
+        canonical_id="CR_b",
+        group_id="GRP_b",
+        subject_entity="DIFFERENT_SUBJ",  # subject mismatch as well
+        outcome_entity="OS",
+        relation_type=RelationTypeEnum.prognostic,
+        direction=DirectionEnum.negative,
+        predicate_text="x",
+        is_conflicted=False,
+        study_coverage="single_study",
+        category="morphology",  # category mismatch as well
+        supporting_pmcids=["PMC1"],
+        member_normal_ids=["NF_b"],
+        mean_grounding_score=0.8,
+        finding_count=1,
+    )
+    _, _, skipped = _stage().relate([a, b], pmcid="PMC1")
+    assert len(skipped) == 1
+    assert skipped[0].reason == "non_polarity_direction"

@@ -429,6 +429,27 @@ class MapOutputRouter:
 
         conf_str = f"{bundle.confidence:.2f}" if bundle.confidence is not None else "n/a"
 
+        # B-051: polarity hard-fail overrides any theta-based decision. Emit
+        # ONLY POLARITY_CONFLICT — never co-emit a low-agreement reason
+        # because the embedding score was not actually low.
+        if (
+            bundle.score_details is not None
+            and bundle.score_details.get("hard_fail_reason") == "polarity_conflict"
+        ):
+            conflict = bundle.score_details.get("polarity_conflict_details") or {}
+            n_pairs = conflict.get("count", 0)
+            return RoutingDecision(
+                decision=ChunkDecision.ESCALATE,
+                gate_origin=GateOrigin.AGREEMENT_GATE,
+                reason_codes=[ReasonCode.POLARITY_CONFLICT],
+                explanation=(
+                    f"Polarity conflict on {n_pairs} comparable finding pair(s); "
+                    f"embedding agreement={conf_str} overridden."
+                ),
+                agreement_details=bundle,
+                valid_voter_indices=valid_voter_indices,
+            )
+
         if bundle.decision == ChunkDecision.KEEP:
             return RoutingDecision(
                 decision=ChunkDecision.KEEP,

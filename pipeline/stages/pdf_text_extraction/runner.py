@@ -42,6 +42,18 @@ from typing import List, Optional
 from pipeline.stages.pdf_text_extraction.blacklist import BlacklistManager
 from pipeline.stages.pdf_text_extraction.config import PipelineConfig, TableDetectorType
 from pipeline.stages.pdf_text_extraction.models.dto import LayoutResult
+from pipeline.stages.pdf_text_extraction.stage_cache import (
+    STAGE_CACHE_VERSION,
+    StageName,
+    _StageCache,
+    dump_hierarchical_rows,
+    dump_layout_elements,
+    dump_table_detection,
+    load_hierarchical_rows,
+    load_layout_elements,
+    load_table_detection,
+)
+from pipeline.stages.summarization.persistence import compute_pipeline_config_hash
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +85,109 @@ class PipelineRunner:
         self._two_pass_extractor = None
         self._nlp               = None
         self._outputs: list     = []
+
+        # Per-run state — populated at the top of `run_document`.
+        self._current_config_hash: Optional[str] = None
+
+        # Seed pipeline-owned randomness (B-027). Idempotent within the
+        # process; safe to call from each PipelineRunner constructor.
+        self._seed_pipeline()
+
+    # ── Seeding ───────────────────────────────────────────────────────────────
+
+    def _seed_pipeline(self) -> None:
+        """Seed pipeline-owned randomness.
+
+        Seeds `random`, `numpy`, and (when installed) `torch` /
+        `torch.cuda` with `cfg.runtime.seed`. Setting `seed=None` opts out.
+
+        NOTE: this does NOT guarantee deterministic output from external
+        document/layout libraries (Docling, TATR weights, OCR engines,
+        scispaCy). Cached stage outputs are content-keyed by
+        `cfg.runtime.skip_existing_outputs`, not by seed.
+
+        `PYTHONHASHSEED` is set best-effort; it only fully governs hash
+        randomisation when set BEFORE Python interpreter startup. Future
+        child processes (none today in the PDF pipeline) inherit it.
+        """
+        seed = self._cfg.runtime.seed
+        if seed is None:
+            logger.info("Seeding skipped (runtime.seed is None)")
+            return
+
+        import os
+        import random
+
+        os.environ["PYTHONHASHSEED"] = str(seed)
+        random.seed(seed)
+        try:
+            import numpy as np  # type: ignore
+            np.random.seed(seed)
+        except ImportError:
+            pass
+        try:
+            import torch  # type: ignore
+            torch.manual_seed(seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(seed)
+            # Intentionally NOT setting torch.use_deterministic_algorithms
+            # or cuDNN deterministic flags — those carry perf and op-coverage
+            # costs and are out of scope for this patch.
+        except ImportError:
+            pass
+        logger.info(
+            "Seeded pipeline-owned randomness (seed=%d). Note: this does not "
+            "guarantee deterministic output from external libraries (Docling, "
+            "TATR, OCR, scispaCy).", seed,
+        )
+
+    # ── Config hash (used to invalidate stage cache) ──────────────────────────
+
+    def _compute_config_hash(self) -> str:
+        """Compute a stable hash of the output-affecting config surface.
+
+        Excludes RuntimeConfig (audited as gating-only: `skip_blacklisted`,
+        `update_blacklist_on_failure`, `blacklist_if_rows_exceed`,
+        `num_workers`, log level, `seed` — none touch element/page-level
+        output for cached stages 2/5/6 today). Includes the scispaCy model
+        name when NER paths are active. Includes `STAGE_CACHE_VERSION` so
+        format / behaviour changes invalidate older artifacts.
+
+        Not in the hash but documented in `docs/HOW_TO_RUN.md`: scispaCy /
+        spaCy package + model-weights versions. Run `rm -rf out/stage_cache/`
+        after dependency upgrades that affect NLP output.
+        """
+        cfg = self._cfg
+        nlp_model = (
+            "en_core_sci_sm"
+            if (
+                cfg.filtering.apply_ner_filtering
+                or cfg.filtering.apply_paragraph_relevance_filtering
+                or cfg.masking.mask_header_footer_sidebar
+            )
+            else None
+        )
+        return compute_pipeline_config_hash(
+            config={
+                "docling":        cfg.docling,
+                "docling_text":   cfg.docling_text,
+                "tatr":           cfg.tatr,
+                "masking":        cfg.masking,
+                "filtering":      cfg.filtering,
+                "text":           cfg.text,
+                "two_pass":       cfg.two_pass,
+                "table_detector": cfg.table_detector,
+                "nlp_model":      nlp_model,
+                "stage_version":  STAGE_CACHE_VERSION,
+            },
+            schema_version="pdf_v1",
+        )
+
+    def _get_stage_cache(self) -> _StageCache:
+        return _StageCache(
+            root=self._cfg.paths.output_root / "stage_cache",
+            enabled=self._cfg.runtime.skip_existing_outputs,
+        )
 
     # ── Stage factory helpers ─────────────────────────────────────────────────
 
@@ -323,12 +438,17 @@ class PipelineRunner:
         else:
             return detector.detect(pdf_path)
 
-    def _steps_1_3_4_standard(self, pdf_path: Path, pmcid: str):
+    def _steps_1_3_4_standard(
+        self, pdf_path: Path, pmcid: str, cache: _StageCache,
+    ):
         """
         Standard Steps 1–4: extract → detect tables → mask → re-extract.
 
         Returns (layout, layout_pre_recon, masked_layout, detection).
         Detection runs here (before masking) because the region masker needs it.
+
+        Reminder: bump STAGE_CACHE_VERSION[StageName.TABLE_DETECTION] in
+        stage_cache.py if `_run_table_detection` behaviour changes.
         """
         from pipeline.stages.pdf_text_extraction.components.table_reconstructor import reconstruct_tables_from_lists
 
@@ -340,7 +460,15 @@ class PipelineRunner:
             layout = reconstruct_tables_from_lists(layout)
 
         logger.info("[%s] Step 2 — table detection (%s)", pmcid, self._cfg.table_detector)
-        detection = self._run_table_detection(layout, pdf_path)
+        detection = cache.get_or_compute(
+            stage_name=StageName.TABLE_DETECTION,
+            pmcid=pmcid,
+            config_hash=self._current_config_hash,
+            compute_fn=lambda: self._run_table_detection(layout, pdf_path),
+            loader_fn=load_table_detection,
+            dumper_fn=dump_table_detection,
+            summarise_fn=lambda r: f"{len(r.regions)} regions",
+        )
 
         masker = self._get_region_masker()
         regions_to_mask = masker.collect_regions(
@@ -393,13 +521,29 @@ class PipelineRunner:
         return layout, layout_pre_recon, masked_layout, None  # detection deferred
 
     def _process(self, pdf_path: Path, pmcid: str):
+        # Compute the per-run config hash used to invalidate stage cache.
+        # Stays on `self` so multiple stages share the same value within a
+        # `run_document` call without recomputing.
+        self._current_config_hash = self._compute_config_hash()
+        cache = self._get_stage_cache()
+
         if self._cfg.two_pass.enabled:
             layout, layout_pre_recon, masked_layout, detection = self._steps_1_3_4_two_pass(pdf_path, pmcid)
-            # Step 2: table detection deferred to here in two-pass mode
+            # Step 2: table detection deferred to here in two-pass mode.
+            # Same cache slot as the standard branch — `cfg.two_pass.enabled`
+            # is in the config hash so a mode flip invalidates correctly.
             logger.info("[%s] Step 2 — table detection (%s)", pmcid, self._cfg.table_detector)
-            detection = self._run_table_detection(layout, pdf_path)
+            detection = cache.get_or_compute(
+                stage_name=StageName.TABLE_DETECTION,
+                pmcid=pmcid,
+                config_hash=self._current_config_hash,
+                compute_fn=lambda: self._run_table_detection(layout, pdf_path),
+                loader_fn=load_table_detection,
+                dumper_fn=dump_table_detection,
+                summarise_fn=lambda r: f"{len(r.regions)} regions",
+            )
         else:
-            layout, layout_pre_recon, masked_layout, detection = self._steps_1_3_4_standard(pdf_path, pmcid)
+            layout, layout_pre_recon, masked_layout, detection = self._steps_1_3_4_standard(pdf_path, pmcid, cache)
 
         # ── Step 2b: Visualization ────────────────────────────────────────────
         if vis := self._get_visualizer():
@@ -407,10 +551,22 @@ class PipelineRunner:
             vis.visualize_detections(detection, layout, pmcid)
 
         # ── Step 5: Artifact filtering ────────────────────────────────────────
+        # Reminder: bump STAGE_CACHE_VERSION[StageName.FILTERING] in
+        # stage_cache.py if this stage's behaviour OR the on-disk format
+        # changes (e.g. new module-level constant in
+        # parsers/layout_utils.filter_artifacts).
         if self._cfg.filtering.enabled:
             logger.info("[%s] Step 5 — artifact filtering", pmcid)
-            masked_layout.elements = self._get_artifact_filter().filter_elements(
-                masked_layout.elements
+            masked_layout.elements = cache.get_or_compute(
+                stage_name=StageName.FILTERING,
+                pmcid=pmcid,
+                config_hash=self._current_config_hash,
+                compute_fn=lambda: self._get_artifact_filter().filter_elements(
+                    masked_layout.elements
+                ),
+                loader_fn=load_layout_elements,
+                dumper_fn=dump_layout_elements,
+                summarise_fn=lambda els: f"{len(els)} elements",
             )
 
         # ── Step 5b: Raw text dump (pre-assembly) ─────────────────────────────
@@ -425,8 +581,19 @@ class PipelineRunner:
             logger.info("[%s] Raw text written to %s", pmcid, raw_path)
 
         # ── Step 6: Text assembly ─────────────────────────────────────────────
+        # Reminder: bump STAGE_CACHE_VERSION[StageName.TEXT_ASSEMBLY] in
+        # stage_cache.py if this stage's behaviour OR the on-disk format
+        # changes (e.g. ContextAwareStitcher logic changes).
         logger.info("[%s] Step 6 — text assembly", pmcid)
-        rows = self._get_text_assembler().assemble(masked_layout)
+        rows = cache.get_or_compute(
+            stage_name=StageName.TEXT_ASSEMBLY,
+            pmcid=pmcid,
+            config_hash=self._current_config_hash,
+            compute_fn=lambda: self._get_text_assembler().assemble(masked_layout),
+            loader_fn=load_hierarchical_rows,
+            dumper_fn=dump_hierarchical_rows,
+            summarise_fn=lambda r: f"{len(r)} rows",
+        )
 
         # ── Step 7: Media cropping ────────────────────────────────────────────
         logger.info("[%s] Step 7 — media cropping", pmcid)

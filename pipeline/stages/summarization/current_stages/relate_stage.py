@@ -35,7 +35,14 @@ import itertools
 import logging
 
 from ..artifact_models import SkippedPair
-from ..models import CanonicalRule, RawNLIPair, Relation, RelationTypeLabel
+from ..models import (
+    CanonicalRule,
+    NON_POLARITY_DIRS,
+    RawNLIPair,
+    Relation,
+    RelationTypeLabel,
+    direction_value,
+)
 from ..nli_config import get_active_spec
 
 logger = logging.getLogger(__name__)
@@ -230,6 +237,15 @@ def _should_compare(a: CanonicalRule, b: CanonicalRule) -> tuple[bool, str]:
       outcome_incompatible
     """
     from ..models import RelationTypeEnum  # local import avoids circular at module level
+    # B-049: skip any pair where either side carries a non-polarity direction
+    # (unclear / no_direction). NLI on those is meaningless — there's nothing
+    # to SUPPORT or CONTRADICT. `direction_value` normalises enum / string /
+    # None inputs uniformly, including legacy rows where `direction is None`.
+    if (
+        direction_value(a.direction) in NON_POLARITY_DIRS
+        or direction_value(b.direction) in NON_POLARITY_DIRS
+    ):
+        return False, "non_polarity_direction"
     if a.category != b.category:
         return False, "category_mismatch"
     if a.relation_type != b.relation_type:

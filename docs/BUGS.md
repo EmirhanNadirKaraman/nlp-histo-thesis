@@ -45,9 +45,9 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-023 | Fixed (2026-05-15) | Medium | Summarisation, NORMALIZE dedup | `_dedup_key` keys on `(text_element_id, subject, outcome, relation_type)` but not on `direction`. Findings extracted from the same sentence with opposing directions (positive vs. negative) collapse into one `NormalFinding`; `_merge` picks `rep.direction` (highest grounding wins) and the opposite-direction finding is silently absorbed. Docstring defends this as "contradictions surface at RELATE", but RELATE only ever sees the surviving direction so they cannot surface. Either include `direction` in the dedup key or carry per-direction histograms onto `NormalFinding` so CANONICALIZE can split. | [Bug 23](#bug-23--normalize-dedup-collapses-opposite-direction-findings-from-the-same-sentence) |
 | B-024 | Mitigated (2026-05-15) | Low | Summarisation, RELATE → Relation schema | `Relation.nli_score_a_to_b` / `nli_score_b_to_a` field docstring says "entailment score from A→B direction", but `relate_stage._classify_pair` stores **contradiction** score for CONTRADICT and **entailment** for SUPPORT (`relate_stage.py:400-405`). DB columns and inspector scripts surface the field without label context (`scripts/run_paper_single_model.py:405` prints as `A→B={:.2f}`). Downstream readers cannot tell which score they're looking at. Either rename to a label-neutral name or update the schema doc — `RawNLIPair` already stores entailment and contradiction separately so no information loss either way. | [Bug 24](#bug-24--relationnli_score_-field-doc-disagrees-with-relate_stage-write-path) |
 | B-025 | Observed | Low | Summarisation, RELATE polarity guard | `relate_stage._classify_pair` groups `DirectionEnum.partial` with `_POSITIVE_DIRECTIONS` for the same-polarity guard. `partial` sits between positive and unclear — bundling it with positive means a `partial`-vs-`negative` pair can never emit CONTRADICT even with high bidirectional contradiction scores. Worth a calibration sweep against the gold set before flipping. | [Bug 25](#bug-25--relate-polarity-guard-treats-partial-as-positive-blocking-partial-vs-negative-contradictions) |
-| B-026 | Observed | Low | Summarisation, CANONICALIZE tie-break | `_split_by_direction` picks `largest_dir = max(non_unclear, key=lambda d: len(non_unclear[d]))`. When two directions tie on count, Python's `max` returns the first key encountered, and dict iteration order traces back to `_direction_counts(members)` which iterates members in arrival order. The "majority direction" assignment is therefore input-order-dependent for ties — non-deterministic across re-runs if upstream stages ever reorder members. Sort the keys or break the tie explicitly. | [Bug 26](#bug-26--canonicalize-split_by_direction-tie-break-is-member-order-dependent) |
-| B-027 | Partial (2026-05-15) | High | PDF extraction, `PipelineRunner` runtime knobs | `RuntimeConfig` exposes `num_workers`, `log_level`, `seed`, `skip_existing_outputs`. **Wired 2026-05-15**: `num_workers` (forwarded to `ParallelBatchRunner` in `runner.py:564`), `log_level` (`runner.py` `main()` calls `logging.basicConfig(level=cfg.runtime.log_level.value, …)`). **Still dead**: `seed` (no `random/np/torch` seed call sites), `skip_existing_outputs` (per-stage output-cache check unimplemented). | [Bug 27](#bug-27--runtimeconfig-knobs-num_workers-log_level-seed-skip_existing_outputs-not-consumed) |
-| B-028 | Observed (2026-05-15) | High | PDF extraction, DB ingester | `DatabaseConfig.{schema, create_tables_if_missing, batch_size, connect_timeout_sec}` (`config.py:181-184`) are dataclass fields with no consumers. `runner.py:178` constructs `PostgresDatabaseIngester(db_url=self._cfg.database.db_url)` — the ingester signature (`outputs/db_ingester.py:35`) only accepts `db` and `db_url`. A user setting a non-default `schema` or tuning `batch_size` gets silent no-op behaviour. | [Bug 28](#bug-28--databaseconfig-sub-fields-never-propagated-to-postgresdatabaseingester) |
+| B-026 | Superseded (2026-05-15) | Low | Summarisation, CANONICALIZE tie-break | Determinism hole in the unclear-folding policy. Superseded by [B-049](#bug-49--canonicalize-folds-unclear--no_direction-into-majority-polarity-bin) which removes the folding logic entirely, eliminating the `max(...)` tiebreak it depended on. | [Bug 26](#bug-26--canonicalize-split_by_direction-tie-break-is-member-order-dependent) |
+| B-027 | Fixed (2026-05-15) | High | PDF extraction, `PipelineRunner` runtime knobs | All four `RuntimeConfig` knobs now consumed. `num_workers` + `log_level` wired earlier. `seed`: `PipelineRunner._seed_pipeline()` seeds `random` / `numpy` / `torch` (+ `torch.cuda` when available) at `__init__`; `seed` widened to `int \| None` so callers can opt out. Does **not** promise determinism for external libs (Docling/TATR/OCR/scispaCy). `skip_existing_outputs`: new `_StageCache` (`stage_cache.py`) caches stages 2 (table detection), 5 (artifact filtering), 6 (text assembly) to `out/stage_cache/<stage>/<pmcid>.json` with a config-hash sidecar. Sidecar / loader corruption falls through to recompute with WARNING; bugs propagate. Final writers (steps 7/8) still always run. Regression test in `tests/pdf_text_extraction/test_b027_seed_and_cache.py` (22 cases). | [Bug 27](#bug-27--runtimeconfig-knobs-num_workers-log_level-seed-skip_existing_outputs-not-consumed) |
+| B-028 | Fixed (2026-05-15, deleted) | High | PDF extraction, DB ingester | `DatabaseConfig.{schema, create_tables_if_missing, batch_size, connect_timeout_sec}` had no consumers. Deleted, not wired — no current thesis demand for schema isolation, custom batching, or tunable connect timeouts; wiring four fake knobs would have multiplied DB-layer surface area for zero behaviour gain. `DatabaseConfig` now exposes only `enabled` + `db_url`. Loader's strict-unknown-key check rejects YAMLs referencing the removed fields (regression test in `tests/test_config_loader.py::test_deleted_database_keys_rejected`). | [Bug 28](#bug-28--databaseconfig-sub-fields-never-propagated-to-postgresdatabaseingester) |
 | B-029 | Fixed (2026-05-15) | High | PDF extraction, scispaCy loader | `PipelineRunner._get_nlp` (`runner.py:199`) called `spacy.load("en_core_sci_sm")` directly, bypassing the documented `umls_resources.get_nlp()` singleton. If the PDF extraction and summarisation pipelines ran in the same process the small scispaCy model loaded twice (once here, once via `umls_resources` which loads `en_core_sci_lg`). Fixed by adding `umls_resources.get_small_nlp(model_name)` (process-wide per-model cache; honours `$NLP_HISTO_DISABLE_UMLS`) and routing `PipelineRunner._get_nlp` through it. Co-fixed with B-038. | [Bug 29](#bug-29--pipelinerunner_get_nlp-bypasses-umls_resources-singleton) |
 | B-030 | Fixed (2026-05-15, deleted) | Medium | PDF extraction, filtering config | `FilteringConfig.{fix_ligatures, remove_reference_markers, min_paragraph_chars}` had no consumers. Dropped all three from the dataclass — current behaviour is "always fix ligatures, always strip citations, no minimum-length filter". Inverting any default would silently change extraction output across the corpus, so wiring was rejected in favour of deletion. `FilteringConfig` now exposes only the three knobs that actually drive code (`enabled`, `apply_ner_filtering`, `apply_paragraph_relevance_filtering`). | [Bug 30](#bug-30--filteringconfig-dead-knobs-fix_ligatures-remove_reference_markers-min_paragraph_chars) |
 | B-031 | Fixed (2026-05-15, deleted) | Medium | PDF extraction, text assembly config | Six unread `TextAssemblyConfig` fields removed: `enabled`, `baseline_mode`, `use_hierarchical_extraction`, `use_context_aware_stitching`, `compare_combinations`, `save_combination_outputs`. Hierarchical extraction + stitching are hardcoded; the baseline-mode A/B harness is dead. `BaselineMode` enum and its package-level export also dropped. `TextAssemblyConfig` now exposes only `write_raw_text` and `pre_filter_relevance`. `tests/test_config_loader.py::test_enum_coerced_from_string` rewritten to use `LogLevel` instead of `BaselineMode`. | [Bug 31](#bug-31--textassemblyconfig-six-of-eight-fields-unread) |
@@ -69,8 +69,11 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-046 | Fixed (2026-05-15) | Low | Summarisation, MAP direction enum | Hedging words (`maybe`, `possibly`, `none`, `n/a`) outside `DirectionEnum` fell through to the unknown-value branch and coerced to `unclear`, losing the polarity-vs-uncertainty distinction in the live enum (raw still on `_raw_direction` per B-015). Added `_DIRECTION_ALIASES` mapping hedging → `unclear` and `none`/`n/a` → `no_direction`; alias-repair branch in `_coerce_invalid_direction` logs `reason="alias_repair"`. Bumped `MAP_SCHEMA_VERSION` → `"map_v8_direction_alias_repair"`. Tests in `tests/summarization/test_enum_alias_repair.py`. From [MAP_PROMPT_AUDIT Issue 8](MAP_PROMPT_AUDIT.md#issue-8--directionmaybe-single-occurrence-low). | [Bug 46](#bug-46--direction-hedging-words-coerce-to-unclear-instead-of-alias-repair) |
 | B-047 | Fixed (2026-05-15) | Low | Summarisation, MAP direction prompt | Prompt example mapped `"BCL2 was negative"` to `direction=absent` but both `negative` and `absent` plausibly applied for expression-context negation. Same FindingGroup could end up with both labels on opposite-polarity findings, blocking RELATE's CONTRADICT signal. Added a disambiguating rule under the `direction` definition (`expression`-only: `negative staining`/`no expression` → `absent`; `decreased`/`reduced` → `negative`; other relation_types: prefer `negative`, reserve `absent` for literal "absent"/"not present"/"lacking"). Bumped `MAP_PROMPT_VERSION` → `"map_prompt_v5_expression_absent_vs_negative"`. From [MAP_PROMPT_AUDIT Issue 6](MAP_PROMPT_AUDIT.md#issue-6--directionabsent-vs-directionnegative-ambiguity-in-expression-contexts-low). | [Bug 47](#bug-47--direction-absent-vs-negative-ambiguity-on-expression-claims) |
 | B-048 | Fixed (2026-05-15) | Low | Summarisation, optional RULE block enums | `Rule.type` was `Literal["Diagnostic", "Prognostic", "Management"]` (Title-Case) and `RuleCounts` mirrored the casing in field names — inconsistent with the lowercase `Finding.confidence` / `Finding.category` convention. Lowered all three; added a `mode="before"` validator on `Rule.type` so legacy Title-Case payloads round-trip. Updated MAP RULE OutputFormat prompt + `_recompute_audit` helper. RULE block is off by default, no DB rows to backfill. Tests in `tests/summarization/test_enum_alias_repair.py`. From [MAP_PROMPT_AUDIT Issue 7](MAP_PROMPT_AUDIT.md#issue-7--ruletype-is-title-case-diagnosticprognosticmanagement-everything-else-lowercase-low). | [Bug 48](#bug-48--ruletype-title-case-inconsistent-with-lowercase-convention) |
+| B-049 | Fixed (2026-05-15) | Medium | Summarisation, CANONICALIZE direction policy | `_split_by_direction` folded `unclear` and `no_direction` members into the largest polarity bin. Two holes: (a) **reproducibility** — `max(non_unclear, key=len)` returns the first dict key on ties, traceable to upstream member-arrival order, so the same paper produced different `member_normal_ids` / `finding_count` / `mean_grounding_score` across re-runs (supersedes B-026); (b) **honesty** — hedged findings got re-cast as votes for the majority direction, inflating downstream confidence and feeding RELATE pairs as if the model had really claimed that polarity. Fixed: every observed direction gets its own `CanonicalRule` bin (no folding); RELATE and corpus_relate skip pairs where either side is `unclear` / `no_direction`; `is_conflicted` repurposed to a **group-level** signal (True iff the group emits ≥2 polarity-bearing bins, stamped on every rule from the group). Added `direction_value`, `POLARITY_BEARING_DIRS`, `NON_POLARITY_DIRS` to `models.py` as the single source of truth; gates use the normalizer so `DirectionEnum` / raw string / `None` paths all behave the same. `partial` deliberately kept polarity-bearing for now — the semantic question of whether partial really conflicts with positive is owned by B-025. Bumped `CANONICALIZE_DIRECTION_POLICY_VERSION` (fed into `pipeline_config_hash`) to force cache invalidation. Tests: rewritten `tests/summarization/test_canonicalize_direction_split.py` (16 cases incl. S5 core invariant against unclear leakage into polarity bins), new `tests/summarization/test_corpus_relate_non_polarity.py`, extended `tests/summarization/test_relate_skipped_pairs.py`, `tests/summarization/test_pipeline_config_hash.py`. | [Bug 49](#bug-49--canonicalize-folds-unclear--no_direction-into-majority-polarity-bin) |
+| B-050 | Fixed (2026-05-15) | Low | Scripts, batch poll interval | `scripts/run_paper.py` carried three diverging defaults for `--poll-interval`: argparse `60` (line 331), `_run_all_batch(poll_interval=20)` (line 787), `_run_batch(poll_interval=60)` (line 885). CLI flows passed `args.poll_interval` so the call-site defaults rarely fired — but a direct programmatic caller of either batch helper got 20s or 60s depending on which one they imported. Consolidated onto module-level `DEFAULT_POLL_INTERVAL_SEC = 60` referenced by argparse + both function signatures. Regression: `tests/test_poll_interval_defaults.py` introspects via `inspect.signature` (not `__defaults__` tuple indexing) and asserts all three resolve to 60. **Note**: if another agent's parallel work also claims B-050, renumber to B-051 at commit time. | [Bug 50](#bug-50--poll_interval-default-mismatch-across-cli-and-batch-helpers) |
+| B-051 | Fixed (2026-05-15) | High | Summarisation, MAP agreement gate | `EmbeddingScorer._polarity` applied only a 20% multiplicative penalty; opposite-polarity paraphrases with cos≈1.0 produced score=0.80, passing `theta=0.7` and accepting the chunk as KEEP despite a direct voter contradiction. Fixed: new pure helper `agreement/polarity_conflict.detect_polarity_conflict` invoked from `AgreementChecker.compute` after the scorer runs but before theta — when two **comparable** findings (same `subject_entity` / `outcome_entity` / `relation_type` / `category`, all four required, strings `.strip().casefold()`d) carry opposite `{positive, negative}` directions, decision is forced to `ChunkDecision.ESCALATE` with `score_details["hard_fail_reason"] = "polarity_conflict"`. `MapOutputRouter._agreement_gate` emits ONLY `ReasonCode.POLARITY_CONFLICT` (never co-emits low-agreement codes — the score was high; only the structural check failed); explanation makes the override explicit. v1 conservative: scope fields excluded from comparability (cross-cohort false-escalate cheaper than missed contradiction); `absent`/`partial`/`unclear`/`no_direction` excluded from the hard-polarity set pending B-025 calibration. Cache invalidation: bumped `MAP_SCHEMA_VERSION` → `"map_v9_polarity_hard_fail"` (invalidates `PipelineCache`); added `MAP_AGREEMENT_POLICY_VERSION = "polarity_hard_fail_v1"` routed into `compute_pipeline_config_hash` on both runners (invalidates per-paper result cache). 11 deterministic regression tests in `tests/summarization/agreement/test_b051_hard_fail_polarity.py` + 3 hash regression tests in `tests/summarization/test_pipeline_config_hash.py`. | [Bug 51](#bug-51--map-agreement-gate-treats-opposite-polarity-as-soft-disagreement) |
 
-Add new rows here when you discover something. Bump the ID monotonically (`B-049`, `B-050`, …). Put the long write-up in a new `## Bug N — …` section below.
+Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
 
 ---
 
@@ -1894,7 +1897,82 @@ purely operational characteristics (Low).
 
 ### Status / Severity / Surface
 
-Partial (2026-05-15) · High · PDF extraction, `PipelineRunner` runtime knobs.
+Fixed (2026-05-15) · High · PDF extraction, `PipelineRunner` runtime knobs.
+
+### Resolution
+
+All four knobs now drive code:
+
+* **`num_workers`** + **`log_level`** — wired earlier (`runner.py:564`,
+  `runner.py main()`).
+* **`seed`** — `PipelineRunner.__init__` calls `_seed_pipeline()` which
+  seeds `random` / `numpy` / `torch` (+ `torch.cuda` when available) and
+  best-effort sets `PYTHONHASHSEED`. `seed` field widened to
+  `int | None = 42` so callers can opt out (`None` skips seeding
+  entirely). Torch / numpy `ImportError` is swallowed so seed init works
+  in slim envs.
+* **`skip_existing_outputs`** — new `_StageCache`
+  (`pipeline/stages/pdf_text_extraction/stage_cache.py`) wraps the three
+  expensive non-Docling stages: table detection (Step 2), artifact
+  filtering (Step 5), text assembly (Step 6). Each cached artifact is
+  written to `out/stage_cache/<stage_name>/<pmcid>.json` with a
+  `<pmcid>.hash` sidecar. Both writes go through atomic temp+rename;
+  loader and sidecar-read failures inside a narrow expected-error set
+  log WARNING and fall through to recompute (bugs outside that set
+  propagate). Stages 1/4 stay on Docling's existing per-PDF JSON cache;
+  stages 3/7/8 always run.
+
+### Scope (what this fix does NOT cover)
+
+* **External-library determinism.** Seeding `random` / `numpy` / `torch`
+  does not make Docling, TATR, OCR engines, or scispaCy deterministic.
+  The `_seed_pipeline()` log line spells this out.
+* **Dependency-version invalidation.** scispaCy / spaCy package and
+  model-weights versions are NOT in the cache hash. A weights upgrade
+  can change `nlp(text)` output without changing the model name string.
+  `docs/HOW_TO_RUN.md` documents the manual remediation:
+  `rm -rf out/stage_cache/`.
+* **Behaviour-version invalidation.** When a cached stage's algorithm
+  or a module-level constant it reads changes, contributors must bump
+  `STAGE_CACHE_VERSION[stage_name]` in `stage_cache.py`. The constant's
+  comment enumerates the cases; each cached stage in `runner.py` carries
+  a one-line reminder.
+* **Stages 7/8.** Final user-facing writers (media JSON, text file, DB
+  ingest) always run. Step 8 has its own short-circuits
+  (`skip_existing_in_db`, `skip_existing_media_json`).
+
+### Verification
+
+`tests/pdf_text_extraction/test_b027_seed_and_cache.py` — 22 tests:
+
+* `_StageCache` primitives: first-run write, second-run hit,
+  enabled=False recompute, corrupted artifact → recompute with WARNING,
+  hash mismatch → CACHE STALE + sidecar-and-artifact overwrite,
+  invalid-UTF-8 sidecar → CACHE INVALID, unexpected loader exception
+  propagates, write failure propagates, artifact-without-sidecar
+  emits its own message.
+* Round-trips: `TableDetectionResult` (asserts `Path` + `int` page-dim
+  keys preserved), `LayoutElement[]` (all five fields), `HierarchicalRow[]`
+  (preserves `list[str]` for `path_list` and `source_chunks`).
+* Runner wiring: standard + two-pass first-run write all three caches;
+  second run uses a **fresh** `PipelineRunner` instance with raise-on-call
+  stage mocks (proves the cache truly short-circuits the expensive call
+  site, not just the factory); two-pass→standard mode flip emits 3×
+  CACHE STALE; `skip_existing_outputs=False` recomputes.
+* Seed: random.seed called with config value, `seed=None` skips all
+  seeding (with `PYTHONHASHSEED` left alone), missing torch / numpy
+  swallowed.
+* Pin test: `test_runner_pass1_layout_feeds_table_detection` captures
+  the layout passed to `_run_table_detection` in two-pass mode so a
+  future refactor that diverges the input from `pass1_layout` will fail
+  loudly.
+
+`python -m pytest tests/pdf_text_extraction/test_b027_seed_and_cache.py -q`
+→ 22 passed. Wider sweep
+(`tests/pdf_text_extraction tests/parsers tests/test_config_loader.py
+tests/summarization/test_phase2_normalize.py`) → 92 passed.
+
+### Pre-resolution context (kept for history)
 
 ### Symptom
 
@@ -1948,7 +2026,7 @@ hardcoded.
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · High · PDF extraction, DB ingester.
+Fixed (2026-05-15, deleted) · High · PDF extraction, DB ingester.
 
 ### Symptom
 
@@ -1958,7 +2036,7 @@ has no effect on ingest behaviour. Same for `create_tables_if_missing` and
 
 ### Evidence
 
-* `config.py:178-184` — `DatabaseConfig` declares `schema`,
+* `config.py:158-165` (pre-fix) — `DatabaseConfig` declared `schema`,
   `create_tables_if_missing`, `batch_size`, `connect_timeout_sec`.
 * `runner.py:178` — `PostgresDatabaseIngester(db_url=self._cfg.database.db_url)`.
   Only `db_url` is forwarded.
@@ -1969,28 +2047,39 @@ has no effect on ingest behaviour. Same for `create_tables_if_missing` and
 ### Diagnosis
 
 The ingester was written before the config split was finalised. The four
-unused fields are aspirational. There is no schema-aware `MetaData` or
+unused fields were aspirational. There is no schema-aware `MetaData` or
 batched-insert path in `PostgresDatabaseIngester.write` — it `session.add`s
 each ORM object then commits via the session context manager.
 
-### Fix (proposed)
+### Fix — deleted, not wired
 
-Two options:
+Considered both options:
 
-1. Wire them. Pass the four fields into the ingester, route `batch_size`
+1. **Wire them.** Pass the four fields into the ingester, route `batch_size`
    through `session.bulk_save_objects`, plumb `connect_timeout_sec` into
-   `get_db_connection` (currently no such kwarg exists in `database/db_connection.py`),
-   route `schema` into `__table_args__` overrides or a `search_path` set
-   on the engine.
-2. Delete them. If batched inserts and schema isolation are not on the
-   roadmap, removing the fields stops users from being misled.
+   `get_db_connection` (currently no such kwarg exists in
+   `database/db_connection.py`), route `schema` into `__table_args__`
+   overrides or a `search_path` set on the engine.
+2. **Delete them.** Honest minimal config — removes the maintenance surface
+   of four fake knobs that nothing reads.
 
-Recommend (1) for `batch_size` (low-cost, modest perf upside on large
-papers), (2) for the rest unless a concrete user surfaces.
+**Chose (2)** in the 2026-05-15 Tier 1 config audit. No current thesis
+demand for non-default schema isolation, configurable connect timeouts, or
+custom insert batching. `create_tables_if_missing` and `batch_size` look
+like simple wires but easily expand to deeper refactors (DB initialisation
+ordering, transactional batching, ORM `MetaData` rebinding) — risk
+disproportionate to a zero-user-payoff feature. If a future need surfaces
+(multi-tenant schema isolation, ingest perf), reintroduce the relevant
+field with a real consumer + a test that proves it changes behaviour.
+
+`DatabaseConfig` now exposes only `enabled: bool` and `db_url: Optional[str]`.
 
 ### Verification
 
-Pending.
+* `grep -rn 'database\.schema\|database\.create_tables\|database\.batch_size\|database\.connect_timeout' pipeline/ scripts/ database/ tests/ configs/` → zero matches (post-deletion sweep).
+* `tests/test_config_loader.py::test_deleted_database_keys_rejected` (parametrised over the four fields) — YAML referencing any of them raises `ValueError` at load time, surfaced by the strict-unknown-key check in `pipeline/config_loader.py:48-52`.
+* `python -c "from pipeline.config_loader import load_config; load_config('configs/run.yaml')"` — clean load.
+* `configs/run.yaml` already did not reference the four deleted fields, so the YAML required no edits.
 
 ---
 
@@ -3142,5 +3231,227 @@ The audit deferred this because the optional REDUCE+RULES block is off by defaul
 ### Verification
 
 `pytest tests/summarization/test_enum_alias_repair.py` — all 60 tests pass (5 new). RULE block is off by default; no production payloads to migrate. If the block is ever re-enabled, the back-compat validator on `Rule.type` ensures legacy cached `ExtractedRules` JSONs still parse.
+
+---
+
+## Bug 49 — CANONICALIZE folds `unclear` / `no_direction` into majority polarity bin
+
+### Status / Severity / Surface
+
+Fixed (2026-05-15) · Medium · Summarisation, CANONICALIZE direction policy. Supersedes [B-026](#bug-26--canonicalize-split_by_direction-tie-break-is-member-order-dependent).
+
+### Symptom
+
+`CanonicalizeStage._split_by_direction` folded findings with `direction=unclear` and `direction=no_direction` into the largest polarity bin in a mixed group. Two compounding problems:
+
+1. **Reproducibility hole.** Tie-break in the folding logic was `max(non_unclear, key=lambda d: len(non_unclear[d]))`. On ties, Python's `max` returns the first key it iterates — and dict iteration order traces back to upstream member-arrival order via `_direction_counts(members)`. The unclear members then attached to a non-deterministically-chosen bin → same paper, same data, different `member_normal_ids` / `finding_count` / `mean_grounding_score` on the emitted `CanonicalRule` across re-runs. Bad for thesis reproducibility claims.
+2. **Honesty hole.** Unclear / no_direction findings were re-cast as votes for the majority direction. RESOLVE then inflated `finding_count` using hedged findings; RELATE paired the inflated rule against other papers as if the model had really claimed the majority polarity. The "I don't know" signal vanished after CANONICALIZE.
+
+### Evidence
+
+* The tie-break case manifested whenever a group had ≥2 polarity bins of equal size *and* at least one unclear / no_direction member to distribute. Pre-fix the regression test `tests/summarization/test_canonicalize_direction_split.py::test_split_no_direction_attaches_to_largest_polarity_in_mixed_group` (B-021 era) encoded this folding explicitly.
+* User-facing data: `sum_canonical_rules` rows where `finding_count` overcounted relative to the actual polarity-claiming source findings; `sum_relations` paired hedged rules against cross-paper polarity rules.
+
+### Diagnosis
+
+Two design holes, single mechanical cause: the folding logic. The fix is to *not* fold. Every observed direction in a group gets its own `CanonicalRule`. RELATE / corpus_relate skip pairs where either side carries `unclear` / `no_direction` (NLI on those is meaningless — there's nothing to SUPPORT or CONTRADICT). The data pipeline stays lossless; the inert rules carry traceability without polluting the relation graph.
+
+`is_conflicted` cannot survive its old "within-bin polarity diversity" semantics — within a per-direction bin, polarity is uniform by construction. The flag is repurposed to **group-level** polarity disagreement (True iff the parent group produced ≥2 polarity-bearing direction bins, stamped on every rule emitted from that group). Documented in the `CanonicalRule.is_conflicted` field docstring (`models.py`) and at the assignment site in `canonicalize_stage.py`.
+
+### Fix
+
+* `pipeline/stages/summarization/models.py`
+  * Added `direction_value(d) -> str` normalizer alongside `DirectionEnum`. Handles `DirectionEnum` members, raw strings (from JSON-roundtripped metadata), and `None` (legacy rows) uniformly so a naive `direction in NON_POLARITY_DIRS` check can't silently fail.
+  * Added `POLARITY_BEARING_DIRS = frozenset({"positive", "negative", "absent", "partial"})` and `NON_POLARITY_DIRS = frozenset({"unclear", "no_direction"})` as the single source of truth used by canonicalize / relate / corpus_relate. `partial` is included in the polarity set so `positive + partial → is_conflicted=True`; this is not a final decision on partial's semantics — owned by [B-025](#bug-25--relate-polarity-guard-treats-partial-as-positive-blocking-partial-vs-negative-contradictions).
+  * Added `CANONICALIZE_DIRECTION_POLICY_VERSION = "per_direction_no_folding_v2"` near `MAP_SCHEMA_VERSION`.
+  * Updated `CanonicalRule.is_conflicted` field docstring to spell out the group-level semantics.
+* `pipeline/stages/summarization/current_stages/canonicalize_stage.py`
+  * Rewrote `_split_by_direction(member_nfs)` — one bin per observed direction via `direction_value()`; returns `sorted(bins.items())` so emit order is deterministic. Dropped the `group` argument and the `direction_counts` dependency.
+  * Refactored `_compute_scope_fields` → `_study_coverage(member_nfs) -> str`; the dead within-bin `is_conflicted` computation is gone.
+  * `canonicalize()` now computes group-level `is_conflicted` once per group using `POLARITY_BEARING_DIRS` (no local re-definition), applies it to every emitted rule, and inlines a comment on the new semantics.
+* `pipeline/stages/summarization/current_stages/relate_stage.py`
+  * Added an early-return at the top of `_should_compare`: `if direction_value(a.direction) in NON_POLARITY_DIRS or direction_value(b.direction) in NON_POLARITY_DIRS: return False, "non_polarity_direction"`. Runs before category / relation_type / subject / outcome gates so non-polarity pairs are never NLI-evaluated. `_POSITIVE_DIRECTIONS` / `_NEGATIVE_DIRECTIONS` / `same_polarity` logic for CONTRADICT eligibility unchanged — only operates on pairs that already passed the new gate.
+* `pipeline/stages/summarization/helpers/corpus_relate.py`
+  * Mirror non-polarity skip at the top of `_should_compare_cross_paper`. Cross-paper rules can arrive with `direction` as a raw string (metadata roundtrip) or `None` (legacy); the normalizer handles both.
+* `pipeline/stages/summarization/runner.py` + `pipeline/stages/summarization/batch/runner.py`
+  * Both `_pipeline_config_hash` implementations include `CANONICALIZE_DIRECTION_POLICY_VERSION` in their `thresholds` dict so the cache hash flips whenever canonicalization semantics change. Forces a clean re-run of `out/summaries/summaries/*.json` next invocation.
+
+### Verification
+
+* **Unit tests** — `pytest tests/summarization/test_canonicalize_direction_split.py` (16 cases including S5 core invariant `test_no_unclear_leakage_into_polarity_bins`); `pytest tests/summarization/test_relate_skipped_pairs.py` (14 cases, 4 new non-polarity); `pytest tests/summarization/test_corpus_relate_non_polarity.py` (6 cases); `pytest tests/summarization/test_pipeline_config_hash.py` (13 cases, 2 new for the constant). All green.
+* **Cascade regression** — `pytest tests/summarization/ -q` (574 passed, 1 pre-existing unrelated UMLS-singleton test-order pollution in `test_phase_a_gate.py::test_normalize_stage_normalizes_entities` which passes standalone).
+* **Determinism** — `tests/summarization/test_canonicalize_direction_split.py::test_b026_determinism_2pos_2neg_1unclear` re-runs the 2-positive-2-negative-1-unclear case with the member list reversed; the emitted rules are identical (sorted by direction, deterministic bin contents). Supersedes B-026.
+
+### Follow-up
+
+* **Presentation filtering** — `unclear` / `no_direction` `FinalRule` rows now appear in `sum_final_rules`. The data pipeline stays lossless; if a future inspector / report wants a polarity-only view, filter at the presentation layer rather than dropping rows in RESOLVE. Tracked in `docs/THESIS.md` TODO.
+* **`partial` semantics** — B-049 keeps `partial` in `POLARITY_BEARING_DIRS` for the group-level flag and in `_POSITIVE_DIRECTIONS` for the CONTRADICT gate. Whether either is right is owned by [B-025](#bug-25--relate-polarity-guard-treats-partial-as-positive-blocking-partial-vs-negative-contradictions) and needs a calibration sweep before changing.
+
+---
+
+## Bug 50 — `poll_interval` default mismatch across CLI and batch helpers
+
+### Status / Severity / Surface
+
+Fixed (2026-05-15) · Low · Scripts, batch poll interval.
+
+### Symptom
+
+`scripts/run_paper.py` shipped three diverging defaults for the batch poll
+interval. A programmatic caller importing `_run_all_batch` got a 20s default;
+the same caller importing `_run_batch` got 60s; the argparse default was also
+60s. CLI flows always passed `args.poll_interval` so the call-site defaults
+rarely fired in production, but the duplicate defaults were a footgun for
+anyone scripting against the helpers directly.
+
+### Evidence
+
+* `scripts/run_paper.py:331` (pre-fix) — `parser.add_argument("--poll-interval", type=int, default=60, ...)`.
+* `scripts/run_paper.py:787` (pre-fix) — `def _run_all_batch(pmcids, poll_interval: int = 20, ...)`.
+* `scripts/run_paper.py:885` (pre-fix) — `def _run_batch(pmcid, poll_interval: int = 60, ...)`.
+
+### Diagnosis
+
+Classic duplicate-defaults bug. The two batch helpers diverged historically
+(one written for multi-paper polling, the other for single-paper) and the
+argparse default was added later without re-aligning the function signatures.
+
+### Fix
+
+Module-level constant `DEFAULT_POLL_INTERVAL_SEC = 60` at
+`scripts/run_paper.py:48`. Argparse `default=DEFAULT_POLL_INTERVAL_SEC`,
+both function signatures `poll_interval: int = DEFAULT_POLL_INTERVAL_SEC`.
+Single source of truth.
+
+### Verification
+
+* `tests/test_poll_interval_defaults.py::test_poll_interval_defaults_agree` — uses `inspect.signature(...).parameters["poll_interval"].default` on both helpers (deliberately not `func.__defaults__` tuple indexing, which breaks the moment a positional parameter is added before `poll_interval`) and asserts both equal `DEFAULT_POLL_INTERVAL_SEC == 60`.
+* CLI flow unchanged — both helpers still receive `args.poll_interval` from `main()` (`run_paper.py:448, 458`), so behaviour in the default invocation path is identical to pre-fix.
+
+---
+
+## Bug 51 — MAP agreement gate treats opposite polarity as soft disagreement
+
+### Status / Severity / Surface
+
+Fixed (2026-05-15) · High · Summarisation, MAP agreement gate.
+
+### Symptom
+
+`EmbeddingScorer._polarity` applies a 20% multiplicative penalty when claim
+text appears to contradict. Two voters with opposite-polarity paraphrases of
+the same claim (embedding similarity ≈ 1.0) produce a final agreement score
+of exactly 0.80 — passes `theta=0.7` (default in `AgreementChecker`), sits
+on the boundary at `theta=0.8`. The cascade therefore accepts chunks where
+voters directly contradict each other, contaminating any downstream theta
+sweep that tries to claim "the cascade is safe."
+
+### Evidence
+
+* `pipeline/stages/summarization/agreement/embedding.py:34-73` (`_polarity` heuristic).
+* `pipeline/stages/summarization/agreement/embedding.py:279` — `contradiction_factor = 1.0 - 0.20 * ratio`.
+* `tests/summarization/agreement/test_embedding_scorer.py::test_contradiction_max_penalty_bounded` (pre-fix) asserts `score == pytest.approx(0.80, abs=1e-6)` for the worst-case opposite-polarity pair.
+* `Finding.direction: DirectionEnum` is structured data already available at agreement-scoring time — `_polarity` ignores it and inspects `claim` text instead.
+
+### Diagnosis
+
+The scorer's polarity signal is a token-spotting heuristic on free text; it
+participates as a multiplicative dampening rather than a veto. The cascade
+needs a *structural* check on `Finding.direction` that runs as a hard-fail
+regardless of embedding similarity. Adding this at scorer level would couple
+agreement decisions to scoring details; adding it only in the router would
+miss the no-router code path (and the batch runner shares
+`AgreementChecker.compute` as the single chokepoint).
+
+### Fix
+
+**New helper** at `pipeline/stages/summarization/agreement/polarity_conflict.py`:
+`detect_polarity_conflict(outputs: list[AuditableSummary]) -> dict | None`.
+Pure function. Iterates voter pairs × finding pairs. A pair is a hard-fail
+iff:
+
+* **comparable** — same `subject_entity`, `outcome_entity`, `relation_type`,
+  `category` (all four required, strings `.strip().casefold()`d; any `None`
+  field disqualifies). Mirrors `group_stage._group_id` (post-B-022) — the
+  same definition of "this is the same claim" the codebase already uses.
+* **opposite hard polarity** — `{a.direction, b.direction} == {positive, negative}`.
+
+`AgreementChecker.compute` (`agreement/checker.py`) calls the helper *after*
+the scorer runs (so `pairwise_upper` / `embedding_agreement` stay available
+for trace inspection) but *before* the theta fallback. On conflict it sets
+`bundle.decision = ChunkDecision.ESCALATE` and stamps
+`score_details["hard_fail_reason"] = "polarity_conflict"` plus
+`score_details["polarity_conflict_details"]` with per-pair records.
+
+`MapOutputRouter._agreement_gate` (`routing/router.py`) reads
+`bundle.score_details["hard_fail_reason"]`. On conflict it returns a
+`RoutingDecision` with `reason_codes=[ReasonCode.POLARITY_CONFLICT]` — never
+co-emits `INSUFFICIENT_AGREEMENT` or `ESCALATED_DUE_TO_LOW_AGREEMENT` (the
+score was high; only the structural check failed). Explanation reads
+`"Polarity conflict on N comparable finding pair(s); embedding agreement=X.XX overridden."`
+
+New reason code `ReasonCode.POLARITY_CONFLICT = "polarity_conflict"` in
+`routing/models.py` (extensible enum; no schema migration; flows naturally
+into `CascadeDecisionRecord.reason_codes` and the JSONL decision log).
+
+**v1 conservative scope**:
+
+* Polarity set is `{positive, negative}` only. `absent` / `partial` /
+  `unclear` / `no_direction` deliberately excluded — `absent` overlaps
+  semantically with `negative` in biomarker-expression contexts; `partial`
+  is bundled with `positive` in `relate_stage._POSITIVE_DIRECTIONS` so MAP
+  must not be stricter than RELATE. Broadening waits on B-025 calibration.
+* Scope fields (`disease_subtype`, `tissue_site`, `treatment_context`, …)
+  are NOT part of the comparability key. Same biomarker / different cohort /
+  opposite direction will therefore hard-fail today — a conservative
+  *false-escalation* trade-off (extra L3 call is cheap; a missed
+  contradiction silently kept as L1 consensus is expensive). Scope-aware
+  comparability is v2.
+* Evidence-disjoint hard-fail is NOT implemented in this patch. Two correct
+  paraphrases citing different but valid sentences (e.g. summary vs methods)
+  would false-escalate without a proximity policy. TODO in the helper
+  references `agreement/hybrid_structured.py:_evidence_jaccard`.
+
+**Cache invalidation** — both layers covered:
+
+* `MAP_SCHEMA_VERSION` bumped `"map_v8_direction_alias_repair"` →
+  `"map_v9_polarity_hard_fail"`. Invalidates `PipelineCache.set_map` /
+  `get_map` entries (key includes `schema_version`) so stale chunk-level
+  KEEP winners cannot leak.
+* `MAP_AGREEMENT_POLICY_VERSION = "polarity_hard_fail_v1"` added to
+  `models.py`; included in `compute_pipeline_config_hash` on both
+  `SummarizationRunner._pipeline_config_hash` and
+  `BatchSummarizationRunner._pipeline_config_hash` (same pattern as B-049's
+  `CANONICALIZE_DIRECTION_POLICY_VERSION`). Invalidates per-paper result
+  cache (`out/summaries/summaries/*.json`).
+
+### Verification
+
+* `tests/summarization/agreement/test_b051_hard_fail_polarity.py` — 11
+  deterministic regression tests (mocked scorer, synthetic `AuditableSummary`
+  / `Finding`; no real embeddings, no LLM calls). Covers ESCALATE/KEEP
+  paths, comparability gates, every polarity pair the v1 policy excludes
+  (`unclear`, `no_direction`, `absent`, `partial`), trace metadata
+  structure, and the router translation of the hard-fail signal into
+  `ReasonCode.POLARITY_CONFLICT`.
+* `tests/summarization/test_pipeline_config_hash.py` — 3 new tests:
+  - `test_map_agreement_policy_version_changes_hash` — flipping the version
+    string changes the hash.
+  - `test_map_agreement_policy_constant_is_defined` — constant import path.
+  - `test_both_runners_include_map_agreement_policy_version_in_thresholds`
+    — greps both runner sources for the literal key so a future refactor
+    that drops it gets caught.
+* Full suites: `tests/summarization/agreement/` + `tests/summarization/routing/` — 207 passed.
+
+### Follow-up (not in this patch)
+
+* Theta sweep — runs *after* this lands; calibration numbers are now
+  meaningful.
+* Evidence-disjoint hard-fail (v2) — proposal sketched in the helper
+  docstring.
+* Scope-aware comparability (v2) — per-category equivalence rules over
+  `FindingScope` fields.
+* Broaden polarity set to include `absent` / `partial` once B-025
+  calibration is in.
 
 

@@ -20,9 +20,23 @@ _log = logging.getLogger(__name__)
 # Bump these whenever the MAP output schema or prompt changes in a
 # behaviour-affecting way. They are included in cache keys / run metadata so
 # stale outputs don't collide with new ones.
-MAP_SCHEMA_VERSION: str = "map_v8_direction_alias_repair"
+MAP_SCHEMA_VERSION: str = "map_v9_polarity_hard_fail"
 MAP_PROMPT_VERSION: str = "map_prompt_v5_expression_absent_vs_negative"
 MAP_STAGE_NAME:     str = "map"
+
+# CANONICALIZE behavioural-version stamp (B-049). Bumped when canonicalization
+# semantics change in a way that invalidates cached summaries. Fed into
+# `compute_pipeline_config_hash` via the `thresholds` dict on both runners so
+# cached `out/summaries/summaries/*.json` re-runs cleanly on the next
+# invocation. Not user-tunable — change the value, not the field.
+CANONICALIZE_DIRECTION_POLICY_VERSION: str = "per_direction_no_folding_v2"
+
+# MAP agreement-gate behavioural-version stamp (B-051). Bumped when the MAP
+# cascade KEEP/ESCALATE policy changes in a way that invalidates cached
+# per-paper results. Fed into `compute_pipeline_config_hash` on both runners.
+# Companion to the `MAP_SCHEMA_VERSION` bump that invalidates the chunk-level
+# `PipelineCache` — both are required to cover both cache layers.
+MAP_AGREEMENT_POLICY_VERSION: str = "polarity_hard_fail_v1"
 
 
 # ── Cascade signature helper ──────────────────────────────────────────────────
@@ -87,6 +101,41 @@ class DirectionEnum(str, Enum):
     partial       = "partial"
     unclear       = "unclear"
     no_direction  = "no_direction"
+
+
+# Shared direction-class constants. Used by canonicalize_stage.py (group-level
+# is_conflicted computation), relate_stage.py (non-polarity skip), and
+# corpus_relate.py (cross-paper non-polarity skip). One source of truth so the
+# polarity-class definition can't drift between sites.
+#
+# `partial` is included in POLARITY_BEARING_DIRS for the group-level
+# is_conflicted flag — meaning `positive + partial → is_conflicted=True`. The
+# question of whether `partial` should really count as a contradicting
+# polarity (vs. a qualifier on `positive`) is owned by B-025 and is NOT a
+# final decision in B-049.
+POLARITY_BEARING_DIRS: frozenset[str] = frozenset({"positive", "negative", "absent", "partial"})
+NON_POLARITY_DIRS:     frozenset[str] = frozenset({"unclear", "no_direction"})
+
+
+def direction_value(d: object) -> str:
+    """Normalize a direction to its string value.
+
+    Handles three input shapes that all flow into the same gates:
+    * `DirectionEnum` member — live Pydantic-parsed CanonicalRule.direction
+    * Raw string — metadata dicts read from cached JSON in corpus_relate.py
+    * `None` — legacy/cached rows; treated as `"unclear"` by the project
+      convention used at canonicalize_stage.py:60 and :110.
+
+    A naive `direction in NON_POLARITY_DIRS` check would silently fail on
+    `None` (None not in any set) and would work only by accident on raw
+    strings (because `DirectionEnum(str, Enum)` is a str subclass). This
+    helper makes the normalization explicit at every gate site.
+    """
+    if d is None:
+        return "unclear"
+    if hasattr(d, "value"):  # DirectionEnum or any other Enum
+        return d.value  # type: ignore[attr-defined]
+    return str(d)
 
 
 class RelationTypeEnum(str, Enum):
@@ -781,9 +830,16 @@ class CanonicalRule(BaseModel):
     subject_entity:      str
     outcome_entity:      str
     relation_type:       RelationTypeEnum
-    direction:           DirectionEnum | None  # dominant direction for this bin
+    direction:           DirectionEnum | None  # the single direction this rule represents
     predicate_text:      str                   # highest mean_grounding_score predicate in the bin
-    is_conflicted:       bool                  # True if ≥2 non-unclear opposing directions in bin
+    # Group-level signal (B-049): True iff the *parent canonicalization group*
+    # produced ≥2 polarity-bearing direction bins. Every per-direction rule
+    # from a conflicted group carries the same flag. Does NOT mean this
+    # individual rule contains contradictory members — by construction each
+    # rule contains exactly one direction's worth of members. `partial`
+    # counts as polarity-bearing here; whether that's the right call is the
+    # open semantic question owned by B-025.
+    is_conflicted:       bool
     study_coverage:      Literal["single_study", "multi_study", "unknown"]
     category:            Literal["morphology", "IHC", "molecular_genetics", "staging", "treatment", "prognosis", "demographic"]
     supporting_pmcids:   List[str]             # unique PMCIDs across member NFs

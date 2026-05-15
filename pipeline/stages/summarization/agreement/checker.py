@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import logging
 
+from pipeline.stages.summarization.agreement.polarity_conflict import (
+    detect_polarity_conflict,
+)
 from pipeline.stages.summarization.interfaces.agreement import MapOutputScorer
 from pipeline.stages.summarization.interfaces.scoring import (
     AgreementContext,
@@ -62,6 +65,27 @@ class AgreementChecker:
             return ScoreBundle(confidence=1.0, decision=ChunkDecision.KEEP)
 
         bundle = self._scorer.compute(outputs, source_text, context)
+
+        # B-051: hard-fail veto for comparable opposite-polarity findings.
+        # Runs AFTER the scorer so pairwise_upper / embedding_agreement remain
+        # available for trace inspection, and BEFORE the theta fallback so the
+        # decision cannot revert to KEEP regardless of similarity.
+        conflict = detect_polarity_conflict(outputs)
+        if conflict is not None:
+            bundle.decision = ChunkDecision.ESCALATE
+            details = bundle.score_details if bundle.score_details is not None else {}
+            details = dict(details)
+            details["hard_fail_reason"] = "polarity_conflict"
+            details["polarity_conflict_details"] = conflict
+            bundle.score_details = details
+            logger.info(
+                "AgreementChecker [%s] hard-fail → ESCALATE "
+                "(polarity_conflict on %d pair(s); embedding_agreement=%s)",
+                type(self._scorer).__name__,
+                conflict["count"],
+                _fmt(bundle.embedding_agreement),
+            )
+            return bundle
 
         if bundle.decision is None:
             primary = bundle.confidence or bundle.embedding_agreement or 0.0

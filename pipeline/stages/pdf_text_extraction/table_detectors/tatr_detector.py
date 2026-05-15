@@ -65,9 +65,17 @@ class TATRTableDetector:
 
             logger.info("Loading TATR model (%s)…", self._config.model_name)
             _SHARED_PROCESSOR = AutoImageProcessor.from_pretrained(self._config.model_name)
+<<<<<<< Updated upstream:pipeline/stages/pdf_text_extraction/table_detectors/tatr_detector.py
             device = self._config.device
             _SHARED_MODEL = AutoModelForObjectDetection.from_pretrained(self._config.model_name)
             _SHARED_MODEL = _SHARED_MODEL.to(device)
+=======
+            _SHARED_MODEL = AutoModelForObjectDetection.from_pretrained(
+                self._config.model_name,
+                low_cpu_mem_usage=False,
+                device_map=None,
+            ).to("cpu")
+>>>>>>> Stashed changes:pipeline/stages/table_detectors/tatr_detector.py
             _SHARED_MODEL.eval()
             logger.info("TATR model loaded.")
 

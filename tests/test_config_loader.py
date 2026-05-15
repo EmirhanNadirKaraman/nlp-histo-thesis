@@ -116,3 +116,72 @@ def test_tatr_render_dpi_overridable(tmp_path: Path):
     """)
     pdf, _ = load_config(p)
     assert pdf.tatr.render_dpi == 300
+
+
+# ── B-028: deleted DatabaseConfig sub-fields fail loudly ──────────────────────
+# `schema`, `create_tables_if_missing`, `batch_size`, `connect_timeout_sec`
+# never had consumers (`PostgresDatabaseIngester` only accepts `db_url`). They
+# were removed in the 2026-05-15 Tier 1 config audit rather than wired. Any
+# YAML still referencing them must fail at load time, not silently no-op.
+@pytest.mark.parametrize(
+    "dead_field, value",
+    [
+        ("schema", '"custom"'),
+        ("create_tables_if_missing", "true"),
+        ("batch_size", "500"),
+        ("connect_timeout_sec", "30"),
+    ],
+)
+def test_deleted_database_keys_rejected(tmp_path: Path, dead_field: str, value: str):
+    p = _write(tmp_path, f"""
+        pdf_extraction:
+          database:
+            {dead_field}: {value}
+    """)
+    with pytest.raises(ValueError, match=f"DatabaseConfig\\.{dead_field}"):
+        load_config(p)
+
+
+# ── RuntimeConfig kill-switch fields still load (sanity) ──────────────────────
+# Phase-1 audit incorrectly flagged these as dead. They are kill-switch
+# features consumed at runner.py:375-378 (blacklist_if_rows_exceed) and
+# runner.py:603+ (multi_source_crops). Defaults are None/False, so the
+# default code path is unchanged — but the config knob must still load.
+def test_runtime_kill_switch_fields_still_load(tmp_path: Path):
+    p = _write(tmp_path, """
+        pdf_extraction:
+          runtime:
+            blacklist_if_rows_exceed: 5000
+            multi_source_crops: true
+    """)
+    pdf, _ = load_config(p)
+    assert pdf.runtime.blacklist_if_rows_exceed == 5000
+    assert pdf.runtime.multi_source_crops is True
+
+
+# ── Seed wiring: configured seed reaches PipelineRunner._seed_pipeline ────────
+def test_seed_reaches_seed_pipeline(tmp_path: Path, monkeypatch):
+    """Mock-based wiring test — does NOT touch global RNG state.
+
+    Asserts the seed value loaded from YAML is the value the runner passes
+    to its internal seeding helper. Implementation detail of how the helper
+    seeds (`random.seed`, `numpy.random.seed`, `torch.manual_seed`) is out
+    of scope for this test.
+    """
+    from pipeline.stages.pdf_text_extraction import runner as runner_mod
+
+    captured = {}
+
+    def fake_seed_pipeline(self):
+        captured["seed"] = self._cfg.runtime.seed
+
+    monkeypatch.setattr(runner_mod.PipelineRunner, "_seed_pipeline", fake_seed_pipeline)
+
+    p = _write(tmp_path, """
+        pdf_extraction:
+          runtime:
+            seed: 99
+    """)
+    pdf, _ = load_config(p)
+    runner_mod.PipelineRunner(pdf)
+    assert captured["seed"] == 99
