@@ -201,6 +201,32 @@ python -m pytest tests/summarization/ -q
 
 # Focused — group/canonicalize hash invariants
 python -m pytest tests/summarization/test_phase3_group.py tests/summarization/test_demographics.py -q
+
+# Phase 1 of the evaluation harness
+python -m pytest tests/eval/ -q
+```
+
+---
+
+## 6a. Evaluation harness (Phase 1 — no-API proxy metrics)
+
+`scripts/eval/compute_proxy_metrics.py` reads the summarisation pipeline's
+frozen artifacts and writes no-label proxy metrics. It never calls an LLM,
+embedding API, or NLI model, and never re-executes any pipeline stage. See
+[`CALIBRATION_EVAL.md`](CALIBRATION_EVAL.md) for the full column reference.
+
+```bash
+python scripts/eval/compute_proxy_metrics.py \
+    --input out/summaries \
+    --out eval/results/proxy_metrics.csv
+```
+
+Outputs land alongside the CSV:
+
+```
+eval/results/proxy_metrics.csv               one row per pmcid + __aggregate__
+eval/results/proxy_metrics_aggregate.json    nested aggregate + status_counts
+eval/results/proxy_metrics.meta.json         git_commit, created_at, schema_version
 ```
 
 ---

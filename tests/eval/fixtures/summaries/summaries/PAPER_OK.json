@@ -1,0 +1,44 @@
+{
+  "status": "success",
+  "run_id": "PAPER_OK_20260516T000000",
+  "pmcid": "PAPER_OK",
+  "pipeline_config_hash": "deadbeef00000001",
+  "canonical_rules": [
+    {"canonical_id": "c1", "direction": "positive", "subject_entity": "A", "outcome_entity": "B"},
+    {"canonical_id": "c2", "direction": "negative", "subject_entity": "A", "outcome_entity": "C"},
+    {"canonical_id": "c3", "direction": "unclear", "subject_entity": "X", "outcome_entity": "Y"},
+    {"canonical_id": "c4", "direction": "no_direction", "subject_entity": "P", "outcome_entity": "Q"}
+  ],
+  "final_rules": [
+    {"final_id": "f1", "final_score": 0.82, "support_count": 1, "contradict_count": 0},
+    {"final_id": "f2", "final_score": 0.40, "support_count": 0, "contradict_count": 1},
+    {"final_id": "f3", "final_score": 0.55, "support_count": 0, "contradict_count": 0}
+  ],
+  "relations": [
+    {"relation_type": "SUPPORT", "rule_a_id": "f1", "rule_b_id": "f3"},
+    {"relation_type": "CONTRADICT", "rule_a_id": "f1", "rule_b_id": "f2"}
+  ],
+  "relate_raw_pairs": [],
+  "audit_trail": {
+    "map_chunks": [
+      {"chunk_id": "C1", "findings": [
+        {"claim": "x", "grounding_score": 0.9},
+        {"claim": "y", "grounding_score": 0.7}
+      ]},
+      {"chunk_id": "C2", "findings": [
+        {"claim": "z", "grounding_score": 0.5}
+      ]}
+    ]
+  },
+  "map_run_metadata": {},
+  "rejection_summary": {
+    "pmcid": "PAPER_OK",
+    "grounding_threshold": 0.6,
+    "map_findings_total": 10,
+    "map_grounding_rejected": 3,
+    "normal_findings_total": 7,
+    "non_groupable_total": 1,
+    "grounding_rejection_rate": 0.3,
+    "non_groupable_rate": 0.1
+  }
+}

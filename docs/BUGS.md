@@ -71,6 +71,7 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-048 | Fixed (2026-05-15) | Low | Summarisation, optional RULE block enums | `Rule.type` was `Literal["Diagnostic", "Prognostic", "Management"]` (Title-Case) and `RuleCounts` mirrored the casing in field names — inconsistent with the lowercase `Finding.confidence` / `Finding.category` convention. Lowered all three; added a `mode="before"` validator on `Rule.type` so legacy Title-Case payloads round-trip. Updated MAP RULE OutputFormat prompt + `_recompute_audit` helper. RULE block is off by default, no DB rows to backfill. Tests in `tests/summarization/test_enum_alias_repair.py`. From [MAP_PROMPT_AUDIT Issue 7](MAP_PROMPT_AUDIT.md#issue-7--ruletype-is-title-case-diagnosticprognosticmanagement-everything-else-lowercase-low). | [Bug 48](#bug-48--ruletype-title-case-inconsistent-with-lowercase-convention) |
 | B-049 | Fixed (2026-05-15) | Medium | Summarisation, CANONICALIZE direction policy | `_split_by_direction` folded `unclear` and `no_direction` members into the largest polarity bin. Two holes: (a) **reproducibility** — `max(non_unclear, key=len)` returns the first dict key on ties, traceable to upstream member-arrival order, so the same paper produced different `member_normal_ids` / `finding_count` / `mean_grounding_score` across re-runs (supersedes B-026); (b) **honesty** — hedged findings got re-cast as votes for the majority direction, inflating downstream confidence and feeding RELATE pairs as if the model had really claimed that polarity. Fixed: every observed direction gets its own `CanonicalRule` bin (no folding); RELATE and corpus_relate skip pairs where either side is `unclear` / `no_direction`; `is_conflicted` repurposed to a **group-level** signal (True iff the group emits ≥2 polarity-bearing bins, stamped on every rule from the group). Added `direction_value`, `POLARITY_BEARING_DIRS`, `NON_POLARITY_DIRS` to `models.py` as the single source of truth; gates use the normalizer so `DirectionEnum` / raw string / `None` paths all behave the same. `partial` deliberately kept polarity-bearing for now — the semantic question of whether partial really conflicts with positive is owned by B-025. Bumped `CANONICALIZE_DIRECTION_POLICY_VERSION` (fed into `pipeline_config_hash`) to force cache invalidation. Tests: rewritten `tests/summarization/test_canonicalize_direction_split.py` (16 cases incl. S5 core invariant against unclear leakage into polarity bins), new `tests/summarization/test_corpus_relate_non_polarity.py`, extended `tests/summarization/test_relate_skipped_pairs.py`, `tests/summarization/test_pipeline_config_hash.py`. | [Bug 49](#bug-49--canonicalize-folds-unclear--no_direction-into-majority-polarity-bin) |
 | B-050 | Fixed (2026-05-15) | Low | Scripts, batch poll interval | `scripts/run_paper.py` carried three diverging defaults for `--poll-interval`: argparse `60` (line 331), `_run_all_batch(poll_interval=20)` (line 787), `_run_batch(poll_interval=60)` (line 885). CLI flows passed `args.poll_interval` so the call-site defaults rarely fired — but a direct programmatic caller of either batch helper got 20s or 60s depending on which one they imported. Consolidated onto module-level `DEFAULT_POLL_INTERVAL_SEC = 60` referenced by argparse + both function signatures. Regression: `tests/test_poll_interval_defaults.py` introspects via `inspect.signature` (not `__defaults__` tuple indexing) and asserts all three resolve to 60. **Note**: if another agent's parallel work also claims B-050, renumber to B-051 at commit time. | [Bug 50](#bug-50--poll_interval-default-mismatch-across-cli-and-batch-helpers) |
+| B-055 | Observed (2026-05-16) | High | Summarisation, batch runner → `sum_map_findings` | `sum_map_findings` rows missing for 9 of the last 10 batch-mode pipeline runs (ids 38–48 across 5 papers), despite each paper's `rejection_summary.map_findings_total` recording 100–230 MAP findings produced. Other `sum_*` tables (`sum_normal_findings`, `sum_finding_groups`, `sum_canonical_rules`, `sum_final_rules`, `sum_rejection_summaries`, `sum_map_voter_outputs`) get rows on the same runs, so the DB connection + `pipeline_run_db_id` + persistence wiring are not at fault. The function itself works: a direct call to `persist_map_findings(db, 48, pmcid, chunk_summaries)` against the same paper's batch handle on disk wrote 154 rows successfully, with `verbatim_support` exactly matching `text_elements.text_content`. Bug pre-dates the 2026-05-16 B-005 dedup (same behaviour on HEAD `7ea254a`); the dedup rewrote the wrapper but the production failure mode was already present. Suspect call-path issue inside `BatchSummarizationRunner.finalize()` between L483 (`chunk_summaries = [AuditableSummary.model_validate(v) for v in handle.finalized.values()]`) and L522 (`self._persist_map_findings(...)`) — either `chunk_summaries` is empty at the call site (which would also break downstream `all_findings = [f for cs in chunk_summaries for f in cs.findings]` at L536, contradicted by 214 `sum_normal_findings` rows on run 48), or an exception in the bulk `INSERT` is being swallowed by `except Exception as exc: logger.warning(...)` and the run's stdout went unrecorded. Adjacent inconsistency: runs 47/46/44/43 wrote `sum_canonical_rules` (100+ rows) with **zero** `sum_normal_findings` — physically impossible from the in-process flow, suggests these were cache short-circuits whose `_load_result` path skipped MAP/NORMALIZE persistence but still wrote canonical/final from the cached JSON. | [Bug 55](#bug-55--sum_map_findings-not-populated-by-batch-runner) |
 | B-054 | Fixed (2026-05-16) | High | Summarisation, NER stage scispaCy singleton bypass | `named_entity_recognition/ner.py`'s `load_ner_model()` and `load_linker_model()` issued direct `spacy.load("en_core_sci_lg", …)` calls — completely bypassing the `umls_resources.get_nlp()` singleton documented in CLAUDE.md and MEMORY.md. `SummarizationRunner._run_stages` calls `run_ner_on_db(pmcid, save_to_db=True, force=False)` per paper *without* passing `nlp=` / `linker_nlp=`, so the loaders fired with `None` defaults and freshly loaded ~2.6 GB of scispaCy + UMLS twice per paper. Concretely visible in production runs: `[pmcid] NER done [136.4s]` on a paper that bailed out (already had entities) — the time was pure model-load waste. Compounded by `umls_resources.get_nlp()` already holding its own copy for NORMALIZE / UMLS_ENRICH, so peak RSS hit ~3 copies of en_core_sci_lg in memory. Same class of bug as B-029 (PDF runner) / B-038 (summariser load_paper_from_db), missed because `named_entity_recognition/` lives outside `pipeline/stages/` and the existing singleton-guard test only scanned the stages tree. Fixed by routing both loaders through `umls_resources.get_nlp()`; the "fast NER" pass wraps the span-extraction loop in `nlp.select_pipes(disable=["scispacy_linker"])` so it stays cheap on the linker-attached singleton; the "Document already has entities" skip check moved *above* the model-load block so a skipped paper now costs ~0 s (was ~150 s). Regression test in `tests/summarization/test_scispacy_singleton.py::test_ner_module_routes_through_singleton` asserts neither loader contains a direct `spacy.load(` call. `batch_ner.py` inherits the fix automatically (it imports the same functions). | [Bug 54](#bug-54--ner-stage-scispacy-singleton-bypass) |
 | B-053 | Fixed (2026-05-16) | Low | Tooling, percentiles cost estimator | `scripts/estimate_pipeline_cost_percentiles.py` hygiene cluster — dead `import json` + `import statistics`; two never-called helpers (`estimate_non_llm_stages`, `render_paper_table`) that duplicated the markdown rendering inline in `main()`; misleading inline comment claiming `est_chunks = ceil((n - overlap) / stride)` while the code (correctly, matching `MapStage._make_chunks`) did `ceil(n / stride)`; `pick_percentile` had no guard for an empty paper list (`idx = ceil(0.5*0) - 1 = -1` → silent off-end indexing) or out-of-range `p`; `CHUNK_SIZE`/`CHUNK_OVERLAP` duplicated as module constants instead of sourced from `MapConfig.chunk_size`/`chunk_overlap`, leaving a silent drift hazard if production config changes. Fixed: dead imports + helpers removed, comment rewritten to cite `_make_chunks`, `pick_percentile` raises `ValueError` on empty corpus / `p ∉ (0, 1]`, chunk constants now read off `MapConfig()` at module load. Numbers unchanged — none of this moved the printed cost (the percentiles report is an intentional upper-bound budget for the top-decile/P80–P90 papers by `n_te`). Regression test `tests/test_estimate_pipeline_cost_percentiles.py` (15 cases). | [Bug 53](#bug-53--percentiles-cost-estimator-hygiene-cluster) |
 | B-052 | Fixed (2026-05-16) | Medium | Tooling, cost estimation script | `scripts/estimate_selection_cost.py:per_chunk_input_tokens` modelled the average sentences per MAP chunk as `min(chunk_size, n_sentences / n_chunks * (1 + 0))`. At production defaults (`chunk_size=10`, `chunk_overlap=2`, stride=8) `n_sentences / n_chunks ≈ stride = 8`, so the clamp returned ~8 sentences per chunk — but `MapStage._make_chunks` (`map_stage.py:1263-1267`) slices `sentences[i:i+chunk_size]` so each non-tail chunk actually sees 10 sentences. The trailing `* (1 + 0)` was a leftover from a removed overlap term. Net: every cost number in the projection table was ~15–20% low, exactly the headline figure a thesis budget review reads. Fixed by replacing the formula with a sum over `min(chunk_size, n_sentences - start) for start in range(0, n_sentences, stride)` divided by `n_chunks` — matches `_make_chunks` line-for-line, accounts for the truncated tail, and rounds with `ceil` for conservative budget estimates. Function signature gained `chunk_overlap` (caller updated); also validates `0 <= chunk_overlap < chunk_size`. Co-fixed in the same change: `.order_by(TextElement.position_in_section)` (the B-039 bug) flipped to `.order_by(TextElement.id)` to actually mirror `SummarizationRunner.load_paper_from_db`. Dead `import math` cleaned up. Regression test in `tests/test_estimate_selection_cost.py`. | [Bug 52](#bug-52--cost-estimation-script-underestimates-per-chunk-input-tokens) |
@@ -496,6 +497,28 @@ multiple recent commits; reshuffling its private methods into a shared
 module while also changing the batch runner doubles the surface area of
 this change. A follow-up TODO captures the dedup once both runners have
 been verified to behave identically.
+
+### Dedup follow-up (shipped 2026-05-16)
+
+The "dedup once verified" follow-up landed. 13 helpers lifted to
+module-level functions in `pipeline/stages/summarization/persistence.py`
+(taking `db` as the first parameter): `build_rejection_summary` +
+`create_pipeline_run` / `finish_pipeline_run` / `clear_normalized_run_data` /
+`replace_verbatim_from_db` + 7 `persist_*` per-table writers + the
+already-extracted `non_groupable_reason`. Both `SummarizationRunner` and
+`BatchSummarizationRunner` now thin-wrap each (1-3 line forwards).
+Net −421 LOC across the three files. All `test_persistence.py` /
+`test_batch_persistence.py` cases pass; full summarisation suite identical
+pre/post (1 pre-existing flake unrelated to this change).
+
+Four cache/result helpers (`_pipeline_config_hash`, `_result_path`,
+`_load_result`, `_save_result`) were left as per-class methods because the
+implementations diverge by design (sync `_load_result` tags the dict
+`status="skipped"` per B-008; sync `_save_result` wraps hash compute in
+try/except; sync `_pipeline_config_hash` reads `map_meta.run_metadata_summary()`
+and includes `scorer`; sync uses `self._cfg` vs batch `self._cfg_full`).
+Tracked as carry-forward in `docs/THESIS.md` *##TODOs* — either backport
+the sync features to batch and unify, or formally split the contract.
 
 ---
 
@@ -3740,5 +3763,121 @@ root and was outside the scan.
 * Audit `named_entity_recognition/` for other direct `spacy.load(...)`
   call sites and consider extending the singleton-guard test's scope
   to include it.
+
+
+---
+
+## Bug 55 — `sum_map_findings` not populated by batch runner
+
+**Status:** Observed (2026-05-16) · **Severity:** High · **Surface:**
+Summarisation, `BatchSummarizationRunner.finalize()` → `sum_map_findings` DB persistence.
+
+### Symptom
+
+`sum_map_findings` shows 0 rows for 9 of the last 10 batch-mode pipeline
+runs (pipeline_runs ids 38–48, all status='success', 5 distinct papers):
+
+| run | pmcid                    | map | norm | canon | rel | final | voters |
+|----:|--------------------------|----:|-----:|------:|----:|------:|-------:|
+|  48 | PMC9826086_HIS-81-786    | **0** |  214 |   203 |   0 |   203 |    132 |
+|  47 | PMC7539961_HIS-77-579    | **0** |    0 |   147 |   0 |   147 |    122 |
+|  46 | PMC6635746_HIS-73-68     | **0** |    0 |   173 |   1 |   173 |      7 |
+|  44 | PMC4329418_his0066-0409  | **0** |    0 |   146 |   1 |   146 |      0 |
+|  43 | PMC10100421_HIS-82-393   | **0** |    0 |   185 |   2 |   185 |      0 |
+
+Each paper's `sum_rejection_summaries.map_findings_total` records 100–230 MAP
+findings produced. Discovered during the [B-005 end-to-end verification TODO](../docs/THESIS.md#todos)
+(L36) on 2026-05-16.
+
+### Evidence
+
+* Direct call to `persist_map_findings(db, 48, 'PMC9826086_HIS-81-786',
+  chunk_summaries)` against the saved batch handle at
+  `out/summaries/batch_handles.prepatch/PMC9826086_HIS-81-786.batch.json`
+  wrote **154 rows successfully** with `verbatim_support` exactly matching
+  `text_elements.text_content`. So the persistence function and DB wiring
+  are correct.
+* Same code path on HEAD `7ea254a` (pre B-005 dedup) shows the same
+  failure — not a regression from today's refactor.
+* `sum_map_voter_outputs` and `sum_rejection_summaries` populate on the
+  same failing runs → the runner reaches end-of-`finalize()` with a valid
+  `pipeline_run_db_id`; the failure is specific to the MAP-findings table.
+* `sum_normal_findings` is also zero on runs 47/46/44/43, yet
+  `sum_canonical_rules` has 100+ rows on each — physically impossible
+  from the in-process flow, which strongly suggests those runs hit the
+  result-cache short-circuit at `BatchSummarizationRunner.finalize()` L472
+  (`if handle.cached_result_only: return self._load_result(pmcid)`).
+  The on-disk JSON for cached runs only stores `canonical_rules` /
+  `final_rules` (not `chunk_summaries` / `normal_findings`), so a
+  cache-hit replay would naturally produce the 0/0/100+ pattern observed.
+
+### Diagnosis (hypotheses, not yet confirmed)
+
+The function is good; the call path inside `finalize()` is the problem.
+Three candidate root causes, in descending likelihood:
+
+1. **Cache short-circuit at L472** masks MAP+NORMALIZE persistence
+   entirely for cache-hit runs. The pipeline_runs row is still created
+   upstream (by `submit()` or its caller), so a successful cache-hit
+   leaves a pipeline_runs row with zero MAP rows. This matches runs
+   47/46/44/43 (0 normal, 100+ canonical). For run 48 it would not match
+   on its own (214 normal_findings present) — possibly run 48 was a
+   mixed-mode partial cache hit.
+2. **Silent exception in the bulk `INSERT`** caught by `except Exception
+   as exc: logger.warning(...)`. Production stdout for these runs was
+   not captured to `logs/runA*.log` (those files cover earlier runs only),
+   so a warning may have been emitted and lost. Confirmable by adding
+   `logger.warning("[%s] DB: persist_map_findings entering with %d
+   chunk_summaries, db_id=%s", pmcid, len(chunk_summaries), db_id)`
+   ahead of the `try:` and re-running one paper.
+3. **`chunk_summaries` is empty at L522** for some structural reason
+   (e.g., the `cached_result_only` branch already returned at L476 but
+   somehow execution continued). Less likely — `all_findings = [f for cs
+   in chunk_summaries for f in cs.findings]` at L536 would also collapse
+   to `[]`, producing zero normal_findings, which is contradicted by
+   run 48 (214 rows).
+
+### Mitigation
+
+Manually back-populated `sum_map_findings` for run 48 from the on-disk
+batch handle (154 rows). Verbatim spot-check passes (5/5 spans exact
+match against `text_elements.text_content`). Historical runs 38–47 are
+similarly recoverable from `out/summaries/batch_handles.prepatch/*.batch.json`
+via the same `persist_map_findings(db, run_id, pmcid, chunk_summaries)`
+pattern — pending user authorisation.
+
+### Fix (proposed, not yet shipped)
+
+Order of work, cheapest first:
+
+1. Add a one-line `logger.info("[%s] _persist_map_findings entering with
+   %d chunks (%d findings) db_id=%s", pmcid, len(chunk_summaries),
+   sum(len(cs.findings) for cs in chunk_summaries), db_id)` at
+   `batch/runner.py:522` (and the equivalent sync runner site) so the
+   next batch run leaves a paper trail.
+2. Audit the cache short-circuit at `finalize()` L472–L482: when
+   `handle.cached_result_only` is true and `_load_result` returns a
+   cached dict, the function exits **before** any DB persistence runs.
+   But the pipeline_runs row already exists. Either:
+   (a) move `submit()`'s `_create_pipeline_run` call out of the always-on
+   path so cache hits never create a row; or
+   (b) on cache hit, replay persistence using the cached payload (would
+   require persisting `chunk_summaries` / `normal_findings` to the JSON,
+   which today are omitted by `_save_result`).
+3. Re-run one paper end-to-end against a real DB after (1) and (2),
+   confirm `sum_map_findings` populates, then back-populate runs 38–47.
+
+### Verification (target state)
+
+* After the fix, a fresh batch run for a single paper produces
+  `sum_map_findings.COUNT(*) >= sum_normal_findings.COUNT(*)` for that
+  `pipeline_run_id` (MAP is upstream of NORMALIZE; counts must be
+  monotone non-increasing through the stage chain).
+* A cache-hit re-run of the same paper either skips creating a new
+  pipeline_runs row, or replays persistence consistently.
+* Add a regression test that calls `BatchSummarizationRunner.finalize()`
+  against a synthetic `BatchHandle` with `cached_result_only=False` and
+  asserts that all `sum_*` tables (including `sum_map_findings`) get
+  rows.
 
 

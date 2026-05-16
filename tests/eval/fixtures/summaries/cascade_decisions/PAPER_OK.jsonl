@@ -1,0 +1,3 @@
+{"chunk_id": "C1", "level": "l1", "decision": "keep", "deferral_score": 0.82, "reason_codes": [], "pmcid": "PAPER_OK"}
+{"chunk_id": "C2", "level": "l2", "decision": "escalate", "deferral_score": 0.45, "reason_codes": ["polarity_conflict"], "pmcid": "PAPER_OK"}
+{"chunk_id": "C3", "level": "l3", "decision": "keep", "deferral_score": 0.71, "reason_codes": [], "pmcid": "PAPER_OK"}

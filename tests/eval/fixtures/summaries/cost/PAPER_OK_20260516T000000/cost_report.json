@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "n_papers": 1,
+  "actual_usage": {
+    "total": {"calls": 6, "input_tokens": 1200, "output_tokens": 400, "total_tokens": 1600, "cost_usd": 0.0123},
+    "by_paper": {
+      "PAPER_OK": {"calls": 6, "input_tokens": 1200, "output_tokens": 400, "total_tokens": 1600, "cost_usd": 0.0123}
+    }
+  }
+}

@@ -89,7 +89,7 @@ summarization:
     extra_synonyms: {}          # surface → canonical overrides on top of synonyms.yaml (B-037)
 
   grounding:
-    threshold: null             # null disables the entailment filter
+    threshold: 0.5             # null disables the entailment filter
 
   relate:
     entailment_threshold: 0.50

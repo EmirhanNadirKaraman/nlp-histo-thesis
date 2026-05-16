@@ -227,3 +227,7 @@ eval/out/
 eval/pdfs/
 eval/data/
 eval/reports/
+
+# Phase 1 eval-harness outputs (keep eval/results/.gitkeep)
+eval/results/*.csv
+eval/results/*.json
