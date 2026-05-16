@@ -1286,6 +1286,7 @@ class BatchSummarizationRunner:
                     scope_qualify_count  = fr.scope_qualify_count,
                     is_contradicted      = fr.is_contradicted,
                     contradicted_by      = list(fr.contradicted_by) if fr.contradicted_by else [],
+                    score_mode           = fr.score_mode,
                 ))
             if rows:
                 with self._db.session_scope() as session:

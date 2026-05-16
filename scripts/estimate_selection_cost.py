@@ -34,8 +34,8 @@ from __future__ import annotations
 
 import argparse
 import logging
-import math
 import sys
+from math import ceil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -67,7 +67,7 @@ OUTPUT_TOKENS_PER_CHUNK = 800
 #   pipeline/stages/summarization/batch/voter_configs.py  (cascade structure)
 # and
 #   configs/model_prices.json via PriceBook  (per-model prices).
-# Pick the cascade with ``--profile {cheap|real|default}`` (required —
+# Pick the cascade with ``--profile {cheap|real}`` (required —
 # no implicit default).
 
 @dataclass
@@ -176,20 +176,35 @@ def count_tokens(tokenizer, sentences: list[str]) -> int:
 
 
 def per_chunk_input_tokens(text_tokens: int, n_chunks: int,
-                           chunk_size: int, n_sentences: int) -> int:
+                           chunk_size: int, chunk_overlap: int,
+                           n_sentences: int) -> int:
     """Approximate average input tokens for a single MAP call.
 
-    Each chunk feeds ``chunk_size`` sentences (or fewer for the tail). The
-    average sentences-per-chunk is ``n_sentences / n_chunks`` (which exceeds
-    ``chunk_size`` slightly because of overlap counting sentences twice).
+    Mirrors `MapStage._make_chunks` semantics exactly: each chunk is
+    `sentences[i : i+chunk_size]` for `i` stepping by `stride = chunk_size
+    - chunk_overlap`. The trailing chunk is truncated if it would run past
+    `n_sentences`. Average sentences per chunk = total sentence-occurrences
+    across all chunks / n_chunks — this is what the LLM actually sees,
+    overlap counted as duplicates by construction.
+
+    Budget estimates use conservative `ceil` rounding so the printed
+    cost is never lower than the realised cost given the modelled inputs.
     """
+    if chunk_overlap < 0 or chunk_overlap >= chunk_size:
+        raise ValueError(
+            f"chunk_overlap must satisfy 0 <= overlap < chunk_size; "
+            f"got chunk_size={chunk_size}, chunk_overlap={chunk_overlap}"
+        )
     if n_chunks == 0 or n_sentences == 0:
         return PROMPT_OVERHEAD_TOKENS
-    avg_sentences_per_chunk = min(chunk_size, n_sentences / n_chunks * (1 + 0))
-    # Effective chunk-text tokens = total tokens × (avg_sentences / n_sentences)
-    # but we want per-chunk, so it's text_tokens * avg / n_sentences:
+    stride = chunk_size - chunk_overlap
+    total_sentence_occurrences = sum(
+        min(chunk_size, n_sentences - start)
+        for start in range(0, n_sentences, stride)
+    )
+    avg_sentences_per_chunk = total_sentence_occurrences / n_chunks
     chunk_text_tokens = text_tokens * avg_sentences_per_chunk / n_sentences
-    return PROMPT_OVERHEAD_TOKENS + int(round(chunk_text_tokens))
+    return PROMPT_OVERHEAD_TOKENS + ceil(chunk_text_tokens)
 
 
 # ── Paper loading ───────────────────────────────────────────────────────────
@@ -208,7 +223,16 @@ class PaperStats:
 def load_paper_stats(pmcid: str, bucket: str, *,
                      tokenizer, chunk_size: int, chunk_overlap: int,
                      nlp) -> PaperStats | None:
-    """Use the same DB path MAP uses (TextElement → spaCy sentencize)."""
+    """Mirror `SummarizationRunner.load_paper_from_db` (TextElement →
+    spaCy sentencize).
+
+    Sort by `TextElement.id` to match the production load path
+    (`pipeline/stages/summarization/runner.py:load_paper_from_db`).
+    `id` is autoincrement and `db_ingester` writes rows in document order
+    via per-row `session.flush()`, so `.order_by(id)` preserves document
+    order. Sorting by `position_in_section` instead — as this script did
+    pre-fix — interleaves sections (the B-039 bug).
+    """
     import time as _time
     from database import get_db_connection, Document, TextElement
 
@@ -222,7 +246,7 @@ def load_paper_stats(pmcid: str, bucket: str, *,
         rows = (
             session.query(TextElement)
             .filter_by(document_id=doc.id)
-            .order_by(TextElement.position_in_section)
+            .order_by(TextElement.id)
             .all()
         )
         n_text_elements = len(rows)
@@ -245,7 +269,8 @@ def load_paper_stats(pmcid: str, bucket: str, *,
     n_sentences = len(sentences)
     n_chunks = count_chunks(n_sentences, chunk_size, chunk_overlap)
     text_tokens = count_tokens(tokenizer, sentences)
-    avg_in = per_chunk_input_tokens(text_tokens, n_chunks, chunk_size, n_sentences)
+    avg_in = per_chunk_input_tokens(text_tokens, n_chunks, chunk_size,
+                                    chunk_overlap, n_sentences)
     logger.debug("[%s] tokenized in %.2fs (%d tokens)",
                  pmcid, _time.perf_counter() - t_tok, text_tokens)
 
@@ -316,8 +341,9 @@ def main() -> int:
                         metavar="FRAC", help="L3 escalation fraction "
                                               "(repeatable; matched to --l2-rate).")
     parser.add_argument("--profile", required=True,
-                        help="Cascade profile name (cheap | real | default). "
-                             "Required — no implicit default.")
+                        choices=("cheap", "real"),
+                        help="Cascade profile name. Required — no implicit "
+                             "default. `default` profile retired 2026-05-16.")
     parser.add_argument("--prices", default=None,
                         help="Path to model_prices.json. "
                              "Defaults to configs/model_prices.json.")

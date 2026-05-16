@@ -12,15 +12,23 @@ invocation, a config default, or a pipeline stage changes.
 # Python deps
 pip install -r requirements.txt
 
+# Optional — large UMLS-linked scispaCy model (needed by the summarisation
+# pipeline unless NLP_HISTO_DISABLE_UMLS=1 is set). Skip on low-RAM machines.
+pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_lg-0.5.4.tar.gz
+
 # Postgres (local default — edit .env to point elsewhere)
 createdb -U postgres nlp_histo
 cp .env.example .env
 # fill in DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+# also fill the three API keys the summarisation pipeline uses (direct APIs,
+# both sync and batch modes — no Azure Foundry or Vertex AI required):
+#   OPENAI_API_KEY      — OpenAI (gpt-4o-mini, gpt-4.1-* voters)
+#   GOOGLE_API_KEY      — Gemini direct API (Gemini Flash / Flash-Lite voters)
+#   ANTHROPIC_API_KEY   — Anthropic direct API (Claude Haiku / Sonnet voters)
 
-# Schema
-python database/setup_db.py            # create tables
-python database/setup_db.py --check    # inspect, no changes
-python database/setup_db.py --drop     # destructive: wipe + recreate
+# Schema — managed by Alembic. `database/setup_db.py` no longer exists.
+alembic upgrade head        # create all base + sum_* tables
+alembic current             # sanity: prints latest revision (should be 0011…)
 ```
 
 Optional kill-switches (useful on low-RAM machines):
@@ -34,9 +42,14 @@ export NLP_HISTO_SKIP_UMLS_ENRICHMENT=1    # load scispaCy but skip CUI enrichme
 
 ## 1. Acquire papers
 
+The downloader reads `target_pmc_ids.txt` from its own CWD. The canonical
+list is checked into `files/target_pmc_ids.txt` — copy (or symlink) it
+into `file-selector/` before running:
+
 ```bash
+cp files/target_pmc_ids.txt file-selector/
 cd file-selector
-python file_downloader.py     # needs target_pmc_ids.txt
+python file_downloader.py
 python tarball_extractor.py
 python pdf_organizer.py
 cd ..
@@ -76,15 +89,26 @@ Outputs land under `out/`:
 
 ## 3. Summarisation pipeline
 
+Exactly one of `--sync` / `--batch` is **required** — there is no implicit
+default, to prevent accidentally launching the wrong mode. `--profile` is
+also required (`cheap` | `real`).
+
+Both modes use the same three direct-API keys (`OPENAI_API_KEY`,
+`GOOGLE_API_KEY`, `ANTHROPIC_API_KEY` — see §0). No extra env vars are
+needed for `--batch`.
+
 ```bash
 # Single paper, sync (live) mode — pmcid is positional, no --pmcid flag
-python scripts/run_paper.py PMC7150310_main --sync
+python scripts/run_paper.py PMC7150310_main --sync  --profile cheap
 
-# Single paper, default (batch / async) mode
-python scripts/run_paper.py PMC7150310_main
+# Single paper, batch (async) mode
+python scripts/run_paper.py PMC7150310_main --batch --profile real
 
-# Cheap-tier corpus run from a YAML selection (matches configs/paper_selection/runA.yaml)
-python scripts/run_paper.py --from-selection configs/paper_selection/runA.yaml --sync
+# Corpus run from a YAML selection (sync)
+python scripts/run_paper.py --from-selection configs/paper_selection/runA.yaml --sync  --profile cheap
+
+# Corpus run from a YAML selection (batch)
+python scripts/run_paper.py --from-selection configs/paper_selection/calibration_set_v1.yaml --batch --profile real
 ```
 
 Outputs land in `out/summaries/runs/<run_id>/`:
@@ -105,16 +129,71 @@ The pooled cross-paper relations live at `out/summaries/corpus_relations.json`.
 
 ---
 
-## 4. Cost estimation
+## 4. Regenerating the paper-selection YAML
+
+`configs/paper_selection/calibration_set_v1.yaml` was produced offline by
+the ILP selector in `eval/paper_selection/`. To rebuild it (or produce a
+new selection version) from the ingested corpus:
 
 ```bash
-python scripts/estimate_selection_cost.py
-python scripts/estimate_pipeline_cost_percentiles.py
+# DB-backed, ILP strategy (recommended). Requires `pip install pulp`.
+python -m eval.paper_selection.run_select \
+    --strategy ilp \
+    --output-version calibration_set_v1
+
+# Greedy fallback — no PuLP needed; faster but order-sensitive at the margins.
+python -m eval.paper_selection.run_select --strategy greedy --output-version smoke_v2
+
+# Inspect without writing anything.
+python -m eval.paper_selection.run_select --strategy ilp --dry-run
 ```
+
+Outputs land under `configs/paper_selection/`:
+
+* `{version}.yaml` — consumed by `--from-selection` in §3
+* `{version}_rationale.json` — full audit trail (ILP objective, sub-pool
+  sizes, hardness breakdown, per-pick reason strings)
+* `{version}_summary.csv` — flat per-paper table for spreadsheet review
+
+Full algorithm — formulas, weights, ILP formulations, design rationale —
+in [`readmes/PAPER_SELECTION.md`](readmes/PAPER_SELECTION.md).
 
 ---
 
-## 5. Tests
+## 5. Cost estimation
+
+`estimate_selection_cost.py` requires `--profile` and either positional
+PMCIDs or `--from-selection`:
+
+```bash
+# Project MAP cost for the calibration set under the cheap cascade profile
+python scripts/estimate_selection_cost.py \
+    --from-selection configs/paper_selection/calibration_set_v1.yaml \
+    --profile cheap
+```
+
+`estimate_pipeline_cost_percentiles.py` takes no arguments — it loads
+every ingested paper, picks P50 / P80 / P90 by `n_te`, and writes a
+markdown report covering per-paper cost AND cumulative spend at cuts
+10 / 25 / 50 / 75 / 80 / 90 / 100 %:
+
+```bash
+python scripts/estimate_pipeline_cost_percentiles.py
+# → out/cost_percentile_report.md (also printed to stdout)
+
+# Just the cumulative-spend section (answers "what if I run the
+# smallest P% of papers?"):
+sed -n '/^## Cumulative spend/,/^## Cold-run/p' \
+    out/cost_percentile_report.md
+```
+
+Both scripts read prices from `configs/model_prices.json` and pull
+cascade profiles live from
+`pipeline/stages/summarization/batch/voter_configs.py`.
+
+---
+
+## 6. Tests
 
 ```bash
 # Full summarisation suite (~3 min)
@@ -126,7 +205,7 @@ python -m pytest tests/summarization/test_phase3_group.py tests/summarization/te
 
 ---
 
-## 6. Thesis demos (see [`THESIS.md`](THESIS.md))
+## 7. Thesis demos (see [`THESIS.md`](THESIS.md))
 
 ```bash
 # Synthetic Tr=3 / opacity=0 PDF — confirms R1 catches ghost text
@@ -143,7 +222,7 @@ Artifacts land in `out/thesis_demo/ghost_text/`.
 
 ---
 
-## 7. Inspection helpers
+## 8. Inspection helpers
 
 ```bash
 python scripts/inspect_pipeline_output.py --pmcid PMC7150310_main
@@ -179,7 +258,7 @@ Pre-2026-05-15 baselines live under `logs/archive/` for before/after comparison.
 
 ---
 
-## 8. Database housekeeping
+## 9. Database housekeeping
 
 ```bash
 # Count text elements for a paper
@@ -197,7 +276,7 @@ WHERE pmcid LIKE 'PMC7150310%';"
 
 ---
 
-## 9. Per-stage output cache (B-027)
+## 10. Per-stage output cache (B-027)
 
 `runtime.skip_existing_outputs` reuses cached outputs for the three
 expensive non-Docling stages of the PDF pipeline:

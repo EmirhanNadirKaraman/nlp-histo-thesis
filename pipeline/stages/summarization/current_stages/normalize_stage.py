@@ -284,6 +284,7 @@ def _dedup_key(
     outcome: str | None,
     relation_type: RelationTypeEnum,
     direction: DirectionEnum | None,
+    category: str | None,
 ) -> str | None:
     """
     Return a grouping key for conditional dedup, or None if any field that
@@ -297,16 +298,24 @@ def _dedup_key(
     the same sentence stay separate — otherwise a positive and negative claim
     on the same te_id collapse silently and CONTRADICT can never surface at
     RELATE.
+
+    category is part of the key so findings differing only on category (e.g.
+    "morphology" vs "IHC") stay separate. Pre-this-change the dedup pretended
+    these were the same claim and silently picked the best-grounded member's
+    category — losing the discarded category entirely. Downstream GROUP keys
+    on category, so a cross-category merge would precommit a single category
+    before GROUP even saw the data.
     """
     if (
         subject is None
         or outcome is None
         or relation_type is RelationTypeEnum.unclear
         or text_element_id is None
+        or category is None
     ):
         return None
     dir_key = direction.value if direction is not None else "none"
-    return f"{text_element_id}|{subject}|{outcome}|{relation_type.value}|{dir_key}"
+    return f"{text_element_id}|{subject}|{outcome}|{relation_type.value}|{dir_key}|{category}"
 
 
 # ── Source span extraction ─────────────────────────────────────────────────────
@@ -414,7 +423,10 @@ class NormalizeStage:
         ungroupable: list[tuple[Finding, str | None, str | None]] = []
 
         for f, te_id, subj_cui, out_cui in normalized:
-            key = _dedup_key(te_id, f.subject_entity, f.outcome_entity, f.relation_type, f.direction)
+            key = _dedup_key(
+                te_id, f.subject_entity, f.outcome_entity,
+                f.relation_type, f.direction, f.category,
+            )
             if key is None:
                 ungroupable.append((f, subj_cui, out_cui))
             else:

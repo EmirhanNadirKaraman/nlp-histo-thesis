@@ -24,7 +24,7 @@ nlp-histo/
 │       └── summarization/         Text → structured rules via LLM cascade
 ├── database/               SQLAlchemy ORM, connection pool, schema setup
 ├── named_entity_recognition/  scispaCy + UMLS entity extraction
-├── eval/                   Evaluation harness, annotation tools
+├── eval/                   Evaluation harness, annotation tools, paper selection
 ├── scripts/                One-off / inspection / thesis-demo scripts
 ├── tests/                  pytest suite (summarisation-heavy)
 ├── configs/                YAML run configs, NLI/pricing tables
@@ -182,6 +182,67 @@ Cross-paper relations are produced separately by
 
 ---
 
+## Pipeline C — Paper selection
+
+**Orchestrator:** [`eval/paper_selection/run_select.py`](../eval/paper_selection/run_select.py) — CLI driver, no LLM / API calls.
+
+Offline pipeline that builds the YAML selection files consumed by
+`scripts/run_paper.py --from-selection`. Produces three buckets — `related`,
+`diverse`, `hard` — with rationale + flat summary alongside.
+
+```
+RawPaper (DB / JSONL)
+  │   loaders.py            DBLoader | JSONLLoader
+  ▼
+PaperFingerprint            fingerprints.py:build_fingerprints
+  │     ─ UMLS-TUI bucketed entity sets (disease/biomarker/gene/tissue/method/outcome)
+  │     ─ Workload counters, layout counters, source_stats
+  ▼
+SelectionResult             selectors.py (greedy)  | ilp_selectors.py (PuLP-CBC, opt-in)
+  │     ─ select_related_papers(_ilp)
+  │     ─ select_diverse_papers(_ilp)
+  │     ─ select_hard_papers(_ilp)
+  ▼
+configs/paper_selection/{version}.yaml           ← consumed by --from-selection
+configs/paper_selection/{version}_rationale.json ← full audit trail
+configs/paper_selection/{version}_summary.csv    ← flat per-paper table
+                          export.py:write_calibration_set
+```
+
+### Key files
+
+| File | Role |
+|---|---|
+| `eval/paper_selection/run_select.py` | CLI entry point + post-selection validation (count, useful-entities, rel-ordering, hard-ordering sanity checks). |
+| `eval/paper_selection/loaders.py` | `DBLoader` (default) + `JSONLLoader` (fallback) → `RawPaper` records. |
+| `eval/paper_selection/fingerprints.py` | TUI semantic-type bucketing, regex extractors (`CD-N`, `Ki-67`, gene-like uppercase), curated keyword dicts → `PaperFingerprint`. |
+| `eval/paper_selection/models.py` | Pure-dataclass DTOs: `PaperFingerprint`, `HardnessBreakdown`, `SelectionResult`. |
+| `eval/paper_selection/metrics.py` | Pluggable Protocols: `Relatedness` (PairMetric), `Diversity` (SetMetric), `Hardness` (PaperMetric → `HardnessBreakdown`). |
+| `eval/paper_selection/selectors.py` | Greedy bucket selectors (default). `select_calibration_set` composes the three buckets with default mutual exclusion. |
+| `eval/paper_selection/ilp_selectors.py` | ILP bucket selectors via PuLP-CBC. Candidate pruning + edge sparsification; per-bucket time budget; pre-score fallback on infeasibility. |
+| `eval/paper_selection/export.py` | YAML / JSON / CSV writers; tiny in-tree YAML emitter — no PyYAML dependency. |
+
+### Critical invariants
+
+* **Strategy-agnostic.** `(papers, rationale)` shape is identical between
+  greedy and ILP; downstream consumers (`run_select.py`, `export.py`)
+  never branch on strategy.
+* **Deterministic.** Both strategies are deterministic for a given
+  fingerprint list + metric config. ILP ties broken by PMCID ordering;
+  greedy picks broken by score then PMCID.
+* **Fallback chain.** ILP infeasible / no usable solution →
+  `_prescore_fallback` returns top-`k` by pre-score with
+  `ilp_solution_quality="prescore_fallback"` in the rationale; PuLP not
+  installed → CLI errors unless `--ilp-fallback-greedy`.
+* **YAML is the only consumer-facing artifact.** JSON + CSV exist for
+  thesis evidence — picking, hardness breakdowns, ILP objective, sub-pool
+  reasons.
+
+Full algorithm spec — formulas, weights, design rationale — in
+[`docs/readmes/PAPER_SELECTION.md`](readmes/PAPER_SELECTION.md).
+
+---
+
 ## Database
 
 **ORM:** `database/models.py`
@@ -211,7 +272,9 @@ Cross-paper relations are produced separately by
 **Connection:** `database/db_connection.py` →
 `get_db_connection().session_scope()`.
 
-**Schema setup:** `database/setup_db.py` (`--check`, `--drop`).
+**Schema setup:** Alembic — `alembic upgrade head` to create the schema,
+`alembic current` to inspect the version. (Legacy `database/setup_db.py`
+has been removed.)
 
 ---
 
@@ -264,6 +327,7 @@ and want all logs to coalesce.
 | Script                                          | Purpose                                                   |
 |-------------------------------------------------|-----------------------------------------------------------|
 | `scripts/run_paper.py`                          | End-to-end driver for one paper                           |
+| `python -m eval.paper_selection.run_select`     | Build a new `configs/paper_selection/{version}.yaml`      |
 | `scripts/estimate_selection_cost.py`            | Cheap-tier cost estimate before a run                     |
 | `scripts/estimate_pipeline_cost_percentiles.py` | Cost-percentile sweep                                     |
 | `scripts/inspect_pipeline_output.py`            | HTML inspector for a single paper                         |
@@ -341,4 +405,5 @@ that motivated the change when applicable.
 | 2026-05-15 | PDF extraction › `remove_citations` year preservation | Capped citation-index runs at 1–3 digits in three branches of `remove_citations` (`parsers/text_processing.py`): after-period (`\. \d{1,3}(?:[,–\-]\d{1,3})*`), after-comma (same shape), standalone-with-separator (same shape, requires ≥1 separator). Bracket-style branch left as `\d+` because brackets disambiguate years from indices. Pre-fix `"Smith et al. 2020 reported …"` became `"Smith et al. reported …"`; post-fix the year survives. Citation indices in pathology papers are practically never ≥1000. Regression test in `tests/parsers/test_remove_citations.py` (9 cases). | BUGS.md [Bug 43](BUGS.md#bug-43--remove_citations-strips-publication-years) |
 | 2026-05-15 | Cross-pipeline › config hygiene cluster | Five dead-knob bugs cleaned up in one pass. Deletions: `BaselineMode` enum + `pipeline.stages.pdf_text_extraction.BaselineMode` re-export; `FilteringConfig.{fix_ligatures, remove_reference_markers, min_paragraph_chars}`; `TextAssemblyConfig.{enabled, baseline_mode, use_hierarchical_extraction, use_context_aware_stitching, compare_combinations, save_combination_outputs}`; `CroppingConfig.{include_captions_in_metadata, panel_counting_enabled}`; `TATRConfig.{enabled, max_detections_per_page, batch_size_pages, structure_model_name}`. Wires: promoted hardcoded `tatr_detector._RENDER_DPI = 150` to `TATRConfig.render_dpi: int = 150` (read per-call in `detect()`); added `NormalizeConfig.extra_synonyms: dict[str, str] | None` to `SummarizationConfig` and threaded it through both sync and batch runners into `NormalizeStage(extra_synonyms=...)`. Loader fix discovered while wiring: `pipeline/config_loader.py:_unwrap_optional` now also unwraps PEP-604 `X | None` (`types.UnionType`) — was only matching `typing.Union`; new `_is_mapping_type` helper short-circuits `dict[...]`-typed YAML values out of the nested-dataclass branch so `extra_synonyms: {acme: ACME}` no longer crashes. `configs/run.yaml` template updated: dead-knob comment lines removed, `tatr.render_dpi` and `summarization.normalize.extra_synonyms` added. Regression coverage: 8 tests in `tests/test_config_loader.py`, including new `test_normalize_extra_synonyms_loaded_as_mapping` and `test_tatr_render_dpi_overridable`. | BUGS.md [Bug 30](BUGS.md#bug-30--filteringconfig-dead-knobs-fix_ligatures-remove_reference_markers-min_paragraph_chars), [Bug 31](BUGS.md#bug-31--textassemblyconfig-six-of-eight-fields-unread), [Bug 32](BUGS.md#bug-32--croppingconfig-dead-knobs-include_captions_in_metadata-panel_counting_enabled), [Bug 34](BUGS.md#bug-34--tatrconfig-dead-knobs-render-dpi-hardcoded), [Bug 37](BUGS.md#bug-37--normalizestageextra_synonyms-not-exposed-via-summarizationconfig) |
 | 2026-05-15 | Summarisation › CANONICALIZE per-direction binning + group-level `is_conflicted` | `_split_by_direction` rewritten: one bin per observed direction (no folding of `unclear` / `no_direction` into the majority polarity bin); returns `sorted(bins.items())` for determinism. `_compute_scope_fields` shrunk to `_study_coverage`. `is_conflicted` repurposed to a group-level signal (True iff the group emits ≥2 polarity-bearing bins; stamped on every rule from the group). New shared symbols in `pipeline/stages/summarization/models.py`: `direction_value()` normalizer (`DirectionEnum` / raw string / `None` → string), `POLARITY_BEARING_DIRS`, `NON_POLARITY_DIRS`. `RelateStage._should_compare` and `corpus_relate._should_compare_cross_paper` skip pairs where either side's direction is non-polarity (`return False, "non_polarity_direction"`). New `CANONICALIZE_DIRECTION_POLICY_VERSION = "per_direction_no_folding_v2"` fed into `pipeline_config_hash` via both runners' `thresholds` dict — cache flips on bumps. Tests: rewritten `tests/summarization/test_canonicalize_direction_split.py` (16 cases incl. S5 core invariant), new `tests/summarization/test_corpus_relate_non_polarity.py` (6 cases), extended `tests/summarization/test_relate_skipped_pairs.py` (+4), extended `tests/summarization/test_pipeline_config_hash.py` (+2). Supersedes B-026. | BUGS.md [Bug 49](BUGS.md#bug-49--canonicalize-folds-unclear--no_direction-into-majority-polarity-bin) |
+| 2026-05-16 | Eval › paper-selection algorithm documented | Full write-up of `eval/paper_selection/`: three buckets (related / diverse / hard), pluggable PairMetric / SetMetric / PaperMetric Protocols (`Relatedness`, `Diversity`, `Hardness`), two interchangeable strategies (greedy default, PuLP-CBC ILP opt-in), ILP scaling levers (candidate pruning + edge sparsification + per-bucket time budget + pre-score fallback), three output artifacts (`{version}.yaml` consumer-facing, `_rationale.json` + `_summary.csv` for thesis evidence). New `docs/readmes/PAPER_SELECTION.md` is the algorithm spec; STRUCTURE.md gained a "Pipeline C — Paper selection" section + scripts table row; HOW_TO_RUN.md §4 documents the regen command. THESIS.md decisions log entry for the bucket structure + ILP-as-default call. No code changes. | [`docs/readmes/PAPER_SELECTION.md`](readmes/PAPER_SELECTION.md) |
 | 2026-05-15 | PDF extraction › PipelineRunner seeding + per-stage cache | Closes B-027. New `PipelineRunner._seed_pipeline()` seeds `random` / `numpy` / `torch` (+ `torch.cuda` when available) at `__init__` from `cfg.runtime.seed` (widened to `int \| None = 42`; `None` opts out). New `pipeline/stages/pdf_text_extraction/stage_cache.py` provides `_StageCache.get_or_compute(stage_name, pmcid, config_hash, compute_fn, loader_fn, dumper_fn, summarise_fn)` and per-stage (loader, dumper) pairs for `TableDetectionResult`, `List[LayoutElement]`, `List[HierarchicalRow]`. `runner._process` wraps stages 2 (table detection — both standard and two-pass branches), 5 (artifact filtering), 6 (text assembly) through the cache; final writers (7/8) and Docling extraction (1/4 — already cached at the Docling layer) untouched. Cache hash includes `cfg.docling`, `cfg.docling_text`, `cfg.tatr`, `cfg.masking`, `cfg.filtering`, `cfg.text`, `cfg.two_pass`, `cfg.table_detector`, the scispaCy model name when NER is active, and `STAGE_CACHE_VERSION` (per-stage int dict — bump for serialisation OR behaviour changes). Disk layout: `out/stage_cache/<stage>/<pmcid>.{json,hash}` with atomic temp+rename writes; sidecar / loader corruption logs WARNING and falls through to recompute, unexpected exceptions propagate. Final writers (steps 7/8) always run. Atomic helpers inlined in `stage_cache.py` rather than extracted from `summarization/persistence.py` (planned contingency — keeps summarisation byte-output untouched). `configs/run.yaml` template updated; `docs/HOW_TO_RUN.md` §9 documents cleanup, version-bump triggers, and reproducibility scope. 22-test regression in `tests/pdf_text_extraction/test_b027_seed_and_cache.py`. | BUGS.md [Bug 27](BUGS.md#bug-27--runtimeconfig-knobs-num_workers-log_level-seed-skip_existing_outputs-not-consumed) |

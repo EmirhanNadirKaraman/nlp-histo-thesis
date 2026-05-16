@@ -20,7 +20,7 @@ _log = logging.getLogger(__name__)
 # Bump these whenever the MAP output schema or prompt changes in a
 # behaviour-affecting way. They are included in cache keys / run metadata so
 # stale outputs don't collide with new ones.
-MAP_SCHEMA_VERSION: str = "map_v9_polarity_hard_fail"
+MAP_SCHEMA_VERSION: str = "map_v10_nli_and_voter_config_in_key"
 MAP_PROMPT_VERSION: str = "map_prompt_v5_expression_absent_vs_negative"
 MAP_STAGE_NAME:     str = "map"
 
@@ -62,11 +62,42 @@ def compute_cascade_signature(voter_specs: list[tuple[str, str]]) -> str:
     """Stable short hash of an ordered (provider, model) sequence.
 
     Used in MAP cache keys and run-artifact metadata so the same chunk under a
-    different cascade configuration is considered a cache miss.
+    different cascade configuration is considered a cache miss. This signature
+    captures **identity only** — provider + model. Sampler settings
+    (temperature, top_p) are captured separately by
+    ``compute_voter_config_hash`` so a temperature tweak under the same
+    (provider, model) still invalidates the cache.
     """
     import hashlib
     import json
     payload = json.dumps([list(t) for t in voter_specs], separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def compute_voter_config_hash(
+    voter_specs_with_sampling: list[tuple[str, str, float, float | None]],
+) -> str:
+    """Stable short hash of an ordered (provider, model, temperature, top_p) sequence.
+
+    Companion to ``compute_cascade_signature`` — captures sampler settings so
+    editing ``voter_configs.py`` (e.g. flipping L1 temperature 0.0 → 0.2) under
+    the same model set produces a different MAP cache key. ``top_p`` may be
+    ``None`` for providers that don't expose it; the hash encodes that
+    explicitly via ``json.dumps`` so ``None`` and ``1.0`` are distinguishable.
+
+    Temperatures are rounded to 3 dp before hashing to avoid float-identity
+    misses in the same way as the in-run voter cache (see
+    ``map_stage._voter_cache_key``).
+    """
+    import hashlib
+    import json
+    payload = json.dumps(
+        [
+            [provider, model, round(float(temperature), 3), top_p]
+            for provider, model, temperature, top_p in voter_specs_with_sampling
+        ],
+        separators=(",", ":"),
+    )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
@@ -82,14 +113,28 @@ class MapRunMetadata(BaseModel):
     ``provider`` and ``model`` identify the producer of the *stored* result —
     in the cascade this is the voter or escalation model whose output was
     selected, not the cascade as a whole.
+
+    ``nli_model_id`` is the active grounding/relation NLI checkpoint
+    (``$NLP_HISTO_NLI_MODEL`` resolved at process start). Stored on each MAP
+    entry because grounding scores are computed during MAP and persisted with
+    the result — swapping NLI models without invalidating those scores would
+    serve stale entailment judgements as if fresh.
+
+    ``voter_config_hash`` is the deterministic hash of
+    (provider, model, temperature, top_p) tuples across all cascade levels.
+    Defaults to empty string for backward-compat with on-disk entries written
+    before the field existed; the cache lookup checks both fields and treats
+    a mismatch as a miss.
     """
-    schema_version:    str = MAP_SCHEMA_VERSION
-    prompt_version:    str = MAP_PROMPT_VERSION
-    stage_name:        str = MAP_STAGE_NAME
-    provider:          str
-    model:             str
-    cascade_profile:   str = "custom"
-    cascade_signature: str
+    schema_version:     str = MAP_SCHEMA_VERSION
+    prompt_version:     str = MAP_PROMPT_VERSION
+    stage_name:         str = MAP_STAGE_NAME
+    provider:           str
+    model:              str
+    cascade_profile:    str = "custom"
+    cascade_signature:  str
+    nli_model_id:       str = ""
+    voter_config_hash:  str = ""
 
 
 # ── Phase 1: new enums and scope model ────────────────────────────────────────
@@ -926,6 +971,13 @@ class FinalRule(BaseModel):
     scope_qualify_count:   int = 0
     is_contradicted:       bool
     contradicted_by:       List[str]             # canonical_ids that contradict this rule
+    # Observability — which RESOLVE scoring branch produced this rule's
+    # final_score. ``relations_present`` uses the votes+grounding+relations
+    # formula; ``relations_absent`` uses the grounding-dominant fallback.
+    # See ``current_stages/resolve_stage.py`` for the exact branch logic.
+    # Default ``relations_absent`` keeps backward compatibility with cached
+    # entries from before the field existed.
+    score_mode:            Literal["relations_present", "relations_absent"] = "relations_absent"
 
 
 # ── Corpus-level RELATE output ────────────────────────────────────────────────

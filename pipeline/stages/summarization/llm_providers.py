@@ -260,7 +260,11 @@ def anthropic_direct_chat(
     api_key: str | None = None,
     temperature: float = 0.1,
     max_tokens: int = DEFAULT_MAX_TOKENS,
-    request_timeout: int = 60,
+    # Sonnet 4.6 on dense MAP chunks can take 60–120s, longer under
+    # concurrent load (chunk_workers ≥ 10 funnels multiple L3 escalations
+    # at the rate limiter). 180s gives headroom for retries to actually
+    # succeed instead of double-timing-out and killing the paper.
+    request_timeout: int = 180,
 ) -> "ChatAnthropic":  # type: ignore[name-defined]
     """Direct Anthropic API via ChatAnthropic (ANTHROPIC_API_KEY)."""
     from langchain_anthropic import ChatAnthropic

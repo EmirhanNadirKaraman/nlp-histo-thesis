@@ -41,6 +41,7 @@ from ..models import (
     AuditableSummary,
     MapRunMetadata,
     compute_cascade_signature,
+    compute_voter_config_hash,
 )
 from ..prompts import build_map_chain
 from ..routing import MapOutputRouter
@@ -49,10 +50,42 @@ from pipeline.stages.summarization.interfaces.scoring import ChunkDecision
 
 logger = logging.getLogger(__name__)
 
+# LengthFinishReasonError lives in the `openai` package (the structured-
+# output parser raises it when finish_reason="length"). Gemini's
+# direct-API ChatOpenAI wrapper goes through the same OpenAI client at
+# https://generativelanguage.googleapis.com/v1beta/openai/..., so this
+# exception fires for Gemini voters too — not just OpenAI ones.
+# Historic note: a prior import targeted langchain_core.exceptions, where
+# this class does NOT exist; the fallback silently set the guard to None,
+# so length-limit errors went through the retry loop pointlessly.
 try:
-    from langchain_core.exceptions import LengthFinishReasonError as _LengthFinishReasonError
-except ImportError:  # older langchain versions
+    from openai import LengthFinishReasonError as _LengthFinishReasonError
+except ImportError:  # openai SDK absent (test contexts)
     _LengthFinishReasonError = None  # type: ignore[assignment,misc]
+
+
+def _selected_global_index(outcome, *, kept: bool) -> int | None:
+    """Translate an agreement outcome's best_index into the ORIGINAL voter
+    spec index. Returns None when the level escalated (no winner) or when
+    the bundle is missing — both legitimate "no selected voter" cases.
+
+    Mirrors the lookup that ``producer_from_outcome`` uses, but returns the
+    integer index instead of the (provider, model) tuple. Used to populate
+    ``SumMapVoterOutput.is_selected`` so the row whose ``raw_output``
+    became the level's MAP result is identifiable.
+    """
+    if not kept:
+        return None
+    bundle = getattr(outcome, "agreement_bundle", None)
+    best_idx = getattr(bundle, "best_index", None) if bundle is not None else None
+    if best_idx is None:
+        return None
+    vvi = getattr(outcome, "valid_voter_indices", None)
+    if vvi is None:
+        return int(best_idx)
+    if 0 <= best_idx < len(vvi):
+        return int(vvi[best_idx])
+    return None
 
 
 def _format_sentences(chunk: list[dict]) -> str:
@@ -154,6 +187,21 @@ class MapStage:
         self._l1_temps = [float(getattr(llm, "temperature", 0.0) or 0.0) for llm in voter_llms]
         self._l2_temps = [float(getattr(llm, "temperature", 0.0) or 0.0) for llm in level2_voter_llms]
         self._l3_temp  = float(getattr(escalation_llm, "temperature", 0.0) or 0.0)
+
+        # Per-voter top_p, captured for the MAP cache key (voter_config_hash).
+        # Some LangChain LLM wrappers don't expose .top_p; we record None in
+        # that case so the hash distinguishes "absent" from any literal value.
+        def _capture_top_p(llm) -> float | None:
+            value = getattr(llm, "top_p", None)
+            if value is None:
+                return None
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+        self._l1_top_ps = [_capture_top_p(llm) for llm in voter_llms]
+        self._l2_top_ps = [_capture_top_p(llm) for llm in level2_voter_llms]
+        self._l3_top_p  = _capture_top_p(escalation_llm)
         self._agreement = AgreementChecker(scorer=scorer or EmbeddingScorer(), theta=theta, reject_theta=reject_theta)
         self._router = router
         self._escalation_lock = threading.Lock()
@@ -175,6 +223,35 @@ class MapStage:
             self._voter_specs + self._l2_specs + [self._l3_spec]
         )
 
+        # MAP cache key inputs that go beyond (provider, model) identity:
+        # voter sampler settings and the active NLI grounding model id. See
+        # ``models.compute_voter_config_hash`` and ``MapRunMetadata`` for the
+        # rationale. Captured here so every metadata object built by
+        # ``_make_metadata`` carries identical values.
+        l1_full_specs = [
+            (p, m, t, tp)
+            for (p, m), t, tp in zip(self._voter_specs, self._l1_temps, self._l1_top_ps)
+        ]
+        l2_full_specs = [
+            (p, m, t, tp)
+            for (p, m), t, tp in zip(self._l2_specs, self._l2_temps, self._l2_top_ps)
+        ]
+        l3_full_spec = (
+            self._l3_spec[0], self._l3_spec[1], self._l3_temp, self._l3_top_p,
+        )
+        self._voter_config_hash = compute_voter_config_hash(
+            l1_full_specs + l2_full_specs + [l3_full_spec]
+        )
+
+        # Active NLI grounding/relation checkpoint. Bound at construction so
+        # the metadata stamped on every cache entry reflects the model that
+        # produced the persisted grounding scores. Resolves ``$NLP_HISTO_NLI_MODEL``.
+        try:
+            from ..nli_config import get_active_spec  # noqa: PLC0415 — local import
+            self._nli_model_id = get_active_spec().hf_id
+        except Exception:  # noqa: BLE001
+            self._nli_model_id = ""
+
         # ── Invocation-time usage capture ──────────────────────────────────────
         # Records one InvocationUsage per chain.invoke() call. Populated in
         # _run_voters and _invoke_l3 by reading usage_metadata directly off
@@ -187,6 +264,16 @@ class MapStage:
         self._invocation_usage_records: list = []
         self._invocation_usage_lock = threading.Lock()
 
+        # ── Per-voter output buffer ────────────────────────────────────────────
+        # Captures every voter's AuditableSummary (or failure) per (chunk,
+        # level, voter_index). The runner reads this via
+        # ``voter_output_records()`` after MAP completes and persists into
+        # ``sum_map_voter_outputs``. Cache hits are skipped (the chunk did
+        # not reach any voter this run; the original voter outputs were
+        # captured by whichever earlier run populated the cache).
+        self._voter_output_records: list[dict] = []
+        self._voter_output_lock = threading.Lock()
+
     # ── Run-metadata helpers ────────────────────────────────────────────────────
 
     def _make_metadata(self, provider: str, model: str) -> MapRunMetadata:
@@ -195,6 +282,8 @@ class MapStage:
             model=model,
             cascade_profile=self._cascade_profile,
             cascade_signature=self._cascade_signature,
+            voter_config_hash=self._voter_config_hash,
+            nli_model_id=self._nli_model_id,
         )
 
     def cascade_lookup_metadata(self) -> MapRunMetadata:
@@ -258,11 +347,21 @@ class MapStage:
             self._last_escalation_counts = {
                 "total": 0, "l1_kept": 0, "l2_escalated": 0, "l2_kept": 0,
                 "l3_escalated": 0, "l3_kept": 0, "finalized": 0, "dropped": 0,
+                # Chunks served from PipelineCache; never reach _process_chunk
+                # and therefore never bump the per-tier counters. Tracked
+                # separately so the cascade report can distinguish API work
+                # from cache work without conflating cost numbers.
+                "cache_hits": 0,
             }
         # Reset invocation-usage records for this paper so the runner reads
         # only the current MAP run's records.
         with self._invocation_usage_lock:
             self._invocation_usage_records = []
+        # Reset per-voter output buffer for this paper. Same lifecycle as
+        # invocation_usage_records — populated during _cascade, read by
+        # the runner after MAP completes, cleared at start of the next paper.
+        with self._voter_output_lock:
+            self._voter_output_records = []
 
         # Thread the usage collector onto the instance for the duration of
         # this paper. Reset in a finally so an exception cannot leave a stale
@@ -333,15 +432,40 @@ class MapStage:
                 if hit:
                     # Always assign chunk_id from current position — cached
                     # chunk_id may be stale (e.g. from a different run or paper).
-                    hit = hit.model_copy(update={"chunk_id": f"C{abs_idx + 1}"})
+                    cached_chunk_id = f"C{abs_idx + 1}"
+                    hit = hit.model_copy(update={"chunk_id": cached_chunk_id})
                     results.append(hit)
                     cache_hit_indices.append(idx)
                     if usage_collector is not None:
                         usage_collector.record_cache_hit(
                             stage="MAP", role="voter",
                             substage="cache_hit",
-                            item_id=f"C{abs_idx + 1}",
+                            item_id=cached_chunk_id,
                         )
+                    # Cache hits skip _process_chunk where the per-tier
+                    # escalation counters are incremented. Bump total /
+                    # finalized / cache_hits here so the cascade report
+                    # reflects all chunks the paper went through, not just
+                    # the cache-miss ones. Tier counters (l1_kept etc.)
+                    # stay zero — we don't know which tier originally
+                    # produced the cached entry.
+                    with self._escalation_lock:
+                        self._last_escalation_counts["total"] += 1
+                        self._last_escalation_counts["finalized"] += 1
+                        self._last_escalation_counts["cache_hits"] += 1
+                    # Replay per-voter outputs from the cache if the entry
+                    # carries them so sum_map_voter_outputs gets populated
+                    # even on cache hits. Older entries lack the field and
+                    # silently contribute nothing — degraded but not broken.
+                    cached_voter_outputs = cache.get_voter_outputs(chunk, lookup_md)
+                    if cached_voter_outputs:
+                        # Restamp chunk_id in case the cache was written
+                        # under a different per-paper chunk numbering.
+                        with self._voter_output_lock:
+                            for r in cached_voter_outputs:
+                                row = dict(r)
+                                row["chunk_id"] = cached_chunk_id
+                                self._voter_output_records.append(row)
                     continue
             results.append(None)
             uncached.append((idx, chunk))
@@ -398,7 +522,18 @@ class MapStage:
                 results[idx_result] = result
                 if cache and result is not None:
                     prov, model = producer or ("unknown", "unknown")
-                    cache.set_map(chunk, result, self._make_metadata(prov, model))
+                    # Snapshot the voter-output rows for this chunk so the
+                    # cache entry carries them. Future cache hits replay
+                    # these into sum_map_voter_outputs without needing
+                    # another live cascade.
+                    chunk_voter_rows = [
+                        dict(r) for r in self.voter_output_records()
+                        if r.get("chunk_id") == chunk_id
+                    ]
+                    cache.set_map(
+                        chunk, result, self._make_metadata(prov, model),
+                        voter_outputs=chunk_voter_rows or None,
+                    )
 
         live_results = [r for r in results if r is not None]
 
@@ -500,6 +635,16 @@ class MapStage:
             voter_count=len(voters), voter_specs=self._voter_specs,
         )
 
+        l1_selected_global_idx = _selected_global_index(
+            l1_outcome, kept=l1_outcome.keep,
+        )
+        self._buffer_voter_outputs(
+            pmcid=pmcid, chunk_id=chunk_id, level="l1",
+            voters_full=voters_full, voter_specs=self._voter_specs,
+            voter_timings=voter_timings,
+            selected_voter_index=l1_selected_global_idx,
+        )
+
         if l1_outcome.keep:
             result = l1_outcome.best
             _producer = producer_from_outcome(l1_outcome, self._voter_specs)
@@ -515,6 +660,13 @@ class MapStage:
                 )
             result = self._invoke_l3(inp, chunk_id)
             _producer = self._l3_spec
+            # Router path skips L2; record L3 immediately so the buffer is
+            # symmetric with the legacy L1→L2→L3 staircase below.
+            self._buffer_voter_outputs(
+                pmcid=pmcid, chunk_id=chunk_id, level="l3",
+                voters_full=[result], voter_specs=[self._l3_spec],
+                voter_timings=None, selected_voter_index=0,
+            )
         else:
             # Legacy path: L1 → L2 → L3 staircase (no router). Reuses
             # evaluate_chunk for the L2 decision so the sync/batch surface
@@ -543,6 +695,16 @@ class MapStage:
                 voter_count=len(l2_voters), voter_specs=self._l2_specs,
             )
 
+            l2_selected_global_idx = _selected_global_index(
+                l2_outcome, kept=l2_outcome.keep,
+            )
+            self._buffer_voter_outputs(
+                pmcid=pmcid, chunk_id=chunk_id, level="l2",
+                voters_full=l2_full, voter_specs=self._l2_specs,
+                voter_timings=l2_timings,
+                selected_voter_index=l2_selected_global_idx,
+            )
+
             if l2_outcome.keep:
                 result = l2_outcome.best
                 _producer = producer_from_outcome(l2_outcome, self._l2_specs)
@@ -552,6 +714,13 @@ class MapStage:
                 logger.debug("Chunk %s: L2 escalating to L3", chunk_id)
                 result = self._invoke_l3(inp, chunk_id)
                 _producer = self._l3_spec
+                # L3 is a single voter; record it with voter_index=0,
+                # always selected (it's the final word at this chunk).
+                self._buffer_voter_outputs(
+                    pmcid=pmcid, chunk_id=chunk_id, level="l3",
+                    voters_full=[result], voter_specs=[self._l3_spec],
+                    voter_timings=None, selected_voter_index=0,
+                )
 
         # RoutingDataset audit row — emit on every router-path chunk (both
         # KEEP and escalate). Mirrors the original _cascade behaviour so
@@ -975,6 +1144,72 @@ class MapStage:
         """
         with self._invocation_usage_lock:
             return list(self._invocation_usage_records)
+
+    def _buffer_voter_outputs(
+        self,
+        *,
+        pmcid: str,
+        chunk_id: str,
+        level: str,                                     # "l1" | "l2" | "l3"
+        voters_full: list,                               # list[AuditableSummary | None]
+        voter_specs: list[tuple[str, str]],
+        voter_timings: dict[int, float | None] | None,
+        selected_voter_index: int | None,
+    ) -> None:
+        """Buffer one row per voter for the (chunk, level) tuple.
+
+        ``voters_full`` aligns positionally with ``voter_specs`` — both are
+        length-N lists, ``None`` slots indicate voters whose API call
+        failed (the run continues with the survivors, but the row is still
+        emitted with ``failed=True`` and ``raw_output=None``).
+
+        ``selected_voter_index`` is the global voter index whose
+        AuditableSummary became the level's result, or None when the level
+        escalated (no winner). Exactly one row per (chunk, level) has
+        ``is_selected=True`` when a non-None value is passed.
+        """
+        from ..models import AuditableSummary  # noqa: PLC0415
+        rows: list[dict] = []
+        for idx, summary in enumerate(voters_full):
+            provider, model = (
+                voter_specs[idx] if idx < len(voter_specs) else ("unknown", "unknown")
+            )
+            latency = None
+            if voter_timings is not None:
+                latency = voter_timings.get(idx)
+            failed = summary is None
+            raw_output = None
+            finding_count = 0
+            if isinstance(summary, AuditableSummary):
+                raw_output = summary.model_dump()
+                finding_count = len(summary.findings or [])
+            rows.append({
+                "pmcid":          pmcid,
+                "chunk_id":       chunk_id,
+                "level":          level,
+                "voter_index":    idx,
+                "provider":       provider,
+                "model":          model,
+                "is_selected":    (selected_voter_index == idx),
+                "failed":         failed,
+                "error_message":  None,  # API errors are logged elsewhere; not threaded here yet
+                "finding_count":  finding_count,
+                "latency_ms":     latency,
+                "raw_output":     raw_output,
+            })
+        with self._voter_output_lock:
+            self._voter_output_records.extend(rows)
+
+    def voter_output_records(self) -> list[dict]:
+        """Return a snapshot of per-voter outputs collected during the
+        current paper's MAP run.
+
+        Empty until ``process()`` is called. Reset at the start of every
+        ``process()`` invocation. The runner consumes this to persist
+        ``sum_map_voter_outputs`` rows after the MAP stage finishes.
+        """
+        with self._voter_output_lock:
+            return list(self._voter_output_records)
 
     @staticmethod
     def _voter_cache_key(provider: str, model: str, temperature: float, inp: dict) -> tuple:

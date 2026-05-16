@@ -399,6 +399,51 @@ class SumMapFinding(Base):
     )
 
 
+class SumMapVoterOutput(Base):
+    """
+    One row per (chunk, cascade level, voter) — captures the AuditableSummary
+    each individual voter produced, including voters whose output was
+    eventually discarded by agreement. Lets thesis analysis answer "what did
+    each model say for chunk C5?" rather than only "which voter won".
+
+    ``raw_output`` is the full AuditableSummary serialised as JSONB (Pydantic
+    ``model_dump()``). ``failed = True`` rows carry ``raw_output = NULL`` and
+    the API error in ``error_message``.
+
+    ``is_selected`` marks the voter whose output became the per-chunk MAP
+    result at this level. Exactly one row per (chunk, level) has
+    is_selected=True when the level produced a result; zero when the level
+    escalated and a higher tier produced the final.
+    """
+    __tablename__ = "sum_map_voter_outputs"
+
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    pipeline_run_id = Column(Integer, ForeignKey("pipeline_runs.id", ondelete="CASCADE"), nullable=False)
+    pmcid           = Column(String(50),  nullable=False)
+    chunk_id        = Column(String(20),  nullable=False)   # "C1", "C2", …
+    level           = Column(String(4),   nullable=False)   # "l1" | "l2" | "l3"
+    voter_index     = Column(Integer,     nullable=False)   # 0-based within the level
+    provider        = Column(String(20),  nullable=False)   # "openai" | "gemini" | "anthropic"
+    model           = Column(String(100), nullable=False)
+    is_selected     = Column(Boolean,     nullable=False)   # winner at this level (one per (chunk, level) at most)
+    failed          = Column(Boolean,     nullable=False)   # API call raised
+    error_message   = Column(Text,        nullable=True)
+    finding_count   = Column(Integer,     nullable=False)   # 0 if failed
+    latency_ms      = Column(Float,       nullable=True)
+    raw_output      = Column(JSONB,       nullable=True)    # AuditableSummary.model_dump()
+    created_at      = Column(TIMESTAMP,   server_default="now()")
+
+    __table_args__ = (
+        Index("ix_smvo_run",   "pipeline_run_id"),
+        Index("ix_smvo_pmcid", "pmcid"),
+        Index("ix_smvo_chunk", "pipeline_run_id", "pmcid", "chunk_id"),
+        UniqueConstraint(
+            "pipeline_run_id", "pmcid", "chunk_id", "level", "voter_index",
+            name="uq_sum_map_voter_output",
+        ),
+    )
+
+
 class SumNormalFinding(Base):
     """
     One row per NormalFinding output from the NORMALIZE stage.
@@ -623,6 +668,9 @@ class SumFinalRule(Base):
     scope_qualify_count  = Column(Integer,     nullable=False)
     is_contradicted      = Column(Boolean,     nullable=False)
     contradicted_by      = Column(ARRAY(Text), nullable=True)
+    # Which RESOLVE branch produced final_score. See models.FinalRule.score_mode.
+    # Nullable for backward compatibility with rows written before the column existed.
+    score_mode           = Column(String(30),  nullable=True)
     created_at           = Column(TIMESTAMP,   server_default="now()")
 
     __table_args__ = (

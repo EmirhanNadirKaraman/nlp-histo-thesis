@@ -140,6 +140,28 @@ def test_load_paper_from_db_routes_through_singleton():
     )
 
 
+def test_ner_module_routes_through_singleton():
+    """B-054 regression guard: `named_entity_recognition/ner.py`'s
+    `load_ner_model()` and `load_linker_model()` must NOT call
+    `spacy.load` directly — both used to issue a fresh `spacy.load(
+    "en_core_sci_lg")` per call, reloading ~2.6 GB once per paper from
+    `runner.py:run_ner_on_db(pmcid)`."""
+    import inspect
+    from named_entity_recognition import ner
+
+    for fn_name in ("load_ner_model", "load_linker_model"):
+        fn = getattr(ner, fn_name)
+        src = inspect.getsource(fn)
+        code = _strip_comments_and_docstrings(src)
+        assert "spacy.load(" not in code, (
+            f"{fn_name} must not call spacy.load directly — B-054 regressed?"
+        )
+        assert "umls_resources" in src or "get_nlp" in src or "load_ner_model" in src, (
+            f"{fn_name} must route through umls_resources.get_nlp() — "
+            f"B-054 regressed?"
+        )
+
+
 def test_only_umls_resources_calls_spacy_load_in_pipeline_tree():
     """Process-wide invariant: every `spacy.load(...)` call in the pipeline
     package must live inside `umls_resources.py`. If a new module starts

@@ -198,10 +198,14 @@ def _norm_subject(entity: str) -> str:
 
 def _norm_outcome(entity: str) -> str:
     """
-    Lowercase + strip for outcome gate comparison.
-    Used for has_feature and all other relation types except expression.
+    Synonym-dict normalization + lowercase for outcome gate comparison.
+    Symmetric with _norm_subject so synonym variants that survived NORMALIZE
+    (e.g. "ALK-positive" vs "ALK+") still match on the outcome side. The
+    earlier raw strip().lower() was the asymmetric leg of the gate — it let
+    semantically identical outcomes fail the gate purely on surface form.
     """
-    return entity.strip().lower()
+    from .normalize_stage import normalize_entity
+    return (normalize_entity(entity) or "").strip().lower()
 
 
 def _norm_outcome_expression(entity: str) -> str:
@@ -220,21 +224,32 @@ def _norm_outcome_expression(entity: str) -> str:
 
 def _should_compare(a: CanonicalRule, b: CanonicalRule) -> tuple[bool, str]:
     """
-    Strict 4-condition gate. A pair reaches NLI only when ALL hold:
+    CUI-first gate. A pair reaches NLI only when ALL hold:
       1. category matches exactly
       2. relation_type matches exactly
-      3. subject_entity matches exactly
-      4. normalized outcome_entity matches exactly
-         (for expression: marker name after stripping suffixes must match)
+      3. subject compatibility:
+           - if both rules have subject_cui → CUIs must be equal
+           - otherwise → normalized subject strings must be equal
+      4. outcome compatibility (same CUI-first rule):
+           - if both rules have outcome_cui → CUIs must be equal
+           - else if expression relation → expression-marker normalization must match
+           - else → normalized outcome strings must be equal
 
-    Returns (eligible, rejection_reason).
-    rejection_reason is "" when eligible=True.
+    Mirrors helpers/corpus_relate.py:_should_compare_cross_paper so per-paper
+    and cross-paper gates use the same compatibility logic. The earlier per-paper
+    gate compared outcomes via raw strip().lower() and ignored CUIs, which
+    rejected synonym-identical outcomes purely on surface form.
+
+    Returns (eligible, rejection_reason). rejection_reason is "" when eligible.
 
     Debug rejection reasons:
+      non_polarity_direction
       category_mismatch
       relation_type_mismatch
-      subject_mismatch
-      outcome_incompatible
+      subject_cui_mismatch        (CUIs present, CUIs differ)
+      subject_mismatch            (no CUIs, normalized strings differ)
+      outcome_cui_incompatible    (CUIs present, CUIs differ)
+      outcome_incompatible        (no CUIs, normalized strings differ)
     """
     from ..models import RelationTypeEnum  # local import avoids circular at module level
     # B-049: skip any pair where either side carries a non-polarity direction
@@ -250,10 +265,21 @@ def _should_compare(a: CanonicalRule, b: CanonicalRule) -> tuple[bool, str]:
         return False, "category_mismatch"
     if a.relation_type != b.relation_type:
         return False, "relation_type_mismatch"
-    if _norm_subject(a.subject_entity) != _norm_subject(b.subject_entity):
-        return False, "subject_mismatch"
-    # Outcome comparison — stricter normalization for expression rules
-    if a.relation_type == RelationTypeEnum.expression:
+
+    # Subject gate — CUI when both present, normalized string fallback otherwise.
+    if a.subject_cui and b.subject_cui:
+        if a.subject_cui != b.subject_cui:
+            return False, "subject_cui_mismatch"
+    else:
+        if _norm_subject(a.subject_entity) != _norm_subject(b.subject_entity):
+            return False, "subject_mismatch"
+
+    # Outcome gate — CUI when both present; otherwise expression-specific
+    # marker normalization for expression rules, normalized string for the rest.
+    if a.outcome_cui and b.outcome_cui:
+        if a.outcome_cui != b.outcome_cui:
+            return False, "outcome_cui_incompatible"
+    elif a.relation_type == RelationTypeEnum.expression:
         if _norm_outcome_expression(a.outcome_entity) != _norm_outcome_expression(b.outcome_entity):
             return False, "outcome_incompatible"
     else:

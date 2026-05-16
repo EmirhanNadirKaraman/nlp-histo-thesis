@@ -102,6 +102,11 @@ class ResolveStage:
         # exceeded the similarity threshold), use the wider grounding-dominant
         # formula so scores are meaningfully spread.
         relations_present = len(relations) > 0
+        score_mode = "relations_present" if relations_present else "relations_absent"
+        logger.info(
+            "[%s] RESOLVE score_mode=%s (%d relations across %d rules)",
+            pmcid, score_mode, len(relations), len(rules),
+        )
 
         final_rules: list[FinalRule] = []
 
@@ -180,6 +185,7 @@ class ResolveStage:
                 scope_qualify_count=0,
                 is_contradicted=len(contradicts) > 0,
                 contradicted_by=contradicted_by,
+                score_mode=score_mode,
             )
             final_rules.append(final_rule)
 

@@ -333,6 +333,18 @@ class SummarizationRunner:
         """
         return self._map.invocation_usage_records()
 
+    @property
+    def last_map_voter_output_records(self) -> list[dict]:
+        """Per-voter AuditableSummary records from the most recent MAP run.
+
+        One dict per (chunk, level, voter_index). Persisted into
+        ``sum_map_voter_outputs`` by ``_persist_voter_outputs``. Cache hits
+        contribute no records (the original voter outputs live with whichever
+        earlier run populated the cache). Reset at the start of every
+        ``process()`` call.
+        """
+        return self._map.voter_output_records()
+
     def process(
         self,
         file_data: dict,
@@ -496,6 +508,10 @@ class SummarizationRunner:
             self._persist_map_artifacts(
                 writer, pmcid, chunk_summaries, grounding_rejected,
             )
+
+            # Per-voter outputs → sum_map_voter_outputs (captures the
+            # AuditableSummary each model produced, including non-winners).
+            self._persist_voter_outputs(pipeline_run_db_id, pmcid)
 
             # 1b. NORMALIZE — entity normalization + conditional dedup
             n_scored = len(self._scored_map_findings.get(pmcid, []))
@@ -1228,6 +1244,52 @@ class SummarizationRunner:
     def _persist_resolve_artifacts(self, writer, pmcid, final_rules, relations) -> None:
         persist_resolve_artifacts(writer, pmcid, final_rules, relations)
 
+    def _persist_voter_outputs(self, db_id: int | None, pmcid: str) -> None:
+        """Persist per-voter AuditableSummary records into ``sum_map_voter_outputs``.
+
+        Reads from ``MapStage.voter_output_records()`` (populated during the
+        cascade) and inserts one row per (chunk, level, voter_index). Cache
+        hits contribute no records — their voter outputs live with whichever
+        earlier run populated the MAP cache and were persisted then.
+
+        No-op when ``db_id`` is None (sync run with no DB attached).
+        Failures are logged as a warning and do not raise; voter-output
+        capture is an observability artifact, not load-bearing.
+        """
+        if db_id is None:
+            return
+        records = self.last_map_voter_output_records
+        if not records:
+            return
+        try:
+            from database.models import SumMapVoterOutput
+            rows = [
+                SumMapVoterOutput(
+                    pipeline_run_id = db_id,
+                    pmcid           = pmcid,
+                    chunk_id        = r["chunk_id"],
+                    level           = r["level"],
+                    voter_index     = r["voter_index"],
+                    provider        = r["provider"],
+                    model           = r["model"],
+                    is_selected     = bool(r["is_selected"]),
+                    failed          = bool(r["failed"]),
+                    error_message   = r.get("error_message"),
+                    finding_count   = int(r["finding_count"]),
+                    latency_ms      = r.get("latency_ms"),
+                    raw_output      = r.get("raw_output"),
+                )
+                for r in records
+            ]
+            with self._db.session_scope() as session:
+                session.bulk_save_objects(rows)
+            logger.info(
+                "[%s] DB: persisted %d per-voter outputs (run_id=%d)",
+                pmcid, len(rows), db_id,
+            )
+        except Exception as exc:
+            logger.warning("[%s] DB: failed to persist voter outputs: %s", pmcid, exc)
+
     def _persist_map_findings(
         self,
         db_id: int | None,
@@ -1632,6 +1694,7 @@ class SummarizationRunner:
                     scope_qualify_count  = fr.scope_qualify_count,
                     is_contradicted      = fr.is_contradicted,
                     contradicted_by      = list(fr.contradicted_by) if fr.contradicted_by else [],
+                    score_mode           = fr.score_mode,
                 ))
             if rows:
                 with self._db.session_scope() as session:

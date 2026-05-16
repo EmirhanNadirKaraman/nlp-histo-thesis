@@ -37,12 +37,21 @@ class PipelineCache:
 
     MAP key components
     ------------------
-    schema_version + prompt_version + stage_name + cascade_signature + input_hash
+    schema_version + prompt_version + stage_name + cascade_signature
+      + voter_config_hash + nli_model_id + input_hash
 
     where ``input_hash = sha256(sorted(text_element_ids))`` is the chunk
     identity. The cascade signature is a stable hash of the ordered
     (provider, model) sequence used at L1+L2+L3 (see
     ``models.compute_cascade_signature``).
+
+    ``voter_config_hash`` captures voter sampler settings — temperature and
+    top_p — so editing ``voter_configs.py`` produces a different key even
+    when (provider, model) tuples are unchanged. ``nli_model_id`` captures
+    the active grounding NLI checkpoint so swapping
+    ``$NLP_HISTO_NLI_MODEL`` invalidates persisted entries (their stored
+    grounding scores would otherwise be served stale against a different
+    NLI model).
 
     REDUCE → pmcid + sorted chunk_ids of inputs
     RULE   → pmcid + sorted text_element_ids from the consolidated summary
@@ -93,13 +102,22 @@ class PipelineCache:
     def _map_key(sentences: list[dict], metadata: MapRunMetadata) -> str:
         """Deterministic versioned key for one MAP chunk.
 
-        Format: ``{schema_version}|{prompt_version}|{stage}|{cascade}|{input_hash}``
+        Format:
+          ``{schema_version}|{prompt_version}|{stage}|{cascade}
+            |{voter_config_hash}|{nli_model_id}|{input_hash}``
+
+        ``voter_config_hash`` and ``nli_model_id`` default to ``""`` on
+        ``MapRunMetadata`` for backward compatibility; old in-memory metadata
+        constructions still hash without crashing but will not collide with
+        newer-format keys.
         """
         return "|".join((
             metadata.schema_version,
             metadata.prompt_version,
             metadata.stage_name,
             metadata.cascade_signature,
+            metadata.voter_config_hash,
+            metadata.nli_model_id,
             PipelineCache._input_hash(sentences),
         ))
 
@@ -140,10 +158,15 @@ class PipelineCache:
             return None
         # Belt-and-braces: the key includes versions, but if a future bug
         # writes mismatched metadata under the same key, fail closed.
+        # ``nli_model_id`` and ``voter_config_hash`` default to "" for
+        # entries written before those fields existed; the equality check
+        # against the caller-supplied metadata still treats those as misses
+        # when the caller now has non-empty values (the desired behaviour).
         stored_meta = entry["metadata"]
         for field in ("schema_version", "prompt_version", "stage_name",
-                      "cascade_signature"):
-            if stored_meta.get(field) != getattr(metadata, field):
+                      "cascade_signature", "voter_config_hash",
+                      "nli_model_id"):
+            if stored_meta.get(field, "") != getattr(metadata, field):
                 self._misses["map"] += 1
                 return None
         self._hits["map"] += 1
@@ -154,11 +177,42 @@ class PipelineCache:
         sentences: list[dict],
         result: AuditableSummary,
         metadata: MapRunMetadata,
+        voter_outputs: list[dict] | None = None,
     ) -> None:
-        self._map[self._map_key(sentences, metadata)] = {
+        """Persist a chunk's MAP result.
+
+        ``voter_outputs`` is an optional list of per-voter records
+        (matching ``MapStage._buffer_voter_outputs``'s row shape) so cache
+        hits on later runs can still populate ``sum_map_voter_outputs``.
+        Older entries written before this field existed simply lack the
+        key — readers tolerate that and degrade to "no voter outputs
+        available for this cache hit".
+        """
+        entry: dict = {
             "metadata": metadata.model_dump(),
             "result":   result.model_dump(),
         }
+        if voter_outputs is not None:
+            entry["voter_outputs"] = voter_outputs
+        self._map[self._map_key(sentences, metadata)] = entry
+
+    def get_voter_outputs(
+        self,
+        sentences: list[dict],
+        metadata: MapRunMetadata,
+    ) -> list[dict] | None:
+        """Return the per-voter records captured the last time this chunk's
+        MAP result was cached, or None when the entry pre-dates the
+        ``voter_outputs`` field (or simply was never persisted).
+        """
+        key = self._map_key(sentences, metadata)
+        entry = self._map.get(key)
+        if entry is None:
+            return None
+        outputs = entry.get("voter_outputs")
+        if not isinstance(outputs, list):
+            return None
+        return outputs
 
     # ── REDUCE ─────────────────────────────────────────────────────────────────
 

@@ -44,7 +44,7 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-022 | Fixed (2026-05-15) | High | Summarisation, GROUP bucket key | `group_stage._group_id` mixes namespaces: `subj_key = subject_cui if subject_cui else subject`. Two NormalFindings with identical normalized subject (e.g. `"CD30"`) where one has `subject_cui` populated and the other does not (intermittent UMLS link miss, or the synonym-dict path in `_resolve_entity` returning canonical name without CUI) land in different buckets — dedup defeated and downstream CanonicalRule count inflated. | [Bug 22](#bug-22--group_id-mixes-cui-and-string-keys-when-cui-population-is-partial) |
 | B-023 | Fixed (2026-05-15) | Medium | Summarisation, NORMALIZE dedup | `_dedup_key` keys on `(text_element_id, subject, outcome, relation_type)` but not on `direction`. Findings extracted from the same sentence with opposing directions (positive vs. negative) collapse into one `NormalFinding`; `_merge` picks `rep.direction` (highest grounding wins) and the opposite-direction finding is silently absorbed. Docstring defends this as "contradictions surface at RELATE", but RELATE only ever sees the surviving direction so they cannot surface. Either include `direction` in the dedup key or carry per-direction histograms onto `NormalFinding` so CANONICALIZE can split. | [Bug 23](#bug-23--normalize-dedup-collapses-opposite-direction-findings-from-the-same-sentence) |
 | B-024 | Mitigated (2026-05-15) | Low | Summarisation, RELATE → Relation schema | `Relation.nli_score_a_to_b` / `nli_score_b_to_a` field docstring says "entailment score from A→B direction", but `relate_stage._classify_pair` stores **contradiction** score for CONTRADICT and **entailment** for SUPPORT (`relate_stage.py:400-405`). DB columns and inspector scripts surface the field without label context (`scripts/run_paper_single_model.py:405` prints as `A→B={:.2f}`). Downstream readers cannot tell which score they're looking at. Either rename to a label-neutral name or update the schema doc — `RawNLIPair` already stores entailment and contradiction separately so no information loss either way. | [Bug 24](#bug-24--relationnli_score_-field-doc-disagrees-with-relate_stage-write-path) |
-| B-025 | Observed | Low | Summarisation, RELATE polarity guard | `relate_stage._classify_pair` groups `DirectionEnum.partial` with `_POSITIVE_DIRECTIONS` for the same-polarity guard. `partial` sits between positive and unclear — bundling it with positive means a `partial`-vs-`negative` pair can never emit CONTRADICT even with high bidirectional contradiction scores. Worth a calibration sweep against the gold set before flipping. | [Bug 25](#bug-25--relate-polarity-guard-treats-partial-as-positive-blocking-partial-vs-negative-contradictions) |
+| B-025 | Observed | Low | Summarisation, RELATE polarity guard | `relate_stage._classify_pair` groups `DirectionEnum.partial` with `_POSITIVE_DIRECTIONS` for the same-polarity guard. `partial` sits between positive and unclear — bundling it with positive means a `partial`-vs-`positive` pair can never emit CONTRADICT even with high bidirectional contradiction scores (e.g. "focal positivity in a subset of cells" vs. "broadly positive expression"). `partial`-vs-`negative` is unaffected because the two sets are disjoint. Worth a calibration sweep against the gold set before flipping. | [Bug 25](#bug-25--relate-polarity-guard-treats-partial-as-positive-blocking-partial-vs-positive-contradictions) |
 | B-026 | Superseded (2026-05-15) | Low | Summarisation, CANONICALIZE tie-break | Determinism hole in the unclear-folding policy. Superseded by [B-049](#bug-49--canonicalize-folds-unclear--no_direction-into-majority-polarity-bin) which removes the folding logic entirely, eliminating the `max(...)` tiebreak it depended on. | [Bug 26](#bug-26--canonicalize-split_by_direction-tie-break-is-member-order-dependent) |
 | B-027 | Fixed (2026-05-15) | High | PDF extraction, `PipelineRunner` runtime knobs | All four `RuntimeConfig` knobs now consumed. `num_workers` + `log_level` wired earlier. `seed`: `PipelineRunner._seed_pipeline()` seeds `random` / `numpy` / `torch` (+ `torch.cuda` when available) at `__init__`; `seed` widened to `int \| None` so callers can opt out. Does **not** promise determinism for external libs (Docling/TATR/OCR/scispaCy). `skip_existing_outputs`: new `_StageCache` (`stage_cache.py`) caches stages 2 (table detection), 5 (artifact filtering), 6 (text assembly) to `out/stage_cache/<stage>/<pmcid>.json` with a config-hash sidecar. Sidecar / loader corruption falls through to recompute with WARNING; bugs propagate. Final writers (steps 7/8) still always run. Regression test in `tests/pdf_text_extraction/test_b027_seed_and_cache.py` (22 cases). | [Bug 27](#bug-27--runtimeconfig-knobs-num_workers-log_level-seed-skip_existing_outputs-not-consumed) |
 | B-028 | Fixed (2026-05-15, deleted) | High | PDF extraction, DB ingester | `DatabaseConfig.{schema, create_tables_if_missing, batch_size, connect_timeout_sec}` had no consumers. Deleted, not wired — no current thesis demand for schema isolation, custom batching, or tunable connect timeouts; wiring four fake knobs would have multiplied DB-layer surface area for zero behaviour gain. `DatabaseConfig` now exposes only `enabled` + `db_url`. Loader's strict-unknown-key check rejects YAMLs referencing the removed fields (regression test in `tests/test_config_loader.py::test_deleted_database_keys_rejected`). | [Bug 28](#bug-28--databaseconfig-sub-fields-never-propagated-to-postgresdatabaseingester) |
@@ -71,6 +71,9 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-048 | Fixed (2026-05-15) | Low | Summarisation, optional RULE block enums | `Rule.type` was `Literal["Diagnostic", "Prognostic", "Management"]` (Title-Case) and `RuleCounts` mirrored the casing in field names — inconsistent with the lowercase `Finding.confidence` / `Finding.category` convention. Lowered all three; added a `mode="before"` validator on `Rule.type` so legacy Title-Case payloads round-trip. Updated MAP RULE OutputFormat prompt + `_recompute_audit` helper. RULE block is off by default, no DB rows to backfill. Tests in `tests/summarization/test_enum_alias_repair.py`. From [MAP_PROMPT_AUDIT Issue 7](MAP_PROMPT_AUDIT.md#issue-7--ruletype-is-title-case-diagnosticprognosticmanagement-everything-else-lowercase-low). | [Bug 48](#bug-48--ruletype-title-case-inconsistent-with-lowercase-convention) |
 | B-049 | Fixed (2026-05-15) | Medium | Summarisation, CANONICALIZE direction policy | `_split_by_direction` folded `unclear` and `no_direction` members into the largest polarity bin. Two holes: (a) **reproducibility** — `max(non_unclear, key=len)` returns the first dict key on ties, traceable to upstream member-arrival order, so the same paper produced different `member_normal_ids` / `finding_count` / `mean_grounding_score` across re-runs (supersedes B-026); (b) **honesty** — hedged findings got re-cast as votes for the majority direction, inflating downstream confidence and feeding RELATE pairs as if the model had really claimed that polarity. Fixed: every observed direction gets its own `CanonicalRule` bin (no folding); RELATE and corpus_relate skip pairs where either side is `unclear` / `no_direction`; `is_conflicted` repurposed to a **group-level** signal (True iff the group emits ≥2 polarity-bearing bins, stamped on every rule from the group). Added `direction_value`, `POLARITY_BEARING_DIRS`, `NON_POLARITY_DIRS` to `models.py` as the single source of truth; gates use the normalizer so `DirectionEnum` / raw string / `None` paths all behave the same. `partial` deliberately kept polarity-bearing for now — the semantic question of whether partial really conflicts with positive is owned by B-025. Bumped `CANONICALIZE_DIRECTION_POLICY_VERSION` (fed into `pipeline_config_hash`) to force cache invalidation. Tests: rewritten `tests/summarization/test_canonicalize_direction_split.py` (16 cases incl. S5 core invariant against unclear leakage into polarity bins), new `tests/summarization/test_corpus_relate_non_polarity.py`, extended `tests/summarization/test_relate_skipped_pairs.py`, `tests/summarization/test_pipeline_config_hash.py`. | [Bug 49](#bug-49--canonicalize-folds-unclear--no_direction-into-majority-polarity-bin) |
 | B-050 | Fixed (2026-05-15) | Low | Scripts, batch poll interval | `scripts/run_paper.py` carried three diverging defaults for `--poll-interval`: argparse `60` (line 331), `_run_all_batch(poll_interval=20)` (line 787), `_run_batch(poll_interval=60)` (line 885). CLI flows passed `args.poll_interval` so the call-site defaults rarely fired — but a direct programmatic caller of either batch helper got 20s or 60s depending on which one they imported. Consolidated onto module-level `DEFAULT_POLL_INTERVAL_SEC = 60` referenced by argparse + both function signatures. Regression: `tests/test_poll_interval_defaults.py` introspects via `inspect.signature` (not `__defaults__` tuple indexing) and asserts all three resolve to 60. **Note**: if another agent's parallel work also claims B-050, renumber to B-051 at commit time. | [Bug 50](#bug-50--poll_interval-default-mismatch-across-cli-and-batch-helpers) |
+| B-054 | Fixed (2026-05-16) | High | Summarisation, NER stage scispaCy singleton bypass | `named_entity_recognition/ner.py`'s `load_ner_model()` and `load_linker_model()` issued direct `spacy.load("en_core_sci_lg", …)` calls — completely bypassing the `umls_resources.get_nlp()` singleton documented in CLAUDE.md and MEMORY.md. `SummarizationRunner._run_stages` calls `run_ner_on_db(pmcid, save_to_db=True, force=False)` per paper *without* passing `nlp=` / `linker_nlp=`, so the loaders fired with `None` defaults and freshly loaded ~2.6 GB of scispaCy + UMLS twice per paper. Concretely visible in production runs: `[pmcid] NER done [136.4s]` on a paper that bailed out (already had entities) — the time was pure model-load waste. Compounded by `umls_resources.get_nlp()` already holding its own copy for NORMALIZE / UMLS_ENRICH, so peak RSS hit ~3 copies of en_core_sci_lg in memory. Same class of bug as B-029 (PDF runner) / B-038 (summariser load_paper_from_db), missed because `named_entity_recognition/` lives outside `pipeline/stages/` and the existing singleton-guard test only scanned the stages tree. Fixed by routing both loaders through `umls_resources.get_nlp()`; the "fast NER" pass wraps the span-extraction loop in `nlp.select_pipes(disable=["scispacy_linker"])` so it stays cheap on the linker-attached singleton; the "Document already has entities" skip check moved *above* the model-load block so a skipped paper now costs ~0 s (was ~150 s). Regression test in `tests/summarization/test_scispacy_singleton.py::test_ner_module_routes_through_singleton` asserts neither loader contains a direct `spacy.load(` call. `batch_ner.py` inherits the fix automatically (it imports the same functions). | [Bug 54](#bug-54--ner-stage-scispacy-singleton-bypass) |
+| B-053 | Fixed (2026-05-16) | Low | Tooling, percentiles cost estimator | `scripts/estimate_pipeline_cost_percentiles.py` hygiene cluster — dead `import json` + `import statistics`; two never-called helpers (`estimate_non_llm_stages`, `render_paper_table`) that duplicated the markdown rendering inline in `main()`; misleading inline comment claiming `est_chunks = ceil((n - overlap) / stride)` while the code (correctly, matching `MapStage._make_chunks`) did `ceil(n / stride)`; `pick_percentile` had no guard for an empty paper list (`idx = ceil(0.5*0) - 1 = -1` → silent off-end indexing) or out-of-range `p`; `CHUNK_SIZE`/`CHUNK_OVERLAP` duplicated as module constants instead of sourced from `MapConfig.chunk_size`/`chunk_overlap`, leaving a silent drift hazard if production config changes. Fixed: dead imports + helpers removed, comment rewritten to cite `_make_chunks`, `pick_percentile` raises `ValueError` on empty corpus / `p ∉ (0, 1]`, chunk constants now read off `MapConfig()` at module load. Numbers unchanged — none of this moved the printed cost (the percentiles report is an intentional upper-bound budget for the top-decile/P80–P90 papers by `n_te`). Regression test `tests/test_estimate_pipeline_cost_percentiles.py` (15 cases). | [Bug 53](#bug-53--percentiles-cost-estimator-hygiene-cluster) |
+| B-052 | Fixed (2026-05-16) | Medium | Tooling, cost estimation script | `scripts/estimate_selection_cost.py:per_chunk_input_tokens` modelled the average sentences per MAP chunk as `min(chunk_size, n_sentences / n_chunks * (1 + 0))`. At production defaults (`chunk_size=10`, `chunk_overlap=2`, stride=8) `n_sentences / n_chunks ≈ stride = 8`, so the clamp returned ~8 sentences per chunk — but `MapStage._make_chunks` (`map_stage.py:1263-1267`) slices `sentences[i:i+chunk_size]` so each non-tail chunk actually sees 10 sentences. The trailing `* (1 + 0)` was a leftover from a removed overlap term. Net: every cost number in the projection table was ~15–20% low, exactly the headline figure a thesis budget review reads. Fixed by replacing the formula with a sum over `min(chunk_size, n_sentences - start) for start in range(0, n_sentences, stride)` divided by `n_chunks` — matches `_make_chunks` line-for-line, accounts for the truncated tail, and rounds with `ceil` for conservative budget estimates. Function signature gained `chunk_overlap` (caller updated); also validates `0 <= chunk_overlap < chunk_size`. Co-fixed in the same change: `.order_by(TextElement.position_in_section)` (the B-039 bug) flipped to `.order_by(TextElement.id)` to actually mirror `SummarizationRunner.load_paper_from_db`. Dead `import math` cleaned up. Regression test in `tests/test_estimate_selection_cost.py`. | [Bug 52](#bug-52--cost-estimation-script-underestimates-per-chunk-input-tokens) |
 | B-051 | Fixed (2026-05-15) | High | Summarisation, MAP agreement gate | `EmbeddingScorer._polarity` applied only a 20% multiplicative penalty; opposite-polarity paraphrases with cos≈1.0 produced score=0.80, passing `theta=0.7` and accepting the chunk as KEEP despite a direct voter contradiction. Fixed: new pure helper `agreement/polarity_conflict.detect_polarity_conflict` invoked from `AgreementChecker.compute` after the scorer runs but before theta — when two **comparable** findings (same `subject_entity` / `outcome_entity` / `relation_type` / `category`, all four required, strings `.strip().casefold()`d) carry opposite `{positive, negative}` directions, decision is forced to `ChunkDecision.ESCALATE` with `score_details["hard_fail_reason"] = "polarity_conflict"`. `MapOutputRouter._agreement_gate` emits ONLY `ReasonCode.POLARITY_CONFLICT` (never co-emits low-agreement codes — the score was high; only the structural check failed); explanation makes the override explicit. v1 conservative: scope fields excluded from comparability (cross-cohort false-escalate cheaper than missed contradiction); `absent`/`partial`/`unclear`/`no_direction` excluded from the hard-polarity set pending B-025 calibration. Cache invalidation: bumped `MAP_SCHEMA_VERSION` → `"map_v9_polarity_hard_fail"` (invalidates `PipelineCache`); added `MAP_AGREEMENT_POLICY_VERSION = "polarity_hard_fail_v1"` routed into `compute_pipeline_config_hash` on both runners (invalidates per-paper result cache). 11 deterministic regression tests in `tests/summarization/agreement/test_b051_hard_fail_polarity.py` + 3 hash regression tests in `tests/summarization/test_pipeline_config_hash.py`. | [Bug 51](#bug-51--map-agreement-gate-treats-opposite-polarity-as-soft-disagreement) |
 
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
@@ -1771,21 +1774,21 @@ Mitigation is doc-only and intentionally untested. The Option B follow-up's veri
 
 ---
 
-## Bug 25 — RELATE polarity guard treats `partial` as positive, blocking partial-vs-negative contradictions
+## Bug 25 — RELATE polarity guard treats `partial` as positive, blocking partial-vs-positive contradictions
 
 ### Status / Severity / Surface
 
 * **Status:** Observed — calibration question, not a clean defect.
 * **Severity:** Low — depends on how often the LLM emits `partial`; if rare, near-zero impact.
-* **Surface:** `pipeline/stages/summarization/current_stages/relate_stage.py:155-167`
+* **Surface:** `pipeline/stages/summarization/current_stages/relate_stage.py:162-174`
 
 ### Symptom
 
-A `CanonicalRule` with `direction=DirectionEnum.partial` paired against another with `direction=DirectionEnum.negative` (or `absent`) cannot be classified CONTRADICT, even when the NLI scores cross the threshold in both directions. The pair is downgraded to UNRELATED via the same-polarity guard.
+A `CanonicalRule` with `direction=DirectionEnum.partial` paired against another with `direction=DirectionEnum.positive` cannot be classified CONTRADICT, even when the NLI scores cross the threshold in both directions. The pair is downgraded to UNRELATED via the same-polarity guard. `partial`-vs-`negative` and `partial`-vs-`absent` are unaffected — the POS / NEG sets are disjoint, so those pairs reach the NLI score check normally.
 
 ### Evidence
 
-`relate_stage.py:155-167`:
+`relate_stage.py:162-174`:
 
 ```python
 _NEGATIVE_DIRECTIONS = {DirectionEnum.negative, DirectionEnum.absent}
@@ -1801,23 +1804,23 @@ same_polarity = (
 contradict_allowed = not same_polarity
 ```
 
-`DirectionEnum.partial` is in `_POSITIVE_DIRECTIONS`, so `partial`-vs-`positive` is blocked (correct: both are "some-of-the-thing-happened" claims) — but so is `partial`-vs-`negative`, which is the case the guard was meant to *allow*.
+`DirectionEnum.partial` is in `_POSITIVE_DIRECTIONS`, so `partial`-vs-`positive` lands in the "same polarity" branch and never reaches the CONTRADICT classification — even when the structured claim text really is in tension (e.g. "focal positivity in a subset of tumour cells" against "broadly / diffusely positive").
 
 ### Diagnosis
 
-`partial` is the LLM's escape hatch for "expressed in some but not all tumour cells" / "weak focal positivity" / "tumour cells with partial staining". Semantically it sits between `positive` and `unclear` — a partial-positive claim is closer to positive than negative, but it is not so unambiguously positive that it cannot contradict a flat negative claim. The current guard codes it as fully positive, foreclosing the CONTRADICT classification for a real subset of the corpus.
+`partial` is the LLM's escape hatch for "expressed in some but not all tumour cells" / "weak focal positivity" / "tumour cells with partial staining". Semantically it sits between `positive` and `unclear` — closer to positive than negative, but not so unambiguously positive that it always coexists with a flat positive claim. Bundling it with `positive` for the polarity guard codes the two as interchangeable and forecloses the CONTRADICT classification for the subset of the corpus where the partial / full-positive distinction is the load-bearing semantic conflict.
 
 ### Fix options
 
-**Option A — drop `partial` from `_POSITIVE_DIRECTIONS`.** Treat it as neutral for the polarity guard so both `partial`-vs-`positive` and `partial`-vs-`negative` reach the NLI score check. Risk: NLI alone may mis-label a `partial`-vs-`positive` lexical-overlap pair as CONTRADICT.
+**Option A — drop `partial` from `_POSITIVE_DIRECTIONS`.** Treat it as neutral for the polarity guard so `partial`-vs-`positive` reaches the NLI score check. Risk: NLI alone may mis-label a `partial`-vs-`positive` lexical-overlap pair as CONTRADICT when the two findings are really coexisting observations.
 
-**Option B — separate `_PARTIAL_DIRECTIONS` set.** Allow `partial`-vs-`positive` to default to "same polarity" but allow `partial`-vs-`negative` through the contradiction check.
+**Option B — separate `_PARTIAL_DIRECTIONS` set.** Keep the same-polarity branch for `partial`-vs-`partial` (and possibly `partial`-vs-`positive`) but introduce an explicit "partial-vs-positive contradiction allowed when NLI scores are high enough in both directions" rule.
 
-Recommendation: Option B. Requires a calibration sweep on the gold set first — verify how often `partial` actually appears and what the NLI model does on real partial-vs-negative pairs from the corpus.
+Recommendation: defer until calibration. Requires a sweep on the gold set first — verify how often `partial` actually appears and what the NLI model does on real partial-vs-positive pairs from the corpus.
 
 ### Verification
 
-Sweep `out/summaries/runs/.../relate/<pmcid>/raw_pairs.jsonl` for pairs where one rule has `direction=partial` and the other has `direction=negative` and both `con_*` scores exceed `contradiction_threshold`. Count how many such pairs would have flipped to CONTRADICT under each option. Make the call.
+Sweep `out/summaries/runs/.../relate/<pmcid>/raw_pairs.jsonl` for pairs where one rule has `direction=partial` and the other has `direction=positive` and both `con_*` scores exceed `contradiction_threshold`. Count how many such pairs would have flipped to CONTRADICT under each option. Make the call.
 
 ---
 
@@ -3453,5 +3456,289 @@ into `CascadeDecisionRecord.reason_codes` and the JSONL decision log).
   `FindingScope` fields.
 * Broaden polarity set to include `absent` / `partial` once B-025
   calibration is in.
+
+---
+
+## Bug 52 — Cost-estimation script underestimates per-chunk input tokens
+
+### Status / Severity / Surface
+
+* **Status:** Fixed (2026-05-16)
+* **Severity:** Medium — wrong headline number on every cost projection.
+* **Surface:** `scripts/estimate_selection_cost.py:per_chunk_input_tokens`,
+  `load_paper_stats`
+
+### Symptom
+
+Every row in the "MAP cost projection" table printed by
+`scripts/estimate_selection_cost.py` was ~15–20% lower than the cost a
+real run on the same selection would incur. The `in/chunk` column was
+the load-bearing input: `n_chunks × in/chunk × $/MTok` is the L1 cost
+formula, and `in/chunk` was systematically off.
+
+### Diagnosis
+
+The pre-fix `per_chunk_input_tokens` computed the average sentences
+per chunk as:
+
+```python
+avg_sentences_per_chunk = min(chunk_size, n_sentences / n_chunks * (1 + 0))
+```
+
+At the production defaults (`chunk_size=10`, `chunk_overlap=2`,
+`stride=8`), `n_sentences / n_chunks ≈ stride = 8`, so the clamp
+returned ~8. But `MapStage._make_chunks`
+(`pipeline/stages/summarization/current_stages/map_stage.py:1263-1267`)
+slices:
+
+```python
+stride = self.chunk_size - self.chunk_overlap
+chunks = [sentences[i : i + self.chunk_size]
+          for i in range(0, len(sentences), stride)]
+```
+
+Each non-tail chunk holds exactly `chunk_size` (10) sentences. For
+`n_sentences=100`, `range(0, 100, 8) = [0, 8, …, 96]` → 13 starts. The
+first 12 chunks have 10 sentences each; the tail chunk has 4. Total
+sentence-occurrences across chunks = 12·10 + 4 = 124. Average =
+124 / 13 ≈ 9.54. The script reported ~7.69 — ~20% low.
+
+The trailing `* (1 + 0)` in the original formula was a leftover from a
+removed overlap term.
+
+### Fix
+
+[`scripts/estimate_selection_cost.py:per_chunk_input_tokens`](../scripts/estimate_selection_cost.py)
+rewritten to compute total sentence-occurrences exactly the way
+`_make_chunks` produces chunks, then divide by `n_chunks`:
+
+```python
+stride = chunk_size - chunk_overlap
+total_sentence_occurrences = sum(
+    min(chunk_size, n_sentences - start)
+    for start in range(0, n_sentences, stride)
+)
+avg_sentences_per_chunk = total_sentence_occurrences / n_chunks
+chunk_text_tokens = text_tokens * avg_sentences_per_chunk / n_sentences
+return PROMPT_OVERHEAD_TOKENS + ceil(chunk_text_tokens)
+```
+
+Three associated changes in the same patch:
+
+1. Function signature gained `chunk_overlap: int` (caller in
+   `load_paper_stats` updated). Without it, the stride couldn't be
+   recomputed to mirror `_make_chunks`.
+2. Defensive validation: `0 <= chunk_overlap < chunk_size` — same
+   precondition `MapStage.__init__` already enforces, surfaced at the
+   helper boundary so a future caller that constructs the script
+   programmatically gets a clear `ValueError` instead of a silent
+   nonsense result.
+3. Rounding switched from `round` to `ceil`. Budget estimates should
+   not understate cost; the prior `round` could shave a half-token off
+   every chunk. Imported `from math import ceil` (the dead `import
+   math` was removed in the same edit).
+
+Co-fixed: `load_paper_stats` was ordering DB rows by
+`TextElement.position_in_section`, which interleaves sections (the
+B-039 bug). Flipped to `.order_by(TextElement.id)` so the script
+actually mirrors `SummarizationRunner.load_paper_from_db`
+(`pipeline/stages/summarization/runner.py:940`) as its docstring claims.
+
+### Verification
+
+* Manual: `n_sentences=100`, `chunk_size=10`, `chunk_overlap=2`,
+  `stride=8`. `range(0, 100, 8) = 13` starts. Per-chunk counts
+  `[10, 10, …, 10, 4]`. Total = 124. Average = 124/13 ≈ 9.54.
+  Pre-fix returned ~7.69; post-fix returns 9.54.
+* Regression test:
+  [`tests/test_estimate_selection_cost.py`](../tests/test_estimate_selection_cost.py)
+  pins the formula against the worked example plus edge cases
+  (empty input, exactly one chunk, no overlap, overlap-out-of-range
+  validation).
+* End-to-end smoke: rerun
+  `python scripts/estimate_selection_cost.py --from-selection
+  configs/paper_selection/calibration_set_v1.yaml --profile cheap` —
+  `in/chunk` is ~15–20% higher than pre-fix on the same papers, per-tier
+  totals scale by the same factor.
+
+---
+
+## Bug 53 — Percentiles cost estimator hygiene cluster
+
+### Status / Severity / Surface
+
+* **Status:** Fixed (2026-05-16)
+* **Severity:** Low — none of these changed a printed cost number.
+* **Surface:** `scripts/estimate_pipeline_cost_percentiles.py`
+
+### Symptom
+
+Pre-fix, the script projected MAP cost for the P80 / P90 papers (by
+`text_elements` count — the long-tail/upper-bound budget the supervisor
+quotes). Audit surfaced five small defects: two dead imports, two
+never-called helpers, a misleading inline comment about `est_chunks`,
+no validation in `pick_percentile`, and `CHUNK_SIZE` / `CHUNK_OVERLAP`
+hardcoded as module constants instead of pulled from
+`MapConfig` — a silent drift hazard if production chunking ever
+changes.
+
+### Fix
+
+[`scripts/estimate_pipeline_cost_percentiles.py`](../scripts/estimate_pipeline_cost_percentiles.py):
+
+* Removed `import json`, `import statistics` — neither was referenced.
+* Removed `estimate_non_llm_stages` (line 278 pre-fix) and
+  `render_paper_table` (line 325 pre-fix). Both were defined but never
+  called; `main()` already covered the same output inline.
+* Rewrote the `est_chunks` inline comment to cite
+  `MapStage._make_chunks` so the next reader doesn't have to verify the
+  formula against the (correctly different) code.
+* `pick_percentile` now raises `ValueError` on empty corpus
+  (previously `idx = -1` and silently returned the last paper) and on
+  `p ∉ (0, 1]`.
+* `CHUNK_SIZE` and `CHUNK_OVERLAP` are now read from `MapConfig()`
+  defaults at module load — single source of truth with the
+  production config.
+
+### Why this is small
+
+The script is a pre-run budget estimator for the *largest* papers in
+the corpus (P80, P90 by `n_te`). It's deliberately a conservative
+upper bound: per-chunk tokens come from a single observed L3 call,
+applied uniformly to every voter at every tier; cascade escalation
+rates are scenario inputs, not measurements. Nothing in this patch
+changes the numbers it prints — purely hygiene + drift prevention.
+
+### Verification
+
+* `tests/test_estimate_pipeline_cost_percentiles.py` — 15 cases:
+  `CHUNK_SIZE` / `CHUNK_OVERLAP` / `STRIDE` track `MapConfig` defaults;
+  `est_chunks` matches `len(range(0, n, stride))` for n ∈ {1, 8, 9, 100,
+  200}; `pick_percentile` nearest-rank for n ∈ {10, 100} and p ∈ {0.5,
+  0.8, 0.9, 1.0}; empty-corpus + out-of-range `p` validation.
+* Manual: running the script against the production DB produces the
+  same per-paper rows and per-tier totals as before — verified by diff
+  on `out/cost_percentile_report.md`.
+
+---
+
+## Bug 54 — NER stage scispaCy singleton bypass
+
+### Status / Severity / Surface
+
+* **Status:** Fixed (2026-05-16)
+* **Severity:** High — ~150 s wasted per paper, peak RSS up to 3× the
+  intended scispaCy footprint, OOM risk on low-RAM machines.
+* **Surface:** `named_entity_recognition/ner.py` `load_ner_model()` /
+  `load_linker_model()` / `run_ner_on_db()`. Triggered from
+  `pipeline/stages/summarization/runner.py:660-671`.
+
+### Symptom
+
+A multi-paper sync run shows the UMLS / scispaCy linker load message
+firing once for the first paper (via `umls_resources.get_nlp()`) as
+expected — *and then again for every paper during the NER stage*:
+
+```
+02:51:31  [PMC10100421_HIS-82-393] NER — running entity extraction…
+Loading fast NER model...
+✓ Fast NER model loaded
+Loading UMLS linker model...
+✓ UMLS linker model loaded
+⚠ Document PMC10100421_HIS-82-393 already has 2344 entities …
+02:53:47  [PMC10100421_HIS-82-393] NER done [136.4s]
+```
+
+That 136-second NER wall-time on a *skipped* paper is pure model-load
+overhead — both scispaCy loads completed before the existing-entities
+check fired. Next paper repeats the loads from scratch.
+
+### Diagnosis
+
+`named_entity_recognition/ner.py` (pre-fix):
+
+```python
+def load_ner_model():
+    nlp = spacy.load("en_core_sci_lg", disable=[…])
+    return nlp
+
+def load_linker_model():
+    nlp = spacy.load("en_core_sci_lg", disable=[…])
+    nlp.add_pipe("scispacy_linker", config={"threshold": 0.85, …})
+    return nlp
+```
+
+Both call `spacy.load(...)` directly. No module-level cache, no
+singleton routing. `run_ner_on_db(pmcid, …, nlp=None, linker_nlp=None)`
+defaults both to `None`; the runner at
+`pipeline/stages/summarization/runner.py:666` calls it without passing
+either, so the loaders fire with `None` and load fresh every time.
+
+Two-instance memory cost per paper because the codebase deliberately
+keeps "fast NER" and "linker" as separate models — the fast pass
+extracts entity spans without running the linker, then a second pass
+batches the unique span strings through the linker model. Both
+instances are full `en_core_sci_lg` loads (~2.6 GB each with the
+linker), and `umls_resources.get_nlp()` already holds a third copy for
+NORMALIZE / UMLS_ENRICH. Peak RSS in the user's run hit ~3.2 GB during
+linker load on top of the existing 2.6 GB singleton.
+
+Worse, the "Document already has entities" early-exit check at
+`ner.py:186-199` (pre-fix) fired *after* both loads — so a paper with
+cached entities still paid the full ~150 s load cost before bailing.
+
+Same class as B-029 (`PipelineRunner._get_nlp` direct load) and B-038
+(`SummarizationRunner.load_paper_from_db` direct load). Missed by the
+existing singleton-guard test because that test only scanned files
+under `pipeline/stages/`; `named_entity_recognition/` lives at repo
+root and was outside the scan.
+
+### Fix
+
+1. **Route both loaders through the singleton.** `load_ner_model()`
+   and `load_linker_model()` now call `umls_resources.get_nlp()` (raise
+   a clear `RuntimeError` when it returns `None`, e.g. under
+   `NLP_HISTO_DISABLE_UMLS=1` — the runner's `try/except` around the
+   NER call logs and continues). Both functions return the same
+   singleton object — kept as two names for API back-compat.
+
+2. **Disable the linker pipe for the fast-NER pass.** The singleton has
+   `scispacy_linker` attached for NORMALIZE / UMLS_ENRICH; running it
+   on every doc during span extraction would slow pass 1 by ~10×.
+   Wrap the pass-1 loop in `nlp.select_pipes(disable=["scispacy_linker"])`
+   — temporary mute, restored on `with` exit, so the singleton stays
+   intact for downstream stages.
+
+3. **Move the "already has entities" check before model loading.** A
+   paper that already has entities now bails in ~10 ms instead of
+   ~150 s.
+
+`batch_ner.py` benefits automatically — it imports the same loaders.
+
+### Verification
+
+* `tests/summarization/test_scispacy_singleton.py::test_ner_module_routes_through_singleton`
+  — greps both loader sources for direct `spacy.load(` calls and
+  asserts they route through `umls_resources` / `get_nlp`.
+* `test_only_umls_resources_calls_spacy_load_in_pipeline_tree` (existing)
+  continues to pass because `named_entity_recognition/` is outside its
+  scope; the new test fills the same gap for the NER module.
+* Manual check on a real run: paper 1 shows the one-time "UMLS:
+  loading" log line; subsequent papers' NER stages no longer print
+  "Loading fast NER model..." → "Loading UMLS linker model..." paired
+  with ~75 s loads (they print as singleton cache hits and inference
+  proceeds immediately).
+
+### Follow-up (not in this patch)
+
+* Collapse `run_ner_on_db`'s `nlp=` and `linker_nlp=` parameters into a
+  single `nlp=` argument since both are now the same object. Cosmetic
+  API cleanup, low priority.
+* Quiet the "Loading fast NER model..." / "Loading UMLS linker model..."
+  `print()` calls — they're misleading now that both are singleton
+  hits after the first paper. Use `logger.debug` instead.
+* Audit `named_entity_recognition/` for other direct `spacy.load(...)`
+  call sites and consider extending the singleton-guard test's scope
+  to include it.
 
 

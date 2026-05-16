@@ -7,28 +7,42 @@ from tqdm import tqdm
 # Add parent directory to path so we can import database module
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import spacy
-import scispacy  # noqa: F401 - needed to register scispacy components
-from scispacy.linking import EntityLinker  # noqa: F401 - registers scispacy_linker factory
 from sqlalchemy import func
 from database import get_db_connection, TextElement, Document, Entity
+from pipeline.stages.summarization import umls_resources
 
 
 def load_ner_model():
-    """Load fast NER model without linker."""
-    nlp = spacy.load("en_core_sci_lg", disable=["parser", "attribute_ruler", "lemmatizer"])
+    """Return the singleton scispaCy model used for entity-span extraction.
+
+    Routes through `umls_resources.get_nlp()` — the same singleton every other
+    stage uses, so this call costs nothing after the first paper in a process.
+    Previously this issued a fresh `spacy.load("en_core_sci_lg")` per call,
+    which under `runner.py`'s default invocation reloaded ~2.6 GB scispaCy +
+    UMLS twice per paper (B-054). The singleton has the `scispacy_linker` pipe
+    attached, but for the fast NER pass `run_ner_on_db` disables it with a
+    `nlp.select_pipes(...)` context manager so span extraction stays cheap.
+
+    Returns the same object as `load_linker_model()` — kept as two names for
+    API back-compat; collapsing the parameters in callers is a follow-up.
+    """
+    nlp = umls_resources.get_nlp()
+    if nlp is None:
+        raise RuntimeError(
+            "scispaCy/UMLS unavailable — NER cannot run. Check that "
+            "en_core_sci_lg is installed and $NLP_HISTO_DISABLE_UMLS is unset."
+        )
     return nlp
 
 
 def load_linker_model():
-    """Load model with UMLS linker for entity linking."""
-    nlp = spacy.load("en_core_sci_lg", disable=["parser", "attribute_ruler", "lemmatizer"])
-    nlp.add_pipe("scispacy_linker", config={
-        "resolve_abbreviations": True,
-        "linker_name": "umls",
-        "threshold": 0.85
-    })
-    return nlp
+    """Return the singleton scispaCy + UMLS linker model.
+
+    Identical to `umls_resources.get_nlp()` (en_core_sci_lg + `scispacy_linker`
+    at threshold 0.85). Kept as a thin shim so existing callers keep working
+    while the fix lands; functionally identical to `load_ner_model()` above.
+    """
+    return load_ner_model()
 
 
 # UMLS semantic types that are never valid entity links for biomedical text mining:
@@ -158,7 +172,32 @@ def run_ner_on_db(pmcid: str, min_chars: int = 50, save_to_db: bool = False, for
     if entity_cache is None:
         entity_cache = {}
 
-    # Step 0: Load models if not provided
+    db = get_db_connection()
+
+    # Cheap skip-check BEFORE loading any model. Previously the loaders fired
+    # first and a paper that already had entities still paid ~75 s for two
+    # scispaCy loads before bailing — concretely visible in the runner log as
+    # "NER done [136.4s]" on a paper that did zero inference (B-054).
+    # The model name used to key existing entities matches what the singleton
+    # exposes via `nlp.meta["name"]` ("core_sci_lg" for en_core_sci_lg).
+    if save_to_db and not force:
+        with db.session_scope() as session:
+            existing_count = (
+                session.query(func.count(Entity.id))
+                .join(TextElement)
+                .join(Document)
+                .filter(Document.pmcid == pmcid)
+                .filter(Entity.model_name == "core_sci_lg")
+                .scalar()
+            )
+        if existing_count > 0:
+            print(f"⚠ Document {pmcid} already has {existing_count} entities from model 'core_sci_lg'.")
+            print("Skipping processing. Use --force to reprocess and replace.\n")
+            return []
+
+    # Step 0: Load models if not provided. Both routes go through the
+    # `umls_resources.get_nlp()` singleton — first paper pays the ~75 s load,
+    # every subsequent paper is a dict lookup.
     if nlp is None:
         print("Loading fast NER model...")
         nlp = load_ner_model()
@@ -176,27 +215,8 @@ def run_ner_on_db(pmcid: str, min_chars: int = 50, save_to_db: bool = False, for
         linker = linker_nlp.get_pipe("scispacy_linker")
         linker_name = "umls"
 
-    db = get_db_connection()
-
     with db.session_scope() as session:
-        # Get model name early for skip check
         model_name = nlp.meta.get('name', 'unknown')
-
-        # Check if entities from THIS MODEL already exist for this document
-        if save_to_db and not force:
-            existing_count = (
-                session.query(func.count(Entity.id))
-                .join(TextElement)
-                .join(Document)
-                .filter(Document.pmcid == pmcid)
-                .filter(Entity.model_name == model_name)
-                .scalar()
-            )
-
-            if existing_count > 0:
-                print(f"⚠ Document {pmcid} already has {existing_count} entities from model '{model_name}'.")
-                print("Skipping processing. Use --force to reprocess and replace.\n")
-                return []
 
         # Step 1: SQL-level filtering (much faster than Python filtering)
         results = (
@@ -221,17 +241,24 @@ def run_ner_on_db(pmcid: str, min_chars: int = 50, save_to_db: bool = False, for
 
         print(f"Processing {len(texts)} text blocks for {pmcid}...")
 
-        # Step 2: FAST NER pass (no linker) - collect all entities
+        # Step 2: FAST NER pass (no linker) - collect all entities.
+        # The singleton `nlp` has `scispacy_linker` attached for downstream
+        # stages (NORMALIZE, UMLS_ENRICH). Running it on every doc here would
+        # cost ~10× the span-extraction time without need — we link only the
+        # unique span strings in pass 2 below. `select_pipes(disable=...)`
+        # temporarily mutes the linker; the `with` block restores it on exit.
         all_entities = []  # List of (doc_idx, ent_text, ent_label, start_char, end_char)
         unique_entity_texts = set()
 
         print("Pass 1: Fast NER extraction...")
-        for i, doc in tqdm(enumerate(nlp.pipe(texts, batch_size=50)),
-                          total=len(texts),
-                          desc="🔍 NER"):
-            for ent in doc.ents:
-                all_entities.append((i, ent.text, ent.label_, ent.start_char, ent.end_char))
-                unique_entity_texts.add(ent.text)
+        disable = ["scispacy_linker"] if "scispacy_linker" in nlp.pipe_names else []
+        with nlp.select_pipes(disable=disable):
+            for i, doc in tqdm(enumerate(nlp.pipe(texts, batch_size=50)),
+                              total=len(texts),
+                              desc="🔍 NER"):
+                for ent in doc.ents:
+                    all_entities.append((i, ent.text, ent.label_, ent.start_char, ent.end_char))
+                    unique_entity_texts.add(ent.text)
 
         print(f"Found {len(all_entities)} entity mentions, {len(unique_entity_texts)} unique texts")
 

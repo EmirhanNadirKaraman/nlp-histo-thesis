@@ -27,12 +27,14 @@ $0.  Compute time / GPU is out of scope here.
 from __future__ import annotations
 
 import json
+import logging
 import math
-import statistics
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
+
+logger = logging.getLogger(__name__)
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
@@ -42,6 +44,7 @@ from sqlalchemy import func, distinct
 
 from database import get_db_connection
 from database.models import Document, TextElement, Figure, Table
+from pipeline.stages.summarization.config import MapConfig
 from pipeline.stages.summarization.costing import PriceBook
 from pipeline.stages.summarization.batch.voter_configs import (
     CascadeProfile, get_profile, list_profiles,
@@ -62,10 +65,12 @@ OBS_OUTPUT_TOK_PER_CHUNK = 2521
 # Sentence-from-words ratio observed in PMC10047158.
 OBS_SENT_PER_WORD = 78 / 1335  # ≈ 0.0584
 
-# MAP chunking — must match pipeline/stages/summarization/config.py
-CHUNK_SIZE = 10
-CHUNK_OVERLAP = 2
-STRIDE = CHUNK_SIZE - CHUNK_OVERLAP  # 8
+# MAP chunking sourced from the single source of truth (`MapConfig` defaults)
+# so a change in production config cannot silently desync the estimate.
+_MAP_DEFAULTS = MapConfig()
+CHUNK_SIZE = _MAP_DEFAULTS.chunk_size
+CHUNK_OVERLAP = _MAP_DEFAULTS.chunk_overlap
+STRIDE = CHUNK_SIZE - CHUNK_OVERLAP
 
 
 # Profile model lists are pulled from voter_configs at runtime — no local
@@ -80,18 +85,124 @@ def _profile_models(p: CascadeProfile) -> dict[str, list[str] | str]:
     }
 
 
+# Which cascade profiles get cost-projected in the report. Explicit allowlist
+# rather than `list_profiles()` so a future re-introduction of `default` (or any
+# experimental profile) in `voter_configs.py` doesn't silently leak into the
+# thesis budget report. To add a profile to the report, add it here.
+_REPORTED_PROFILES: tuple[str, ...] = ("cheap", "real")
+
+
 PROFILES: dict[str, dict[str, list[str] | str]] = {
-    name: _profile_models(get_profile(name)) for name in list_profiles()
+    name: _profile_models(get_profile(name))
+    for name in _REPORTED_PROFILES
+    if name in list_profiles()
 }
 
 # Escalation rate scenarios (fraction of chunks that escalate past each tier).
-# expected_l2 and expected_l3 are calibrated to the only observed run
-# (PMC10047158: 1/8 chunks reached L3, no chunks stopped at L2).
+# `expected` is the load-bearing one — used by per-paper and cumulative tables.
+# Default values are loose hedges over the single early observation
+# (PMC10047158: 1/8 reached L3, 0 stopped at L2). At runtime, `main()` calls
+# `load_observed_escalation_rates()` and replaces this `expected` row with
+# chunk-weighted means over any `out/summaries/reports/escalation_report_*.json`
+# files present. Best / worst stay as anchor scenarios for the sensitivity table.
 SCENARIOS = {
     "best":     {"l2_rate": 0.05, "l3_rate": 0.01},
     "expected": {"l2_rate": 0.20, "l3_rate": 0.10},
     "worst":    {"l2_rate": 1.00, "l3_rate": 1.00},  # every chunk reaches L3
 }
+
+
+REPORTS_DIR = Path("out/summaries/reports")
+
+
+@dataclass
+class ObservedRates:
+    """Chunk-weighted escalation fractions aggregated across run reports."""
+    l2_rate: float
+    l3_rate: float
+    n_reports: int
+    total_chunks: int
+    total_l2_escalated: int
+    total_l3_escalated: int
+    sources: list[str] = field(default_factory=list)
+
+
+def load_observed_escalation_rates(
+    reports_dir: Path = REPORTS_DIR,
+) -> ObservedRates | None:
+    """Return chunk-weighted L2/L3 escalation fractions across all escalation
+    reports in ``reports_dir`` — or ``None`` when there is nothing to learn from.
+
+    Chunk-weighted = `sum(l2_escalated) / sum(total_chunks)` across reports,
+    not the mean of per-report rates. Each chunk gets equal vote regardless
+    of which paper / report it came from. A single small paper can't pull the
+    mean around.
+
+    Skips reports that are unreadable, malformed, or carry `total_chunks <= 0`
+    (and logs the skip). Reads `totals` first; falls back to summing the
+    per-paper `papers[]` array if `totals` is absent.
+    """
+    if not reports_dir.exists():
+        return None
+    paths = sorted(reports_dir.glob("escalation_report_*.json"))
+    if not paths:
+        return None
+
+    total_chunks = 0
+    total_l2 = 0
+    total_l3 = 0
+    sources: list[str] = []
+    for path in paths:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("escalation report unreadable: %s (%s)", path.name, exc)
+            continue
+
+        n, l2, l3 = _extract_chunk_counts(data)
+        if n <= 0:
+            logger.debug("escalation report has zero chunks: %s", path.name)
+            continue
+        total_chunks += n
+        total_l2 += l2
+        total_l3 += l3
+        sources.append(path.name)
+
+    if total_chunks == 0:
+        return None
+    return ObservedRates(
+        l2_rate=total_l2 / total_chunks,
+        l3_rate=total_l3 / total_chunks,
+        n_reports=len(sources),
+        total_chunks=total_chunks,
+        total_l2_escalated=total_l2,
+        total_l3_escalated=total_l3,
+        sources=sources,
+    )
+
+
+def _extract_chunk_counts(report: dict) -> tuple[int, int, int]:
+    """Pull `(total_chunks, l2_escalated, l3_escalated)` out of one report.
+
+    Prefers the `totals` block (writer-emitted aggregate). Falls back to
+    summing the per-paper `papers[]` list when an older report omits totals.
+    """
+    totals = report.get("totals")
+    if isinstance(totals, dict) and totals.get("total_chunks") is not None:
+        return (
+            int(totals.get("total_chunks", 0) or 0),
+            int(totals.get("l2_escalated", 0) or 0),
+            int(totals.get("l3_escalated", 0) or 0),
+        )
+    papers = report.get("papers") or []
+    n = l2 = l3 = 0
+    for p in papers:
+        if not isinstance(p, dict):
+            continue
+        n += int(p.get("total_chunks", 0) or 0)
+        l2 += int(p.get("l2_escalated", 0) or 0)
+        l3 += int(p.get("l3_escalated", 0) or 0)
+    return n, l2, l3
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -117,8 +228,8 @@ class PaperMeta:
     def est_chunks(self) -> int:
         if self.est_sentences <= 0:
             return 0
-        # ceil((n - overlap) / stride) but at least 1
-        return max(1, math.ceil((self.est_sentences) / STRIDE))
+        # Mirrors `len(range(0, n_sentences, stride))` from `MapStage._make_chunks`.
+        return max(1, math.ceil(self.est_sentences / STRIDE))
 
 
 def rank_papers() -> list[PaperMeta]:
@@ -178,6 +289,10 @@ def enrich(paper: PaperMeta) -> PaperMeta:
 
 def pick_percentile(papers: list[PaperMeta], p: float) -> tuple[int, PaperMeta]:
     n = len(papers)
+    if n == 0:
+        raise ValueError("pick_percentile: empty paper list — no candidates to rank")
+    if not 0.0 < p <= 1.0:
+        raise ValueError(f"pick_percentile: p must be in (0, 1]; got {p}")
     idx = math.ceil(p * n) - 1
     return idx, papers[idx]
 
@@ -275,17 +390,64 @@ def estimate_map(
     return rows
 
 
-def estimate_non_llm_stages(paper: PaperMeta) -> list[StageCost]:
-    """GROUNDING / NORMALIZE / GROUP / CANONICALIZE / RELATE / RESOLVE → $0 LLM."""
-    zeros = []
-    for stage in ("GROUNDING", "NORMALIZE", "GROUP", "CANONICALIZE", "RELATE", "RESOLVE"):
-        zeros.append(StageCost(
-            stage=stage, model="(local NLI / deterministic)",
-            calls=0, input_tokens=0, output_tokens=0,
-            input_price_per_1m=None, output_price_per_1m=None,
-            cost_usd=0.0, batch_cost_usd=0.0,
+# ─────────────────────────────────────────────────────────────────────────────
+# Cumulative spend across the smallest P% of papers
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class CumulativePoint:
+    cut: float            # in (0, 1]
+    n_papers: int         # papers[:n_papers] included
+    total_chunks: int
+    normal_cost: float
+    batch_cost: float
+
+
+def cumulative_cost_by_cut(
+    papers: list[PaperMeta],
+    book: PriceBook,
+    profile: dict,
+    l2_rate: float,
+    l3_rate: float,
+    cuts: list[float],
+) -> list[CumulativePoint]:
+    """Running sum of per-paper MAP cost from rank 1 → ceil(cut × N).
+
+    Answers "what if I run only the smallest cut % of papers?". Papers
+    are taken in the order given (this script feeds them sorted ascending
+    by `n_te`).  Each paper's per-tier cost comes from `estimate_map`.
+
+    Cuts outside (0, 1] are rejected.  Missing prices propagate as 0 —
+    matches the per-paper tables, which render them as `n/a`; a global
+    cumulative number can't carry "partial unknown" cleanly without
+    misleading the reader.
+    """
+    n = len(papers)
+    if n == 0:
+        return []
+    for p in cuts:
+        if not 0.0 < p <= 1.0:
+            raise ValueError(f"cumulative_cost_by_cut: cut must be in (0, 1]; got {p}")
+
+    per_paper: list[tuple[int, float, float]] = []  # (chunks, normal, batch)
+    for paper in papers:
+        rows = estimate_map(paper, book, profile, l2_rate, l3_rate)
+        normal = _sum_cost(rows) or 0.0
+        batch = _sum_batch_cost(rows) or 0.0
+        per_paper.append((paper.est_chunks, normal, batch))
+
+    out: list[CumulativePoint] = []
+    for cut in cuts:
+        idx = math.ceil(cut * n)
+        slice_ = per_paper[:idx]
+        out.append(CumulativePoint(
+            cut=cut,
+            n_papers=idx,
+            total_chunks=sum(c for c, _, _ in slice_),
+            normal_cost=sum(n_c for _, n_c, _ in slice_),
+            batch_cost=sum(b for _, _, b in slice_),
         ))
-    return zeros
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -322,34 +484,45 @@ def _sum_batch_cost(rows: Iterable[StageCost]) -> float | None:
     return None if seen_unknown else total
 
 
-def render_paper_table(label: str, paper: PaperMeta, rows: list[StageCost]) -> list[str]:
-    lines = [f"### {label}: {paper.pmcid}", ""]
-    lines.append(f"- est. sentences: **{paper.est_sentences}** "
-                 f"(from {paper.n_words} words × {OBS_SENT_PER_WORD:.4f} sent/word)")
-    lines.append(f"- est. MAP chunks: **{paper.est_chunks}** "
-                 f"(chunk_size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP}, stride={STRIDE})")
-    lines.append("")
-    lines.append("| stage | model | calls | input tok | output tok | "
-                 "in $/1M | out $/1M | normal | batch (×0.5) |")
-    lines.append("|---|---|---:|---:|---:|---:|---:|---:|---:|")
-    for r in rows:
-        lines.append(
-            f"| {r.stage} | `{r.model}` | {r.calls} | "
-            f"{r.input_tokens:,} | {r.output_tokens:,} | "
-            f"{_ppm(r.input_price_per_1m)} | {_ppm(r.output_price_per_1m)} | "
-            f"{_money(r.cost_usd)} | {_money(r.batch_cost)} |"
+def _cascade_rates_assumption_line(observed: ObservedRates | None) -> str:
+    """Single bullet describing where the `expected` cascade rates came from.
+
+    Falls into two branches: observed (chunk-weighted from on-disk reports)
+    or the static hedge fallback when nothing is on disk yet.
+    """
+    if observed is None:
+        return (
+            "- **Cascade rates** are scenario inputs, not measurements. No "
+            "`out/summaries/reports/escalation_report_*.json` files found, so "
+            "the `expected` row falls back to the static hedge defaults "
+            "(20 % / 10 %). Run the pipeline on ≥3–5 papers and re-run this "
+            "script to switch to calibrated rates automatically."
         )
-    total = _sum_cost(rows)
-    batch_total = _sum_batch_cost(rows)
-    lines.append(f"| **TOTAL** | | | | | | | **{_money(total)}** | **{_money(batch_total)}** |")
-    lines.append("")
-    return lines
+    return (
+        "- **Cascade rates (calibrated)**: `expected` row reads from "
+        f"{observed.n_reports} escalation report(s) covering "
+        f"{observed.total_chunks:,} chunks. Chunk-weighted means: "
+        f"l2 = {observed.l2_rate:.1%} "
+        f"({observed.total_l2_escalated:,}/{observed.total_chunks:,}), "
+        f"l3 = {observed.l3_rate:.1%} "
+        f"({observed.total_l3_escalated:,}/{observed.total_chunks:,}). "
+        "Best / worst rows remain anchor scenarios."
+    )
 
 
 def main() -> None:
     book = PriceBook.load()
     papers = rank_papers()
     n = len(papers)
+
+    # Calibrate `expected` cascade rates from observed escalation reports,
+    # if any exist. Falls back to the static hedge defaults otherwise.
+    observed = load_observed_escalation_rates()
+    if observed is not None:
+        SCENARIOS["expected"] = {
+            "l2_rate": observed.l2_rate,
+            "l3_rate": observed.l3_rate,
+        }
 
     # Median, P80, P90 nearest-rank
     selections: dict[str, tuple[int, PaperMeta]] = {
@@ -389,15 +562,20 @@ def main() -> None:
     lines += [
         "## Stage-level cost — expected cascade rates, per profile",
         "",
-        f"Expected cascade rates: L2 escalation = {expected['l2_rate']:.0%}, "
-        f"L3 escalation = {expected['l3_rate']:.0%} of chunks "
-        "(calibrated to the one observed cached run on PMC10047158).",
+        f"Expected cascade rates: L2 escalation = {expected['l2_rate']:.1%}, "
+        f"L3 escalation = {expected['l3_rate']:.1%} of chunks "
+        + (
+            f"(chunk-weighted mean over {observed.n_reports} escalation "
+            f"report(s), {observed.total_chunks:,} chunks)."
+            if observed is not None else
+            "(static hedge — no escalation reports on disk yet)."
+        ),
         "",
         "Profiles imported live from "
         "`pipeline/stages/summarization/batch/voter_configs.py`:",
         "",
     ]
-    for pname in list_profiles():
+    for pname in PROFILES:
         prof = get_profile(pname)
         l1 = ", ".join(v.model for v in prof.l1_voters)
         l2 = ", ".join(v.model for v in prof.l2_voters)
@@ -487,6 +665,43 @@ def main() -> None:
             "",
         ]
 
+    # Cumulative spend across the smallest P% of papers — answers "what
+    # if I run only the first 90% of the corpus?". Uses the same expected
+    # cascade rates as the per-paper section above.
+    cuts = [0.10, 0.25, 0.50, 0.75, 0.80, 0.90, 1.00]
+    lines += [
+        "## Cumulative spend — running the smallest P% of papers",
+        "",
+        f"Running sum of per-paper MAP cost from rank 1 (smallest by `n_te`) "
+        f"up to `ceil(P × {n})`. Same expected cascade rates as above "
+        f"(L2 = {expected['l2_rate']:.1%}, L3 = {expected['l3_rate']:.1%}). "
+        "Answers 'what if I cap the run at the smallest P% of the corpus?'.",
+        "",
+    ]
+    # Pre-compute per-profile cumulative series so each profile is rendered
+    # in its own table (one combined table would have 6 cost columns × 4
+    # profiles → unreadable).
+    cumulative_by_profile = {
+        pname: cumulative_cost_by_cut(
+            papers, book, profile,
+            expected["l2_rate"], expected["l3_rate"], cuts,
+        )
+        for pname, profile in PROFILES.items()
+    }
+    for pname, series in cumulative_by_profile.items():
+        lines.append(f"#### profile = `{pname}`")
+        lines.append("")
+        lines.append(
+            "| cut | n_papers | total chunks | normal $ | batch (×0.5) $ |"
+        )
+        lines.append("|---:|---:|---:|---:|---:|")
+        for pt in series:
+            lines.append(
+                f"| {pt.cut:>4.0%} | {pt.n_papers:,} | {pt.total_chunks:,} | "
+                f"{_money(pt.normal_cost)} | {_money(pt.batch_cost)} |"
+            )
+        lines.append("")
+
     # Cold vs warm cache
     lines += [
         "## Cold-run vs cache-warm",
@@ -515,14 +730,7 @@ def main() -> None:
         "a sensitivity band.",
         f"- **Chunk count** = `ceil(n_sentences / {STRIDE})` (chunk_size="
         f"{CHUNK_SIZE}, overlap={CHUNK_OVERLAP}).",
-        "- **Cascade rates** are scenario inputs, not measurements. Only one "
-        "trace exists (PMC10047158: 0 / 8 stopped at L2, 1 / 8 reached L3). "
-        "Expected-case values (20 % / 10 %) are best-guess defaults.",
-        "  - **TODO — recalibrate after ≥3–5 real runs.** Once `out/summaries/"
-        "reports/escalation_report_*.json` covers more papers, replace the "
-        "`expected` row with the observed escalation fractions "
-        "(`l2_escalated / total_chunks`, `l3_escalated / total_chunks`) "
-        "averaged across runs. Edit `SCENARIOS['expected']` in this script.",
+        _cascade_rates_assumption_line(observed),
         "- **Prices** loaded verbatim from `configs/model_prices.json`. "
         "Models present: " + ", ".join(book.known_models()) + ".",
         "- **Cache** assumed cold for the tables; the warm-run section reports "

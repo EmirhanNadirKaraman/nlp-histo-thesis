@@ -3,15 +3,18 @@ Process one or more histopathology papers through the summarization pipeline.
 
 Usage
 -----
-python scripts/run_paper.py PMC1234567              # batch mode (default)
-python scripts/run_paper.py PMC1234567 --sync       # sync (live) mode
-python scripts/run_paper.py PMC1234567 --trace      # enable JSONL traces (sync only)
-python scripts/run_paper.py PMC1234567 --dry-run    # print config and exit
+Exactly one of --sync / --batch is required (no implicit default — prevents
+accidentally launching the wrong mode).
+
+python scripts/run_paper.py PMC1234567 --batch          # batch (async) mode
+python scripts/run_paper.py PMC1234567 --sync           # sync (live) mode
+python scripts/run_paper.py PMC1234567 --sync --trace   # enable JSONL traces (sync only)
+python scripts/run_paper.py PMC1234567 --batch --dry-run  # print config and exit
 
 # Omit PMCID to auto-sample from eval/data/source_cases.jsonl:
-python scripts/run_paper.py                         # 2 random PMCIDs, seed=42
-python scripts/run_paper.py --sample 3 --seed 7    # 3 random PMCIDs, seed=7
-python scripts/run_paper.py --all                   # all PMCIDs in source_cases.jsonl
+python scripts/run_paper.py --batch                     # 2 random PMCIDs, seed=42
+python scripts/run_paper.py --sync --sample 3 --seed 7  # 3 random PMCIDs, seed=7
+python scripts/run_paper.py --batch --all               # all PMCIDs in source_cases.jsonl
 
 Requires: GOOGLE_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY
 """
@@ -113,6 +116,7 @@ def build_runner(
     profile_name: str | None = None,
     artifact_root: Path | None = None,
     artifact_run_id: str | None = None,
+    chunk_workers: int | None = None,
 ):
     """Return (runner, token_usage) where token_usage is {level: {model: {input, output}}}.
 
@@ -126,12 +130,17 @@ def build_runner(
     from pipeline.stages.summarization import SummarizationRunner
     from pipeline.stages.summarization.agreement.providers import OpenAIEmbedder
     from pipeline.stages.summarization.batch.voter_configs import get_profile
+    from dataclasses import replace as _dc_replace
     from pipeline.stages.summarization.config import SummarizationConfig
     from pipeline.stages.summarization.llm_providers import (
         anthropic_direct_chat,
         gemini_direct_chat,
         openai_direct_chat,
     )
+
+    sum_cfg = SummarizationConfig()
+    if chunk_workers is not None:
+        sum_cfg = _dc_replace(sum_cfg, map=_dc_replace(sum_cfg.map, chunk_workers=chunk_workers))
 
     l1_store: dict = {}
     l2_store: dict = {}
@@ -177,7 +186,7 @@ def build_runner(
         level2_voter_llms=level2_voter_llms,
         escalation_llm=escalation_llm,
         embed_fn=OpenAIEmbedder(),
-        config=SummarizationConfig(),
+        config=sum_cfg,
         output_dir=Path("out/summaries"),
         trace_enabled=trace,
         voter_specs=voter_specs,
@@ -202,7 +211,9 @@ def build_batch_runner(
     db=None,
     force_rerun: bool = False,
     run_ner: bool = False,
+    chunk_workers: int | None = None,
 ):
+    from dataclasses import replace as _dc_replace
     from pipeline.stages.summarization.agreement.providers import GeminiEmbedder
     from pipeline.stages.summarization.batch import BatchSummarizationRunner
     from pipeline.stages.summarization.batch.voter_configs import get_profile
@@ -214,6 +225,10 @@ def build_batch_runner(
     profile = get_profile(profile_name)
     logger.info("Cascade profile: %s", profile.name)
 
+    sum_cfg = SummarizationConfig()
+    if chunk_workers is not None:
+        sum_cfg = _dc_replace(sum_cfg, map=_dc_replace(sum_cfg.map, chunk_workers=chunk_workers))
+
     # REDUCE + RULES still run synchronously (one call per paper at the end).
     # The L3 voter model in the active profile is used so smoke profiles stay cheap.
     escalation_llm = anthropic_direct_chat(profile.l3_voter.model, temperature=0.0)
@@ -223,7 +238,7 @@ def build_batch_runner(
         l2_voters=profile.l2_voters,
         l3_model=profile.l3_voter,
         escalation_llm=escalation_llm,
-        config=SummarizationConfig(),
+        config=sum_cfg,
         output_dir=Path("out/summaries"),
         embed_fn=GeminiEmbedder(),
         cascade_profile=profile.name,
@@ -328,8 +343,20 @@ def main():
     parser.add_argument("--seed",         type=int, default=42,
                         help="Random seed for PMCID sampling (default: 42)")
     parser.add_argument("--trace",        action="store_true", help="Write JSONL traces (sync mode only)")
-    parser.add_argument("--sync",         action="store_true", help="Use sync (live) mode instead of batch")
+    mode_group = parser.add_mutually_exclusive_group(required=True)
+    mode_group.add_argument("--sync",  action="store_true",
+                            help="Use sync (live) mode. Required if --batch not given.")
+    mode_group.add_argument("--batch", action="store_true",
+                            help="Use batch (async) mode. Required if --sync not given.")
     parser.add_argument("--dry-run",       action="store_true", help="Print config and exit without API calls")
+    parser.add_argument(
+        "--chunk-workers", type=int, default=None, metavar="N",
+        help="ThreadPoolExecutor size for MAP chunk-level parallelism. "
+             "Each worker processes one MAP chunk and fires all L1 voters "
+             "for it in parallel inside. Default 5 (from MapConfig). Raise to "
+             "saturate provider rate limits on bigger Tier accounts; lower if "
+             "you keep hitting 429s. Applies to both --sync and --batch.",
+    )
     parser.add_argument("--limit-chunks",  type=int, default=None, metavar="N",
                         help="Process at most N MAP chunks (useful for cheap iteration)")
     parser.add_argument("--start-chunk",   type=int, default=0, metavar="K",
@@ -354,29 +381,26 @@ def main():
              "UMLS KB — useful on memory-constrained machines."
     )
     parser.add_argument(
-        "--health-check", default="yes", choices=["yes", "no"],
+        "--health-check", required=True, choices=["yes", "no"],
         metavar="yes|no",
         help="Run startup health checks before any LLM call: NLI model load, "
              "UMLS singleton, embedding provider, and a trivial DB query. "
              "Logs an aggregated OK/FAIL summary so silent fallbacks (Issue G, "
              "B-019/B-020-class) surface before paying for a cascade. Adds "
              "~90s on first run (UMLS + NLI model load); subsequent runs in "
-             "the same process are fast. Default 'yes' for safety; set 'no' "
-             "for fast single-paper dev iteration."
+             "the same process are fast. REQUIRED — no implicit default; "
+             "pass 'yes' for safety on real runs, 'no' for fast dev iteration."
     )
     parser.add_argument(
         "--profile", required=True, metavar="NAME",
-        choices=["cheap", "real", "default"],
+        choices=["cheap", "real"],
         help="Cascade profile (required — no implicit default to prevent "
              "accidental spend). Registered in "
              "pipeline/stages/summarization/batch/voter_configs.py:\n"
              "  cheap   — Gemini + OpenAI only, no Claude. Smoke/dev runs.\n"
              "  real    — Gemini-Flash-Lite/GPT-4o-mini/GPT-4.1-nano at L1; "
              "Gemini-Flash + GPT-4.1-mini + Claude-Haiku at L2; Claude-Sonnet "
-             "at L3. Production-quality eval runs.\n"
-             "  default — heterogeneous: Gemini-Flash-Lite + GPT-4o-mini + "
-             "Claude-Haiku at L1; mid-tier mirror at L2; Claude-Sonnet at L3. "
-             "Same shape as the historical hardcoded sync default.",
+             "at L3. Production-quality eval runs.",
     )
     args = parser.parse_args()
 
@@ -455,6 +479,7 @@ def main():
             profile_name=args.profile,
             artifact_root=artifact_root_path,
             artifact_run_id=args.artifact_run_id,
+            chunk_workers=args.chunk_workers,
         )
     else:
         for pmcid in pmcids:
@@ -465,6 +490,7 @@ def main():
                     profile_name=args.profile,
                     artifact_root=artifact_root_path,
                     artifact_run_id=args.artifact_run_id,
+                    chunk_workers=args.chunk_workers,
                 )
             else:
                 _run_sync(
@@ -473,6 +499,7 @@ def main():
                     profile_name=args.profile,
                     artifact_root=artifact_root_path,
                     artifact_run_id=args.artifact_run_id,
+                    chunk_workers=args.chunk_workers,
                 )
 
 
@@ -480,13 +507,15 @@ def _run_sync(pmcid: str, trace: bool,
               start_chunk: int = 0, limit_chunks: int | None = None,
               profile_name: str | None = None,
               artifact_root: Path | None = None,
-              artifact_run_id: str | None = None) -> None:
+              artifact_run_id: str | None = None,
+              chunk_workers: int | None = None) -> None:
     logger.info("Building sync runner…")
     runner, token_usage = build_runner(
         trace=trace,
         profile_name=profile_name,
         artifact_root=artifact_root,
         artifact_run_id=artifact_run_id,
+        chunk_workers=chunk_workers,
     )
 
     logger.info("Loading paper %s from database…", pmcid)
@@ -605,6 +634,9 @@ def _escalation_stats(pmcid: str, handle) -> dict:
         "l3_kept":          l3_kept,
         "finalized":        finalized,
         "dropped":          dropped,
+        # Batch path: the handle does not track PipelineCache hits separately;
+        # set to 0 so the column renders consistently with sync runs.
+        "cache_hits":       0,
         "l1_pct":           round(100 * l1_kept / total, 1) if total else 0.0,
         "token_usage":      usage,
         "est_cost_usd":     round(actual_cost, 6),
@@ -652,14 +684,15 @@ def _escalation_stats_sync(pmcid: str, token_usage: dict, runner) -> dict:
         and last_map_invocation_usage_records.
     """
     ec = runner.last_map_escalation_counts
-    total     = ec.get("total", 0)
-    l1_kept   = ec.get("l1_kept", 0)
-    l2_esc    = ec.get("l2_escalated", 0)
-    l2_kept   = ec.get("l2_kept", 0)
-    l3_esc    = ec.get("l3_escalated", 0)
-    l3_kept   = ec.get("l3_kept", 0)
-    finalized = ec.get("finalized", 0)
-    dropped   = ec.get("dropped", 0)
+    total      = ec.get("total", 0)
+    l1_kept    = ec.get("l1_kept", 0)
+    l2_esc     = ec.get("l2_escalated", 0)
+    l2_kept    = ec.get("l2_kept", 0)
+    l3_esc     = ec.get("l3_escalated", 0)
+    l3_kept    = ec.get("l3_kept", 0)
+    finalized  = ec.get("finalized", 0)
+    dropped    = ec.get("dropped", 0)
+    cache_hits = ec.get("cache_hits", 0)
 
     # Records-first: read directly from MapStage. Callback-derived
     # token_usage is kept only as a fallback so older runners that don't
@@ -687,6 +720,7 @@ def _escalation_stats_sync(pmcid: str, token_usage: dict, runner) -> dict:
         "l3_kept":          l3_kept,
         "finalized":        finalized,
         "dropped":          dropped,
+        "cache_hits":       cache_hits,
         "l1_pct":           round(100 * l1_kept / total, 1) if total else 0.0,
         "token_usage":      token_usage,
         "est_cost_usd":     round(actual_cost, 6),
@@ -714,6 +748,7 @@ def _save_escalation_report(stats: list[dict], output_dir: Path) -> None:
         "l3_kept":       sum(s["l3_kept"]        for s in stats),
         "finalized":     sum(s["finalized"]      for s in stats),
         "dropped":       sum(s["dropped"]        for s in stats),
+        "cache_hits":    sum(s.get("cache_hits", 0) for s in stats),
         "est_cost_usd":  round(sum(s["est_cost_usd"]  for s in stats), 6),
         "est_saved_usd": saved_total,
     }
@@ -743,7 +778,7 @@ def _save_escalation_report(stats: list[dict], output_dir: Path) -> None:
     _csv_fields = [
         "pmcid", "mode", "total_chunks", "l1_kept", "l1_pct",
         "l2_escalated", "l2_kept", "l3_escalated", "l3_kept",
-        "finalized", "dropped", "est_cost_usd", "est_saved_usd",
+        "finalized", "dropped", "cache_hits", "est_cost_usd", "est_saved_usd",
     ]
     with csv_path.open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=_csv_fields, extrasaction="ignore")
@@ -757,24 +792,26 @@ def _save_escalation_report(stats: list[dict], output_dir: Path) -> None:
     def _fmt_money(v) -> str:
         return "    n/a " if v is None else f"{v:>8.5f}"
 
-    print(f"\n{'─' * 80}")
+    print(f"\n{'─' * 90}")
     print("Cascade Escalation Report")
-    print(f"{'─' * 80}")
-    print(f"{'PMCID':<45} {'Md':>2} {'Total':>5} {'L1%':>5} {'→L2':>4} {'→L3':>4} {'Drop':>4} {'Cost$':>8} {'Saved$':>8}")
-    print(f"{'─' * 80}")
+    print(f"{'─' * 90}")
+    print(f"{'PMCID':<45} {'Md':>2} {'Total':>5} {'Cch':>4} {'L1%':>5} {'→L2':>4} {'→L3':>4} {'Drop':>4} {'Cost$':>8} {'Saved$':>8}")
+    print(f"{'─' * 90}")
     for s in stats:
         print(
-            f"{s['pmcid']:<45} {s.get('mode','?')[0]:>2} {s['total_chunks']:>5} {s['l1_pct']:>4.0f}%"
+            f"{s['pmcid']:<45} {s.get('mode','?')[0]:>2} {s['total_chunks']:>5}"
+            f" {s.get('cache_hits', 0):>4} {s['l1_pct']:>4.0f}%"
             f" {s['l2_escalated']:>4} {s['l3_escalated']:>4} {s['dropped']:>4}"
             f" {s['est_cost_usd']:>8.5f} {_fmt_money(s['est_saved_usd'])}"
         )
-    print(f"{'─' * 80}")
+    print(f"{'─' * 90}")
     print(
-        f"{'TOTAL':<45} {'':>2} {totals['total_chunks']:>5} {totals['l1_pct']:>4.0f}%"
+        f"{'TOTAL':<45} {'':>2} {totals['total_chunks']:>5}"
+        f" {totals.get('cache_hits', 0):>4} {totals['l1_pct']:>4.0f}%"
         f" {totals['l2_escalated']:>4} {totals['l3_escalated']:>4} {totals['dropped']:>4}"
         f" {totals['est_cost_usd']:>8.5f} {_fmt_money(totals['est_saved_usd'])}"
     )
-    print(f"{'─' * 80}")
+    print(f"{'─' * 90}")
     print(f"\nActual cost:    ${totals['est_cost_usd']:.5f}")
     if totals["est_saved_usd"] is None:
         print("Saved vs L3-only baseline: unavailable (no L1 usage or L3 price missing)")
@@ -795,6 +832,7 @@ def _run_all_batch(
     profile_name: str | None = None,
     artifact_root: Path | None = None,
     artifact_run_id: str | None = None,
+    chunk_workers: int | None = None,
 ) -> None:
     """Submit all papers simultaneously, poll together, finalize all."""
     from pipeline.stages.summarization.batch import BatchPhase
@@ -805,6 +843,7 @@ def _run_all_batch(
         artifact_root=artifact_root,
         artifact_run_id=artifact_run_id,
         db=_open_db_connection("build_batch_runner (multi)"),
+        chunk_workers=chunk_workers,
     )
 
     # ── Phase 1: submit all papers in parallel ────────────────────────────────
@@ -893,6 +932,7 @@ def _run_batch(
     profile_name: str | None = None,
     artifact_root: Path | None = None,
     artifact_run_id: str | None = None,
+    chunk_workers: int | None = None,
 ) -> None:
     from pipeline.stages.summarization.batch import BatchPhase
     from pipeline.stages.summarization.runner import SummarizationRunner
@@ -903,6 +943,7 @@ def _run_batch(
         artifact_root=artifact_root,
         artifact_run_id=artifact_run_id,
         db=_open_db_connection("build_batch_runner (single)"),
+        chunk_workers=chunk_workers,
     )
 
     logger.info("Loading paper %s from database…", pmcid)

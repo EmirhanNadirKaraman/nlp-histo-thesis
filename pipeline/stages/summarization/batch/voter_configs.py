@@ -20,6 +20,12 @@ runs cannot silently burn an unintended cascade.
             GPT-4.1-nano (cheapest tier; no Claude voter at L1). L2:
             Gemini-Flash, GPT-4.1-mini, Claude-Haiku. L3: Claude-Sonnet
             (temperature=0.0). Use for real evaluation runs.
+
+The previous ``default`` profile (Claude-Haiku at L1 for 3-provider
+diversity, mirroring the legacy hardcoded sync config) was removed —
+``real`` is the production cascade and ``cheap`` is the smoke cascade,
+both retained. Reintroduce only if the L1-provider-diversity hypothesis is
+empirically required.
 """
 from __future__ import annotations
 
@@ -138,41 +144,9 @@ def _make_real_profile() -> CascadeProfile:
     return CascadeProfile(name="real", l1_voters=l1, l2_voters=l2, l3_voter=l3)
 
 
-def _make_default_profile() -> CascadeProfile:
-    """3-provider heterogeneous cascade — single source of truth for what
-    sync runs used to hardcode in ``scripts/run_paper.py``.
-
-    L1: Gemini-Flash-Lite (gemini), GPT-4o-mini (openai), Claude-Haiku-4.5
-        (anthropic). temperature=0.1 across the board for sampling
-        diversity.
-    L2: Gemini-Flash (gemini), GPT-4.1-mini (openai), Claude-Haiku-4.5
-        (anthropic). temperature=0.1. Note: L2 Haiku stays at 0.1 so
-        ``MapStage``'s in-run voter cache treats it as the same call
-        as L1 Haiku for that chunk (avoids paying twice).
-    L3: Claude-Sonnet-4.6. temperature=0.0 (deterministic final escalation).
-
-    Different from ``real``: ``real`` has no Claude voter at L1.  Different
-    from ``cheap``: ``cheap`` has no Claude voters at any tier.
-    """
-    from .models import VoterBatchConfig
-    l1 = [
-        VoterBatchConfig(GEMINI_L1, provider="gemini",   temperature=0.1),
-        VoterBatchConfig(OPENAI_L1, provider="openai",   temperature=0.1),
-        VoterBatchConfig(CLAUDE_L1, provider="claude",   temperature=0.1),
-    ]
-    l2 = [
-        VoterBatchConfig(GEMINI_L2, provider="gemini",   temperature=0.1),
-        VoterBatchConfig(OPENAI_L2, provider="openai",   temperature=0.1),
-        VoterBatchConfig(CLAUDE_L2, provider="claude",   temperature=0.1),
-    ]
-    l3 = VoterBatchConfig(CLAUDE_L3, provider="claude",  temperature=0.0)
-    return CascadeProfile(name="default", l1_voters=l1, l2_voters=l2, l3_voter=l3)
-
-
 _PROFILE_BUILDERS = {
     "cheap":   _make_cheap_profile,
     "real":    _make_real_profile,
-    "default": _make_default_profile,
 }
 
 
