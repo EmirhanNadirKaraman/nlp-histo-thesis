@@ -110,6 +110,42 @@ def _open_db_connection(caller_label: str):
         return None
 
 
+DEFAULT_CONFIG_PATH = "configs/run.yaml"
+
+
+def _load_summarization_config(config_path: str | Path | None):
+    """Return a ``SummarizationConfig`` populated from ``config_path``.
+
+    Falls back to ``SummarizationConfig()`` defaults when ``config_path`` is
+    ``None`` / empty / missing on disk, or when the YAML has no
+    ``summarization`` block. Logs which path was taken so callers can see
+    whether the YAML override actually applied.
+    """
+    from pipeline.stages.summarization.config import SummarizationConfig
+
+    if not config_path:
+        logger.info("Summarisation config: defaults (no --config path)")
+        return SummarizationConfig()
+
+    path = Path(config_path)
+    if not path.exists():
+        logger.warning(
+            "Summarisation config: %s not found — falling back to defaults", path,
+        )
+        return SummarizationConfig()
+
+    from pipeline.config_loader import load_config
+
+    _pdf_cfg, sum_cfg = load_config(path)
+    logger.info(
+        "Summarisation config loaded from %s "
+        "(grounding.threshold=%s, map.theta=%s, relate.entailment_threshold=%s)",
+        path, sum_cfg.grounding.threshold, sum_cfg.map.theta,
+        sum_cfg.relate.entailment_threshold,
+    )
+    return sum_cfg
+
+
 def build_runner(
     trace: bool,
     *,
@@ -117,6 +153,7 @@ def build_runner(
     artifact_root: Path | None = None,
     artifact_run_id: str | None = None,
     chunk_workers: int | None = None,
+    config_path: str | Path | None = DEFAULT_CONFIG_PATH,
 ):
     """Return (runner, token_usage) where token_usage is {level: {model: {input, output}}}.
 
@@ -125,20 +162,20 @@ def build_runner(
     :func:`get_profile`. ``profile_name`` must be set (either directly or via
     ``$NLP_HISTO_PROFILE``); there is no implicit default — see
     :func:`get_profile`. ``artifact_root`` enables filesystem persistence
-    (no-op when None).
+    (no-op when None). ``config_path`` selects the YAML used to override
+    ``SummarizationConfig`` defaults; pass ``None`` to skip YAML loading.
     """
     from pipeline.stages.summarization import SummarizationRunner
     from pipeline.stages.summarization.agreement.providers import OpenAIEmbedder
     from pipeline.stages.summarization.batch.voter_configs import get_profile
     from dataclasses import replace as _dc_replace
-    from pipeline.stages.summarization.config import SummarizationConfig
     from pipeline.stages.summarization.llm_providers import (
         anthropic_direct_chat,
         gemini_direct_chat,
         openai_direct_chat,
     )
 
-    sum_cfg = SummarizationConfig()
+    sum_cfg = _load_summarization_config(config_path)
     if chunk_workers is not None:
         sum_cfg = _dc_replace(sum_cfg, map=_dc_replace(sum_cfg.map, chunk_workers=chunk_workers))
 
@@ -212,12 +249,12 @@ def build_batch_runner(
     force_rerun: bool = False,
     run_ner: bool = False,
     chunk_workers: int | None = None,
+    config_path: str | Path | None = DEFAULT_CONFIG_PATH,
 ):
     from dataclasses import replace as _dc_replace
     from pipeline.stages.summarization.agreement.providers import GeminiEmbedder
     from pipeline.stages.summarization.batch import BatchSummarizationRunner
     from pipeline.stages.summarization.batch.voter_configs import get_profile
-    from pipeline.stages.summarization.config import SummarizationConfig
     from pipeline.stages.summarization.llm_providers import (
         anthropic_direct_chat,
     )
@@ -225,7 +262,7 @@ def build_batch_runner(
     profile = get_profile(profile_name)
     logger.info("Cascade profile: %s", profile.name)
 
-    sum_cfg = SummarizationConfig()
+    sum_cfg = _load_summarization_config(config_path)
     if chunk_workers is not None:
         sum_cfg = _dc_replace(sum_cfg, map=_dc_replace(sum_cfg.map, chunk_workers=chunk_workers))
 
@@ -402,6 +439,16 @@ def main():
              "Gemini-Flash + GPT-4.1-mini + Claude-Haiku at L2; Claude-Sonnet "
              "at L3. Production-quality eval runs.",
     )
+    parser.add_argument(
+        "--config", default=DEFAULT_CONFIG_PATH, metavar="PATH",
+        help=f"YAML used to populate SummarizationConfig (default: "
+             f"{DEFAULT_CONFIG_PATH}). The summarisation block ("
+             "summarization.map, summarization.grounding, "
+             "summarization.relate, summarization.resolve, …) is read via "
+             "pipeline.config_loader.load_config. Pass an empty string "
+             "('--config \"\"') to skip YAML loading and use dataclass "
+             "defaults — useful when scripting reproducible thesis runs.",
+    )
     args = parser.parse_args()
 
     # Make profile available to downstream builders without threading the arg
@@ -480,6 +527,7 @@ def main():
             artifact_root=artifact_root_path,
             artifact_run_id=args.artifact_run_id,
             chunk_workers=args.chunk_workers,
+            config_path=args.config,
         )
     else:
         for pmcid in pmcids:
@@ -491,6 +539,7 @@ def main():
                     artifact_root=artifact_root_path,
                     artifact_run_id=args.artifact_run_id,
                     chunk_workers=args.chunk_workers,
+                    config_path=args.config,
                 )
             else:
                 _run_sync(
@@ -500,6 +549,7 @@ def main():
                     artifact_root=artifact_root_path,
                     artifact_run_id=args.artifact_run_id,
                     chunk_workers=args.chunk_workers,
+                    config_path=args.config,
                 )
 
 
@@ -508,7 +558,8 @@ def _run_sync(pmcid: str, trace: bool,
               profile_name: str | None = None,
               artifact_root: Path | None = None,
               artifact_run_id: str | None = None,
-              chunk_workers: int | None = None) -> None:
+              chunk_workers: int | None = None,
+              config_path: str | Path | None = DEFAULT_CONFIG_PATH) -> None:
     logger.info("Building sync runner…")
     runner, token_usage = build_runner(
         trace=trace,
@@ -516,6 +567,7 @@ def _run_sync(pmcid: str, trace: bool,
         artifact_root=artifact_root,
         artifact_run_id=artifact_run_id,
         chunk_workers=chunk_workers,
+        config_path=config_path,
     )
 
     logger.info("Loading paper %s from database…", pmcid)
@@ -833,6 +885,7 @@ def _run_all_batch(
     artifact_root: Path | None = None,
     artifact_run_id: str | None = None,
     chunk_workers: int | None = None,
+    config_path: str | Path | None = DEFAULT_CONFIG_PATH,
 ) -> None:
     """Submit all papers simultaneously, poll together, finalize all."""
     from pipeline.stages.summarization.batch import BatchPhase
@@ -844,6 +897,7 @@ def _run_all_batch(
         artifact_run_id=artifact_run_id,
         db=_open_db_connection("build_batch_runner (multi)"),
         chunk_workers=chunk_workers,
+        config_path=config_path,
     )
 
     # ── Phase 1: submit all papers in parallel ────────────────────────────────
@@ -933,6 +987,7 @@ def _run_batch(
     artifact_root: Path | None = None,
     artifact_run_id: str | None = None,
     chunk_workers: int | None = None,
+    config_path: str | Path | None = DEFAULT_CONFIG_PATH,
 ) -> None:
     from pipeline.stages.summarization.batch import BatchPhase
     from pipeline.stages.summarization.runner import SummarizationRunner
@@ -944,6 +999,7 @@ def _run_batch(
         artifact_run_id=artifact_run_id,
         db=_open_db_connection("build_batch_runner (single)"),
         chunk_workers=chunk_workers,
+        config_path=config_path,
     )
 
     logger.info("Loading paper %s from database…", pmcid)
