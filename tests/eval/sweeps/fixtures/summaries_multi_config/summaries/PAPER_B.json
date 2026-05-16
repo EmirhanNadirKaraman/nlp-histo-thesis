@@ -1,0 +1,18 @@
+{
+  "status": "success",
+  "run_id": "PAPER_B_runY",
+  "pmcid": "PAPER_B",
+  "pipeline_config_hash": "hashB",
+  "canonical_rules": [],
+  "final_rules": [],
+  "relations": [],
+  "audit_trail": {"map_chunks": [{"chunk_id": "C1", "findings": [
+    {"claim": "b", "grounding_score": 0.3}
+  ]}]},
+  "rejection_summary": {
+    "pmcid": "PAPER_B",
+    "grounding_threshold": null,
+    "map_findings_total": 1,
+    "map_grounding_rejected": 0
+  }
+}
