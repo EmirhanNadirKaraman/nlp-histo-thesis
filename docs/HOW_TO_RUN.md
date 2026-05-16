@@ -231,6 +231,90 @@ eval/results/proxy_metrics.meta.json         git_commit, created_at, schema_vers
 
 ---
 
+## 6b. Calibration sweeps and plots (Layer A — no-API)
+
+All Layer A sweeps live under `eval/sweeps/`. They read frozen
+summarisation artifacts and never call an LLM / NLI / embedding API. See
+[`eval/sweeps/README.md`](../eval/sweeps/README.md) for the Layer A
+invariant and the list of which knobs are honestly sweepable today.
+
+### Grounding-threshold retention sweep
+
+```bash
+python eval/sweeps/grounding.py
+```
+
+Reads `out/summaries/` (configurable via `--input`) and writes:
+
+```
+eval/results/grounding_sweep.csv             one row per threshold, with `#`-comment metadata
+eval/results/grounding_sweep.md              human-readable report (disclaimer + retention table + per-paper detail)
+```
+
+Threshold grid defaults to `0.30,0.40,0.50,0.60,0.70,0.80,0.90,0.95`;
+override with `--thresholds 0.4,0.5,0.6`. Pass `--strict-single-config`
+to fail loudly when the input dir mixes producer configurations
+(multiple `pipeline_config_hash` or `run_id` values).
+
+### Grounding-sweep plots (matplotlib)
+
+After running the sweep, generate the two thesis-ready PNGs and embed
+them into the sweep markdown:
+
+```bash
+python eval/sweeps/grounding_plot.py
+```
+
+Outputs:
+
+```
+eval/results/grounding_retention.png            retention curve + mean-score-kept / mean-score-rejected overlay
+eval/results/grounding_score_distribution.png   stacked histogram of all persisted grounding scores
+```
+
+The plotter also injects the two images into `grounding_sweep.md` inside
+an HTML-comment fence (`<!-- BEGIN: grounding_plot.py auto-generated -->`
+… `<!-- END: ... -->`) so the report and the figures travel together.
+Re-running the plotter replaces the block in place rather than appending
+duplicates. Pass `--sweep-md ""` to skip the markdown-embed step.
+
+To view the figures inline, open `eval/results/grounding_sweep.md` in any
+markdown renderer (VS Code preview, GitHub web UI, JetBrains preview).
+
+### Manual-label sample (Phase 2)
+
+When you want to hand-label findings to turn the retention sweep into a
+precision/recall analysis, draw a stratified sample with:
+
+```bash
+python scripts/eval/sample_grounding_for_manual_labeling.py
+```
+
+Outputs:
+
+```
+eval/results/grounding_manual_sample.jsonl   first line is _meta header; remaining lines are placeholder rows
+eval/results/grounding_manual_sample.md      bucket allocation + disclaimer
+```
+
+Defaults: `--n 100`, `--threshold 0.50`, `--seed 42`. Findings are bucketed
+by score (`very_low` → `high`) and the near-threshold buckets are
+over-sampled because that's where threshold calibration matters most.
+Same `--seed` always produces the same JSONL — safe to regenerate.
+Hand-label by setting each row's `label` field to one of
+`supported` / `partial` / `unsupported`.
+
+### Eval-harness tests
+
+```bash
+python -m pytest tests/eval/ -q
+```
+
+Covers all of the above: proxy metrics, grounding sweep, grounding plots,
+manual sampler. None of them touch APIs or pipeline code.
+
+---
+
 ## 7. Thesis demos (see [`THESIS.md`](THESIS.md))
 
 ```bash

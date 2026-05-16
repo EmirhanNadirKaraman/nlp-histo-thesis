@@ -6,8 +6,8 @@
 
 - schema_version: `v1`
 - sweep_name: `grounding_threshold`
-- created_at: `2026-05-16T15:18:26Z`
-- git_commit: `d330f09cfeabffa8f7076ca141da03138083cf0b-dirty`
+- created_at: `2026-05-16T16:06:45Z`
+- git_commit: `f3322457853b66d821d79fe9b53ac441c4a2a692-dirty`
 - input_dir: `out/summaries`
 - out_csv: `eval/results/grounding_sweep.csv`
 - out_md: `eval/results/grounding_sweep.md`
@@ -45,6 +45,20 @@
 | `PMC6635746_HIS-73-68` | 194 | 194 | 26 | 0.5 |
 | `PMC7539961_HIS-77-579` | 177 | 177 | 20 | 0.5 |
 | `PMC9826086_HIS-81-786` | 228 | 228 | 18 | 0.5 |
+
+<!-- BEGIN: grounding_plot.py auto-generated -->
+
+## Plots
+
+![Retention curve at varying thresholds](grounding_retention.png)
+
+*Retention curve: blue line is the fraction of scored findings the filter would keep at each candidate threshold; green and red lines are the mean grounding score of survivors and rejects respectively.*
+
+![Distribution of grounding scores](grounding_score_distribution.png)
+
+*Distribution: stacked histogram of every persisted grounding score, coloured by what the producer run actually did at write time. A bimodal distribution means the filter has little gray zone to discriminate.*
+
+<!-- END: grounding_plot.py auto-generated -->
 
 ## Notes
 
