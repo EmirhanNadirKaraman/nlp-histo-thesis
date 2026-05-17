@@ -1,0 +1,153 @@
+{
+  "run_a": {
+    "run_id": "20260517T164702Z_ba8f9982",
+    "config_digest": "424591746b68"
+  },
+  "run_b": {
+    "run_id": "20260517T165347Z_c8b644ee",
+    "config_digest": "89ccc472fb84"
+  },
+  "config_digest_equal": false,
+  "summary_diff": [
+    {
+      "key": "n_attempted",
+      "a": 5,
+      "b": 5,
+      "delta": 0
+    },
+    {
+      "key": "n_with_stats",
+      "a": 5,
+      "b": 5,
+      "delta": 0
+    },
+    {
+      "key": "n_ok",
+      "a": 5,
+      "b": 5,
+      "delta": 0
+    },
+    {
+      "key": "n_failed",
+      "a": 0,
+      "b": 0,
+      "delta": 0
+    },
+    {
+      "key": "total_wall_seconds",
+      "a": 164.5157,
+      "b": 162.5968,
+      "delta": -1.9189
+    },
+    {
+      "key": "mean_wall_seconds",
+      "a": 32.9031,
+      "b": 32.5194,
+      "delta": -0.3837
+    },
+    {
+      "key": "reason_in_header_zone_sum",
+      "a": 29,
+      "b": 29,
+      "delta": 0
+    }
+  ],
+  "counts_diff": [
+    {
+      "key": "after_filter",
+      "a": 337,
+      "b": 337,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "figures_cropped",
+      "a": 18,
+      "b": 18,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "layout_elements_full",
+      "a": 544,
+      "b": 544,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "layout_elements_masked",
+      "a": 348,
+      "b": 348,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "tables_cropped",
+      "a": 6,
+      "b": 8,
+      "delta": 2,
+      "delta_pct": 33.3
+    },
+    {
+      "key": "text_rows",
+      "a": 117,
+      "b": 117,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "two_pass_kept",
+      "a": 469,
+      "b": 469,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "two_pass_rejected",
+      "a": 75,
+      "b": 75,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "two_pass_scored",
+      "a": 544,
+      "b": 544,
+      "delta": 0,
+      "delta_pct": 0.0
+    }
+  ],
+  "reason_diff": [
+    {
+      "key": "R1_blank_pixels",
+      "a": 64,
+      "b": 64,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "R3_dense_text",
+      "a": 11,
+      "b": 11,
+      "delta": 0,
+      "delta_pct": 0.0
+    }
+  ],
+  "status_changes": [],
+  "per_doc_count_diffs": [
+    {
+      "pmcid": "PMC10047158_dermatopathology-10-00017",
+      "field": "n_tables",
+      "a": 0,
+      "b": 1,
+      "delta": 1
+    },
+    {
+      "pmcid": "PMC10047408_dermatopathology-10-00016",
+      "field": "n_tables",
+      "a": 1,
+      "b": 2,
+      "delta": 1
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "run_a": {
+    "run_id": "20260517T164702Z_ba8f9982",
+    "config_digest": "424591746b68"
+  },
+  "run_b": {
+    "run_id": "20260517T165018Z_f0a9dd77",
+    "config_digest": "83da244b2b0f"
+  },
+  "config_digest_equal": false,
+  "summary_diff": [
+    {
+      "key": "n_attempted",
+      "a": 5,
+      "b": 5,
+      "delta": 0
+    },
+    {
+      "key": "n_with_stats",
+      "a": 5,
+      "b": 5,
+      "delta": 0
+    },
+    {
+      "key": "n_ok",
+      "a": 5,
+      "b": 5,
+      "delta": 0
+    },
+    {
+      "key": "n_failed",
+      "a": 0,
+      "b": 0,
+      "delta": 0
+    },
+    {
+      "key": "total_wall_seconds",
+      "a": 164.5157,
+      "b": 163.4678,
+      "delta": -1.0479
+    },
+    {
+      "key": "mean_wall_seconds",
+      "a": 32.9031,
+      "b": 32.6936,
+      "delta": -0.2095
+    },
+    {
+      "key": "reason_in_header_zone_sum",
+      "a": 29,
+      "b": 29,
+      "delta": 0
+    }
+  ],
+  "counts_diff": [
+    {
+      "key": "after_filter",
+      "a": 337,
+      "b": 337,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "figures_cropped",
+      "a": 18,
+      "b": 18,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "layout_elements_full",
+      "a": 544,
+      "b": 544,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "layout_elements_masked",
+      "a": 348,
+      "b": 348,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "tables_cropped",
+      "a": 6,
+      "b": 6,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "text_rows",
+      "a": 117,
+      "b": 117,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "two_pass_kept",
+      "a": 469,
+      "b": 469,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "two_pass_rejected",
+      "a": 75,
+      "b": 75,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "two_pass_scored",
+      "a": 544,
+      "b": 544,
+      "delta": 0,
+      "delta_pct": 0.0
+    }
+  ],
+  "reason_diff": [
+    {
+      "key": "R1_blank_pixels",
+      "a": 64,
+      "b": 64,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "R3_dense_text",
+      "a": 11,
+      "b": 11,
+      "delta": 0,
+      "delta_pct": 0.0
+    }
+  ],
+  "status_changes": [],
+  "per_doc_count_diffs": []
+}
