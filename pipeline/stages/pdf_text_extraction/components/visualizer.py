@@ -110,15 +110,8 @@ class DetectionVisualizer:
         if detection:
             for region in detection.regions:
                 pg = region.bbox.page
-<<<<<<< Updated upstream:pipeline/stages/pdf_text_extraction/components/visualizer.py
                 if 1 <= pg <= len(doc):
                     detection_rects_by_page.setdefault(pg, []).append(
-=======
-                if pg not in detection_rects_by_page:
-                    detection_rects_by_page[pg] = []
-                if 1 <= pg <= len(doc):
-                    detection_rects_by_page[pg].append(
->>>>>>> Stashed changes:pipeline/stages/visualizer.py
                         region.bbox.to_fitz_rect(doc[pg - 1].rect.height)
                     )
 

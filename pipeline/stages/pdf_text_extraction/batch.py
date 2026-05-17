@@ -36,7 +36,7 @@ import threading
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from tqdm import tqdm
 
@@ -44,6 +44,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from pipeline.stages.pdf_text_extraction.blacklist import BlacklistManager
 from pipeline.stages.pdf_text_extraction.config import PipelineConfig
+from pipeline.stages.pdf_text_extraction.outputs.manifest_writer import (
+    RunManifestWriter,
+    make_run_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +89,11 @@ class ParallelBatchRunner:
             "skipped":   0,
         }
 
+        # Per-batch run-id; populated in run_paths.  Threaded through to
+        # PipelineRunner.run_document so per-doc stats files reference the
+        # same run.
+        self._run_id: Optional[str] = None
+
     # ── Per-thread runner factory ─────────────────────────────────────────────
 
     def _get_runner(self):
@@ -117,7 +126,7 @@ class ParallelBatchRunner:
 
         try:
             runner = self._get_runner()
-            ok = runner.run_document(pdf_path, pmcid)
+            ok = runner.run_document(pdf_path, pmcid, run_id=self._run_id)
             return "processed" if ok else "failed"
         except Exception as exc:  # noqa: BLE001
             logger.error("❌ %s — worker error: %s", pmcid, exc)
@@ -152,12 +161,22 @@ class ParallelBatchRunner:
         pdfs: List[Path] = sorted(pdf_dir.glob(glob))
         if max_docs is not None:
             pdfs = pdfs[:max_docs]
-        return self.run_paths(pdfs, pmcid_fn=pmcid_fn)
+        return self.run_paths(
+            pdfs,
+            pmcid_fn=pmcid_fn,
+            _input_meta={
+                "pdf_dir":  str(pdf_dir),
+                "glob":     glob,
+                "max_docs": max_docs,
+            },
+        )
 
     def run_paths(
         self,
         paths: List[Path],
         pmcid_fn: Optional[Callable[[Path], str]] = None,
+        *,
+        _input_meta: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, int]:
         """
         Process an explicit list of PDF paths using a thread pool.
@@ -184,6 +203,27 @@ class ParallelBatchRunner:
             (pdf, pmcid_fn(pdf) if pmcid_fn else pdf.stem)
             for pdf in paths
         ]
+
+        # Observability manifest — best-effort; failure must not affect extraction.
+        manifest: Optional[RunManifestWriter] = None
+        try:
+            self._run_id = make_run_id()
+            manifest = RunManifestWriter(
+                cfg=self._cfg,
+                run_metadata_dir=self._cfg.paths.run_metadata_dir,
+                run_id=self._run_id,
+            )
+            manifest.set_input(
+                runner="ParallelBatchRunner",
+                max_workers=self._max_workers,
+                n_paths=len(paths),
+                **(_input_meta or {}),
+            )
+            manifest.set_attempted([pmcid for _, pmcid in work])
+            logger.info("ParallelBatchRunner: run_id=%s", self._run_id)
+        except Exception:
+            logger.exception("RunManifestWriter init failed — continuing without manifest")
+            manifest = None
 
         try:
             with ThreadPoolExecutor(
@@ -224,4 +264,12 @@ class ParallelBatchRunner:
             self._stats["failed"],
             self._stats["skipped"],
         )
+
+        if manifest is not None:
+            try:
+                manifest.write(batch_stats=dict(self._stats))
+            except Exception:
+                logger.exception("RunManifestWriter.write failed")
+        self._run_id = None
+
         return dict(self._stats)

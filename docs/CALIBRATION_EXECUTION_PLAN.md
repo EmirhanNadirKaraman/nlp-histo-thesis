@@ -403,3 +403,246 @@ console table marking best F1.
   implementation, no batch voter-persistence fix (B-056).
 - Do not run `prime` / `all` unless the checklist above requires
   re-priming.
+
+## 11. Per-Stage Tune-or-Freeze Walk (pipeline call order)
+
+For each stage in execution order: what is worth tuning, what to freeze
+without tuning, and when in the calibration order (§6) to do it. This
+section is the operational complement to the phase-ordered plan in §6 —
+read it when deciding what to touch in a specific stage.
+
+The recommended calibration order is **not** top-to-bottom of this list
+— see §11.x at the end for the actual sweep sequence.
+
+### PDF extraction pipeline
+
+#### 11.1 Layout extraction (Docling)
+
+- **Tune:** `do_ocr` (flip on only if a paper visibly fails text-layer
+  extraction); `images_scale` (default `2.0` is usually right).
+- **Freeze without tuning:** `do_table_structure`, `ocr_engine`,
+  `accelerator_device`, model version.
+- **When:** Phase 1 only if extraction recall is visibly hurting
+  downstream. Otherwise leave on defaults and move on.
+
+#### 11.2 Table detection (TATR / Docling / Hybrid)
+
+- **Tune:** `table_detector` (`HYBRID` is the default; `TATR` alone for
+  recall, `DOCLING` alone for precision); `tatr.threshold` (sweep
+  `0.50 / 0.75 / 0.90 / 0.95 / 0.99` on the existing
+  `eval/annotations/` set); `tatr.render_dpi` (`150` default — bump to
+  `200`/`250` if small or faint tables are missed).
+- **Freeze without tuning:** `tatr.model_name`, `tatr.device`.
+- **When:** Phase 1, **first** PDF-side sweep. Has manual labels;
+  cheap; isolated.
+
+#### 11.3 Region masking
+
+- **Tune:** `mask_header_footer_sidebar`; `expand_box_px` (default `2`;
+  bump to 3–4 if glyph remnants leak).
+- **Freeze without tuning:** `mask_tables`, `mask_figures`,
+  `merge_overlapping_boxes`, the hardcoded sidebar / column heuristics
+  (`_SIDEBAR_MAX_W=150`, `_COLUMN_GAP_MIN=50`).
+- **When:** Phase 1, after table-detection threshold. Spot-check — do
+  not deep-sweep. Masking changes invalidate every downstream label
+  (§5 matrix).
+
+#### 11.4 Re-extraction (Docling on masked PDF)
+
+- **Tune:** Nothing distinct from §11.1. Override `docling_text`
+  separately from `docling` only if you want a different OCR setting
+  for the masked pass.
+- **Freeze without tuning:** All else; defaults inherit from §11.1.
+- **When:** No standalone tuning.
+
+#### 11.5 Artifact filtering
+
+- **Tune:** `apply_ner_filtering`; `apply_paragraph_relevance_filtering`
+  (measure text-count delta against held-out paragraphs).
+- **Freeze without tuning:** Internal filter rules in
+  `parsers/layout_utils.filter_artifacts`.
+- **When:** Phase 1, after masking. Spot-check; filter changes shift
+  every TextElement.
+
+#### 11.6 Two-pass invisible-text (when `two_pass.enabled=True`)
+
+- **Tune:** `blank_brightness_threshold` (`245`),
+  `blank_dark_pixel_max_fraction` (`0.02`), `max_chars_per_bbox_pt`
+  (`15`, R3). Sweep on synthetic ghost-text fixtures only — not real
+  papers.
+- **Freeze without tuning:** `enabled=True`, `render_dpi=150`,
+  `min_anchor_word_count`, `max_white_char_fraction=1.0` (R-color stays
+  disabled per Decisions log), `header_mask_margin_pt`.
+- **When:** Phase 1, only if `scripts/verify_ghost_text_detection.py`
+  shows a regression.
+
+#### 11.7 Text assembly
+
+- **Tune:** `pre_filter_relevance`.
+- **Freeze without tuning:** `write_raw_text` (audit-only); the
+  assembly logic in `parsers/layout_utils.extract_text`.
+- **When:** No standalone tuning — falls out of filtering / two-pass
+  decisions.
+
+#### 11.8 Cropping
+
+- **Tune:** `merge_figures_by_caption` / `merge_tables_by_caption`
+  (default `False`); `subfigure_proximity_pts` (`20`).
+- **Freeze without tuning:** `image_format`, `dpi` (`200`),
+  `min_figure_pts`, footnote-proximity knobs.
+- **When:** Lowest PDF-side priority. Defer indefinitely unless a
+  thesis figure needs better merging.
+
+**Freeze the PDF tier as a profile** after §11.8 lands
+(`configs/profiles/profile-pdf-frozen-<date>.yaml`). Nothing downstream
+should run against a moving PDF target.
+
+### Tier-0 substrate (between PDF and MAP)
+
+#### 11.9 Sentence segmentation
+
+- **Tune:** Nothing.
+- **Freeze without tuning:** `en_core_sci_sm`. Do not swap segmenters.
+
+#### 11.10 UMLS
+
+- **Tune:** Nothing unless a domain expert flags systematic CUI
+  miss-mapping.
+- **Freeze without tuning:** `UMLS_THRESHOLD = 0.85` (`umls_utils.py:11`);
+  the 16-TUI junk filter; `en_core_sci_lg`. Changing any of these
+  silently moves `normal_id` / `group_id` / `canonical_id`.
+- **When:** Treat as Tier-0. Only revisit if NORMALIZE precision is the
+  bottleneck and you have evidence.
+
+#### 11.11 Synonyms
+
+- **Tune:** Add hand-curated entries to `synonyms.yaml` as needed.
+  Content, not threshold.
+- **Freeze without tuning:** Dedup logic.
+- **When:** Pre-Phase-2, but quietly and continuously — every entry
+  shifts downstream IDs.
+
+### Summarization pipeline
+
+#### 11.12 Chunking
+
+- **Tune:** `map.chunk_size` (default `10`); `map.chunk_overlap`
+  (default `2`).
+- **Freeze without tuning:** Sentence segmenter (already Tier 0).
+- **When:** **Freeze first; do not sweep yet.** Any change invalidates
+  every MAP-level label and the existing primer (`chunk_id` moves).
+
+#### 11.13 MAP cascade
+
+- **Tune:** `map.theta` (default `0.8`); `map.reject_theta` (default
+  `0.2`); agreement scorer choice (`SemanticAgreementScorer` ↔
+  `HybridScorer` ↔ `EmbeddingScorer`); voter cascade profile (`cheap` ↔
+  `real`).
+- **Freeze without tuning:** Per-voter `temperature` (`0.1`),
+  `max_tokens` (`16384`), retry budget (`2`), router on/off (keep on);
+  `MAP_SCHEMA_VERSION` and `MAP_PROMPT_VERSION` (bump deliberately and
+  re-prime when you do).
+- **When:** Phase 4, last. Most expensive sweep. Run
+  `eval/silver/map_theta_sweep.py` with a fresh primer that matches
+  current voter config + schema/prompt versions.
+
+#### 11.14 GROUNDING
+
+- **Tune:** `grounding.threshold` (currently `None` / disabled; sweep
+  `[0.3, 0.95]` against the 100 manual labels in
+  `eval/results/grounding_manual_sample.jsonl` once hand-filled).
+- **Freeze without tuning:** NLI model — sweep at the NLI-model layer
+  (§11.19), not as a grounding knob. Token budgets
+  (`_MODEL_MAX_TOKENS=512`, `_PREMISE_BUDGET_FLOOR=64`).
+- **When:** Phase 2 — **cheapest meaningful sweep.** Already shipped at
+  `eval/sweeps/grounding.py`. Run before MAP cascade tuning.
+  Frozen-artifact, zero LLM calls.
+
+#### 11.15 NORMALIZE
+
+- **Tune:** `synonyms.yaml` content (continuous, Tier-0).
+- **Freeze without tuning:** `UMLS_THRESHOLD`, junk-TUI set, polarity
+  trigger lists (`_NEGATIVE_TRIGGERS`, `_POSITIVE_TRIGGERS`), dedup key
+  composition.
+- **When:** No standalone sweep. Any change is Tier-0 invalidation.
+
+#### 11.16 GROUP
+
+- **Tune:** Nothing yet.
+- **Freeze without tuning:** Group key (`subject_entity × outcome_entity
+  × relation_type × category`), `_SCOPE_FIELDS`,
+  `_SCOPE_FIELDS_DEFAULTS`. Changes break group-id stability across
+  runs.
+- **When:** No tuning. Structural stage.
+
+#### 11.17 CANONICALIZE
+
+- **Tune:** Nothing yet.
+- **Freeze without tuning:** `_DIRECTION_ALIASES`, `_CATEGORY_ALIASES`,
+  `_RELATION_TYPE_ALIASES`, `POLARITY_BEARING_DIRS`. The per-direction
+  no-folding policy is a Decisions-log row (B-049) — do not second-guess
+  without new measurement.
+- **When:** No tuning. Structural stage.
+
+#### 11.18 RELATE
+
+- **Tune:** `relate.entailment_threshold` (`0.50`);
+  `relate.contradiction_threshold` (`0.50`). Sweep jointly over
+  `[0.3, 0.9]` step `0.05` once `sum_raw_nli_pairs` is populated.
+- **Freeze without tuning:** NLI model (sweep separately at NLI layer);
+  comparability gate (category × relation_type × normalized subject ×
+  normalized outcome — all four required).
+- **When:** Phase 2, after GROUNDING. Frozen-artifact sweep, no LLM
+  calls. Add `eval/sweeps/relate.py` following the `grounding.py`
+  pattern.
+
+#### 11.19 RESOLVE
+
+- **Tune:** The nine `ResolveConfig` weights — `grounding_weight`,
+  `finding_bonus_max` / `_scale`, `support_boost_per_rel` / `_cap`,
+  `single_study_pen`, `contradict_pen_per_rel` / `_cap`, and the three
+  relations-absent counterparts. Sweep ±50 % around defaults.
+- **Freeze without tuning:** Score formula itself; mode-selection logic
+  (`relations_present` vs `relations_absent`).
+- **When:** Phase 2, last frozen-artifact sweep. Measure top-k
+  stability under weight perturbation against frozen RELATE output. No
+  labels needed; metric is Spearman ρ / top-k Jaccard vs default-weight
+  ranking.
+
+### Cross-cutting layer
+
+#### 11.20 NLI model (affects GROUNDING + RELATE simultaneously)
+
+- **Tune:** Active model in `configs/nli_models.yaml`
+  (`pubmedbert_mednli` ↔ `deberta_zeroshot_v2` ↔ future candidates).
+- **Freeze without tuning:** Per-model `batch_size` (in the registry).
+- **When:** After GROUNDING (§11.14) and RELATE (§11.18) thresholds are
+  characterised at the current default — then swap NLI, re-score,
+  re-threshold both. Human/silver labels survive the swap; only cached
+  scores and thresholds need re-calibration (§5 matrix).
+
+### 11.x Sweep order (not the execution order above)
+
+Read top-to-bottom of §11.1–§11.20 for **execution** order. The actual
+**calibration** order — what to sweep first to avoid wasted work — is:
+
+1. PDF stages §11.1–§11.8 under existing manual labels → freeze as
+   `profile-pdf-frozen-<date>` (Phase 1).
+2. **GROUNDING threshold** (§11.14) on frozen artefacts (Phase 2;
+   already shipped) — pick operating point once 100 manual labels are
+   filled in.
+3. **RESOLVE weights** (§11.19) sweep on frozen RELATE output
+   (Phase 2) — no labels needed.
+4. **RELATE thresholds** (§11.18) on `sum_raw_nli_pairs` (Phase 2) — if
+   those rows are populated.
+5. Structural / proxy experiments per
+   [`STAGE_EVAL_EXPERIMENTS.md`](STAGE_EVAL_EXPERIMENTS.md) (Phase 3).
+6. **MAP θ / reject_θ + agreement scorer + voter cascade** (§11.13)
+   (Phase 4) — most expensive; do last; needs fresh primer matching
+   current schema.
+7. **NLI model swap** (§11.20) as a separate cross-cutting experiment
+   after 2 and 4 are characterised.
+
+§11.12 (chunking), §11.15 (NORMALIZE), §11.16 (GROUP), §11.17
+(CANONICALIZE) **do not sweep** at this stage — frozen by definition.
+They change only when a bug or a new design call forces them.

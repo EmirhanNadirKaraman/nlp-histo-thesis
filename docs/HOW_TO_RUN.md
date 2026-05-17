@@ -70,6 +70,13 @@ runner.run_batch('files/organized_pdfs')
 "
 ```
 
+Or use the CLI in `runner.py` (recommended for sweeps — see §2.1):
+
+```bash
+# Canonical run (matches the legacy `python runner.py` behaviour)
+python pipeline/stages/pdf_text_extraction/runner.py
+```
+
 Outputs land under `out/`:
 
 | Directory             | Contents                                  |
@@ -82,8 +89,88 @@ Outputs land under `out/`:
 | `out/tables/`         | Cropped table images                      |
 | `out/visualization/`  | Annotated debug PDFs                      |
 | `out/json/`           | Detection metadata                        |
-| `out/run_metadata/`   | Per-paper timing/processing stats         |
+| `out/run_metadata/`   | Per-paper `{pmcid}_stats.json` + per-run `run_{ID}.json` manifest |
 | `out/failed_pdfs_blacklist.json` | Skip list (thread-safe)        |
+
+### 2.1. Reproducible sweep runs
+
+Every run of the PDF pipeline now writes two observability artifacts (added
+2026-05-17, see [`THESIS_MATERIAL.md`](THESIS_MATERIAL.md)):
+
+* **Per-document stats** — `out/run_metadata/{pmcid}_stats.json`
+  Contains stage timings, element counts, rejection histogram (R0 / R1 / R2 /
+  R3 / R-color, plus a header-zone tally), table-detection summary, status
+  (`ok` / `failed`), a 12-char `config_digest`, and a compact `config_used`
+  snapshot.  Written even for failed documents.
+* **Per-batch manifest** — `out/run_metadata/run_{ISO_TIMESTAMP}_{uuid8}.json`
+  Contains `run_id`, git SHA + dirty flag + branch, host, python version,
+  full `PipelineConfig` dump, list of attempted PMCIDs, aggregated summary
+  (totals, mean wall, summed reason histogram).  One file per batch
+  invocation.
+
+The runner's `__main__` exposes opt-in flags so two configurations can be
+diffed by inspecting their manifests.  **All flags are optional and a
+no-flag invocation reproduces the canonical behaviour.**  Every command
+below writes its outputs (and only its outputs) under `--out-root`, leaving
+the canonical `out/` untouched.
+
+```bash
+# Baseline (canonical defaults) — for reference / regression diffing
+python pipeline/stages/pdf_text_extraction/runner.py \
+    --pdf-dir files/organized_pdfs --max-docs 10 \
+    --out-root out/sweeps/baseline --no-db --workers 2
+
+# Sweep: TATR threshold (0.99 default → 0.95 / 0.90)
+python pipeline/stages/pdf_text_extraction/runner.py \
+    --pdf-dir files/organized_pdfs --max-docs 10 \
+    --tatr-threshold 0.95 --out-root out/sweeps/tatr095 --no-db --workers 2
+
+python pipeline/stages/pdf_text_extraction/runner.py \
+    --pdf-dir files/organized_pdfs --max-docs 10 \
+    --tatr-threshold 0.90 --out-root out/sweeps/tatr090 --no-db --workers 2
+
+# Sweep: table detector backend (TATR / Docling / Hybrid)
+python pipeline/stages/pdf_text_extraction/runner.py \
+    --pdf-dir files/organized_pdfs --max-docs 10 \
+    --detector docling --out-root out/sweeps/detector_docling --no-db --workers 2
+
+python pipeline/stages/pdf_text_extraction/runner.py \
+    --pdf-dir files/organized_pdfs --max-docs 10 \
+    --detector tatr --out-root out/sweeps/detector_tatr --no-db --workers 2
+
+# Sweep: two-pass ghost-text detection on vs off
+python pipeline/stages/pdf_text_extraction/runner.py \
+    --pdf-dir files/organized_pdfs --max-docs 10 \
+    --no-two-pass --out-root out/sweeps/no_two_pass --no-db --workers 2
+
+# Sweep: TATR render DPI (recall vs cost)
+python pipeline/stages/pdf_text_extraction/runner.py \
+    --pdf-dir files/organized_pdfs --max-docs 10 \
+    --render-dpi 200 --out-root out/sweeps/dpi200 --no-db --workers 2
+```
+
+Read the resulting manifests as JSON:
+
+```bash
+# Find the latest manifest under a sweep directory:
+ls -t out/sweeps/baseline/run_metadata/run_*.json | head -1
+
+# Diff two configurations knob-by-knob (config_digest will differ):
+python - <<'PY'
+import json
+a = json.load(open("out/sweeps/baseline/run_metadata/run_LATEST.json"))
+b = json.load(open("out/sweeps/tatr095/run_metadata/run_LATEST.json"))
+print("digests:", a["config_digest"], b["config_digest"])
+print("reasons (baseline):", a["summary"]["reason_histogram_sum"])
+print("reasons (tatr095):", b["summary"]["reason_histogram_sum"])
+print("tables  (baseline):", a["summary"]["counts_sum"].get("tables_cropped"))
+print("tables  (tatr095):", b["summary"]["counts_sum"].get("tables_cropped"))
+PY
+```
+
+Capture the per-comparison observations under
+`## Observations` in [`docs/THESIS_MATERIAL.md`](THESIS_MATERIAL.md) when a
+sweep informs a thesis decision.
 
 ---
 

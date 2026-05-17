@@ -71,6 +71,7 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-048 | Fixed (2026-05-15) | Low | Summarisation, optional RULE block enums | `Rule.type` was `Literal["Diagnostic", "Prognostic", "Management"]` (Title-Case) and `RuleCounts` mirrored the casing in field names — inconsistent with the lowercase `Finding.confidence` / `Finding.category` convention. Lowered all three; added a `mode="before"` validator on `Rule.type` so legacy Title-Case payloads round-trip. Updated MAP RULE OutputFormat prompt + `_recompute_audit` helper. RULE block is off by default, no DB rows to backfill. Tests in `tests/summarization/test_enum_alias_repair.py`. From [MAP_PROMPT_AUDIT Issue 7](MAP_PROMPT_AUDIT.md#issue-7--ruletype-is-title-case-diagnosticprognosticmanagement-everything-else-lowercase-low). | [Bug 48](#bug-48--ruletype-title-case-inconsistent-with-lowercase-convention) |
 | B-049 | Fixed (2026-05-15) | Medium | Summarisation, CANONICALIZE direction policy | `_split_by_direction` folded `unclear` and `no_direction` members into the largest polarity bin. Two holes: (a) **reproducibility** — `max(non_unclear, key=len)` returns the first dict key on ties, traceable to upstream member-arrival order, so the same paper produced different `member_normal_ids` / `finding_count` / `mean_grounding_score` across re-runs (supersedes B-026); (b) **honesty** — hedged findings got re-cast as votes for the majority direction, inflating downstream confidence and feeding RELATE pairs as if the model had really claimed that polarity. Fixed: every observed direction gets its own `CanonicalRule` bin (no folding); RELATE and corpus_relate skip pairs where either side is `unclear` / `no_direction`; `is_conflicted` repurposed to a **group-level** signal (True iff the group emits ≥2 polarity-bearing bins, stamped on every rule from the group). Added `direction_value`, `POLARITY_BEARING_DIRS`, `NON_POLARITY_DIRS` to `models.py` as the single source of truth; gates use the normalizer so `DirectionEnum` / raw string / `None` paths all behave the same. `partial` deliberately kept polarity-bearing for now — the semantic question of whether partial really conflicts with positive is owned by B-025. Bumped `CANONICALIZE_DIRECTION_POLICY_VERSION` (fed into `pipeline_config_hash`) to force cache invalidation. Tests: rewritten `tests/summarization/test_canonicalize_direction_split.py` (16 cases incl. S5 core invariant against unclear leakage into polarity bins), new `tests/summarization/test_corpus_relate_non_polarity.py`, extended `tests/summarization/test_relate_skipped_pairs.py`, `tests/summarization/test_pipeline_config_hash.py`. | [Bug 49](#bug-49--canonicalize-folds-unclear--no_direction-into-majority-polarity-bin) |
 | B-050 | Fixed (2026-05-15) | Low | Scripts, batch poll interval | `scripts/run_paper.py` carried three diverging defaults for `--poll-interval`: argparse `60` (line 331), `_run_all_batch(poll_interval=20)` (line 787), `_run_batch(poll_interval=60)` (line 885). CLI flows passed `args.poll_interval` so the call-site defaults rarely fired — but a direct programmatic caller of either batch helper got 20s or 60s depending on which one they imported. Consolidated onto module-level `DEFAULT_POLL_INTERVAL_SEC = 60` referenced by argparse + both function signatures. Regression: `tests/test_poll_interval_defaults.py` introspects via `inspect.signature` (not `__defaults__` tuple indexing) and asserts all three resolve to 60. **Note**: if another agent's parallel work also claims B-050, renumber to B-051 at commit time. | [Bug 50](#bug-50--poll_interval-default-mismatch-across-cli-and-batch-helpers) |
+| B-057 | Fixed (2026-05-17) | High | PDF extraction, committed merge-conflict markers | Three files on `eval-speedrun` HEAD shipped with unresolved git merge-conflict markers (`<<<<<<< Updated upstream` / `=======` / `>>>>>>> Stashed changes`): `pipeline/stages/pdf_text_extraction/components/visualizer.py` (lines 113–121), `pipeline/stages/pdf_text_extraction/table_detectors/tatr_detector.py` (lines 68–78), and `eval/run.py` (lines 120–125). `components/__init__.py:7` and `table_detectors/__init__.py:3` re-export these modules eagerly, so any pipeline import (e.g. `DoclingLayoutExtractor`) crashed with `SyntaxError`. Discovered while running the Stage-1 observability-patch smoke test (2026-05-17). Resolved by picking the "Updated upstream" branch in each file: (1) visualizer — `setdefault(pg, []).append(...)`, semantically identical to the alternative; (2) tatr — preserves configurable `self._config.device` per B-034 (the alternative hardcoded `to("cpu")` plus `low_cpu_mem_usage=False, device_map=None` kwargs that were a transformers-loading workaround no longer needed); (3) eval/run.py — log format `"Eligible PDFs: %d / %d (%.1f–%.1f MB)"` matching the actual min+max byte filter applied earlier in the same function. All three resolutions are no-op behaviour changes relative to the documented intent of the surrounding code. | [Bug 57](#bug-57--committed-merge-conflict-markers-in-visualizerpy) |
 | B-056 | Observed (2026-05-16) | Medium | Summarisation, batch runner → `sum_map_voter_outputs` | `BatchSummarizationRunner.finalize()` has no code path that buffers per-voter `AuditableSummary` rows or writes them to `sum_map_voter_outputs`; no `_persist_voter_outputs` method exists on the batch class. Discovered during the Phase 0 audit per [`CALIBRATION_EXECUTION_PLAN.md`](CALIBRATION_EXECUTION_PLAN.md) §10. Blocks θ / reject_θ sweeps over batch-processed papers; sync runs are unaffected. B-055's empirical claim that `sum_map_voter_outputs` was populated on batch runs 38–48 contradicts code-level inspection and requires runtime re-verification on a paper never previously processed via sync. | [Bug 56](#bug-56--batch-runner-omits-per-voter-map-persistence-code-path-absent) |
 | B-055 | Observed (2026-05-16) | High | Summarisation, batch runner → `sum_map_findings` | `sum_map_findings` rows missing for 9 of the last 10 batch-mode pipeline runs (ids 38–48 across 5 papers), despite each paper's `rejection_summary.map_findings_total` recording 100–230 MAP findings produced. Other `sum_*` tables (`sum_normal_findings`, `sum_finding_groups`, `sum_canonical_rules`, `sum_final_rules`, `sum_rejection_summaries`, `sum_map_voter_outputs`) get rows on the same runs, so the DB connection + `pipeline_run_db_id` + persistence wiring are not at fault. The function itself works: a direct call to `persist_map_findings(db, 48, pmcid, chunk_summaries)` against the same paper's batch handle on disk wrote 154 rows successfully, with `verbatim_support` exactly matching `text_elements.text_content`. Bug pre-dates the 2026-05-16 B-005 dedup (same behaviour on HEAD `7ea254a`); the dedup rewrote the wrapper but the production failure mode was already present. Suspect call-path issue inside `BatchSummarizationRunner.finalize()` between L483 (`chunk_summaries = [AuditableSummary.model_validate(v) for v in handle.finalized.values()]`) and L522 (`self._persist_map_findings(...)`) — either `chunk_summaries` is empty at the call site (which would also break downstream `all_findings = [f for cs in chunk_summaries for f in cs.findings]` at L536, contradicted by 214 `sum_normal_findings` rows on run 48), or an exception in the bulk `INSERT` is being swallowed by `except Exception as exc: logger.warning(...)` and the run's stdout went unrecorded. Adjacent inconsistency: runs 47/46/44/43 wrote `sum_canonical_rules` (100+ rows) with **zero** `sum_normal_findings` — physically impossible from the in-process flow, suggests these were cache short-circuits whose `_load_result` path skipped MAP/NORMALIZE persistence but still wrote canonical/final from the cached JSON. | [Bug 55](#bug-55--sum_map_findings-not-populated-by-batch-runner) |
 | B-054 | Fixed (2026-05-16) | High | Summarisation, NER stage scispaCy singleton bypass | `named_entity_recognition/ner.py`'s `load_ner_model()` and `load_linker_model()` issued direct `spacy.load("en_core_sci_lg", …)` calls — completely bypassing the `umls_resources.get_nlp()` singleton documented in CLAUDE.md and MEMORY.md. `SummarizationRunner._run_stages` calls `run_ner_on_db(pmcid, save_to_db=True, force=False)` per paper *without* passing `nlp=` / `linker_nlp=`, so the loaders fired with `None` defaults and freshly loaded ~2.6 GB of scispaCy + UMLS twice per paper. Concretely visible in production runs: `[pmcid] NER done [136.4s]` on a paper that bailed out (already had entities) — the time was pure model-load waste. Compounded by `umls_resources.get_nlp()` already holding its own copy for NORMALIZE / UMLS_ENRICH, so peak RSS hit ~3 copies of en_core_sci_lg in memory. Same class of bug as B-029 (PDF runner) / B-038 (summariser load_paper_from_db), missed because `named_entity_recognition/` lives outside `pipeline/stages/` and the existing singleton-guard test only scanned the stages tree. Fixed by routing both loaders through `umls_resources.get_nlp()`; the "fast NER" pass wraps the span-extraction loop in `nlp.select_pipes(disable=["scispacy_linker"])` so it stays cheap on the linker-attached singleton; the "Document already has entities" skip check moved *above* the model-load block so a skipped paper now costs ~0 s (was ~150 s). Regression test in `tests/summarization/test_scispacy_singleton.py::test_ner_module_routes_through_singleton` asserts neither loader contains a direct `spacy.load(` call. `batch_ner.py` inherits the fix automatically (it imports the same functions). | [Bug 54](#bug-54--ner-stage-scispacy-singleton-bypass) |
@@ -79,6 +80,72 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-051 | Fixed (2026-05-15) | High | Summarisation, MAP agreement gate | `EmbeddingScorer._polarity` applied only a 20% multiplicative penalty; opposite-polarity paraphrases with cos≈1.0 produced score=0.80, passing `theta=0.7` and accepting the chunk as KEEP despite a direct voter contradiction. Fixed: new pure helper `agreement/polarity_conflict.detect_polarity_conflict` invoked from `AgreementChecker.compute` after the scorer runs but before theta — when two **comparable** findings (same `subject_entity` / `outcome_entity` / `relation_type` / `category`, all four required, strings `.strip().casefold()`d) carry opposite `{positive, negative}` directions, decision is forced to `ChunkDecision.ESCALATE` with `score_details["hard_fail_reason"] = "polarity_conflict"`. `MapOutputRouter._agreement_gate` emits ONLY `ReasonCode.POLARITY_CONFLICT` (never co-emits low-agreement codes — the score was high; only the structural check failed); explanation makes the override explicit. v1 conservative: scope fields excluded from comparability (cross-cohort false-escalate cheaper than missed contradiction); `absent`/`partial`/`unclear`/`no_direction` excluded from the hard-polarity set pending B-025 calibration. Cache invalidation: bumped `MAP_SCHEMA_VERSION` → `"map_v9_polarity_hard_fail"` (invalidates `PipelineCache`); added `MAP_AGREEMENT_POLICY_VERSION = "polarity_hard_fail_v1"` routed into `compute_pipeline_config_hash` on both runners (invalidates per-paper result cache). 11 deterministic regression tests in `tests/summarization/agreement/test_b051_hard_fail_polarity.py` + 3 hash regression tests in `tests/summarization/test_pipeline_config_hash.py`. | [Bug 51](#bug-51--map-agreement-gate-treats-opposite-polarity-as-soft-disagreement) |
 
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
+
+---
+
+## Bug 57 — Committed merge-conflict markers in `visualizer.py` (and two siblings)
+
+### Status / Severity / Surface
+Fixed (2026-05-17) · High · PDF extraction, committed merge-conflict markers.
+
+### Symptom
+Every end-to-end PDF run on the `eval-speedrun` branch died before reaching
+any pipeline stage with:
+
+```
+SyntaxError: invalid syntax (visualizer.py, line 113)
+```
+
+After fixing visualizer.py the same error surfaced one import-level deeper:
+
+```
+SyntaxError: invalid syntax (tatr_detector.py, line 68)
+```
+
+Discovered while running the Stage-1 observability-patch smoke test
+(2026-05-17).  The error fired even when `cfg.visualization.enabled = False`,
+because `components/__init__.py:7` re-exports `DetectionVisualizer` and
+`table_detectors/__init__.py:3` re-exports `TATRTableDetector` — Python must
+parse both modules the first time *any* sibling in those packages is
+imported, so disabling features at runtime did not help.
+
+### Evidence
+Three files shipped with conflict markers at HEAD on `eval-speedrun`:
+
+1. `pipeline/stages/pdf_text_extraction/components/visualizer.py` — lines 113–121, in `_pre-compute detection rects` block.
+2. `pipeline/stages/pdf_text_extraction/table_detectors/tatr_detector.py` — lines 68–78, in the lazy `_load()` path that constructs `_SHARED_MODEL`.
+3. `eval/run.py` — lines 120–125, in the "Eligible PDFs" log line.
+
+`git status` was clean, so the markers were part of a committed snapshot —
+most likely a partial conflict resolution from commit `2d70119 … resolve
+stash-pop conflicts` on this branch.
+
+### Diagnosis
+Each conflict had two branches.  In all three cases the "Updated upstream"
+branch was the one that matched the surrounding non-conflicted code intent:
+
+* **visualizer.py** — both branches append the same fitz rect to
+  `detection_rects_by_page[pg]`.  Updated upstream uses
+  `setdefault(pg, []).append(...)`; Stashed uses a separate
+  `if pg not in dict` initialiser.  Functionally identical.
+* **tatr_detector.py** — Updated upstream loads the model and moves it to
+  `self._config.device` (the configurable knob promoted in B-034).  Stashed
+  hardcodes `to("cpu")` plus a transformers-loading workaround
+  (`low_cpu_mem_usage=False, device_map=None`) that's not needed today and
+  silently regresses the GPU path.
+* **eval/run.py** — Updated upstream logs
+  `"Eligible PDFs: %d / %d (%.1f–%.1f MB)"` matching the min+max byte filter
+  applied two lines earlier; Stashed shows only the upper bound.
+
+### Fix
+Picked the "Updated upstream" branch in all three files.  No behaviour
+change relative to the documented intent of the surrounding code.
+
+### Verification
+1. `grep -rln "<<<<<<< " pipeline/ parsers/ database/ eval/` returns no results.
+2. `python -m py_compile pipeline/stages/pdf_text_extraction/components/visualizer.py pipeline/stages/pdf_text_extraction/table_detectors/tatr_detector.py eval/run.py` succeeds.
+3. `python -c "from pipeline.stages.pdf_text_extraction.components import DetectionVisualizer; from pipeline.stages.pdf_text_extraction.table_detectors import TATRTableDetector"` returns without error.
+4. End-to-end smoke run on `PMC10047158_dermatopathology-10-00017.pdf` completes; per-document `out/run_metadata/{pmcid}_stats.json` is produced (verifies B-057 is no longer blocking the Stage-1 observability patch).
 
 ---
 

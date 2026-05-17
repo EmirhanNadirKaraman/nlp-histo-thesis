@@ -117,12 +117,8 @@ def main() -> None:
         if min_bytes <= p.stat().st_size <= max_bytes
     ]
     logging.getLogger(__name__).info(
-<<<<<<< Updated upstream
         "Eligible PDFs: %d / %d (%.1f–%.1f MB)",
         len(eligible), len(all_pdfs), MIN_FILE_MB, MAX_FILE_MB,
-=======
-        "Eligible PDFs: %d / %d (≤ %.1f MB)", len(eligible), len(all_pdfs), MAX_FILE_MB,
->>>>>>> Stashed changes
     )
     rng    = random.Random(cfg.runtime.seed)
     sample = rng.sample(eligible, min(N_SAMPLES, len(eligible)))

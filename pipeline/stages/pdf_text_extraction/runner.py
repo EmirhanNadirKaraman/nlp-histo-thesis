@@ -42,6 +42,15 @@ from typing import List, Optional
 from pipeline.stages.pdf_text_extraction.blacklist import BlacklistManager
 from pipeline.stages.pdf_text_extraction.config import PipelineConfig, TableDetectorType
 from pipeline.stages.pdf_text_extraction.models.dto import LayoutResult
+from pipeline.stages.pdf_text_extraction.outputs.manifest_writer import (
+    RunManifestWriter,
+    make_run_id,
+)
+from pipeline.stages.pdf_text_extraction.outputs.stats_writer import (
+    DocStatsCollector,
+    config_digest,
+    config_snapshot,
+)
 from pipeline.stages.pdf_text_extraction.stage_cache import (
     STAGE_CACHE_VERSION,
     StageName,
@@ -56,6 +65,20 @@ from pipeline.stages.pdf_text_extraction.stage_cache import (
 from pipeline.stages.summarization.persistence import compute_pipeline_config_hash
 
 logger = logging.getLogger(__name__)
+
+
+def _count_region_sources(regions) -> dict:
+    """Tally TableRegion.source values for stats reporting."""
+    counts: dict = {}
+    for r in regions or []:
+        src = getattr(r, "source", "unknown") or "unknown"
+        counts[src] = counts.get(src, 0) + 1
+    return counts
+
+
+def _detector_name(detector) -> str:
+    """TableDetectorType enum → short name (HYBRID/TATR/DOCLING/VLM)."""
+    return getattr(detector, "name", str(detector))
 
 
 class PipelineRunner:
@@ -88,6 +111,7 @@ class PipelineRunner:
 
         # Per-run state — populated at the top of `run_document`.
         self._current_config_hash: Optional[str] = None
+        self._current_stats: Optional[DocStatsCollector] = None
 
         # Seed pipeline-owned randomness (B-027). Idempotent within the
         # process; safe to call from each PipelineRunner constructor.
@@ -337,13 +361,20 @@ class PipelineRunner:
 
     # ── Single document ───────────────────────────────────────────────────────
 
-    def run_document(self, pdf_path: Path, pmcid: str) -> bool:
+    def run_document(
+        self,
+        pdf_path: Path,
+        pmcid: str,
+        run_id: Optional[str] = None,
+    ) -> bool:
         """
         Process a single PDF document end-to-end.
 
         Args:
             pdf_path: Path to the source PDF.
             pmcid:    PubMed Central ID for the document.
+            run_id:   Optional batch-run identifier embedded in the per-doc
+                      stats file.  Default ``None`` (used in single-doc runs).
 
         Returns:
             True on success, False on failure.
@@ -367,25 +398,74 @@ class PipelineRunner:
                 logger.info("⚡ %s — skipped (media JSON exists)", pmcid)
                 return True
 
+        # Observability collector — created BEFORE the first fail-prone step
+        # so failed documents still get a stats file.  Best-effort: if init
+        # fails, we proceed without stats rather than break extraction.
+        stats: Optional[DocStatsCollector] = None
         try:
-            result = self._process(pdf_path, pmcid)
-            logger.info("✅ %s — done (%d rows)", pmcid, len(result))
-            if self._completed:
-                self._completed.add(pmcid)
-            limit = self._cfg.runtime.blacklist_if_rows_exceed
-            if limit is not None and len(result) > limit:
-                self._blacklist.add(pmcid, reason=f"too large ({len(result)} rows > {limit})")
-                logger.info("🚫 %s — blacklisted (too large: %d rows)", pmcid, len(result))
-            return True
-        except Exception as exc:
-            logger.error("❌ %s — failed: %s", pmcid, exc)
-            if self._cfg.runtime.save_error_traces:
-                logger.debug(traceback.format_exc())
-            if self._cfg.runtime.update_blacklist_on_failure:
-                self._blacklist.add(pmcid, reason=str(exc))
-            if self._cfg.runtime.fail_fast:
-                raise
-            return False
+            stats = DocStatsCollector(
+                pmcid=pmcid,
+                pdf_path=pdf_path,
+                run_metadata_dir=self._cfg.paths.run_metadata_dir,
+                run_id=run_id,
+                config_digest=config_digest(self._cfg),
+                config_used=config_snapshot(self._cfg),
+            )
+        except Exception:
+            logger.exception("DocStatsCollector init failed — continuing without stats")
+            stats = None
+        self._current_stats = stats
+
+        try:
+            try:
+                result = self._process(pdf_path, pmcid)
+                logger.info("✅ %s — done (%d rows)", pmcid, len(result))
+                if stats is not None:
+                    stats.set_count("text_rows", len(result))
+                    stats.mark_ok()
+                if self._completed:
+                    self._completed.add(pmcid)
+                limit = self._cfg.runtime.blacklist_if_rows_exceed
+                if limit is not None and len(result) > limit:
+                    self._blacklist.add(pmcid, reason=f"too large ({len(result)} rows > {limit})")
+                    logger.info("🚫 %s — blacklisted (too large: %d rows)", pmcid, len(result))
+                return True
+            except Exception as exc:
+                logger.error("❌ %s — failed: %s", pmcid, exc)
+                if self._cfg.runtime.save_error_traces:
+                    logger.debug(traceback.format_exc())
+                if stats is not None:
+                    stats.mark_failed(exc)
+                if self._cfg.runtime.update_blacklist_on_failure:
+                    self._blacklist.add(pmcid, reason=str(exc))
+                if self._cfg.runtime.fail_fast:
+                    raise
+                return False
+        finally:
+            if stats is not None:
+                stats.write()
+            self._current_stats = None
+
+    # ── Stats helpers ─────────────────────────────────────────────────────────
+
+    def _stage(self, name: str):
+        """Context manager that times a stage if stats are enabled, else no-op."""
+        import contextlib
+        if self._current_stats is None:
+            @contextlib.contextmanager
+            def _noop():
+                yield
+            return _noop()
+        return self._current_stats.stage(name)
+
+    def _record(self, fn) -> None:
+        """Run a stats-recording closure when stats are enabled; swallow errors."""
+        if self._current_stats is None:
+            return
+        try:
+            fn(self._current_stats)
+        except Exception:
+            logger.exception("stats record op failed (suppressed)")
 
     def _patch_section_header_types(
         self,
@@ -453,35 +533,47 @@ class PipelineRunner:
         from pipeline.stages.pdf_text_extraction.components.table_reconstructor import reconstruct_tables_from_lists
 
         logger.info("[%s] Step 1 — layout extraction", pmcid)
-        layout: LayoutResult = self._get_layout_extractor().extract(pdf_path)
+        with self._stage("STEP1_LAYOUT"):
+            layout: LayoutResult = self._get_layout_extractor().extract(pdf_path)
+        self._record(lambda s: s.set_count("layout_elements_full", len(layout.elements)))
         layout_pre_recon = layout
 
         if self._cfg.docling.reconstruct_tables_from_lists:
             layout = reconstruct_tables_from_lists(layout)
 
         logger.info("[%s] Step 2 — table detection (%s)", pmcid, self._cfg.table_detector)
-        detection = cache.get_or_compute(
-            stage_name=StageName.TABLE_DETECTION,
-            pmcid=pmcid,
-            config_hash=self._current_config_hash,
-            compute_fn=lambda: self._run_table_detection(layout, pdf_path),
-            loader_fn=load_table_detection,
-            dumper_fn=dump_table_detection,
-            summarise_fn=lambda r: f"{len(r.regions)} regions",
-        )
+        with self._stage("STEP2_TABLE_DETECTION"):
+            detection = cache.get_or_compute(
+                stage_name=StageName.TABLE_DETECTION,
+                pmcid=pmcid,
+                config_hash=self._current_config_hash,
+                compute_fn=lambda: self._run_table_detection(layout, pdf_path),
+                loader_fn=load_table_detection,
+                dumper_fn=dump_table_detection,
+                summarise_fn=lambda r: f"{len(r.regions)} regions",
+            )
+        self._record(lambda s: s.record_table_detection(
+            detector=_detector_name(self._cfg.table_detector),
+            n_regions=len(detection.regions),
+            per_source_counts=_count_region_sources(detection.regions),
+        ))
 
         masker = self._get_region_masker()
         regions_to_mask = masker.collect_regions(
             detection, layout, nlp=self._get_nlp()
         ) if self._cfg.masking.enabled else []
+        self._record(lambda s: s.set_count("mask_regions", len(regions_to_mask)))
         if regions_to_mask:
             logger.info("[%s] Step 3 — masking %d regions", pmcid, len(regions_to_mask))
-            masked_path = masker.mask(pdf_path, regions_to_mask)
+            with self._stage("STEP3_MASKING"):
+                masked_path = masker.mask(pdf_path, regions_to_mask)
         else:
             masked_path = pdf_path
 
         logger.info("[%s] Step 4 — re-extraction from masked PDF", pmcid)
-        masked_layout: LayoutResult = self._get_masked_extractor().extract(masked_path)
+        with self._stage("STEP4_REEXTRACT"):
+            masked_layout: LayoutResult = self._get_masked_extractor().extract(masked_path)
+        self._record(lambda s: s.set_count("layout_elements_masked", len(masked_layout.elements)))
         self._patch_section_header_types(masked_layout, layout)
         return layout, layout_pre_recon, masked_layout, detection
 
@@ -498,7 +590,12 @@ class PipelineRunner:
         from pipeline.stages.pdf_text_extraction.components.table_reconstructor import reconstruct_tables_from_lists
 
         logger.info("[%s] Steps 1,3,4 — two-pass extraction", pmcid)
-        tp = self._get_two_pass_extractor().process(pdf_path)
+        with self._stage("STEP1_3_4_TWO_PASS"):
+            tp = self._get_two_pass_extractor().process(pdf_path)
+
+        self._record(lambda s: s.record_scored_nodes(tp.scored_nodes))
+        self._record(lambda s: s.set_count("layout_elements_full", len(tp.pass1_layout)))
+        self._record(lambda s: s.set_count("layout_elements_masked", len(tp.pass2_layout)))
 
         layout = _LR(
             elements=tp.pass1_layout,
@@ -533,22 +630,29 @@ class PipelineRunner:
             # Same cache slot as the standard branch — `cfg.two_pass.enabled`
             # is in the config hash so a mode flip invalidates correctly.
             logger.info("[%s] Step 2 — table detection (%s)", pmcid, self._cfg.table_detector)
-            detection = cache.get_or_compute(
-                stage_name=StageName.TABLE_DETECTION,
-                pmcid=pmcid,
-                config_hash=self._current_config_hash,
-                compute_fn=lambda: self._run_table_detection(layout, pdf_path),
-                loader_fn=load_table_detection,
-                dumper_fn=dump_table_detection,
-                summarise_fn=lambda r: f"{len(r.regions)} regions",
-            )
+            with self._stage("STEP2_TABLE_DETECTION"):
+                detection = cache.get_or_compute(
+                    stage_name=StageName.TABLE_DETECTION,
+                    pmcid=pmcid,
+                    config_hash=self._current_config_hash,
+                    compute_fn=lambda: self._run_table_detection(layout, pdf_path),
+                    loader_fn=load_table_detection,
+                    dumper_fn=dump_table_detection,
+                    summarise_fn=lambda r: f"{len(r.regions)} regions",
+                )
+            self._record(lambda s: s.record_table_detection(
+                detector=_detector_name(self._cfg.table_detector),
+                n_regions=len(detection.regions),
+                per_source_counts=_count_region_sources(detection.regions),
+            ))
         else:
             layout, layout_pre_recon, masked_layout, detection = self._steps_1_3_4_standard(pdf_path, pmcid, cache)
 
         # ── Step 2b: Visualization ────────────────────────────────────────────
         if vis := self._get_visualizer():
-            vis.visualize_layout(layout, pmcid)
-            vis.visualize_detections(detection, layout, pmcid)
+            with self._stage("STEP2B_VISUALIZATION"):
+                vis.visualize_layout(layout, pmcid)
+                vis.visualize_detections(detection, layout, pmcid)
 
         # ── Step 5: Artifact filtering ────────────────────────────────────────
         # Reminder: bump STAGE_CACHE_VERSION[StageName.FILTERING] in
@@ -557,17 +661,19 @@ class PipelineRunner:
         # parsers/layout_utils.filter_artifacts).
         if self._cfg.filtering.enabled:
             logger.info("[%s] Step 5 — artifact filtering", pmcid)
-            masked_layout.elements = cache.get_or_compute(
-                stage_name=StageName.FILTERING,
-                pmcid=pmcid,
-                config_hash=self._current_config_hash,
-                compute_fn=lambda: self._get_artifact_filter().filter_elements(
-                    masked_layout.elements
-                ),
-                loader_fn=load_layout_elements,
-                dumper_fn=dump_layout_elements,
-                summarise_fn=lambda els: f"{len(els)} elements",
-            )
+            with self._stage("STEP5_FILTERING"):
+                masked_layout.elements = cache.get_or_compute(
+                    stage_name=StageName.FILTERING,
+                    pmcid=pmcid,
+                    config_hash=self._current_config_hash,
+                    compute_fn=lambda: self._get_artifact_filter().filter_elements(
+                        masked_layout.elements
+                    ),
+                    loader_fn=load_layout_elements,
+                    dumper_fn=dump_layout_elements,
+                    summarise_fn=lambda els: f"{len(els)} elements",
+                )
+            self._record(lambda s: s.set_count("after_filter", len(masked_layout.elements)))
 
         # ── Step 5b: Raw text dump (pre-assembly) ─────────────────────────────
         if self._cfg.text.write_raw_text:
@@ -585,20 +691,25 @@ class PipelineRunner:
         # stage_cache.py if this stage's behaviour OR the on-disk format
         # changes (e.g. ContextAwareStitcher logic changes).
         logger.info("[%s] Step 6 — text assembly", pmcid)
-        rows = cache.get_or_compute(
-            stage_name=StageName.TEXT_ASSEMBLY,
-            pmcid=pmcid,
-            config_hash=self._current_config_hash,
-            compute_fn=lambda: self._get_text_assembler().assemble(masked_layout),
-            loader_fn=load_hierarchical_rows,
-            dumper_fn=dump_hierarchical_rows,
-            summarise_fn=lambda r: f"{len(r)} rows",
-        )
+        with self._stage("STEP6_TEXT_ASSEMBLY"):
+            rows = cache.get_or_compute(
+                stage_name=StageName.TEXT_ASSEMBLY,
+                pmcid=pmcid,
+                config_hash=self._current_config_hash,
+                compute_fn=lambda: self._get_text_assembler().assemble(masked_layout),
+                loader_fn=load_hierarchical_rows,
+                dumper_fn=dump_hierarchical_rows,
+                summarise_fn=lambda r: f"{len(r)} rows",
+            )
+        self._record(lambda s: s.set_count("text_rows", len(rows)))
 
         # ── Step 7: Media cropping ────────────────────────────────────────────
         logger.info("[%s] Step 7 — media cropping", pmcid)
-        cropper = self._get_media_cropper()
-        figures, tables = cropper.crop(pdf_path, layout, detection=detection)
+        with self._stage("STEP7_MEDIA_CROPPING"):
+            cropper = self._get_media_cropper()
+            figures, tables = cropper.crop(pdf_path, layout, detection=detection)
+        self._record(lambda s: s.set_count("figures_cropped", len(figures)))
+        self._record(lambda s: s.set_count("tables_cropped", len(tables)))
 
         if self._cfg.runtime.multi_source_crops:
             from dataclasses import replace
@@ -646,8 +757,9 @@ class PipelineRunner:
 
         # ── Step 8: Outputs ───────────────────────────────────────────────────
         logger.info("[%s] Step 8 — writing outputs", pmcid)
-        for output in self._get_outputs():
-            output.write(pmcid, rows, figures, tables, pdf_path=pdf_path)
+        with self._stage("STEP8_OUTPUTS"):
+            for output in self._get_outputs():
+                output.write(pmcid, rows, figures, tables, pdf_path=pdf_path)
 
         return rows
 
@@ -679,11 +791,37 @@ class PipelineRunner:
             pdfs = pdfs[:max_docs]
         logger.info("Batch: processing %d PDFs in %s", len(pdfs), pdf_dir)
 
+        # Observability manifest — best-effort.
+        manifest: Optional[RunManifestWriter] = None
+        try:
+            run_id = make_run_id()
+            manifest = RunManifestWriter(
+                cfg=self._cfg,
+                run_metadata_dir=self._cfg.paths.run_metadata_dir,
+                run_id=run_id,
+            )
+            attempted = [
+                (pmcid_fn(p) if pmcid_fn else p.stem) for p in pdfs
+            ]
+            manifest.set_input(
+                runner="PipelineRunner.run_batch",
+                pdf_dir=str(pdf_dir),
+                glob=glob,
+                max_docs=max_docs,
+                n_paths=len(pdfs),
+            )
+            manifest.set_attempted(attempted)
+            logger.info("PipelineRunner.run_batch: run_id=%s", run_id)
+        except Exception:
+            logger.exception("RunManifestWriter init failed — continuing without manifest")
+            manifest = None
+            run_id = None
+
         stats = {"processed": 0, "failed": 0, "skipped": 0}
 
         for pdf_path in pdfs:
             pmcid = pmcid_fn(pdf_path) if pmcid_fn else pdf_path.stem
-            ok = self.run_document(pdf_path, pmcid)
+            ok = self.run_document(pdf_path, pmcid, run_id=run_id)
             if ok:
                 stats["processed"] += 1
             elif self._blacklist.contains(pmcid):
@@ -695,41 +833,126 @@ class PipelineRunner:
             "Batch complete: %d processed, %d failed, %d skipped",
             stats["processed"], stats["failed"], stats["skipped"],
         )
+
+        if manifest is not None:
+            try:
+                manifest.write(batch_stats=dict(stats))
+            except Exception:
+                logger.exception("RunManifestWriter.write failed")
+
         return stats
 
 
-def main() -> None:
+def _retarget_paths(cfg, out_root: Path) -> None:
+    """Repoint every PathConfig output directory under ``out_root``.
+
+    Used by the ``--out-root`` CLI flag so a thesis sweep run lands in
+    ``out/sweeps/<name>/`` instead of overwriting the canonical ``out/``.
+    Path defaults are not modified — only the per-run instance.
+    """
+    p = cfg.paths
+    p.output_root      = out_root
+    p.masked_pdf_dir   = out_root / "masked_pdfs"
+    p.docling_full_dir = out_root / "docling_full"
+    p.docling_masked_dir = out_root / "docling_masked"
+    p.text_dir         = out_root / "text"
+    p.text_raw_dir     = out_root / "text_raw"
+    p.json_dir         = out_root / "json"
+    p.vis_dir          = out_root / "visualization"
+    p.figures_dir      = out_root / "figures"
+    p.tables_dir       = out_root / "tables"
+    p.blacklist_file   = out_root / "failed_pdfs_blacklist.json"
+    p.run_metadata_dir = out_root / "run_metadata"
+
+
+def _parse_args(argv=None):
+    """Optional argparse layer.  When called with no arguments the parsed
+    namespace matches the canonical defaults below (preserving prior
+    ``python runner.py`` behaviour byte-for-byte)."""
+    import argparse
+    from pipeline.stages.pdf_text_extraction.config import TableDetectorType
+
+    p = argparse.ArgumentParser(
+        description="PDF text-extraction pipeline (thesis-stabilization runner).",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    p.add_argument("--pdf-dir", type=Path, default=Path("files/organized_pdfs"),
+                   help="Directory of PDFs to process.")
+    p.add_argument("--glob", default="*.pdf", help="Filename glob.")
+    p.add_argument("--max-docs", type=int, default=None,
+                   help="Cap on number of PDFs.")
+    p.add_argument("--workers", type=int, default=None,
+                   help="Worker thread count (default: cfg.runtime.num_workers).")
+    p.add_argument("--out-root", type=Path, default=None,
+                   help="Override output root (e.g. out/sweeps/tatr090).  "
+                        "Leaves the canonical out/ untouched.")
+    p.add_argument("--detector",
+                   choices=["tatr", "docling", "hybrid"],
+                   default=None,
+                   help="Table detector override.")
+    p.add_argument("--tatr-threshold", type=float, default=None,
+                   help="TATR detection confidence threshold (0–1).")
+    p.add_argument("--render-dpi", type=int, default=None,
+                   help="TATR / two-pass render DPI.")
+    two_pass = p.add_mutually_exclusive_group()
+    two_pass.add_argument("--two-pass", dest="two_pass", action="store_true",
+                          default=None, help="Enable two-pass ghost-text detection.")
+    two_pass.add_argument("--no-two-pass", dest="two_pass", action="store_false",
+                          help="Disable two-pass ghost-text detection.")
+    p.add_argument("--db", dest="db_enabled", action=argparse.BooleanOptionalAction,
+                   default=None, help="Enable / disable database ingestion.")
+    p.add_argument("--write-raw-text", dest="write_raw_text",
+                   action=argparse.BooleanOptionalAction, default=None,
+                   help="Dump pre-assembly text to out/text_raw/.")
+    p.add_argument("--skip-existing-in-db", dest="skip_existing_in_db",
+                   action=argparse.BooleanOptionalAction, default=None,
+                   help="Skip documents already present in the DB.")
+    return p.parse_args(argv), TableDetectorType
+
+
+def main(argv=None) -> None:
     from pipeline.stages.pdf_text_extraction.config import PipelineConfig
 
-    # ── Configuration ──────────────────────────────────────────────────────────
-    # Edit pipeline/stages/pdf_text_extraction/config.py to change defaults
+    args, TableDetectorType = _parse_args(argv)
+
+    # ── Canonical defaults (preserved from prior behaviour) ────────────────────
     cfg = PipelineConfig()
-    cfg.database.enabled = True  # set to True to ingest; db_url auto-loaded from .env
-    cfg.text.write_raw_text = True
-    cfg.two_pass.enabled = True  # use two-pass ghost-text detection instead of standard masking
-    cfg.runtime.skip_existing_in_db = True
+    cfg.database.enabled = True if args.db_enabled is None else args.db_enabled
+    cfg.text.write_raw_text = True if args.write_raw_text is None else args.write_raw_text
+    cfg.two_pass.enabled = True if args.two_pass is None else args.two_pass
+    cfg.runtime.skip_existing_in_db = (
+        True if args.skip_existing_in_db is None else args.skip_existing_in_db
+    )
+
+    # ── Sweep overrides (no-op when flag omitted) ──────────────────────────────
+    if args.detector is not None:
+        cfg.table_detector = {
+            "tatr":    TableDetectorType.TATR,
+            "docling": TableDetectorType.DOCLING,
+            "hybrid":  TableDetectorType.HYBRID,
+        }[args.detector]
+    if args.tatr_threshold is not None:
+        cfg.tatr.threshold = args.tatr_threshold
+    if args.render_dpi is not None:
+        cfg.tatr.render_dpi = args.render_dpi
+        cfg.two_pass.render_dpi = args.render_dpi
+    if args.workers is not None:
+        cfg.runtime.num_workers = args.workers
+    if args.out_root is not None:
+        _retarget_paths(cfg, args.out_root)
+
     cfg.prepare()
 
-    logging.basicConfig(level=cfg.runtime.log_level.value, format="%(asctime)s [%(levelname)s] %(message)s")
+    logging.basicConfig(
+        level=cfg.runtime.log_level.value,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+    )
 
-    # ── Single document ────────────────────────────────────────────────────────
-    # PipelineRunner(cfg).run_document(
-    #     pdf_path=Path("files/organized_pdfs/PMC10047158_dermatopathology-10-00017.pdf"),
-    #     pmcid="PMC10047158",
-    # )
-
-    # PipelineRunner(cfg).run_document(
-    #     pdf_path=Path("files/organized_pdfs/PMC10047213_dermatopathology-10-00018.pdf"),
-    #     pmcid="PMC10047213",
-    # )
-
-    # ── Sequential batch ───────────────────────────────────────────────────────
-    # PipelineRunner(cfg).run_batch(pdf_dir=Path("files/organized_pdfs"), max_docs=5)
-
-    # ── Parallel batch (use pipeline/stages/pdf_text_extraction/batch.py instead) ────────
     from pipeline.stages.pdf_text_extraction.batch import ParallelBatchRunner
     ParallelBatchRunner(cfg, max_workers=cfg.runtime.num_workers).run(
-        pdf_dir=Path("files/organized_pdfs"),
+        pdf_dir=args.pdf_dir,
+        glob=args.glob,
+        max_docs=args.max_docs,
     )
 
 
