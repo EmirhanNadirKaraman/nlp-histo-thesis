@@ -42,38 +42,56 @@ Eval-config emits exactly 1 more crop than baseline (65 vs 64) on this 30-PDF se
 
 DOCLING-only continues to lead on F1 (77.9% > everything else) by being more precise.
 
+### Pre-flight checks (2026-05-18 morning) — all green ✅
+
+* **PMCID alignment**: 30 PDFs in `eval/pdfs/`, all 30 in `eval/ground_truth.csv`, zero mismatch.
+* **share_map.json**: 198 unique crops across 7 sweep variants.
+* **Per-variant label files pre-seeded** from the legacy `annotations_json_tables_*.json` + `annotations_json_figures.json`, filtered by each variant's emitted crops.  Each `eval/annotations/<variant>/<mode>.json` already contains the labels for every crop that matches a legacy filename.  Annotator's resume-cursor will skip those and prompt only for the *new* crops.
+* **`scripts/eval/seed_variant_labels.py`** built + run for all 7 sweeps.  Re-run with `--force` after any new sweep to keep the seed in sync.
+
 ### Tomorrow's actual work (labelling, then decision)
 
-Open tasks `#31` → `#36`:
+**Propagation-optimal labelling order (greedy-simulated 2026-05-18 noon)**: ~74-89 keypresses total across 4 distinct sessions (down from ~162 if labelled naively per-variant).
 
-1. **#31 / #32 / #33 / #34** — label gaps.  Use the new flags, no symlinks:
+```bash
+# 0. Refresh share map (only needed if you ran a new sweep) and re-seed.
+python scripts/eval/build_share_map.py
+python scripts/eval/seed_variant_labels.py     # --force to overwrite
 
-   ```bash
-   # Build (or rebuild) the share map first — needed for peer propagation
-   python scripts/eval/build_share_map.py
+# Session 1 — HYBRID-family tables.  tatr_090 is a superset of HYBRID
+# table crops, so propagation reaches baseline, baseline_evalcfg, tatr_095,
+# no_two_pass.  Inside the annotator press [p] to open the source PDF.
+python eval/annotate.py json_tables_full \
+    --sweep out/sweeps/tatr_090 --variant tatr_090            # 24 prompts
 
-   # E1 baseline production defaults — 16 unlabelled tables + 27 unlabelled figures
-   python eval/annotate.py json_tables_full \
-       --sweep out/sweeps/baseline --variant baseline
-   python eval/annotate.py json_figures \
-       --sweep out/sweeps/baseline --variant baseline
+# Session 2 — TATR-only's 8 crops that no other HYBRID variant emits.
+python eval/annotate.py json_tables_full \
+    --sweep out/sweeps/detector_tatr --variant detector_tatr  # 8 prompts
 
-   # E1 eval-config — should be mostly covered after baseline propagation
-   python eval/annotate.py json_tables_full \
-       --sweep out/sweeps/baseline_evalcfg --variant baseline_evalcfg
+# Session 3 — Figures.  Identical 115 crops across every variant; one
+# session covers all eight via share-map propagation.
+python eval/annotate.py json_figures \
+    --sweep out/sweeps/baseline --variant baseline            # 27 prompts
 
-   # E2a docling-only — uses the docling-specific labels file
-   python eval/annotate.py json_tables_docling \
-       --sweep out/sweeps/detector_docling --variant detector_docling
+# Session 4 — DOCLING-only tables (separate label-file family).
+python eval/annotate.py json_tables_docling \
+    --sweep out/sweeps/detector_docling --variant detector_docling   # 15 prompts
 
-   # E3a / E3b new threshold crops — most shared with baseline
-   python eval/annotate.py json_tables_full \
-       --sweep out/sweeps/tatr_095 --variant tatr_095
-   python eval/annotate.py json_tables_full \
-       --sweep out/sweeps/tatr_090 --variant tatr_090
-   ```
+# Session 5 — DOCLING-with-reconstruction (after task #41 sweep + task #42
+# share-map refresh).  Only the new recon-promoted crops will prompt;
+# shared crops propagate from session 4.
+python eval/annotate.py json_tables_docling \
+    --sweep out/sweeps/docling_recon --variant docling_recon  # ~N (TBD)
 
-   Keys: `y` = correct, `n` = incorrect, `s` = skip, `q` = quit, `r` = metrics so far.
+# After labelling, recompute per-variant P/R/F1
+python scripts/eval/score_pdf_variants.py \
+    --md-out reports/variants_PR.md \
+    --json-out reports/variants_PR.json
+```
+
+Total: **~74-89 keypresses** across 5 sessions (vs ~162 if labelled per-variant naively).  Propagation auto-deduplicates shared crops; the cursor jumps straight to the next un-labelled item each session.
+
+Keys: `y` = correct, `n` = incorrect, `o` = other, `l` = custom label, `s` = skip, `b` = back, `space` = next, **`p` = open the source PDF**, `r` = metrics so far, `q` = quit (auto-saves).
 
 2. **#35 → re-run scorer** after each labelling session:
 

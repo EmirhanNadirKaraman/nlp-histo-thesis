@@ -34,9 +34,11 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import sys
 import termios
 import textwrap
+import time
 import tty
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -174,6 +176,9 @@ def parse_json(path: Path, only: str | None = None) -> list[Item]:
                         "detected_label": entry.get("label", ""),
                         "page":           entry.get("page", ""),
                         "image_path":     entry.get("image_path", ""),
+                        # bbox in Docling coords (y=0 at bottom).  Used by the
+                        # annotator's [p] keystroke to draw a clean overlay.
+                        "bbox":           entry.get("bbox", {}),
                     },
                 )
             )
@@ -309,14 +314,135 @@ def ann_key(item: Item) -> str:
 
 
 # ── Input helpers ──────────────────────────────────────────────────────────────
-def read_label(prompt: str = "  Label: ") -> str:
-    """Restore normal terminal mode, read a line of text, return it."""
+
+_STANDARD_LABELS = frozenset({"correct", "incorrect", "other", "skipped"})
+_RUBRIC_PATH = HERE / "label_rubric.yaml"
+
+
+def _load_rubric_labels(path: Path | None = None) -> list[str]:
+    """Return all rubric-defined label strings (sorted).  Used to seed the
+    ``[l]`` quick-pick menu so fresh variants still get the canonical
+    label vocabulary, not just labels typed earlier in the session.
+
+    Returns ``[]`` on any failure (missing file, no yaml, malformed) — the
+    annotator falls back to the recent-only behaviour transparently.
+    """
+    if path is None:
+        path = _RUBRIC_PATH
+    if not path.exists():
+        return []
+    try:
+        import yaml  # type: ignore
+    except ImportError:
+        return []
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    labels = (data or {}).get("labels", {}) or {}
+    return sorted({str(k) for k in labels.keys() if str(k) not in _STANDARD_LABELS})
+
+
+def _label_applies_to(label: str, item_kind: str | None) -> bool:
+    """Decide whether a rubric label belongs in the menu for the current
+    item kind (``"figure"`` / ``"table"`` / anything else).
+
+    Rules:
+      * ``item_kind`` is ``None`` or unrecognised → show all labels.
+      * label mentions ``"figure"`` → figure-only.
+      * label mentions ``"table"`` or ``"footnote"`` → table-only.
+      * otherwise → both (always shown).
+    """
+    if item_kind not in ("figure", "table"):
+        return True
+    lower = label.lower()
+    is_figure_label = "figure" in lower
+    is_table_label = ("table" in lower) or ("footnote" in lower)
+    if item_kind == "figure":
+        return is_figure_label or not (is_figure_label or is_table_label)
+    # item_kind == "table"
+    return is_table_label or not (is_figure_label or is_table_label)
+
+
+def _collect_label_menu(ann: dict[str, str],
+                         item_kind: str | None = None) -> list[str]:
+    """Return the numbered-menu list for the ``[l]`` keystroke.
+
+    Sources:
+      1. Every non-standard label defined in ``eval/label_rubric.yaml``
+         (canonical vocabulary — always offered).
+      2. Any custom label already in ``ann`` (in case the user typed
+         something outside the rubric earlier).
+
+    When ``item_kind`` is ``"figure"`` or ``"table"``, the menu is filtered
+    to labels that apply to that kind (see ``_label_applies_to``).
+    Deduplicated; rubric order preserved, with extras appended.
+    """
+    rubric_labels = _load_rubric_labels()
+    if item_kind in ("figure", "table"):
+        rubric_labels = [l for l in rubric_labels
+                         if _label_applies_to(l, item_kind)]
+    recent = sorted({v for v in ann.values() if v and v not in _STANDARD_LABELS})
+    if item_kind in ("figure", "table"):
+        recent = [l for l in recent if _label_applies_to(l, item_kind)]
+    seen = set(rubric_labels)
+    extras = [v for v in recent if v not in seen]
+    return rubric_labels + extras
+
+
+def _collect_recent_labels(ann: dict[str, str]) -> list[str]:
+    """Return sorted list of non-standard custom labels seen so far in
+    ``ann``.  Kept separate from ``_collect_label_menu`` so callers that
+    want only ann-derived labels (tests, downstream tooling) aren't
+    forced to filter rubric entries back out.
+    """
+    return sorted({v for v in ann.values() if v and v not in _STANDARD_LABELS})
+
+
+def _next_unlabelled_index(items: list, ann: dict[str, str], start: int) -> int:
+    """First index ``>= start`` whose ``ann_key(item)`` is NOT in ``ann``.
+
+    Returns ``len(items)`` if no such item exists — the caller treats that
+    as "we're done with this pass".
+    """
+    for i in range(start, len(items)):
+        if ann_key(items[i]) not in ann:
+            return i
+    return len(items)
+
+
+def read_label(prompt: str = "  Label: ", *,
+               recent: list[str] | None = None) -> str | None:
+    """Restore normal terminal mode, prompt for a label, return it.
+
+    Returns ``None`` if the user cancels (empty input or Ctrl-C / Ctrl-D).
+    If ``recent`` is provided, prints a numbered menu first so the user can
+    type a digit to reuse a previously-seen label instead of retyping.
+    """
     fd  = sys.stdin.fileno()
     old = termios.tcgetattr(fd)
     try:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)  # ensure normal mode
+        print()
+        if recent:
+            print(f"  {c(CYAN, 'Recent labels (type # to reuse):')}")
+            for i, label in enumerate(recent, 1):
+                print(f"    {c(YELLOW, str(i)):>4}  {label}")
+        print(f"  {c(DIM, '(empty to cancel)')}")
         print(prompt, end="", flush=True)
-        return input()
+        try:
+            raw = input()
+        except (EOFError, KeyboardInterrupt):
+            print()  # newline so the next render() doesn't collide
+            return None
+        raw = raw.strip()
+        if not raw:
+            return None
+        if recent and raw.isdigit():
+            idx = int(raw)
+            if 1 <= idx <= len(recent):
+                return recent[idx - 1]
+        return raw
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
@@ -377,27 +503,118 @@ def resolve_pdf_path(doc_id: str, pdf_dir: Path | None) -> Path | None:
     return candidate
 
 
-def open_pdf(pdf_path: Path) -> None:
-    """Open a PDF in the default viewer (macOS).  No-op on failure."""
+def resolve_visualization_path(sweep_dir: Path | None, doc_id: str) -> Path | None:
+    """Locate the annotated visualization PDF for a doc inside a sweep.
+
+    The visualizer writes ``<sweep>/visualization/{pmcid}_layout_vis.pdf`` with
+    coloured bboxes for every detected element (TEXT / FIGURE / TABLE /
+    CAPTION / etc.) overlaid on the source pages.  Returns ``None`` if the
+    file doesn't exist (e.g. visualization was disabled for that sweep).
+    """
+    if sweep_dir is None:
+        return None
+    candidate = sweep_dir / "visualization" / f"{doc_id}_layout_vis.pdf"
+    return candidate if candidate.exists() else None
+
+
+def render_clean_overlay(
+    source_pdf: Path,
+    bbox_docling: dict,
+    page: int,
+    out_path: Path,
+    *,
+    color: tuple[float, float, float] = (0, 0.8, 0),
+    width: float = 2.5,
+) -> bool:
+    """Write a single-bbox overlay PDF: copy of ``source_pdf`` with one
+    outline drawn at ``bbox_docling`` on page ``page``.
+
+    Coordinate conversion: media.json bboxes are Docling coords (y=0 at
+    bottom of page).  fitz uses y=0 at top.  We flip via ``page.rect.height``.
+
+    Returns ``True`` on success, ``False`` if the input is missing / bbox is
+    incomplete / fitz isn't available.
+    """
+    try:
+        import fitz  # type: ignore
+    except ImportError:
+        return False
+    if not source_pdf or not source_pdf.exists():
+        return False
+    required = {"x1", "y1", "x2", "y2"}
+    if not required.issubset(bbox_docling):
+        return False
+    try:
+        doc = fitz.open(str(source_pdf))
+        if not (1 <= page <= len(doc)):
+            doc.close()
+            return False
+        p = doc[page - 1]
+        h = p.rect.height
+        # Docling y is bottom-origin: convert to fitz top-origin.
+        rect = fitz.Rect(
+            bbox_docling["x1"], h - bbox_docling["y1"],
+            bbox_docling["x2"], h - bbox_docling["y2"],
+        )
+        rect.normalize()
+        p.draw_rect(rect, color=color, width=width)  # outline only — no fill
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        doc.save(str(out_path))
+        doc.close()
+        return True
+    except Exception:
+        return False
+
+
+def open_pdf(pdf_path: Path, page: int | None = None) -> None:
+    """Open a PDF in the default viewer.  On macOS optionally navigates to
+    ``page`` via Preview's "Go to Page" keyboard shortcut (Cmd-Opt-G).
+
+    Requires Accessibility permission for the shell to control "System
+    Events" — macOS will prompt on first use.  If permission is denied or
+    the platform isn't macOS, falls back to opening the PDF at page 1.
+    """
     if not pdf_path or not pdf_path.exists():
         return
     try:
-        os.system(f"open {str(pdf_path)!r}")
+        os.system(f"open {shlex.quote(str(pdf_path))}")
+        if sys.platform == "darwin" and page and page > 1:
+            # Give Preview ~0.6s to load before sending keystrokes
+            time.sleep(0.6)
+            script = (
+                'tell application "System Events" to tell process "Preview"\n'
+                "set frontmost to true\n"
+                'keystroke "g" using {command down, option down}\n'
+                "delay 0.2\n"
+                f'keystroke "{page}"\n'
+                "delay 0.1\n"
+                "keystroke return\n"
+                "end tell"
+            )
+            os.system(f"osascript -e {shlex.quote(script)}")
     except Exception:
         pass
 
 
 # ── Display ────────────────────────────────────────────────────────────────────
-def render(item: Item, total: int, ann: dict[str, str], mode: str,
-           pdf_dir: Path | None = None) -> None:
-    _known      = {"correct", "incorrect", "other", "skipped"}
-    n_correct   = sum(1 for v in ann.values() if v == "correct")
-    n_incorrect = sum(1 for v in ann.values() if v == "incorrect")
-    n_other     = sum(1 for v in ann.values() if v == "other")
-    n_skipped   = sum(1 for v in ann.values() if v == "skipped")
-    n_custom    = sum(1 for v in ann.values() if v not in _known)
-    annotated   = n_correct + n_incorrect + n_other + n_custom
-    pct         = annotated / total * 100 if total else 0
+def render(item: Item, items: list[Item], ann: dict[str, str], mode: str,
+           pdf_dir: Path | None = None,
+           sweep_dir: Path | None = None) -> None:
+    _known       = {"correct", "incorrect", "other", "skipped"}
+    total        = len(items)
+    # Count only annotations that belong to items in the current items list.
+    # ``ann`` may contain extra keys propagated in from peer variants whose
+    # crops this variant doesn't emit — counting those inflates the bar past
+    # 100 %.  Filter by the current items' ann_key set.
+    in_scope     = {ann_key(it) for it in items}
+    scoped       = {k: v for k, v in ann.items() if k in in_scope}
+    n_correct    = sum(1 for v in scoped.values() if v == "correct")
+    n_incorrect  = sum(1 for v in scoped.values() if v == "incorrect")
+    n_other      = sum(1 for v in scoped.values() if v == "other")
+    n_skipped    = sum(1 for v in scoped.values() if v == "skipped")
+    n_custom     = sum(1 for v in scoped.values() if v not in _known)
+    annotated    = n_correct + n_incorrect + n_other + n_custom
+    pct          = annotated / total * 100 if total else 0
 
     CLEAR()
     print(c(BOLD, "─" * TERM_WIDTH))
@@ -420,6 +637,13 @@ def render(item: Item, total: int, ann: dict[str, str], mode: str,
     if pdf_path is not None:
         marker = "" if pdf_path.exists() else c(YELLOW, "  (not on disk)")
         print(f"  {c(DIM, 'pdf')}     {c(DIM, str(pdf_path))}{marker}")
+    page = item.meta.get("page") if item.meta else None
+    if page:
+        bbox = item.meta.get("bbox", {}) if item.meta else {}
+        bbox_summary = ""
+        if bbox.get("x1") is not None:
+            bbox_summary = f"  bbox=({bbox.get('x1', 0):.0f},{bbox.get('y1', 0):.0f}-{bbox.get('x2', 0):.0f},{bbox.get('y2', 0):.0f})"
+        print(f"  {c(DIM, 'page')}    {c(GREEN, f'{page}')}{c(DIM, bbox_summary)}")
     print(f"  {c(DIM, 'label')}   {c(CYAN, item.label or '(top level)')}")
     if item.meta:
         if item.meta.get("detected_label"):
@@ -453,11 +677,11 @@ def render(item: Item, total: int, ann: dict[str, str], mode: str,
         f"  {c(GREEN, '[y/→]')} correct   "
         f"{c(RED, '[n/←]')} incorrect   "
         f"{c(MAGENTA, '[o]')} other   "
-        f"{c(CYAN, '[l]')} label   "
+        f"{c(CYAN, '[l]')} label/pick   "
         f"{c(YELLOW, '[s]')} skip   "
         f"{c(BLUE, '[b]')} back   "
         f"{c(DIM, '[space]')} next   "
-        f"{c(DIM, '[p]')} open pdf   "
+        f"{c(DIM, '[p]')} source+bbox@page   "
         f"{c(DIM, '[r]')} metrics   "
         f"{c(DIM, '[q]')} quit"
     )
@@ -466,11 +690,15 @@ def render(item: Item, total: int, ann: dict[str, str], mode: str,
 
 def show_metrics(items: list[Item], ann: dict[str, str], mode: str) -> None:
     known     = {"correct", "incorrect", "other", "skipped"}
-    n_correct   = sum(1 for v in ann.values() if v == "correct")
-    n_incorrect = sum(1 for v in ann.values() if v == "incorrect")
-    n_other     = sum(1 for v in ann.values() if v == "other")
-    custom_labels = {v: sum(1 for x in ann.values() if x == v)
-                     for v in ann.values() if v not in known}
+    # Restrict counting to items currently in scope; peer-variant
+    # propagation can leave extra keys in ``ann`` that don't belong here.
+    in_scope    = {ann_key(it) for it in items}
+    scoped      = {k: v for k, v in ann.items() if k in in_scope}
+    n_correct   = sum(1 for v in scoped.values() if v == "correct")
+    n_incorrect = sum(1 for v in scoped.values() if v == "incorrect")
+    n_other     = sum(1 for v in scoped.values() if v == "other")
+    custom_labels = {v: sum(1 for x in scoped.values() if x == v)
+                     for v in scoped.values() if v not in known}
     n_custom    = sum(custom_labels.values())
     annotated   = n_correct + n_incorrect + n_other + n_custom
     total       = len(items)
@@ -584,29 +812,49 @@ def main() -> None:
 
     while 0 <= cursor < total:
         item = items[cursor]
-        render(item, total, ann, mode, pdf_dir=pdf_dir)
+        render(item, items, ann, mode, pdf_dir=pdf_dir, sweep_dir=sweep_dir)
         key = getch()
 
         if key in ("y", "Y", "RIGHT"):
-            _set(item, "correct"); cursor += 1
+            _set(item, "correct")
+            cursor = _next_unlabelled_index(items, ann, cursor + 1)
         elif key in ("n", "N", "LEFT"):
-            _set(item, "incorrect"); cursor += 1
+            _set(item, "incorrect")
+            cursor = _next_unlabelled_index(items, ann, cursor + 1)
         elif key in ("o", "O"):
-            _set(item, "other"); cursor += 1
+            _set(item, "other")
+            cursor = _next_unlabelled_index(items, ann, cursor + 1)
         elif key in ("l", "L"):
-            label = read_label().strip()
+            label = read_label(recent=_collect_label_menu(ann, item_kind=item.label))
             if label:
-                _set(item, label); cursor += 1
+                _set(item, label)
+                cursor = _next_unlabelled_index(items, ann, cursor + 1)
+            # else: empty / Ctrl-C → stay on current item
         elif key in ("s", "S"):
-            _set(item, "skipped"); cursor += 1
+            _set(item, "skipped")
+            cursor = _next_unlabelled_index(items, ann, cursor + 1)
         elif key == " ":
-            cursor += 1
+            cursor = _next_unlabelled_index(items, ann, cursor + 1)
         elif key in ("b", "B"):
             cursor = max(0, cursor - 1)
         elif key in ("p", "P"):
-            pdf_path = resolve_pdf_path(item.doc_id, pdf_dir)
-            if pdf_path:
-                open_pdf(pdf_path)
+            page = None
+            try:
+                page = int(item.meta.get("page")) if item.meta.get("page") else None
+            except (TypeError, ValueError):
+                page = None
+            source = resolve_pdf_path(item.doc_id, pdf_dir)
+            bbox = item.meta.get("bbox", {}) if item.meta else {}
+            # Clean on-the-fly overlay: source PDF + just THIS crop's bbox
+            # outlined.  No fill, no other layout boxes, no masking-look.
+            # Falls back to raw source if anything goes wrong.
+            target = source
+            if source and page and bbox:
+                tmp = OUT_DIR / "_overlay" / f"{item.doc_id}_p{page}_{item.index}.pdf"
+                if render_clean_overlay(source, bbox, page, tmp):
+                    target = tmp
+            if target:
+                open_pdf(target, page=page)
         elif key in ("r", "R"):
             show_metrics(items, ann, mode)
         elif key in ("q", "Q", "\x03"):
@@ -625,7 +873,7 @@ def main() -> None:
         sk = 0
         while 0 <= sk < len(skipped_indices):
             item = items[skipped_indices[sk]]
-            render(item, total, ann, mode, pdf_dir=pdf_dir)
+            render(item, items, ann, mode, pdf_dir=pdf_dir, sweep_dir=sweep_dir)
             key = getch()
             if key in ("y", "Y", "RIGHT"):
                 _set(item, "correct"); sk += 1
@@ -638,9 +886,20 @@ def main() -> None:
             elif key in ("b", "B"):
                 sk = max(0, sk - 1)
             elif key in ("p", "P"):
-                pdf_path = resolve_pdf_path(item.doc_id, pdf_dir)
-                if pdf_path:
-                    open_pdf(pdf_path)
+                page = None
+                try:
+                    page = int(item.meta.get("page")) if item.meta.get("page") else None
+                except (TypeError, ValueError):
+                    page = None
+                source = resolve_pdf_path(item.doc_id, pdf_dir)
+                bbox = item.meta.get("bbox", {}) if item.meta else {}
+                target = source
+                if source and page and bbox:
+                    tmp = OUT_DIR / "_overlay" / f"{item.doc_id}_p{page}_{item.index}.pdf"
+                    if render_clean_overlay(source, bbox, page, tmp):
+                        target = tmp
+                if target:
+                    open_pdf(target, page=page)
             elif key in ("r", "R"):
                 show_metrics(items, ann, mode)
             elif key in ("q", "Q", "\x03"):

@@ -259,3 +259,349 @@ def test_resolve_pdf_path(tmp_path) -> None:
     assert p == pdf_dir / "PMC_ABC.pdf"
     # No pdf_dir → None
     assert ann_mod.resolve_pdf_path("PMC_X", None) is None
+
+
+# ── resolve_visualization_path ────────────────────────────────────────────────
+
+
+def test_resolve_visualization_path_returns_existing_file(tmp_path) -> None:
+    sweep = tmp_path / "sweep"
+    viz_dir = sweep / "visualization"
+    viz_dir.mkdir(parents=True)
+    target = viz_dir / "PMC_ABC_layout_vis.pdf"
+    target.write_bytes(b"%PDF-1.4\n")
+    assert ann_mod.resolve_visualization_path(sweep, "PMC_ABC") == target
+
+
+def test_resolve_visualization_path_none_when_file_absent(tmp_path) -> None:
+    sweep = tmp_path / "sweep"
+    (sweep / "visualization").mkdir(parents=True)
+    # File doesn't exist
+    assert ann_mod.resolve_visualization_path(sweep, "PMC_MISSING") is None
+
+
+def test_resolve_visualization_path_none_when_sweep_none() -> None:
+    assert ann_mod.resolve_visualization_path(None, "PMC_X") is None
+
+
+def test_resolve_visualization_path_none_when_dir_missing(tmp_path) -> None:
+    """Sweep dir exists but visualization/ subdir does not (e.g. viz disabled)."""
+    sweep = tmp_path / "sweep"
+    sweep.mkdir()
+    assert ann_mod.resolve_visualization_path(sweep, "PMC_X") is None
+
+
+# ── open_pdf ──────────────────────────────────────────────────────────────────
+
+
+def test_open_pdf_no_op_on_missing_path(tmp_path, monkeypatch) -> None:
+    """``open`` must not run if the path doesn't exist."""
+    calls = []
+    monkeypatch.setattr(ann_mod.os, "system", lambda cmd: calls.append(cmd) or 0)
+    ann_mod.open_pdf(tmp_path / "does_not_exist.pdf")
+    assert calls == []
+
+
+def test_open_pdf_no_op_on_none() -> None:
+    ann_mod.open_pdf(None)  # no exception, no os.system call
+
+
+def test_open_pdf_invokes_open_then_osascript_with_page(tmp_path, monkeypatch) -> None:
+    pdf = tmp_path / "fake.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    calls = []
+    monkeypatch.setattr(ann_mod.os, "system",
+                        lambda cmd: calls.append(cmd) or 0)
+    monkeypatch.setattr(ann_mod.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(ann_mod.sys, "platform", "darwin")
+    ann_mod.open_pdf(pdf, page=3)
+    # First call: open the PDF
+    assert calls[0].startswith("open ")
+    assert str(pdf) in calls[0]
+    # Second call: osascript navigating to page
+    assert any("osascript" in c for c in calls[1:])
+    nav = next(c for c in calls if "osascript" in c)
+    assert "Preview" in nav
+    assert "command down, option down" in nav
+    assert '"3"' in nav  # the page keystroke
+
+
+def test_open_pdf_skips_osascript_when_page_is_one(tmp_path, monkeypatch) -> None:
+    """Page 1 is already shown on open — no navigation needed."""
+    pdf = tmp_path / "fake.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    calls = []
+    monkeypatch.setattr(ann_mod.os, "system",
+                        lambda cmd: calls.append(cmd) or 0)
+    monkeypatch.setattr(ann_mod.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(ann_mod.sys, "platform", "darwin")
+    ann_mod.open_pdf(pdf, page=1)
+    assert len(calls) == 1
+    assert calls[0].startswith("open ")
+
+
+def test_open_pdf_skips_osascript_when_page_is_none(tmp_path, monkeypatch) -> None:
+    pdf = tmp_path / "fake.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    calls = []
+    monkeypatch.setattr(ann_mod.os, "system",
+                        lambda cmd: calls.append(cmd) or 0)
+    monkeypatch.setattr(ann_mod.sys, "platform", "darwin")
+    ann_mod.open_pdf(pdf, page=None)
+    assert len(calls) == 1
+
+
+def test_open_pdf_skips_osascript_on_non_darwin(tmp_path, monkeypatch) -> None:
+    pdf = tmp_path / "fake.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    calls = []
+    monkeypatch.setattr(ann_mod.os, "system",
+                        lambda cmd: calls.append(cmd) or 0)
+    monkeypatch.setattr(ann_mod.sys, "platform", "linux")
+    ann_mod.open_pdf(pdf, page=5)
+    # Only the open call; no osascript invocation
+    assert len(calls) == 1
+    assert calls[0].startswith("open ")
+    assert "osascript -e" not in calls[0]
+
+
+# ── UX helpers: recent labels + next-unlabelled cursor + cancel ──────────────
+
+
+def test_collect_recent_labels_returns_only_custom() -> None:
+    ann = {
+        "a.png": "correct", "b.png": "incorrect", "c.png": "other",
+        "d.png": "skipped", "e.png": "table_in_figure", "f.png": "wrong caption",
+        "g.png": "",  # empty value — ignored
+    }
+    recent = ann_mod._collect_recent_labels(ann)
+    assert recent == ["table_in_figure", "wrong caption"]
+
+
+def test_collect_recent_labels_handles_empty() -> None:
+    assert ann_mod._collect_recent_labels({}) == []
+
+
+def test_collect_recent_labels_filters_standard_only() -> None:
+    ann = {"a.png": "correct", "b.png": "skipped"}
+    assert ann_mod._collect_recent_labels(ann) == []
+
+
+def _mk_item(doc_id: str = "PMC_X", label: str = "tables", index: int = 0,
+             image_path: str = ""):
+    """Build a minimal Item with an ann_key derivable from image_path."""
+    return ann_mod.Item(
+        doc_id=doc_id, label=label, index=index, text="caption",
+        meta={"image_path": image_path or f"out/x/{doc_id}_t{index}.png"},
+    )
+
+
+def test_next_unlabelled_index_finds_first_gap() -> None:
+    items = [_mk_item(index=i, image_path=f"a_{i}.png") for i in range(5)]
+    # Label items 0, 1, 3
+    ann = {ann_mod.ann_key(items[0]): "correct",
+           ann_mod.ann_key(items[1]): "correct",
+           ann_mod.ann_key(items[3]): "incorrect"}
+    # start=0 → first unlabelled is item 2
+    assert ann_mod._next_unlabelled_index(items, ann, 0) == 2
+    # start=3 → next unlabelled is item 4
+    assert ann_mod._next_unlabelled_index(items, ann, 3) == 4
+
+
+def test_next_unlabelled_index_returns_total_when_done() -> None:
+    items = [_mk_item(index=i, image_path=f"a_{i}.png") for i in range(3)]
+    ann = {ann_mod.ann_key(item): "correct" for item in items}
+    # Everything labelled → returns past-end
+    assert ann_mod._next_unlabelled_index(items, ann, 0) == 3
+
+
+def test_next_unlabelled_index_skips_propagated_labels() -> None:
+    """Simulates propagation: items 1 and 2 got labels mid-session (from
+    a peer variant); after labelling item 0, cursor should jump to item 3."""
+    items = [_mk_item(index=i, image_path=f"a_{i}.png") for i in range(5)]
+    ann = {
+        ann_mod.ann_key(items[0]): "correct",  # just-labelled
+        ann_mod.ann_key(items[1]): "correct",  # propagated
+        ann_mod.ann_key(items[2]): "incorrect",  # propagated
+    }
+    # Cursor was on 0; after labelling, search starts at 1.
+    assert ann_mod._next_unlabelled_index(items, ann, 1) == 3
+
+
+def test_read_label_empty_input_returns_none(monkeypatch, capsys) -> None:
+    """Empty enter cancels — caller treats None as "stay on this item"."""
+    monkeypatch.setattr("builtins.input", lambda: "")
+    # Bypass tty setup — termios calls would fail in pytest
+    monkeypatch.setattr(ann_mod.termios, "tcgetattr", lambda fd: None)
+    monkeypatch.setattr(ann_mod.termios, "tcsetattr", lambda *a, **kw: None)
+    monkeypatch.setattr(ann_mod.sys.stdin, "fileno", lambda: 0)
+    assert ann_mod.read_label() is None
+
+
+def test_read_label_whitespace_input_returns_none(monkeypatch) -> None:
+    monkeypatch.setattr("builtins.input", lambda: "   ")
+    monkeypatch.setattr(ann_mod.termios, "tcgetattr", lambda fd: None)
+    monkeypatch.setattr(ann_mod.termios, "tcsetattr", lambda *a, **kw: None)
+    monkeypatch.setattr(ann_mod.sys.stdin, "fileno", lambda: 0)
+    assert ann_mod.read_label() is None
+
+
+def test_read_label_keyboard_interrupt_returns_none(monkeypatch) -> None:
+    def _boom():
+        raise KeyboardInterrupt
+    monkeypatch.setattr("builtins.input", _boom)
+    monkeypatch.setattr(ann_mod.termios, "tcgetattr", lambda fd: None)
+    monkeypatch.setattr(ann_mod.termios, "tcsetattr", lambda *a, **kw: None)
+    monkeypatch.setattr(ann_mod.sys.stdin, "fileno", lambda: 0)
+    assert ann_mod.read_label() is None
+
+
+def test_read_label_eof_returns_none(monkeypatch) -> None:
+    def _eof():
+        raise EOFError
+    monkeypatch.setattr("builtins.input", _eof)
+    monkeypatch.setattr(ann_mod.termios, "tcgetattr", lambda fd: None)
+    monkeypatch.setattr(ann_mod.termios, "tcsetattr", lambda *a, **kw: None)
+    monkeypatch.setattr(ann_mod.sys.stdin, "fileno", lambda: 0)
+    assert ann_mod.read_label() is None
+
+
+def test_read_label_text_returns_stripped(monkeypatch) -> None:
+    monkeypatch.setattr("builtins.input", lambda: "  weird crop  ")
+    monkeypatch.setattr(ann_mod.termios, "tcgetattr", lambda fd: None)
+    monkeypatch.setattr(ann_mod.termios, "tcsetattr", lambda *a, **kw: None)
+    monkeypatch.setattr(ann_mod.sys.stdin, "fileno", lambda: 0)
+    assert ann_mod.read_label() == "weird crop"
+
+
+def test_read_label_numeric_picks_from_recent(monkeypatch) -> None:
+    """Typing '2' should resolve to the 2nd recent label."""
+    monkeypatch.setattr("builtins.input", lambda: "2")
+    monkeypatch.setattr(ann_mod.termios, "tcgetattr", lambda fd: None)
+    monkeypatch.setattr(ann_mod.termios, "tcsetattr", lambda *a, **kw: None)
+    monkeypatch.setattr(ann_mod.sys.stdin, "fileno", lambda: 0)
+    result = ann_mod.read_label(recent=["table_in_figure", "wrong caption", "icon"])
+    assert result == "wrong caption"
+
+
+def test_read_label_numeric_out_of_range_treated_as_literal(monkeypatch) -> None:
+    """If the digit is outside the menu range, treat it as a literal label."""
+    monkeypatch.setattr("builtins.input", lambda: "9")
+    monkeypatch.setattr(ann_mod.termios, "tcgetattr", lambda fd: None)
+    monkeypatch.setattr(ann_mod.termios, "tcsetattr", lambda *a, **kw: None)
+    monkeypatch.setattr(ann_mod.sys.stdin, "fileno", lambda: 0)
+    assert ann_mod.read_label(recent=["a", "b"]) == "9"
+
+
+def test_read_label_no_recent_menu_pass_through(monkeypatch) -> None:
+    """recent=None → no menu, raw text returned."""
+    monkeypatch.setattr("builtins.input", lambda: "2")
+    monkeypatch.setattr(ann_mod.termios, "tcgetattr", lambda fd: None)
+    monkeypatch.setattr(ann_mod.termios, "tcsetattr", lambda *a, **kw: None)
+    monkeypatch.setattr(ann_mod.sys.stdin, "fileno", lambda: 0)
+    assert ann_mod.read_label() == "2"  # literal — no menu to look up
+
+
+# ── Rubric-backed label menu ─────────────────────────────────────────────────
+
+
+def test_load_rubric_labels_reads_file(tmp_path, monkeypatch) -> None:
+    p = tmp_path / "rubric.yaml"
+    p.write_text(
+        "labels:\n"
+        "  correct:\n    crop: 1.0\n"
+        "  table_in_figure:\n    crop: 0.0\n"
+        "  wrong caption:\n    crop: 1.0\n"
+    )
+    monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", p)
+    out = ann_mod._load_rubric_labels()
+    # 'correct' is a standard label and filtered out
+    assert out == ["table_in_figure", "wrong caption"]
+
+
+def test_load_rubric_labels_missing_file_returns_empty(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", tmp_path / "absent.yaml")
+    assert ann_mod._load_rubric_labels() == []
+
+
+def test_collect_label_menu_merges_rubric_and_ann(tmp_path, monkeypatch) -> None:
+    p = tmp_path / "rubric.yaml"
+    p.write_text(
+        "labels:\n"
+        "  table_in_figure:\n    crop: 0.0\n"
+        "  wrong caption:\n    crop: 1.0\n"
+    )
+    monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", p)
+    ann = {"a.png": "weird new label", "b.png": "table_in_figure"}
+    menu = ann_mod._collect_label_menu(ann)
+    # Rubric labels first (sorted), then non-rubric extras from ann
+    assert menu == ["table_in_figure", "wrong caption", "weird new label"]
+
+
+def test_collect_label_menu_no_rubric_falls_back_to_recent(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", tmp_path / "absent.yaml")
+    ann = {"a.png": "fresh label"}
+    assert ann_mod._collect_label_menu(ann) == ["fresh label"]
+
+
+# ── Kind-aware menu filtering ────────────────────────────────────────────────
+
+
+def test_label_applies_figure_only() -> None:
+    assert ann_mod._label_applies_to("correct figure", "figure") is True
+    assert ann_mod._label_applies_to("correct figure", "table") is False
+
+
+def test_label_applies_table_only() -> None:
+    assert ann_mod._label_applies_to("missing footnotes", "table") is True
+    assert ann_mod._label_applies_to("missing footnotes", "figure") is False
+    assert ann_mod._label_applies_to("table_in_figure", "table") is True
+    # 'table_in_figure' mentions both — current rule treats it as table-only
+    # because table+footnote match takes precedence in the table branch.
+    assert ann_mod._label_applies_to("table_in_figure", "figure") is True
+
+
+def test_label_applies_neutral_both_kinds() -> None:
+    # No figure/table/footnote keyword → always shown
+    for kind in ("figure", "table"):
+        assert ann_mod._label_applies_to("crop is too big", kind) is True
+        assert ann_mod._label_applies_to("incorrect", kind) is True
+        assert ann_mod._label_applies_to("icon", kind) is True
+
+
+def test_label_applies_unknown_kind_passes_through() -> None:
+    # Non-figure/table item kinds (e.g. text annotation) get the full menu.
+    assert ann_mod._label_applies_to("correct figure", "paragraph") is True
+    assert ann_mod._label_applies_to("missing footnotes", None) is True
+
+
+def test_collect_label_menu_filters_for_figure(tmp_path, monkeypatch) -> None:
+    p = tmp_path / "rubric.yaml"
+    p.write_text(
+        "labels:\n"
+        "  correct figure:\n    crop: 1.0\n"
+        "  missing footnotes:\n    crop: 1.0\n"
+        "  crop is too big:\n    crop: 0.75\n"
+        "  table_in_figure:\n    crop: 0.0\n"
+    )
+    monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", p)
+    menu = ann_mod._collect_label_menu({}, item_kind="figure")
+    # 'missing footnotes' is filtered out (footnote → table-only)
+    assert "missing footnotes" not in menu
+    assert "correct figure" in menu
+    assert "crop is too big" in menu
+
+
+def test_collect_label_menu_filters_for_table(tmp_path, monkeypatch) -> None:
+    p = tmp_path / "rubric.yaml"
+    p.write_text(
+        "labels:\n"
+        "  correct figure:\n    crop: 1.0\n"
+        "  missing footnotes:\n    crop: 1.0\n"
+        "  crop is too big:\n    crop: 0.75\n"
+    )
+    monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", p)
+    menu = ann_mod._collect_label_menu({}, item_kind="table")
+    assert "correct figure" not in menu
+    assert "missing footnotes" in menu
+    assert "crop is too big" in menu

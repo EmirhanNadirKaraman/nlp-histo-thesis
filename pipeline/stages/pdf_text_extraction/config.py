@@ -116,6 +116,18 @@ class MaskingConfig:
     mask_header_footer_sidebar: bool = True
     merge_overlapping_boxes: bool = True
     expand_box_px: int = 2  # small padding to avoid glyph remnants
+    # Drop table-detector regions whose bbox is mostly inside any FIGURE/
+    # PICTURE element (Docling layout).  Eliminates "table-inside-figure"
+    # false positives that the table detector produces when figures contain
+    # screenshots / printed tables / spreadsheet images.
+    # Threshold: a table is dropped if ≥80 % of its area lies inside some
+    # figure bbox on the same page.
+    # Flipped from False → True on 2026-05-18 after empirical observation
+    # of table-in-figure FPs during labelling.  Pre-flip sweeps live in
+    # out/sweeps/ (baseline, baseline_evalcfg, …) and represent the
+    # *disabled* state; re-run them with --no-drop-tables-inside-figures
+    # to reproduce the historical behaviour.
+    drop_tables_inside_figures: bool = True
 
 
 @dataclass(slots=True)
@@ -139,6 +151,7 @@ class CroppingConfig:
     expand_tables_with_footnotes: bool = False   # absorb nearby TEXT/LIST_ITEM/FOOTNOTE elements below each table
     footnote_proximity_pts: float = 20.0         # max gap for FOOTNOTE / LIST_ITEM elements (adaptive)
     text_footnote_proximity_pts: float = 8.0     # fixed max gap for TEXT elements (non-adaptive)
+    footnote_threshold_multiplier: float = 1.2   # after first absorption: max_gap = first_gap * this
 
 
 @dataclass(slots=True)

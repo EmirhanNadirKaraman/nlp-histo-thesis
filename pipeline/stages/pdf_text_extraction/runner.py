@@ -76,6 +76,82 @@ def _count_region_sources(regions) -> dict:
     return counts
 
 
+_FIGURE_ELEMENT_TYPES = frozenset({"FIGURE", "PICTURE"})
+
+
+def _bbox_area_pts(bbox) -> float:
+    return abs((bbox.x2 - bbox.x1) * (bbox.y2 - bbox.y1))
+
+
+def _bbox_intersect_area(a, b) -> float:
+    """Area of the intersection of two BoundingBoxes on the same page.
+
+    Coord-orientation-agnostic: works for Docling (y₁ > y₂, bottom-origin)
+    and fitz (y₀ < y₁, top-origin) alike by min/max-normalising each axis.
+    """
+    if getattr(a, "page", None) != getattr(b, "page", None):
+        return 0.0
+    x1 = max(min(a.x1, a.x2), min(b.x1, b.x2))
+    x2 = min(max(a.x1, a.x2), max(b.x1, b.x2))
+    y1 = max(min(a.y1, a.y2), min(b.y1, b.y2))
+    y2 = min(max(a.y1, a.y2), max(b.y1, b.y2))
+    if x2 > x1 and y2 > y1:
+        return (x2 - x1) * (y2 - y1)
+    return 0.0
+
+
+def _drop_tables_inside_figures(
+    detection,
+    layout,
+    *,
+    threshold: float = 0.8,
+):
+    """Filter ``detection.regions`` by figure containment.
+
+    A detected table region is dropped when at least ``threshold`` fraction
+    of its bbox area lies inside any FIGURE/PICTURE layout element on the
+    same page.  Mutates a new ``TableDetectionResult`` — the input is left
+    untouched so the stage cache key stays stable per its existing config
+    hash.
+
+    Returns ``(filtered_detection, n_dropped)``.
+    """
+    from dataclasses import replace
+    figure_bboxes = [
+        el.bbox for el in (layout.elements if layout is not None else [])
+        if el.type in _FIGURE_ELEMENT_TYPES
+    ]
+    if not figure_bboxes:
+        return detection, 0
+
+    kept = []
+    dropped = 0
+    for region in detection.regions:
+        area = _bbox_area_pts(region.bbox)
+        if area <= 0:
+            kept.append(region)
+            continue
+        # Sum of intersection-with-figures.  Conservative: if any single
+        # figure contains ≥threshold of the table, drop.  We don't OR the
+        # overlaps across figures — usually a "table inside figure" sits
+        # inside ONE figure entirely.
+        max_frac = 0.0
+        for fb in figure_bboxes:
+            if fb.page != region.bbox.page:
+                continue
+            frac = _bbox_intersect_area(region.bbox, fb) / area
+            if frac > max_frac:
+                max_frac = frac
+            if max_frac >= threshold:
+                break
+        if max_frac >= threshold:
+            dropped += 1
+        else:
+            kept.append(region)
+
+    return replace(detection, regions=kept), dropped
+
+
 def _detector_name(detector) -> str:
     """TableDetectorType enum → short name (HYBRID/TATR/DOCLING/VLM)."""
     return getattr(detector, "name", str(detector))
@@ -507,16 +583,31 @@ class PipelineRunner:
             logger.info("  Patched %d element(s) TEXT → SECTION_HEADER from full layout", patched)
 
     def _run_table_detection(self, layout: LayoutResult, pdf_path: Path):
-        """Run the configured table detector and return a TableDetectionResult."""
+        """Run the configured table detector and return a TableDetectionResult.
+
+        If ``MaskingConfig.drop_tables_inside_figures`` is True, post-filters
+        the detector output to drop regions whose bbox is mostly contained in
+        any FIGURE/PICTURE element (eliminates "table-inside-figure" FPs).
+        """
         detector = self._get_table_detector()
         from pipeline.stages.pdf_text_extraction.table_detectors.hybrid_detector import HybridTableDetector
         from pipeline.stages.pdf_text_extraction.table_detectors.docling_detector import DoclingTableDetector
         if isinstance(detector, HybridTableDetector):
-            return detector.detect_with_layout(layout, pdf_path)
+            result = detector.detect_with_layout(layout, pdf_path)
         elif isinstance(detector, DoclingTableDetector):
-            return detector.detect_from_layout(layout)
+            result = detector.detect_from_layout(layout)
         else:
-            return detector.detect(pdf_path)
+            result = detector.detect(pdf_path)
+
+        if self._cfg.masking.drop_tables_inside_figures:
+            result, n_dropped = _drop_tables_inside_figures(result, layout)
+            if n_dropped:
+                logger.info(
+                    "  filter: dropped %d table detection(s) inside FIGURE/PICTURE bboxes",
+                    n_dropped,
+                )
+            self._record(lambda s: s.set_count("table_regions_dropped_inside_figures", n_dropped))
+        return result
 
     def _steps_1_3_4_standard(
         self, pdf_path: Path, pmcid: str, cache: _StageCache,
@@ -922,6 +1013,30 @@ def _parse_args(argv=None):
                    action=argparse.BooleanOptionalAction, default=None,
                    help="Extend table crops downward to absorb nearby footnotes "
                         "(`CroppingConfig.expand_tables_with_footnotes`).")
+    p.add_argument("--drop-tables-inside-figures",
+                   dest="drop_tables_inside_figures",
+                   action=argparse.BooleanOptionalAction, default=None,
+                   help="Drop table-detector regions whose bbox is ≥80%% inside "
+                        "any FIGURE/PICTURE element (eliminates 'table inside "
+                        "figure' false positives).  "
+                        "(`MaskingConfig.drop_tables_inside_figures`).")
+    p.add_argument("--footnote-proximity-pts", type=float, default=None,
+                   dest="footnote_proximity_pts",
+                   help="Max gap (pts) between table bottom and nearest "
+                        "FOOTNOTE/LIST_ITEM to absorb when "
+                        "--expand-tables-with-footnotes is on.  "
+                        "(`CroppingConfig.footnote_proximity_pts`, default 20.0)")
+    p.add_argument("--text-footnote-proximity-pts", type=float, default=None,
+                   dest="text_footnote_proximity_pts",
+                   help="Tighter max gap (pts) for TEXT-typed elements when "
+                        "expanding tables with footnotes.  "
+                        "(`CroppingConfig.text_footnote_proximity_pts`, default 8.0)")
+    p.add_argument("--footnote-threshold-multiplier", type=float, default=None,
+                   dest="footnote_threshold_multiplier",
+                   help="After first footnote absorption, max gap becomes "
+                        "first_gap * this multiplier.  Higher values absorb "
+                        "more cascading elements.  "
+                        "(`CroppingConfig.footnote_threshold_multiplier`, default 1.2)")
     return p.parse_args(argv), TableDetectorType
 
 
@@ -959,6 +1074,14 @@ def main(argv=None) -> None:
         cfg.cropping.merge_tables_by_caption = args.merge_tables_by_caption
     if args.expand_tables_with_footnotes is not None:
         cfg.cropping.expand_tables_with_footnotes = args.expand_tables_with_footnotes
+    if args.drop_tables_inside_figures is not None:
+        cfg.masking.drop_tables_inside_figures = args.drop_tables_inside_figures
+    if args.footnote_proximity_pts is not None:
+        cfg.cropping.footnote_proximity_pts = args.footnote_proximity_pts
+    if args.text_footnote_proximity_pts is not None:
+        cfg.cropping.text_footnote_proximity_pts = args.text_footnote_proximity_pts
+    if args.footnote_threshold_multiplier is not None:
+        cfg.cropping.footnote_threshold_multiplier = args.footnote_threshold_multiplier
     if args.out_root is not None:
         _retarget_paths(cfg, args.out_root)
 

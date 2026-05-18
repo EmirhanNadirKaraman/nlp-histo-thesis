@@ -8,7 +8,7 @@
   "PMC11674653_dermatopathology-11-00035_Table_2_p7.png": "correct",
   "PMC11755463_dermatopathology-12-00002_Table_1_p4.png": "correct",
   "PMC11791726_HIS-86-485_Table_2_p7.png": "wrong caption (footnotes matched to captions, rotated image)",
-  "PMC11791726_HIS-86-485_Table_3_p9.png": "incorrect",
+  "PMC11791726_HIS-86-485_Table_3_p9.png": "table_in_figure",
   "PMC11863984_main_Table_1_p3.png": "correct",
   "PMC11863984_main_Table_2_p3.png": "correct",
   "PMC11863984_main_Table_4_p4.png": "correct",
@@ -47,8 +47,9 @@
   "PMC11863705_main_Table_4_p6.png": "missed table 3, table crop too big if only for table 4",
   "PMC11863705_main_Table_5_p7.png": "wrong caption",
   "PMC11863705_main_Table_6_p1.png": "incorrect",
-  "PMC11863705_mmc1_Table_1_p1.png": "skipped",
   "PMC8352662_main_Table_1_p3.png": "correct",
   "PMC8352662_main_Table_2_p4.png": "correct",
-  "PMC8352662_main_Table_3_p6.png": "missing footnotes"
+  "PMC8352662_main_Table_3_p6.png": "missing footnotes",
+  "PMC7122038_978-1-4614-4800-6_Chapter_25_Table_25_p7.png": "correct",
+  "PMC11791726_HIS-86-485_Table_4_p9.png": "table_in_figure"
 }

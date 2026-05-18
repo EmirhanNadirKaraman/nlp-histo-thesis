@@ -333,6 +333,7 @@ def test_main_full_round_trip(tmp_path, scr, monkeypatch, capsys) -> None:
     md_out = tmp_path / "out.md"
     json_out = tmp_path / "out.json"
     rc = scr.main([
+        "--legacy",
         "--sweeps-root", str(s["sweeps_root"]),
         "--md-out", str(md_out),
         "--json-out", str(json_out),
@@ -368,7 +369,8 @@ def test_main_full_round_trip(tmp_path, scr, monkeypatch, capsys) -> None:
 
 def test_main_to_stdout_when_no_md_out(tmp_path, scr, monkeypatch, capsys) -> None:
     s = _build_eval_scenario(tmp_path, scr, monkeypatch)
-    rc = scr.main(["--sweeps-root", str(s["sweeps_root"])])
+    rc = scr.main([
+        "--legacy","--sweeps-root", str(s["sweeps_root"])])
     assert rc == 0
     out = capsys.readouterr().out
     assert "# Per-variant PDF-extraction P/R/F1" in out
@@ -376,11 +378,282 @@ def test_main_to_stdout_when_no_md_out(tmp_path, scr, monkeypatch, capsys) -> No
     assert "detector_docling" in out
 
 
+# ── Rubric: load_rubric ───────────────────────────────────────────────────────
+
+
+def test_load_rubric_falls_back_when_path_missing(tmp_path, scr) -> None:
+    rubric = scr.load_rubric(tmp_path / "does_not_exist.yaml")
+    # built-in defaults present
+    assert "correct" in rubric
+    assert rubric["correct"]["crop"] == 1.0
+
+
+def test_load_rubric_reads_yaml(tmp_path, scr) -> None:
+    p = tmp_path / "rubric.yaml"
+    p.write_text(
+        "labels:\n"
+        "  correct: {crop: 1.0, caption: 1.0, footnote: 1.0}\n"
+        "  custom_label: {crop: 0.5, caption: n/a, footnote: n/a}\n"
+    )
+    rubric = scr.load_rubric(p)
+    assert rubric["custom_label"]["crop"] == 0.5
+    assert rubric["custom_label"]["caption"] == "n/a"
+
+
+def test_load_rubric_handles_malformed_yaml(tmp_path, scr) -> None:
+    p = tmp_path / "bad.yaml"
+    p.write_text("not: valid: yaml: :::")
+    # Should fall back without raising
+    rubric = scr.load_rubric(p)
+    assert "correct" in rubric
+
+
+# ── Rubric: parse_label_to_rubric ────────────────────────────────────────────
+
+
+def test_parse_label_direct_match(scr) -> None:
+    rubric = scr.load_rubric(None)
+    out = scr.parse_label_to_rubric("correct", rubric)
+    assert out == {"crop": 1.0, "caption": 1.0, "footnote": 1.0, "mask": 1.0}
+
+
+def test_parse_label_no_prefix_match(scr) -> None:
+    """Prefix matching is disabled — a descriptive suffix on a known label
+    is treated as an unknown label and returns None.  User must add an
+    explicit rubric entry (via --review-unknown or by editing YAML)."""
+    rubric = scr.load_rubric(None)
+    out = scr.parse_label_to_rubric("wrong caption (footer matched as caption)", rubric)
+    assert out is None
+
+
+def test_parse_label_compound_not_auto_combined(scr) -> None:
+    """Compound semantics are NOT auto-derived AND no longer prefix-match.
+    A '+'-joined string with no explicit rubric entry returns None."""
+    rubric = scr.load_rubric(None)
+    out = scr.parse_label_to_rubric("wrong caption + missing footnotes", rubric)
+    assert out is None
+
+
+def test_parse_label_explicit_compound_in_rubric(scr, tmp_path) -> None:
+    """The user can still get compound semantics by adding the explicit
+    label to the rubric YAML."""
+    p = tmp_path / "rubric.yaml"
+    p.write_text(
+        "labels:\n"
+        "  wrong caption and missing footnotes:\n"
+        "    crop: 1.0\n"
+        "    caption: 0.0\n"
+        "    footnote: 0.0\n"
+    )
+    rubric = scr.load_rubric(p)
+    out = scr.parse_label_to_rubric("wrong caption and missing footnotes", rubric)
+    assert out == {"crop": 1.0, "caption": 0.0, "footnote": 0.0}
+
+
+def test_parse_label_unknown_returns_none(scr) -> None:
+    rubric = scr.load_rubric(None)
+    assert scr.parse_label_to_rubric("totally unknown label", rubric) is None
+
+
+def test_parse_label_empty_string_returns_none(scr) -> None:
+    rubric = scr.load_rubric(None)
+    assert scr.parse_label_to_rubric("", rubric) is None
+    assert scr.parse_label_to_rubric("   ", rubric) is None
+
+
+def test_parse_label_case_insensitive(scr) -> None:
+    rubric = scr.load_rubric(None)
+    out = scr.parse_label_to_rubric("CORRECT", rubric)
+    assert out["crop"] == 1.0
+
+
+# ── score_kind_rubric ─────────────────────────────────────────────────────────
+
+
+def test_score_kind_rubric_all_correct(scr) -> None:
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png", "b.png"}
+    labels = {"a.png": "correct", "b.png": "correct"}
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=2)
+    # Crop: 2 TP, 0 FP, FN=0
+    assert out["by_dim"]["crop"]["tp"] == 2
+    assert out["by_dim"]["crop"]["fp"] == 0
+    assert out["by_dim"]["crop"]["f1"] == 1.0
+    # Caption/footnote: 2 TP, 0 FP
+    assert out["by_dim"]["caption"]["tp"] == 2
+    assert out["by_dim"]["footnote"]["tp"] == 2
+    # Strict: both items perfect → 2 TP
+    assert out["strict"]["tp"] == 2
+    assert out["strict"]["fp"] == 0
+
+
+def test_score_kind_rubric_wrong_caption_breaks_strict_only(scr) -> None:
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png"}
+    labels = {"a.png": "wrong caption"}
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
+    # Crop dim: TP (crop score 1.0)
+    assert out["by_dim"]["crop"]["tp"] == 1
+    # Caption dim: FP (0.0)
+    assert out["by_dim"]["caption"]["fp"] == 1
+    # Footnote dim: TP (1.0)
+    assert out["by_dim"]["footnote"]["tp"] == 1
+    # Strict: FP because caption < 1.0
+    assert out["strict"]["tp"] == 0
+    assert out["strict"]["fp"] == 1
+
+
+def test_score_kind_rubric_incorrect_excludes_caption_footnote(scr) -> None:
+    """'incorrect' has crop=0, caption=n/a, footnote=n/a.  Counts as crop FP,
+    excluded from caption/footnote dims entirely."""
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png"}
+    labels = {"a.png": "incorrect"}
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
+    assert out["by_dim"]["crop"]["fp"] == 1
+    # Caption/footnote dims: nothing scored → None
+    assert out["by_dim"]["caption"] is None
+    assert out["by_dim"]["footnote"] is None
+    # Strict: every dim is n/a or 0 → no dim scored ≥ 1.0 → skipped from strict
+    assert out["strict"]["tp"] == 0
+
+
+def test_score_kind_rubric_crop_too_big_partial(scr) -> None:
+    """Default rubric: crop is too big → crop=0.75, caption=1, footnote=1.
+    At threshold 0.5 → crop TP.  Strict (threshold 1.0) → FP."""
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png"}
+    labels = {"a.png": "crop is too big"}
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
+    assert out["by_dim"]["crop"]["tp"] == 1   # 0.75 >= 0.5
+    assert out["strict"]["fp"] == 1            # 0.75 < 1.0
+
+
+def test_score_kind_rubric_crop_too_small_below_dim_threshold(scr) -> None:
+    """crop is too small → crop=0.25, below 0.5 threshold → crop FP."""
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png"}
+    labels = {"a.png": "crop is too small"}
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
+    assert out["by_dim"]["crop"]["fp"] == 1
+
+
+def test_score_kind_rubric_unknown_label_unrecognised(scr) -> None:
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png"}
+    labels = {"a.png": "totally novel free-text label"}
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
+    assert out["counts"]["unrecognised"] == 1
+
+
+def test_score_kind_rubric_unlabelled_counted(scr) -> None:
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png", "b.png"}
+    labels = {"a.png": "correct"}
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=2)
+    assert out["counts"]["unlabelled"] == 1
+
+
+# ── Mask dimension ────────────────────────────────────────────────────────────
+
+
+def test_mask_dim_correct_label_scores_tp(scr) -> None:
+    """correct: crop=1, mask=1 → both dims TP."""
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png"}
+    labels = {"a.png": "correct"}
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
+    assert out["by_dim"]["crop"]["tp"] == 1
+    assert out["by_dim"]["mask"]["tp"] == 1
+    assert out["by_dim"]["mask"]["fp"] == 0
+
+
+def test_mask_dim_icon_crop_fp_mask_tp(scr) -> None:
+    """icon: crop=0 (figure-output FP) but mask=1 (masking-side OK)."""
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png"}
+    labels = {"a.png": "icon"}
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
+    # crop: this is a figure-output FP
+    assert out["by_dim"]["crop"]["fp"] == 1
+    assert out["by_dim"]["crop"]["tp"] == 0
+    # mask: icons are correctly masked
+    assert out["by_dim"]["mask"]["tp"] == 1
+    assert out["by_dim"]["mask"]["fp"] == 0
+    # caption / footnote: n/a → not scored
+    assert out["by_dim"]["caption"] is None
+    assert out["by_dim"]["footnote"] is None
+    # Icon counter
+    assert out["counts"]["icon"] == 1
+
+
+def test_mask_dim_incorrect_both_dims_fp(scr) -> None:
+    """incorrect (random paragraph, not an image at all): crop=0 AND mask=0."""
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png"}
+    labels = {"a.png": "incorrect"}
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
+    assert out["by_dim"]["crop"]["fp"] == 1
+    assert out["by_dim"]["mask"]["fp"] == 1
+
+
+def test_mask_dim_missed_figures_contribute_to_mask_fn(scr) -> None:
+    """When the corpus has missed_figures > 0, mask recall is dragged down."""
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png", "b.png"}
+    labels = {"a.png": "correct", "b.png": "correct"}
+    # 3 figures missed entirely (not detected → not masked).
+    out = scr.score_kind_rubric(emitted, labels, rubric, fn_count=3)
+    mask = out["by_dim"]["mask"]
+    assert mask["tp"] == 2
+    assert mask["fn"] == 3                     # uses fn_count
+    assert mask["recall"] == pytest.approx(2 / 5)
+
+
+def test_mask_dim_crop_metrics_unchanged_by_mask_addition(scr) -> None:
+    """The crop dim still computes exactly as before — adding mask must not
+    affect crop's TP/FP/FN math."""
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png", "b.png", "c.png"}
+    labels = {
+        "a.png": "correct",
+        "b.png": "incorrect",
+        "c.png": "icon",
+    }
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=2)
+    # Crop: TP=1 (correct), FP=2 (incorrect + icon)
+    assert out["by_dim"]["crop"]["tp"] == 1
+    assert out["by_dim"]["crop"]["fp"] == 2
+    # FN: max(0, total_actual=2 - tp=1) = 1
+    assert out["by_dim"]["crop"]["fn"] == 1
+
+
+def test_mask_dim_fp_by_label_breakdown(scr) -> None:
+    """Per-dim FP counts get broken down by label so we can say e.g.
+    'of the crop FPs, N are icons, M are incorrect'."""
+    rubric = scr.load_rubric(None)
+    emitted = {"a.png", "b.png", "c.png", "d.png"}
+    labels = {
+        "a.png": "icon",
+        "b.png": "icon",
+        "c.png": "incorrect",
+        "d.png": "correct",
+    }
+    out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=2)
+    crop_fps = out["by_dim"]["crop"]["fp_by_label"]
+    assert crop_fps == {"icon": 2, "incorrect": 1}
+    mask_fps = out["by_dim"]["mask"]["fp_by_label"]
+    # Only incorrect contributes to mask FP (icons are mask=1)
+    assert mask_fps == {"incorrect": 1}
+    assert out["counts"]["icon"] == 2
+
+
 def test_main_no_legacy_fallback_drops_to_zero_when_no_per_variant(
     tmp_path, scr, monkeypatch, capsys
 ) -> None:
     s = _build_eval_scenario(tmp_path, scr, monkeypatch)
     rc = scr.main([
+        "--legacy",
         "--sweeps-root", str(s["sweeps_root"]),
         "--no-legacy-fallback",
     ])
@@ -390,3 +663,57 @@ def test_main_no_legacy_fallback_drops_to_zero_when_no_per_variant(
     assert "| baseline | tables | — | 0.0% | — | 0 |" in out or \
            "| baseline | tables | 0.0% | 0.0% | — | 0 |" in out or \
            "| baseline | tables | — | — | — | 0 |" in out
+
+
+# ── Review-unknown helpers ────────────────────────────────────────────────────
+
+
+def test_collect_unknown_labels(scr) -> None:
+    rubric = {"correct": {"crop": 1.0}}
+    dicts = [
+        {"a.png": "correct", "b.png": "mystery one"},
+        {"c.png": "MYSTERY ONE", "d.png": "another"},  # case-insensitive dedupe
+        {"e.png": ""},  # empty ignored
+    ]
+    out = scr.collect_unknown_labels(dicts, rubric)
+    assert out == ["another", "mystery one"]
+
+
+def test_append_rubric_entry_creates_file(scr, tmp_path) -> None:
+    p = tmp_path / "rubric.yaml"
+    scr.append_rubric_entry(p, "new label", {
+        "crop": 1.0, "caption": 0.5, "footnote": "n/a", "mask": "skip"})
+    txt = p.read_text()
+    assert "labels:" in txt
+    assert "'new label':" in txt
+    assert "crop: 1.0" in txt
+    assert "caption: 0.5" in txt
+    assert "footnote: n/a" in txt
+    assert "mask: skip" in txt
+
+
+def test_append_rubric_entry_preserves_existing_content(scr, tmp_path) -> None:
+    p = tmp_path / "rubric.yaml"
+    p.write_text("# top comment\nlabels:\n  correct:\n    crop: 1.0\n")
+    scr.append_rubric_entry(p, "added", {
+        "crop": 0.0, "caption": "n/a", "footnote": "n/a", "mask": 0.0})
+    txt = p.read_text()
+    assert "# top comment" in txt
+    assert "correct:" in txt
+    assert "'added':" in txt
+    # YAML parses cleanly
+    import yaml
+    data = yaml.safe_load(txt)
+    assert "correct" in data["labels"]
+    assert data["labels"]["added"] == {
+        "crop": 0.0, "caption": "n/a", "footnote": "n/a", "mask": 0.0}
+
+
+def test_append_rubric_entry_quotes_apostrophes(scr, tmp_path) -> None:
+    p = tmp_path / "rubric.yaml"
+    p.write_text("labels:\n")
+    scr.append_rubric_entry(p, "label with 'quote'", {
+        "crop": 1.0, "caption": 1.0, "footnote": 1.0, "mask": 1.0})
+    import yaml
+    data = yaml.safe_load(p.read_text())
+    assert "label with 'quote'" in data["labels"]

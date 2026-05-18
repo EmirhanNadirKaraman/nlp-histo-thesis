@@ -161,3 +161,38 @@ def test_existing_flags_still_work_alongside_new_ones() -> None:
     assert cfg.cropping.merge_tables_by_caption is True
     # The unmentioned new knob stays at default
     assert cfg.cropping.expand_tables_with_footnotes is False
+
+
+def test_footnote_thresholds_default_to_config_values() -> None:
+    captured = _run_main_and_capture(["--pdf-dir", "/tmp/does_not_exist"])
+    cfg = captured.cfg
+    assert cfg.cropping.footnote_proximity_pts == 20.0
+    assert cfg.cropping.text_footnote_proximity_pts == 8.0
+    assert cfg.cropping.footnote_threshold_multiplier == 1.2
+
+
+def test_footnote_threshold_flags_override_config() -> None:
+    captured = _run_main_and_capture([
+        "--pdf-dir", "/tmp/does_not_exist",
+        "--expand-tables-with-footnotes",
+        "--footnote-proximity-pts", "30",
+        "--text-footnote-proximity-pts", "12",
+        "--footnote-threshold-multiplier", "1.5",
+    ])
+    cfg = captured.cfg
+    assert cfg.cropping.expand_tables_with_footnotes is True
+    assert cfg.cropping.footnote_proximity_pts == 30.0
+    assert cfg.cropping.text_footnote_proximity_pts == 12.0
+    assert cfg.cropping.footnote_threshold_multiplier == 1.5
+
+
+def test_footnote_threshold_individual_flag_independent() -> None:
+    """Setting just one threshold doesn't disturb the others."""
+    captured = _run_main_and_capture([
+        "--pdf-dir", "/tmp/does_not_exist",
+        "--footnote-threshold-multiplier", "1.5",
+    ])
+    cfg = captured.cfg
+    assert cfg.cropping.footnote_proximity_pts == 20.0  # default
+    assert cfg.cropping.text_footnote_proximity_pts == 8.0  # default
+    assert cfg.cropping.footnote_threshold_multiplier == 1.5  # overridden

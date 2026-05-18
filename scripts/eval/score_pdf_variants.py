@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 score_pdf_variants.py — per-variant precision / recall / F1 for PDF
-extraction sweeps.
+extraction sweeps, scored against a configurable label rubric.
 
 Reads, for each sweep variant under ``out/sweeps/<variant>/``:
 
@@ -11,29 +11,36 @@ Reads, for each sweep variant under ``out/sweeps/<variant>/``:
    ``eval/annotations/<variant>/<mode>.json`` if it exists, else falls
    back to the legacy shared file ``eval/annotations/annotations_<mode>.json``).
 3. Ground-truth recall counts (``eval/ground_truth.csv``).
+4. Label rubric (``eval/label_rubric.yaml``) mapping each label string to
+   per-dimension scores: ``(crop, caption, footnote)``.
 
-Emits one Markdown row per variant:
+Emits four metrics per (variant, kind):
 
-    | variant | kind | P | R | F1 | TP | FP | FN | labelled | emitted |
+  * **crop** F1   — bbox correctness, with GT-derived recall denominator
+  * **caption** accuracy (P only) — caption-attachment correctness on
+                                    detected items
+  * **footnote** accuracy (P only) — footnote-inclusion correctness on
+                                     detected items
+  * **strict** F1 — all three dims must score 1.0 for TP
 
-Plus a machine-readable JSON next to it.
-
-Label classification borrows from ``eval/precision_recall.py``:
-* TP: label starts with "correct", or "missing footnotes" (tables only).
-* FP: label is "incorrect", "icon", "wrong caption", "crop is too big", "weird…".
-* Anything else: skipped (not counted toward TP or FP).
+Compound labels (``"wrong caption + missing footnotes"``) are split on
+``+`` and combined element-wise via MIN (most pessimistic per dim).
+``n/a`` excludes the item from that dimension's denominator entirely
+(use for "not a table" labels where caption/footnote are meaningless).
+``skip`` excludes the item from all dimension denominators.
 
 Usage::
 
     python scripts/eval/score_pdf_variants.py
+    python scripts/eval/score_pdf_variants.py --rubric eval/label_rubric.yaml
     python scripts/eval/score_pdf_variants.py --md-out reports/variants_PR.md
-    python scripts/eval/score_pdf_variants.py --json-out reports/variants_PR.json
 """
 from __future__ import annotations
 
 import argparse
 import csv
 import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -44,6 +51,11 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SWEEPS_ROOT = _REPO_ROOT / "out" / "sweeps"
 _ANN_ROOT = _REPO_ROOT / "eval" / "annotations"
 _GT_CSV = _REPO_ROOT / "eval" / "ground_truth.csv"
+_DEFAULT_RUBRIC_PATH = _REPO_ROOT / "eval" / "label_rubric.yaml"
+_DIM_NAMES = ("crop", "caption", "footnote", "mask")
+# Dims that have a corpus-level recall denominator (FN from ground truth).
+# Caption / footnote are precision-only — recall is undefined corpus-wide.
+_GT_RECALL_DIMS = frozenset({"crop", "mask"})
 
 
 # ── Label classification (kept in sync with eval/precision_recall.py) ─────────
@@ -159,6 +171,280 @@ def metrics(tp: int, fp: int, fn: int) -> Dict[str, Optional[float]]:
             "precision": p, "recall": r, "f1": f1}
 
 
+# ── Label rubric loading + parsing ────────────────────────────────────────────
+
+
+_BUILTIN_RUBRIC = {
+    "correct":           {"crop": 1.0, "caption": 1.0,   "footnote": 1.0,   "mask": 1.0},
+    "incorrect":         {"crop": 0.0, "caption": "n/a", "footnote": "n/a", "mask": 0.0},
+    "icon":              {"crop": 0.0, "caption": "n/a", "footnote": "n/a", "mask": 1.0},
+    "wrong caption":     {"crop": 1.0, "caption": 0.0,   "footnote": 1.0,   "mask": 1.0},
+    "missing footnotes": {"crop": 1.0, "caption": 1.0,   "footnote": 0.0,   "mask": 1.0},
+    "crop is too big":   {"crop": 0.75,"caption": 1.0,   "footnote": 1.0,   "mask": 0.75},
+    "crop is too small": {"crop": 0.25,"caption": 1.0,   "footnote": 1.0,   "mask": 0.25},
+    "table_in_figure":   {"crop": 0.0, "caption": "n/a", "footnote": "n/a", "mask": 1.0},
+    "weird":             {"crop": "skip","caption": "skip","footnote": "skip","mask": "skip"},
+    "other":             {"crop": "skip","caption": "skip","footnote": "skip","mask": "skip"},
+}
+
+
+def load_rubric(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
+    """Load a YAML rubric file.  Returns a dict mapping label strings to
+    per-dimension scores.  Falls back to the built-in rubric if the file
+    is missing or the import fails."""
+    if path is None:
+        path = _DEFAULT_RUBRIC_PATH
+    if not path.exists():
+        return dict(_BUILTIN_RUBRIC)
+    try:
+        import yaml  # type: ignore
+    except ImportError:
+        return dict(_BUILTIN_RUBRIC)
+    try:
+        data = yaml.safe_load(path.read_text())
+    except Exception:
+        return dict(_BUILTIN_RUBRIC)
+    labels = (data or {}).get("labels", {}) or {}
+    # Lower-case keys for case-insensitive lookup
+    return {str(k).lower(): v for k, v in labels.items()}
+
+
+
+
+def parse_label_to_rubric(
+    label: str,
+    rubric: Dict[str, Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    """Map a label string to per-dim scores via direct rubric lookup only.
+
+    No prefix matching, no compound auto-derivation — the label must match
+    a rubric entry case-insensitively or it returns ``None``.  Run the
+    scorer with ``--review-unknown`` to add an entry interactively.
+    """
+    if not label or not label.strip():
+        return None
+    norm = label.lower().strip()
+    if norm in rubric:
+        return dict(rubric[norm])
+    return None
+
+
+_RUBRIC_VALID_TOKENS = {"n/a", "skip"}
+
+
+def _prompt_rubric_score(label: str) -> Dict[str, Any]:
+    """Interactively ask the user for per-dim scores for one new label.
+
+    Each dim accepts a float in [0.0, 1.0], the literal ``n/a``, or
+    ``skip``.  Re-prompts on invalid input.  KeyboardInterrupt re-raises.
+    """
+    print(f"\n  New label: {label!r}")
+    print("  Enter score per dim (0.0–1.0, 'n/a', or 'skip'):")
+    scored: Dict[str, Any] = {}
+    for dim in _DIM_NAMES:
+        while True:
+            raw = input(f"    {dim}: ").strip().lower()
+            if raw in _RUBRIC_VALID_TOKENS:
+                scored[dim] = raw
+                break
+            try:
+                f = float(raw)
+            except ValueError:
+                print(f"      invalid — enter 0.0–1.0, 'n/a', or 'skip'")
+                continue
+            if not (0.0 <= f <= 1.0):
+                print(f"      out of range — must be in [0.0, 1.0]")
+                continue
+            scored[dim] = f
+            break
+    return scored
+
+
+def _fmt_yaml_scalar(v: Any) -> str:
+    """Format a single scalar for YAML output (string or numeric)."""
+    if isinstance(v, str):
+        return v
+    if isinstance(v, float):
+        # Avoid trailing zeros: 1.0 → "1.0", 0.5 → "0.5"
+        return f"{v:g}" if v != int(v) else f"{v:.1f}"
+    return str(v)
+
+
+def append_rubric_entry(path: Path, label: str, scored: Dict[str, Any]) -> None:
+    """Append one ``labels:`` entry to the YAML file as raw text, preserving
+    existing comments and ordering.  Key is single-quoted for safety.
+
+    Idempotent only at the file level — caller is responsible for not
+    appending duplicates.
+    """
+    if not path.exists():
+        # Initialise a minimal file with the labels block.
+        path.write_text("labels:\n")
+    safe_label = label.replace("'", "''")
+    lines = [f"\n  '{safe_label}':"]
+    for dim in _DIM_NAMES:
+        v = scored.get(dim, "n/a")
+        lines.append(f"    {dim}: {_fmt_yaml_scalar(v)}")
+    with path.open("a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+def collect_unknown_labels(
+    label_dicts: Iterable[Dict[str, str]],
+    rubric: Dict[str, Dict[str, Any]],
+) -> List[str]:
+    """Return sorted list of distinct labels (lower-cased, stripped) appearing
+    in any of the supplied annotation dicts that have no rubric entry.
+    """
+    seen: set[str] = set()
+    for ann in label_dicts:
+        for raw in ann.values():
+            if not raw:
+                continue
+            norm = raw.lower().strip()
+            if norm and norm not in rubric and norm not in seen:
+                seen.add(norm)
+    return sorted(seen)
+
+
+def score_kind_rubric(
+    emitted: set[str],
+    labels: Dict[str, str],
+    rubric: Dict[str, Dict[str, Any]],
+    *,
+    total_actual: Optional[int] = None,
+    fn_count: Optional[int] = None,
+    dim_pass_threshold: float = 0.5,
+    strict_threshold: float = 1.0,
+) -> Dict[str, Any]:
+    """Rubric-based scoring.
+
+    For each emitted crop with a known label:
+      * Each dimension's score is read from the rubric (0.0–1.0 / 'n/a' / 'skip').
+      * Per-dimension: TP if score ≥ ``dim_pass_threshold`` (default 0.5);
+        FP otherwise.  ``n/a`` excludes from that dim's denominator;
+        ``skip`` excludes from all dims.
+      * Strict overall: item is TP iff every dimension scores ≥
+        ``strict_threshold`` (default 1.0) — i.e. perfect on every dim.
+        ``n/a`` dims don't disqualify; ``skip`` does.
+
+    Recall denominator (used by crop dim + strict):
+      * ``total_actual`` → FN = max(0, total_actual - TP)
+      * ``fn_count`` → FN = fn_count
+      * neither → recall + F1 reported as None
+    """
+    per_dim = {d: {"tp": 0, "fp": 0, "na": 0, "skipped": 0,
+                    "fp_by_label": defaultdict(int)}
+               for d in _DIM_NAMES}
+    strict_tp = strict_fp = strict_skipped = 0
+    unlabelled = unrecognised = 0
+    labelled = 0
+    icon_count = 0  # tally for "how much of crop precision loss is icons?"
+
+    for crop in emitted:
+        if crop not in labels:
+            unlabelled += 1
+            continue
+        labelled += 1
+        raw_label = labels[crop]
+        scored = parse_label_to_rubric(raw_label, rubric)
+        if scored is None:
+            unrecognised += 1
+            strict_skipped += 1
+            for d in _DIM_NAMES:
+                per_dim[d]["skipped"] += 1
+            continue
+
+        normalized_label = (raw_label or "").lower().strip()
+        if normalized_label.startswith("icon"):
+            icon_count += 1
+
+        strict_pass = True
+        any_dim_scored = False
+        for d in _DIM_NAMES:
+            v = scored.get(d, "n/a")
+            if v == "skip":
+                per_dim[d]["skipped"] += 1
+                strict_pass = False
+            elif v == "n/a":
+                per_dim[d]["na"] += 1
+                # n/a doesn't disqualify strict — the dim just doesn't apply
+            else:
+                try:
+                    score = float(v)
+                except (TypeError, ValueError):
+                    per_dim[d]["skipped"] += 1
+                    strict_pass = False
+                    continue
+                any_dim_scored = True
+                if score >= dim_pass_threshold:
+                    per_dim[d]["tp"] += 1
+                else:
+                    per_dim[d]["fp"] += 1
+                    per_dim[d]["fp_by_label"][raw_label] += 1
+                if score < strict_threshold:
+                    strict_pass = False
+
+        if not any_dim_scored:
+            # Every dim was n/a or skip → item contributes nothing to strict
+            strict_skipped += 1
+        elif strict_pass:
+            strict_tp += 1
+        else:
+            strict_fp += 1
+
+    # ── Per-dim metrics ──────────────────────────────────────────────────────
+    result_dims: Dict[str, Optional[Dict[str, Any]]] = {}
+    for d in _DIM_NAMES:
+        agg = per_dim[d]
+        if agg["tp"] + agg["fp"] == 0:
+            result_dims[d] = None
+            continue
+        # GT-recall dims (crop, mask): FN comes from ground_truth.csv —
+        # missed_tables for tables, missed_figures for figures.  Caption /
+        # footnote: precision-only, FN = 0, recall + F1 set to None.
+        if d in _GT_RECALL_DIMS:
+            if fn_count is not None:
+                fn = fn_count
+            elif total_actual is not None:
+                fn = max(0, total_actual - agg["tp"])
+            else:
+                fn = 0
+        else:
+            fn = 0
+        m = metrics(agg["tp"], agg["fp"], fn)
+        if d not in _GT_RECALL_DIMS:
+            # Caption / footnote: precision-only is meaningful.
+            m["recall"] = None
+            m["f1"] = None
+        m["na"] = agg["na"]
+        m["skipped"] = agg["skipped"]
+        m["fp_by_label"] = dict(agg["fp_by_label"])
+        result_dims[d] = m
+
+    # ── Strict overall ───────────────────────────────────────────────────────
+    if fn_count is not None:
+        s_fn = fn_count
+    elif total_actual is not None:
+        s_fn = max(0, total_actual - strict_tp)
+    else:
+        s_fn = 0
+    strict = metrics(strict_tp, strict_fp, s_fn)
+    strict["skipped"] = strict_skipped
+
+    return {
+        "by_dim":      result_dims,
+        "strict":      strict,
+        "counts": {
+            "emitted":     len(emitted),
+            "labelled":    labelled,
+            "unlabelled":  unlabelled,
+            "unrecognised": unrecognised,
+            "icon":        icon_count,
+        },
+    }
+
+
 def score_kind(
     emitted: set[str],
     labels: Dict[str, str],
@@ -243,6 +529,95 @@ def render_markdown(rows: List[Dict[str, Any]]) -> str:
     return "\n".join(out) + "\n"
 
 
+def render_markdown_rubric(rows: List[Dict[str, Any]], *,
+                            rubric_path: Optional[Path] = None) -> str:
+    """Render the rubric-based per-dim + strict report."""
+    out: List[str] = []
+    out.append("# Per-variant PDF-extraction — rubric-based P/R/F1")
+    out.append("")
+    out.append("Computed by `scripts/eval/score_pdf_variants.py` using the rubric at:")
+    out.append(f"`{rubric_path}`" if rubric_path else "(built-in fallback rubric)")
+    out.append("")
+    out.append("**Crop F1** — bbox correctness vs ground-truth recall.")
+    out.append("**Caption / Footnote P** — accuracy on detected items "
+               "(no corpus-level recall denominator).")
+    out.append("**Strict F1** — TP iff every dimension scores 1.0 on the rubric.")
+    out.append("")
+    out.append("| variant | kind | "
+               "crop P | crop R | crop F1 | "
+               "caption P (TP/FP) | footnote P (TP/FP) | "
+               "strict P | strict R | strict F1 | strict TP/FP/FN | "
+               "emitted | labelled | unrecog |")
+    out.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    for r in rows:
+        crop = (r.get("by_dim") or {}).get("crop")
+        cap  = (r.get("by_dim") or {}).get("caption")
+        ft   = (r.get("by_dim") or {}).get("footnote")
+        strict = r.get("strict") or {}
+        counts = r.get("counts") or {}
+        out.append(
+            f"| {r['variant']} | {r['kind']} | "
+            f"{_fmt(crop['precision']) if crop else '—'} | "
+            f"{_fmt(crop['recall']) if crop else '—'} | "
+            f"{_fmt(crop['f1']) if crop else '—'} | "
+            f"{_fmt(cap['precision']) if cap else '—'} "
+            f"({cap['tp']}/{cap['fp']})" if cap else "—"
+        )
+        # Caption + footnote in one cell each; rebuild line cleanly:
+    out = []  # rebuild simpler
+    out.append("# Per-variant PDF-extraction — rubric-based P/R/F1")
+    out.append("")
+    if rubric_path:
+        out.append(f"Rubric: `{rubric_path}`")
+    else:
+        out.append("Rubric: (built-in fallback)")
+    out.append("")
+    out.append("Per-dim semantics:")
+    out.append("* **Crop F1** — figure / table output correctness with GT-derived recall.")
+    out.append("* **Mask F1** — text-safety (was the region correctly masked from body text?).  "
+               "Same FN source as crop (missed_figures / missed_tables).")
+    out.append("* **Caption / Footnote precision** — accuracy on detected items "
+               "(no recall denominator).  TP/FP counts in parens.")
+    out.append("* **Strict F1** — TP iff every dim scores ≥ 1.0.")
+    out.append("* **Icon count** — emitted crops labelled `icon` (mask-OK but crop-FP).  "
+               "Helps quantify how much of crop-precision loss is icons specifically.")
+    out.append("")
+    out.append("| variant | kind | crop P | crop R | crop F1 | mask P | mask R | mask F1 | "
+               "caption P | caption tp/fp | footnote P | footnote tp/fp | "
+               "strict P | strict R | strict F1 | strict tp/fp/fn | "
+               "emitted | unlabelled | unrecog | icons |")
+    out.append("|" + "---|" * 20)
+    for r in rows:
+        bd = r.get("by_dim") or {}
+        crop = bd.get("crop") or {}
+        mask = bd.get("mask") or {}
+        cap  = bd.get("caption") or {}
+        ft   = bd.get("footnote") or {}
+        strict = r.get("strict") or {}
+        cnt = r.get("counts") or {}
+        out.append("| "
+            f"{r['variant']} | {r['kind']} | "
+            f"{_fmt(crop.get('precision'))} | "
+            f"{_fmt(crop.get('recall'))} | "
+            f"{_fmt(crop.get('f1'))} | "
+            f"{_fmt(mask.get('precision'))} | "
+            f"{_fmt(mask.get('recall'))} | "
+            f"{_fmt(mask.get('f1'))} | "
+            f"{_fmt(cap.get('precision'))} | "
+            f"{cap.get('tp', '—')}/{cap.get('fp', '—')} | "
+            f"{_fmt(ft.get('precision'))} | "
+            f"{ft.get('tp', '—')}/{ft.get('fp', '—')} | "
+            f"{_fmt(strict.get('precision'))} | "
+            f"{_fmt(strict.get('recall'))} | "
+            f"{_fmt(strict.get('f1'))} | "
+            f"{strict.get('tp', 0)}/{strict.get('fp', 0)}/{strict.get('fn', 0)} | "
+            f"{cnt.get('emitted', 0)} | "
+            f"{cnt.get('unlabelled', 0)} | "
+            f"{cnt.get('unrecognised', 0)} | "
+            f"{cnt.get('icon', 0)} |")
+    return "\n".join(out) + "\n"
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 
@@ -255,11 +630,59 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--no-legacy-fallback", action="store_true",
                    help="Only use per-variant label files; do not fall back "
                         "to eval/annotations/annotations_<mode>.json.")
+    p.add_argument("--rubric", type=Path, default=_DEFAULT_RUBRIC_PATH,
+                   help="YAML rubric mapping label strings to per-dim scores.  "
+                        "See eval/label_rubric.yaml for the default.")
+    p.add_argument("--legacy", action="store_true",
+                   help="Use the old binary classifier instead of the rubric "
+                        "(emits the original P/R/F1 single column).")
+    p.add_argument("--dim-pass-threshold", type=float, default=0.5,
+                   help="Per-dim TP threshold: score >= this counts as TP.")
+    p.add_argument("--strict-threshold", type=float, default=1.0,
+                   help="Strict-overall threshold: every dim must score >= this.")
+    p.add_argument("--review-unknown", action="store_true",
+                   help="Before scoring, list every label that doesn't have a "
+                        "rubric entry and interactively prompt for per-dim "
+                        "scores.  New entries are appended to the rubric YAML.")
     args = p.parse_args(argv)
 
     gt = load_ground_truth()
     figures_fn_total = sum(g.get("missed_figures", 0) for g in gt.values())
     tables_fn_total = sum(g.get("total_tables", 0) for g in gt.values())
+
+    rubric = load_rubric(args.rubric) if not args.legacy else {}
+
+    # ── Optional pre-scoring review of unknown labels ────────────────────────
+    if args.review_unknown and not args.legacy:
+        all_label_dicts: List[Dict[str, str]] = []
+        for variant_dir in sorted(p for p in args.sweeps_root.iterdir() if p.is_dir()):
+            variant = variant_dir.name
+            table_mode, figure_mode = detector_modes(variant_dir)
+            all_label_dicts.append(load_labels(
+                figure_mode, variant,
+                fallback_legacy=not args.no_legacy_fallback))
+            all_label_dicts.append(load_labels(
+                table_mode, variant,
+                fallback_legacy=not args.no_legacy_fallback))
+        unknowns = collect_unknown_labels(all_label_dicts, rubric)
+        if unknowns:
+            print(f"\n{len(unknowns)} label(s) not in rubric "
+                  f"({args.rubric}):", file=sys.stderr)
+            for u in unknowns:
+                print(f"  - {u!r}", file=sys.stderr)
+            print("\nPrompting for scores. Ctrl-C to abort.\n", file=sys.stderr)
+            try:
+                for label in unknowns:
+                    scored = _prompt_rubric_score(label)
+                    append_rubric_entry(args.rubric, label, scored)
+                    rubric[label] = scored
+                    print(f"  → appended to {args.rubric}", file=sys.stderr)
+            except KeyboardInterrupt:
+                print("\n  Aborted by user — partial entries already saved.",
+                      file=sys.stderr)
+                return 130
+        else:
+            print("No unknown labels — rubric covers everything.", file=sys.stderr)
 
     rows: List[Dict[str, Any]] = []
     for variant_dir in sorted(p for p in args.sweeps_root.iterdir() if p.is_dir()):
@@ -272,13 +695,24 @@ def main(argv: Optional[List[str]] = None) -> int:
         tab_labels = load_labels(table_mode,  variant,
                                   fallback_legacy=not args.no_legacy_fallback)
 
-        # Figures: FN is the sum of `missed_figures` from ground_truth.csv
-        # (variant-independent corpus-wide miss count, not derived from TP).
-        # Tables: FN = max(0, total_tables - TP_variant).
-        fig_m = score_kind(figures_emitted, fig_labels, classify_figure,
-                           fn_count=figures_fn_total)
-        tab_m = score_kind(tables_emitted,  tab_labels, classify_table,
-                           total_actual=tables_fn_total)
+        if args.legacy:
+            fig_m = score_kind(figures_emitted, fig_labels, classify_figure,
+                               fn_count=figures_fn_total)
+            tab_m = score_kind(tables_emitted,  tab_labels, classify_table,
+                               total_actual=tables_fn_total)
+        else:
+            fig_m = score_kind_rubric(
+                figures_emitted, fig_labels, rubric,
+                fn_count=figures_fn_total,
+                dim_pass_threshold=args.dim_pass_threshold,
+                strict_threshold=args.strict_threshold,
+            )
+            tab_m = score_kind_rubric(
+                tables_emitted, tab_labels, rubric,
+                total_actual=tables_fn_total,
+                dim_pass_threshold=args.dim_pass_threshold,
+                strict_threshold=args.strict_threshold,
+            )
 
         fig_m["variant"] = variant
         fig_m["kind"] = "figures"
@@ -287,7 +721,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         rows.append(fig_m)
         rows.append(tab_m)
 
-    md = render_markdown(rows)
+    if args.legacy:
+        md = render_markdown(rows)
+    else:
+        md = render_markdown_rubric(rows, rubric_path=args.rubric)
     if args.md_out:
         args.md_out.parent.mkdir(parents=True, exist_ok=True)
         args.md_out.write_text(md)

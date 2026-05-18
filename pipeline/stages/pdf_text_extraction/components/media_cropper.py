@@ -275,6 +275,7 @@ class PyMuPDFMediaCropper:
                 expand_tables_with_footnotes(
                     merged_tables, element_dicts,
                     proximity_pts=self._config.footnote_proximity_pts,
+                    threshold_multiplier=self._config.footnote_threshold_multiplier,
                     text_proximity_pts=self._config.text_footnote_proximity_pts,
                 )
 
