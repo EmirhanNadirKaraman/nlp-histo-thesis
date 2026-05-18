@@ -907,6 +907,21 @@ def _parse_args(argv=None):
     p.add_argument("--skip-existing-in-db", dest="skip_existing_in_db",
                    action=argparse.BooleanOptionalAction, default=None,
                    help="Skip documents already present in the DB.")
+    p.add_argument("--reconstruct-tables-from-lists",
+                   dest="reconstruct_tables_from_lists",
+                   action=argparse.BooleanOptionalAction, default=None,
+                   help="Promote list-shaped layouts to RECONSTRUCTED_TABLE elements "
+                        "(`DoclingConfig.reconstruct_tables_from_lists`).")
+    p.add_argument("--merge-tables-by-caption",
+                   dest="merge_tables_by_caption",
+                   action=argparse.BooleanOptionalAction, default=None,
+                   help="Union table regions sharing the same caption number "
+                        "(`CroppingConfig.merge_tables_by_caption`).")
+    p.add_argument("--expand-tables-with-footnotes",
+                   dest="expand_tables_with_footnotes",
+                   action=argparse.BooleanOptionalAction, default=None,
+                   help="Extend table crops downward to absorb nearby footnotes "
+                        "(`CroppingConfig.expand_tables_with_footnotes`).")
     return p.parse_args(argv), TableDetectorType
 
 
@@ -938,6 +953,12 @@ def main(argv=None) -> None:
         cfg.two_pass.render_dpi = args.render_dpi
     if args.workers is not None:
         cfg.runtime.num_workers = args.workers
+    if args.reconstruct_tables_from_lists is not None:
+        cfg.docling.reconstruct_tables_from_lists = args.reconstruct_tables_from_lists
+    if args.merge_tables_by_caption is not None:
+        cfg.cropping.merge_tables_by_caption = args.merge_tables_by_caption
+    if args.expand_tables_with_footnotes is not None:
+        cfg.cropping.expand_tables_with_footnotes = args.expand_tables_with_footnotes
     if args.out_root is not None:
         _retarget_paths(cfg, args.out_root)
 
