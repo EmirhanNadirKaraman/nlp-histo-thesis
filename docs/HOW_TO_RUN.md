@@ -261,130 +261,32 @@ partially-finished variants pick up from the last completed PDF (per-PDF
 cache), and a PDF interrupted mid-pipeline picks up from its last
 completed stage (per-stage cache).
 
-#### Next steps after Stage 1 (`detector`) — full staged sweep plan
+#### Next steps after Stage 1 (`detector`)
 
-Stages 2–7 below are wired into `ALL_SWEEPS` (variants `08_*` through
-`23_*`).  Each stage builds on the previous stage's "winner" by editing
-the matching `BEST_*` module constant at the top of
-`scripts/eval/run_all_sweeps.py`:
+The full staged sweep plan — Stages 2–7, the `BEST_*` knob table, every
+variant's resolved config, and the end-to-end walkthrough — lives in
+[`PDF_EXTRACTION_EXPERIMENT_PLAN.md`](PDF_EXTRACTION_EXPERIMENT_PLAN.md).
+That document is the source of truth for what each stage answers;
+`scripts/eval/run_all_sweeps.py` is the source of truth for what each
+variant actually does.
 
-| Knob | Default | Set after | Drives |
-|---|---|---|---|
-| `BEST_BASE` | `"07_hybrid_099"` | Stage 1 (`detector`) scoring | Stages 3–7 detector/threshold |
-| `BEST_EXPAND_MULTIPLIER` | `1.2` | Stage 3 (`footnote_tuning`) scoring | Stages 4–7 footnote multiplier |
-| `BEST_TWO_PASS` | `True` | Stage 4 (`two_pass`) scoring | Stages 5–7 two-pass flag |
-| `BEST_STAGE4` | all `False` | Stage 5 (`merge_drop`) scoring | Stages 6–7 kept merge/drop flags |
-| `BEST_EXPAND_SETTING` | `True` | Stage 6 (`reconstruction`) scoring | Stage 7 (`figure_premask`) expand on/off |
-
-Implicit run-wide defaults (matching `_apply_stage1_baseline`) unless a
-variant flips them:
+Quick recap of the stage slugs (run with `--stage <slug>`):
 
 ```
-two_pass = ON                          render_dpi = 150
-reconstruct_tables_from_lists = OFF    merge_tables_by_caption = OFF
-expand_tables_with_footnotes = OFF     merge_figures_by_caption = OFF
-drop_tables_inside_figures = OFF       mask_figures_before_table_detection = OFF
-```
-
-##### Stage 2 — `footnote_screen` (does footnote expansion shift the top detector ranking?)
-
-```
-08_docling_footnote_expand_1_2     base=01_docling,    expand=ON, ftn_x=1.2
-09_tatr_099_footnote_expand_1_2    base=04_tatr_099,   expand=ON, ftn_x=1.2
-10_hybrid_099_footnote_expand_1_2  base=07_hybrid_099, expand=ON, ftn_x=1.2
-```
-
-After this, pick `BEST_BASE`.
-
-##### Stage 3 — `footnote_tuning` (tune multiplier on `BEST_BASE`)
-
-```
-11_best_footnote_expand_1_2        BEST_BASE + expand=ON, ftn_x=1.2
-12_best_footnote_expand_1_3        BEST_BASE + expand=ON, ftn_x=1.3
-13_best_footnote_expand_1_5        BEST_BASE + expand=ON, ftn_x=1.5
-```
-
-After this, pick `BEST_EXPAND_MULTIPLIER`.
-
-##### Stage 4 — `two_pass` ablation
-
-```
-14_best_twopass_on                  BEST_BASE + expand + BEST_EXPAND_MULTIPLIER + two_pass=ON
-15_best_twopass_off                 BEST_BASE + expand + BEST_EXPAND_MULTIPLIER + two_pass=OFF
-```
-
-After this, pick `BEST_TWO_PASS`.
-
-##### Stage 5 — `merge_drop` (independent merge/drop flag ablations)
-
-Each runs on `BEST_BASE + expand + BEST_EXPAND_MULTIPLIER + BEST_TWO_PASS`
-and flips one extra flag.  Do not combine yet — pick winners into
-`BEST_STAGE4` only if one clearly helps.
-
-```
-16_best_merge_tables_by_caption     + merge_tables_by_caption = ON
-17_best_merge_figures_by_caption    + merge_figures_by_caption = ON
-18_best_drop_tables_in_figures      + drop_tables_inside_figures = ON
-```
-
-##### Stage 6 — `reconstruction` interaction
-
-Builds on `BEST_BASE + BEST_TWO_PASS + BEST_STAGE4` plus
-`reconstruct_tables_from_lists = ON`:
-
-```
-19_best_reconstruct_only                  expand=OFF
-20_best_reconstruct_plus_selected_expand  expand=ON, ftn_x=BEST_EXPAND_MULTIPLIER
-```
-
-##### Stage 7 — `figure_premask` (pre-mask figures before table detection)
-
-Skipped automatically if `BEST_BASE == "01_docling"` (pre-masking only
-affects pixel-based detection).  Base is `BEST_BASE + selected expand +
-BEST_TWO_PASS + BEST_STAGE4`.
-
-```
-21_best_drop_only_for_premask_control   drop=ON,  premask=OFF
-22_best_premask_figures_for_tables      drop=OFF, premask=ON
-23_best_drop_plus_premask_figures       drop=ON,  premask=ON
-```
-
-##### Walking through the plan
-
-```bash
-# Stage 1 (all 7), then label + score + pick BEST_BASE → edit constant.
-python scripts/eval/run_all_sweeps.py --stage detector
-
-# Stage 2 — top-of-bracket footnote screen for each detector family.
-python scripts/eval/run_all_sweeps.py --stage footnote_screen
-
-# Stage 3 → set BEST_EXPAND_MULTIPLIER.
-python scripts/eval/run_all_sweeps.py --stage footnote_tuning
-
-# Stage 4 → set BEST_TWO_PASS.
-python scripts/eval/run_all_sweeps.py --stage two_pass
-
-# Stage 5 → fold winners into BEST_STAGE4.
-python scripts/eval/run_all_sweeps.py --stage merge_drop
-
-# Stage 6 → set BEST_EXPAND_SETTING.
-python scripts/eval/run_all_sweeps.py --stage reconstruction
-
-# Stage 7 (TATR/Hybrid only; skipped automatically if BEST_BASE == "01_docling").
-python scripts/eval/run_all_sweeps.py --stage figure_premask
-
-# Or run everything end-to-end (e.g. after all BEST_* are frozen):
-python scripts/eval/run_all_sweeps.py --stage all
-
-# No --stage? Prints the menu (stages, blurbs, variant names) and exits.
-python scripts/eval/run_all_sweeps.py
+detector             Stage 1 — detector / TATR threshold selection      (01–07)
+footnote_screen      Stage 2 — footnote-expansion screen                (08–10)
+footnote_tuning      Stage 3 — tune footnote_threshold_multiplier       (11–13)
+two_pass             Stage 4 — two-pass extraction ablation             (14–15)
+merge_drop           Stage 5 — independent merge/drop flag ablations    (16–18)
+reconstruction       Stage 6 — table reconstruction × selected expand   (19–20)
+figure_premask       Stage 7 — pre-mask figures before table detection  (21–23)
+all                  every variant
 ```
 
 `--stage <name> --list-variants` confirms the resolved config for that
-stage's variants after each `BEST_*` edit.
-
-Caching is per-variant (independent of `--stage`), so picking up later —
-e.g. `--stage footnote_tuning` after `--stage detector` — reuses every
+stage's variants after each `BEST_*` edit.  Caching is per-variant
+(independent of `--stage`), so picking up later — e.g.
+`--stage footnote_tuning` after `--stage detector` — reuses every
 `_DONE.json` marker and per-stage cache already on disk.
 
 ---
