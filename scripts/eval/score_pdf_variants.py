@@ -62,8 +62,13 @@ _GT_RECALL_DIMS = frozenset({"crop", "mask"})
 
 
 def classify_figure(label: str) -> str:
+    """Legacy single-dim classifier (only used under --legacy mode).
+
+    Exact match only (no prefix matching).  Labels not in the explicit
+    tp/fp sets fall through to "skip".
+    """
     lbl = label.lower().strip()
-    if lbl.startswith("correct"):
+    if lbl == "correct":
         return "tp"
     if lbl in ("icon", "incorrect"):
         return "fp"
@@ -71,13 +76,15 @@ def classify_figure(label: str) -> str:
 
 
 def classify_table(label: str) -> str:
+    """Legacy single-dim classifier (only used under --legacy mode).
+
+    Exact match only (no prefix matching).  Labels not in the explicit
+    tp/fp sets fall through to "skip".
+    """
     lbl = label.lower().strip()
-    if lbl == "correct" or lbl.startswith("missing footnotes"):
+    if lbl in ("correct", "missing footnotes"):
         return "tp"
-    if (lbl == "incorrect"
-            or lbl.startswith("wrong caption")
-            or lbl.startswith("crop is too big")
-            or lbl.startswith("weird")):
+    if lbl in ("incorrect", "wrong caption"):
         return "fp"
     return "skip"
 
@@ -439,7 +446,7 @@ def score_kind_rubric(
             scored["footnote"] = "n/a"
 
         normalized_label = (raw_label or "").lower().strip()
-        if normalized_label.startswith("icon"):
+        if normalized_label == "icon":
             icon_count += 1
 
         strict_pass = True

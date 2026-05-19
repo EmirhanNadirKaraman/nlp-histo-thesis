@@ -42,13 +42,14 @@ def scr():
 
 
 @pytest.mark.parametrize("label,expected", [
+    # Exact match only (2026-05-19) — no prefix matching.
     ("correct", "tp"),
-    ("correct figure", "tp"),
-    ("correct-ish", "tp"),  # starts with "correct"
+    ("correct figure", "skip"),                # no longer prefix-matches "correct"
+    ("correct-ish", "skip"),                   # same
     ("icon", "fp"),
     ("incorrect", "fp"),
-    ("CORRECT", "tp"),  # case-insensitive
-    ("  correct  ", "tp"),  # trimmed
+    ("CORRECT", "tp"),                          # case-insensitive normalize OK
+    ("  correct  ", "tp"),                      # trimmed OK
     ("other", "skip"),
     ("skipped", "skip"),
     ("", "skip"),
@@ -58,12 +59,15 @@ def test_classify_figure(scr, label, expected) -> None:
 
 
 @pytest.mark.parametrize("label,expected", [
+    # Exact match only (2026-05-19) — no prefix matching.
     ("correct", "tp"),
-    ("missing footnotes — text below cut", "tp"),
+    ("missing footnotes", "tp"),                # exact match for the bare label
+    ("missing footnotes — text below cut", "skip"),  # no longer prefix-matches
     ("incorrect", "fp"),
-    ("wrong caption (footer matched)", "fp"),
-    ("crop is too big", "fp"),
-    ("weird crop? check later", "fp"),
+    ("wrong caption", "fp"),                    # exact match
+    ("wrong caption (footer matched)", "skip"),  # no longer prefix-matches
+    ("crop is too big", "skip"),                # legacy label not in exact set
+    ("weird crop? check later", "skip"),        # same
     ("other", "skip"),
     ("", "skip"),
 ])
