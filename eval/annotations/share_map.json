@@ -11,7 +11,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -24,7 +26,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -40,7 +43,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -53,7 +58,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -69,7 +75,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -82,7 +90,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -98,7 +107,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -111,7 +122,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -127,7 +139,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -140,7 +154,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -156,7 +171,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -169,7 +186,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -188,7 +206,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -207,7 +228,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -226,7 +250,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -245,7 +272,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -262,6 +292,29 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        165.0,
+        678.0,
+        561.0,
+        295.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
+    {
+      "bbox": [
+        166.0,
+        673.0,
+        561.0,
+        295.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
       ]
     },
     {
@@ -293,7 +346,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -312,7 +368,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -331,7 +390,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -350,7 +412,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -369,7 +434,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -388,11 +456,26 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC11649516_HIS-86-236_Table_1_p5.png": [
+    {
+      "bbox": [
+        62.0,
+        671.0,
+        548.0,
+        143.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         62.0,
@@ -419,9 +502,32 @@
         "03_tatr_095",
         "04_tatr_099"
       ]
+    },
+    {
+      "bbox": [
+        64.0,
+        665.0,
+        547.0,
+        143.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
+      ]
     }
   ],
   "PMC11649516_HIS-86-236_Table_2_p8.png": [
+    {
+      "bbox": [
+        47.0,
+        659.0,
+        282.0,
+        70.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         47.0,
@@ -448,6 +554,17 @@
         "03_tatr_095",
         "04_tatr_099"
       ]
+    },
+    {
+      "bbox": [
+        48.0,
+        653.0,
+        281.0,
+        70.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
+      ]
     }
   ],
   "PMC11674653_dermatopathology-11-00035_Figure_1_p2.png": [
@@ -465,7 +582,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -484,7 +604,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -503,11 +626,26 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC11674653_dermatopathology-11-00035_Table_1_p3.png": [
+    {
+      "bbox": [
+        167.0,
+        193.0,
+        327.0,
+        82.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         167.0,
@@ -539,7 +677,9 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -555,7 +695,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -568,7 +710,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -587,7 +730,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -606,7 +752,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -636,7 +785,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -649,7 +800,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -682,7 +834,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -701,7 +856,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -720,7 +878,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -735,7 +896,8 @@
       "variants": [
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -746,7 +908,8 @@
         65.0
       ],
       "variants": [
-        "01_docling"
+        "01_docling",
+        "08_docling_footnote_expand_1_2"
       ]
     },
     {
@@ -759,7 +922,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -775,7 +939,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -788,11 +954,24 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC11791726_HIS-86-485_Table_3_p10.png": [
+    {
+      "bbox": [
+        62.0,
+        671.0,
+        548.0,
+        431.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         62.0,
@@ -805,6 +984,17 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        64.0,
+        663.0,
+        547.0,
+        431.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
       ]
     },
     {
@@ -833,7 +1023,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -848,7 +1040,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -867,7 +1060,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -886,7 +1082,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -905,7 +1104,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -924,7 +1126,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -939,7 +1144,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -956,6 +1162,29 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        306.0,
+        350.0,
+        560.0,
+        51.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
+    {
+      "bbox": [
+        307.0,
+        343.0,
+        560.0,
+        51.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
       ]
     },
     {
@@ -984,7 +1213,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -999,7 +1230,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     },
     {
@@ -1013,7 +1245,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1026,7 +1260,8 @@
         178.0
       ],
       "variants": [
-        "01_docling"
+        "01_docling",
+        "08_docling_footnote_expand_1_2"
       ]
     },
     {
@@ -1041,6 +1276,17 @@
         "03_tatr_095",
         "04_tatr_099"
       ]
+    },
+    {
+      "bbox": [
+        43.0,
+        716.0,
+        548.0,
+        164.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
+      ]
     }
   ],
   "PMC11863705_main_Table_4_p3.png": [
@@ -1054,11 +1300,23 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC11863705_main_Table_4_p6.png": [
+    {
+      "bbox": [
+        37.0,
+        720.0,
+        553.0,
+        59.0
+      ],
+      "variants": [
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         37.0,
@@ -1070,6 +1328,17 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        313.0,
+        716.0,
+        553.0,
+        59.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
       ]
     },
     {
@@ -1098,7 +1367,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1113,7 +1384,8 @@
       "variants": [
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1128,7 +1400,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1147,7 +1420,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1166,7 +1442,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1185,7 +1464,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1204,7 +1486,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1223,7 +1508,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1238,7 +1526,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1254,7 +1543,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -1267,7 +1558,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1283,7 +1575,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -1296,7 +1590,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1317,6 +1612,18 @@
     },
     {
       "bbox": [
+        36.0,
+        721.0,
+        558.0,
+        459.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
+    {
+      "bbox": [
         44.0,
         715.0,
         277.0,
@@ -1326,6 +1633,17 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099"
+      ]
+    },
+    {
+      "bbox": [
+        44.0,
+        715.0,
+        558.0,
+        459.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1341,7 +1659,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -1354,7 +1674,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1369,7 +1690,8 @@
       "variants": [
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1388,7 +1710,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1407,7 +1732,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1426,7 +1754,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1445,7 +1776,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1464,7 +1798,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1480,7 +1817,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -1493,7 +1832,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1512,7 +1852,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1531,7 +1874,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1550,7 +1896,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1569,7 +1918,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1588,7 +1940,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1607,7 +1962,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1626,7 +1984,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1645,7 +2006,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1664,7 +2028,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1683,11 +2050,26 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC12129649_NEUP-45-177_Table_1_p8.png": [
+    {
+      "bbox": [
+        54.0,
+        353.0,
+        560.0,
+        49.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         54.0,
@@ -1700,6 +2082,17 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        55.0,
+        347.0,
+        559.0,
+        49.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
       ]
     },
     {
@@ -1731,7 +2124,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1750,7 +2146,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1769,7 +2168,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1804,7 +2206,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1823,7 +2228,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1842,7 +2250,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1861,7 +2272,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1879,7 +2293,9 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1898,7 +2314,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1917,7 +2336,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1936,7 +2358,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -1956,9 +2381,33 @@
         "06_hybrid_095",
         "07_hybrid_099"
       ]
+    },
+    {
+      "bbox": [
+        216.0,
+        769.0,
+        503.0,
+        700.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
     }
   ],
   "PMC4945808_dpa-0003-0055_Table_2_p2.png": [
+    {
+      "bbox": [
+        227.0,
+        769.0,
+        502.0,
+        729.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         227.0,
@@ -1982,6 +2431,18 @@
         216.0,
         770.0,
         498.0,
+        729.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
+    {
+      "bbox": [
+        216.0,
+        770.0,
+        498.0,
         742.0
       ],
       "variants": [
@@ -1995,6 +2456,18 @@
     }
   ],
   "PMC4945808_dpa-0003-0055_Table_4_p4.png": [
+    {
+      "bbox": [
+        220.0,
+        770.0,
+        500.0,
+        729.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         220.0,
@@ -2018,6 +2491,18 @@
         221.0,
         770.0,
         500.0,
+        729.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
+    {
+      "bbox": [
+        221.0,
+        770.0,
+        500.0,
         742.0
       ],
       "variants": [
@@ -2031,6 +2516,18 @@
     }
   ],
   "PMC4945808_dpa-0003-0055_Table_6_p6.png": [
+    {
+      "bbox": [
+        223.0,
+        769.0,
+        500.0,
+        729.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         223.0,
@@ -2063,7 +2560,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2082,7 +2582,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2101,7 +2604,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2117,7 +2623,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -2130,11 +2638,24 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC6851684_HIS-75-329_Table_1_p3_2.png": [
+    {
+      "bbox": [
+        298.0,
+        680.0,
+        532.0,
+        569.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         298.0,
@@ -2159,7 +2680,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2169,10 +2691,32 @@
         47.0,
         681.0,
         532.0,
+        198.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2"
+      ]
+    },
+    {
+      "bbox": [
+        47.0,
+        681.0,
+        532.0,
         210.0
       ],
       "variants": [
         "01_docling"
+      ]
+    },
+    {
+      "bbox": [
+        47.0,
+        681.0,
+        533.0,
+        198.0
+      ],
+      "variants": [
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -2198,7 +2742,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2217,7 +2762,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2236,7 +2784,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2255,7 +2806,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2274,7 +2828,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2293,7 +2850,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2312,7 +2872,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2331,7 +2894,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2350,7 +2916,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2369,7 +2938,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2388,7 +2960,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2407,7 +2982,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2426,7 +3004,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2445,7 +3026,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2464,11 +3048,26 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC7543760_main_Table_1_p4.png": [
+    {
+      "bbox": [
+        45.0,
+        752.0,
+        549.0,
+        333.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         45.0,
@@ -2493,11 +3092,24 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC7543760_main_Table_2_p5.png": [
+    {
+      "bbox": [
+        46.0,
+        292.0,
+        549.0,
+        77.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         46.0,
@@ -2510,6 +3122,17 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        47.0,
+        282.0,
+        544.0,
+        77.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
       ]
     },
     {
@@ -2532,6 +3155,18 @@
         45.0,
         520.0,
         549.0,
+        77.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
+    {
+      "bbox": [
+        45.0,
+        520.0,
+        549.0,
         109.0
       ],
       "variants": [
@@ -2539,6 +3174,17 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        47.0,
+        512.0,
+        544.0,
+        77.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
       ]
     },
     {
@@ -2570,7 +3216,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2589,7 +3238,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2608,7 +3260,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2627,7 +3282,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2662,11 +3320,26 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC8352662_main_Table_1_p3.png": [
+    {
+      "bbox": [
+        45.0,
+        752.0,
+        549.0,
+        523.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         45.0,
@@ -2691,11 +3364,24 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC8352662_main_Table_2_p4.png": [
+    {
+      "bbox": [
+        45.0,
+        752.0,
+        549.0,
+        414.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         45.0,
@@ -2720,7 +3406,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2736,7 +3423,9 @@
         "01_docling",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     },
     {
@@ -2749,7 +3438,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2782,7 +3472,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2801,11 +3494,26 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC8416649_main_Table_1_p3.png": [
+    {
+      "bbox": [
+        46.0,
+        453.0,
+        286.0,
+        77.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         46.0,
@@ -2818,6 +3526,17 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        47.0,
+        443.0,
+        285.0,
+        77.0
+      ],
+      "variants": [
+        "09_tatr_099_footnote_expand_1_2"
       ]
     },
     {
@@ -2849,7 +3568,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2868,7 +3590,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2887,7 +3612,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2905,11 +3633,25 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC8420544_CYT-33-93_Table_2_p3.png": [
+    {
+      "bbox": [
+        45.0,
+        317.0,
+        289.0,
+        158.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         45.0,
@@ -2934,11 +3676,24 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
   "PMC8420544_CYT-33-93_Table_3_p4.png": [
+    {
+      "bbox": [
+        45.0,
+        313.0,
+        381.0,
+        189.0
+      ],
+      "variants": [
+        "08_docling_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
+      ]
+    },
     {
       "bbox": [
         45.0,
@@ -2963,7 +3718,8 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "09_tatr_099_footnote_expand_1_2"
       ]
     }
   ],
@@ -2982,7 +3738,10 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_docling_footnote_expand_1_2",
+        "09_tatr_099_footnote_expand_1_2",
+        "10_hybrid_099_footnote_expand_1_2"
       ]
     }
   ]

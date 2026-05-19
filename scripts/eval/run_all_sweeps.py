@@ -138,27 +138,27 @@ ALL_SWEEPS: List[SweepSpec] = [
 # as each stage's scoring lands; the variants below pick them up.
 # ---------------------------------------------------------------------------
 
-# Stage 1 winner — detector / TATR threshold.  Drives Stages 2-6.
+# Stage 1 winner — detector / TATR threshold.  Drives Stages 2-7.
 BEST_BASE = "07_hybrid_099"
 
-# Stage 2 winner — footnote_threshold_multiplier picked from 11/12/13.
-# Used by Stages 3-6 whenever expand_tables_with_footnotes is ON.
+# Stage 3 winner — footnote_threshold_multiplier picked from 11/12/13.
+# Used by Stages 4-7 whenever expand_tables_with_footnotes is ON.
 BEST_EXPAND_MULTIPLIER = 1.2
 
-# Stage 3 winner — two_pass on/off picked from 14/15.  Used by Stages 4-6.
+# Stage 4 winner — two_pass on/off picked from 14/15.  Used by Stages 5-7.
 BEST_TWO_PASS = True
 
-# Stage 4 winners — independent post-processing flags kept from 16/17/18.
+# Stage 5 winners — independent merge/drop flags kept from 16/17/18.
 # None of them are forced on by default; flip an entry to True once the
-# matching Stage 4 variant clearly wins to fold it into Stage 5 / 6 bases.
-BEST_STAGE4: dict = {
+# matching Stage 5 variant clearly wins to fold it into Stage 6 / 7 bases.
+BEST_STAGE5: dict = {
     "merge_tables_by_caption":   False,
     "merge_figures_by_caption":  False,
     "drop_tables_inside_figures": False,
 }
 
-# Stage 6 only — whether the "selected setting" for expand_tables_with_footnotes
-# is ON (True) or OFF (False).  Set to whatever Stages 2/5 chose.
+# Stage 7 only — whether the "selected setting" for expand_tables_with_footnotes
+# is ON (True) or OFF (False).  Set to whatever Stages 3/6 chose.
 BEST_EXPAND_SETTING = True
 
 _STAGE1_BASES = {
@@ -190,20 +190,20 @@ def _apply_best_base(cfg: PipelineConfig) -> None:
     _apply_base(cfg, BEST_BASE)
 
 
-def _apply_stage4_kept(cfg: PipelineConfig) -> None:
-    """Fold in any Stage 4 flags marked as winners in BEST_STAGE4."""
-    if BEST_STAGE4.get("merge_tables_by_caption"):
+def _apply_stage5_kept(cfg: PipelineConfig) -> None:
+    """Fold in any Stage 5 flags marked as winners in BEST_STAGE5."""
+    if BEST_STAGE5.get("merge_tables_by_caption"):
         cfg.cropping.merge_tables_by_caption  = True
-    if BEST_STAGE4.get("merge_figures_by_caption"):
+    if BEST_STAGE5.get("merge_figures_by_caption"):
         cfg.cropping.merge_figures_by_caption = True
-    if BEST_STAGE4.get("drop_tables_inside_figures"):
+    if BEST_STAGE5.get("drop_tables_inside_figures"):
         cfg.masking.drop_tables_inside_figures = True
 
 
-# ---------- Stage 1.5 — expansion screening on top Stage 1 candidates -------
+# ---------- Stage 2 — footnote-expansion screen on top Stage 1 candidates ---
 
-def _stage1_5(base_name: str, multiplier: float):
-    """Build a Stage-1.5 configure() callable on a fixed Stage 1 base."""
+def _stage2(base_name: str, multiplier: float):
+    """Build a Stage-2 configure() callable on a fixed Stage 1 base."""
     def configure(cfg: PipelineConfig) -> None:
         _apply_base(cfg, base_name)
         cfg.cropping.expand_tables_with_footnotes = True
@@ -213,17 +213,17 @@ def _stage1_5(base_name: str, multiplier: float):
 
 ALL_SWEEPS.extend([
     SweepSpec("08_docling_footnote_expand_1_2",
-              _stage1_5("01_docling",    1.2), workers=1, stage="footnote_screen"),
+              _stage2("01_docling",    1.2), workers=1, stage="footnote_screen"),
     SweepSpec("09_tatr_099_footnote_expand_1_2",
-              _stage1_5("04_tatr_099",   1.2), workers=2, stage="footnote_screen"),
+              _stage2("04_tatr_099",   1.2), workers=2, stage="footnote_screen"),
     SweepSpec("10_hybrid_099_footnote_expand_1_2",
-              _stage1_5("07_hybrid_099", 1.2), workers=2, stage="footnote_screen"),
+              _stage2("07_hybrid_099", 1.2), workers=2, stage="footnote_screen"),
 ])
 
 
-# ---------- Stage 2 — footnote multiplier tuning on BEST_BASE ---------------
+# ---------- Stage 3 — footnote multiplier tuning on BEST_BASE ---------------
 
-def _stage2(multiplier: float):
+def _stage3(multiplier: float):
     """Tune footnote_threshold_multiplier on BEST_BASE."""
     def configure(cfg: PipelineConfig) -> None:
         _apply_best_base(cfg)
@@ -233,15 +233,15 @@ def _stage2(multiplier: float):
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("11_best_footnote_expand_1_2", _stage2(1.2), workers=2, stage="footnote_tuning"),
-    SweepSpec("12_best_footnote_expand_1_3", _stage2(1.3), workers=2, stage="footnote_tuning"),
-    SweepSpec("13_best_footnote_expand_1_5", _stage2(1.5), workers=2, stage="footnote_tuning"),
+    SweepSpec("11_best_footnote_expand_1_2", _stage3(1.2), workers=2, stage="footnote_tuning"),
+    SweepSpec("12_best_footnote_expand_1_3", _stage3(1.3), workers=2, stage="footnote_tuning"),
+    SweepSpec("13_best_footnote_expand_1_5", _stage3(1.5), workers=2, stage="footnote_tuning"),
 ])
 
 
-# ---------- Stage 3 — two-pass ablation on BEST_BASE + BEST_EXPAND ----------
+# ---------- Stage 4 — two-pass ablation on BEST_BASE + BEST_EXPAND ----------
 
-def _stage3(two_pass: bool):
+def _stage4(two_pass: bool):
     def configure(cfg: PipelineConfig) -> None:
         _apply_best_base(cfg)
         cfg.cropping.expand_tables_with_footnotes  = True
@@ -251,14 +251,14 @@ def _stage3(two_pass: bool):
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("14_best_twopass_on",  _stage3(True),  workers=2, stage="two_pass"),
-    SweepSpec("15_best_twopass_off", _stage3(False), workers=2, stage="two_pass"),
+    SweepSpec("14_best_twopass_on",  _stage4(True),  workers=2, stage="two_pass"),
+    SweepSpec("15_best_twopass_off", _stage4(False), workers=2, stage="two_pass"),
 ])
 
 
-# ---------- Stage 4 — independent post-processing flags ---------------------
+# ---------- Stage 5 — independent merge/drop flag ablations -----------------
 
-def _stage4(*, merge_tables: bool = False, merge_figures: bool = False,
+def _stage5(*, merge_tables: bool = False, merge_figures: bool = False,
             drop_tif: bool = False):
     def configure(cfg: PipelineConfig) -> None:
         _apply_best_base(cfg)
@@ -272,15 +272,15 @@ def _stage4(*, merge_tables: bool = False, merge_figures: bool = False,
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("16_best_merge_tables_by_caption",  _stage4(merge_tables=True),  workers=2, stage="merge_drop"),
-    SweepSpec("17_best_merge_figures_by_caption", _stage4(merge_figures=True), workers=2, stage="merge_drop"),
-    SweepSpec("18_best_drop_tables_in_figures",   _stage4(drop_tif=True),      workers=2, stage="merge_drop"),
+    SweepSpec("16_best_merge_tables_by_caption",  _stage5(merge_tables=True),  workers=2, stage="merge_drop"),
+    SweepSpec("17_best_merge_figures_by_caption", _stage5(merge_figures=True), workers=2, stage="merge_drop"),
+    SweepSpec("18_best_drop_tables_in_figures",   _stage5(drop_tif=True),      workers=2, stage="merge_drop"),
 ])
 
 
-# ---------- Stage 5 — reconstruction interaction ----------------------------
+# ---------- Stage 6 — reconstruction interaction ----------------------------
 
-def _stage5(*, expand: bool):
+def _stage6(*, expand: bool):
     """Reconstruct tables from lists, with or without selected footnote expand."""
     def configure(cfg: PipelineConfig) -> None:
         _apply_best_base(cfg)
@@ -289,28 +289,28 @@ def _stage5(*, expand: bool):
         if expand:
             cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
         cfg.two_pass.enabled = BEST_TWO_PASS
-        _apply_stage4_kept(cfg)
+        _apply_stage5_kept(cfg)
     return configure
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("19_best_reconstruct_only",                 _stage5(expand=False), workers=2, stage="reconstruction"),
-    SweepSpec("20_best_reconstruct_plus_selected_expand", _stage5(expand=True),  workers=2, stage="reconstruction"),
+    SweepSpec("19_best_reconstruct_only",                 _stage6(expand=False), workers=2, stage="reconstruction"),
+    SweepSpec("20_best_reconstruct_plus_selected_expand", _stage6(expand=True),  workers=2, stage="reconstruction"),
 ])
 
 
-# ---------- Stage 6 — pre-mask figures before table detection ---------------
+# ---------- Stage 7 — pre-mask figures before table detection ---------------
 # Skip if BEST_BASE == "01_docling" — pre-masking targets pixel detectors
 # (TATR / Hybrid) and is a no-op for Docling-only.
 
-def _stage6(*, drop: bool, premask: bool):
+def _stage7(*, drop: bool, premask: bool):
     def configure(cfg: PipelineConfig) -> None:
         _apply_best_base(cfg)
         cfg.cropping.expand_tables_with_footnotes  = BEST_EXPAND_SETTING
         if BEST_EXPAND_SETTING:
             cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
         cfg.two_pass.enabled = BEST_TWO_PASS
-        _apply_stage4_kept(cfg)
+        _apply_stage5_kept(cfg)
         cfg.masking.drop_tables_inside_figures          = drop
         cfg.masking.mask_figures_before_table_detection = premask
     return configure
@@ -318,9 +318,9 @@ def _stage6(*, drop: bool, premask: bool):
 
 if BEST_BASE != "01_docling":
     ALL_SWEEPS.extend([
-        SweepSpec("21_best_drop_only_for_premask_control", _stage6(drop=True,  premask=False), workers=2, stage="figure_premask"),
-        SweepSpec("22_best_premask_figures_for_tables",    _stage6(drop=False, premask=True),  workers=2, stage="figure_premask"),
-        SweepSpec("23_best_drop_plus_premask_figures",     _stage6(drop=True,  premask=True),  workers=2, stage="figure_premask"),
+        SweepSpec("21_best_drop_only_for_premask_control", _stage7(drop=True,  premask=False), workers=2, stage="figure_premask"),
+        SweepSpec("22_best_premask_figures_for_tables",    _stage7(drop=False, premask=True),  workers=2, stage="figure_premask"),
+        SweepSpec("23_best_drop_plus_premask_figures",     _stage7(drop=True,  premask=True),  workers=2, stage="figure_premask"),
     ])
 
 

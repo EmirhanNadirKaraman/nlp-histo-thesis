@@ -23,7 +23,7 @@ Seven stages run in order.  Each stage builds on the previous stage's
 | 2 | `footnote_screen` | 08–10 | (validates `BEST_BASE`) | confirms detector choice under footnote expansion |
 | 3 | `footnote_tuning` | 11–13 | `BEST_EXPAND_MULTIPLIER` | Stages 4–7 footnote multiplier |
 | 4 | `two_pass` | 14–15 | `BEST_TWO_PASS` | Stages 5–7 two-pass flag |
-| 5 | `merge_drop` | 16–18 | `BEST_STAGE4` (dict) | Stages 6–7 kept merge/drop flags |
+| 5 | `merge_drop` | 16–18 | `BEST_STAGE5` (dict) | Stages 6–7 kept merge/drop flags |
 | 6 | `reconstruction` | 19–20 | `BEST_EXPAND_SETTING` | Stage 7 expand on/off |
 | 7 | `figure_premask` | 21–23 | — | (terminal) |
 
@@ -121,7 +121,7 @@ After this, pick `BEST_TWO_PASS`.
 
 Each variant runs on `BEST_BASE + expand + BEST_EXPAND_MULTIPLIER +
 BEST_TWO_PASS` and flips exactly one extra flag.  Do not combine yet —
-pick winners into `BEST_STAGE4` only if one clearly helps.
+pick winners into `BEST_STAGE5` only if one clearly helps.
 
 ```
 16_best_merge_tables_by_caption     + merge_tables_by_caption = ON
@@ -133,7 +133,7 @@ pick winners into `BEST_STAGE4` only if one clearly helps.
 
 ## Stage 6 — `reconstruction` interaction
 
-Builds on `BEST_BASE + BEST_TWO_PASS + BEST_STAGE4` plus
+Builds on `BEST_BASE + BEST_TWO_PASS + BEST_STAGE5` plus
 `reconstruct_tables_from_lists = ON`:
 
 ```
@@ -150,7 +150,7 @@ After this, pick `BEST_EXPAND_SETTING` (whether the final
 
 Skipped automatically if `BEST_BASE == "01_docling"` (pre-masking only
 affects pixel-based detection).  Base is `BEST_BASE + selected expand +
-BEST_TWO_PASS + BEST_STAGE4`.
+BEST_TWO_PASS + BEST_STAGE5`.
 
 ```
 21_best_drop_only_for_premask_control   drop=ON,  premask=OFF
@@ -178,7 +178,7 @@ python scripts/eval/run_all_sweeps.py --stage footnote_tuning
 # Stage 4 → set BEST_TWO_PASS.
 python scripts/eval/run_all_sweeps.py --stage two_pass
 
-# Stage 5 → fold winners into BEST_STAGE4.
+# Stage 5 → fold winners into BEST_STAGE5.
 python scripts/eval/run_all_sweeps.py --stage merge_drop
 
 # Stage 6 → set BEST_EXPAND_SETTING.
