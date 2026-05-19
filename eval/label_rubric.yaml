@@ -141,6 +141,12 @@ table_labels:
     footnote: 1.0
     mask: 0.75
 
+  crop too big major:
+    crop: 0.25
+    caption: 1.0
+    footnote: 1.0
+    mask: 0.25
+
   # ── Table-specific ────────────────────────────────────────────────────────
   missing footnotes:
     crop: 1.0

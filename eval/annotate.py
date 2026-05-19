@@ -785,7 +785,7 @@ def show_metrics(items: list[Item], ann: dict[str, str], mode: str) -> None:
     if by_doc:
         print(c(BOLD, "  Per-document accuracy:"))
         for doc, counts in sorted(by_doc.items()):
-            tot = counts.get("correct", 0) + counts.get("incorrect", 0)
+            tot = sum(counts.values())
             acc = counts.get("correct", 0) / tot if tot else 0
             bar = "█" * int(acc * 20) + "░" * (20 - int(acc * 20))
             print(f"  {doc:<52} [{bar}] {acc:.0%}")
