@@ -1,16 +1,47 @@
 """
-PipelineRunner
+PipelineRunner — single-document orchestrator for the PDF text-extraction pipeline.
 
-Orchestrates the full PDF-processing pipeline for a single document:
+Standard 8-step flow (`PipelineConfig.two_pass.enabled=False`):
 
   1. Extract layout from original PDF (Docling)
-  2. Detect tables (Docling | TATR | Hybrid — configurable)
+  2. Detect tables (Docling | TATR | Hybrid — `cfg.table_detector`)
   3. Mask detected regions with white rectangles
-  4. Re-extract layout from masked PDF (Docling)
-  5. Filter layout artifacts
-  6. Assemble hierarchical text
+  4. Re-extract layout from masked PDF (Docling, optionally with
+     `cfg.docling_text` overriding OCR/structure options)
+  5. Filter layout artifacts (rule-based + optional scispaCy NER)
+  6. Assemble hierarchical text rows
   7. Crop figure / table images
-  8. Write outputs (text file, database, visualizations)
+  8. Write outputs (text file, media JSON, optional PostgreSQL ingest)
+
+Two-pass flow (default, `PipelineConfig.two_pass.enabled=True`):
+
+  Steps 1/3/4 are replaced by `TwoPassTextExtractor`, which runs Docling
+  twice — once on the original PDF (Pass 1) to score every element using
+  pixel-rendering + fitz word evidence, then once on a header-masked copy
+  (Pass 2) — producing the cleaned `pass1_layout` / `pass2_layout`.
+  Step 2 (table detection) runs against `pass1_layout` after the two-pass
+  call.  Steps 5–8 are unchanged.
+
+Additional behaviour:
+
+  * Steps 2, 5, 6 are cached on disk under
+    `<output_root>/stage_cache/<stage_name>/<pmcid>.json` with a
+    config-hash sidecar; cache hits skip recomputation
+    (`RuntimeConfig.skip_existing_outputs=True`).
+  * Step 2 input PDF can be pre-masked with figure bboxes when
+    `MaskingConfig.mask_figures_before_table_detection=True`, so the
+    pixel-based detectors never see table-grid pixels embedded in figures.
+  * Step 2 output can be post-filtered to drop table regions that sit
+    inside FIGURE/PICTURE elements (`MaskingConfig.drop_tables_inside_figures`).
+  * Step 7 optionally writes a second crop set under `<tables_dir>/docling`
+    and `<tables_dir>/docling_recon` for sweep comparisons
+    (`RuntimeConfig.multi_source_crops`).
+  * Every run can emit per-document JSON stats and a per-batch manifest
+    (see `outputs/stats_writer.py`, `outputs/manifest_writer.py`).
+
+The module also exposes a thin argparse `main()` for shell invocations and
+a `_retarget_paths` helper that repoints every `PathConfig` directory under
+a sweep-specific root (used by `scripts/eval/run_all_sweeps.py`).
 
 Usage::
 
@@ -20,11 +51,13 @@ Usage::
     cfg    = PipelineConfig()
     cfg.database.enabled = True
     cfg.database.db_url  = "postgresql://user:pw@localhost/nlp_histo"
+    cfg.prepare()                       # validate + create output dirs
 
     runner = PipelineRunner(cfg)
     runner.run_document(Path("files/organized_pdfs/PMC123.pdf"), pmcid="PMC123")
 
-    # Batch processing
+    # Sequential batch (single thread).  For a thread pool use
+    # `ParallelBatchRunner` from pipeline.stages.pdf_text_extraction.batch.
     runner.run_batch(pdf_dir=Path("files/organized_pdfs"))
 """
 from __future__ import annotations

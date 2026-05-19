@@ -46,7 +46,7 @@ figure_labels:
 
   incorrect:
     crop: 0.0          # not a figure at all
-    caption: n/a
+    caption: 0.0
     footnote: n/a
     mask: 0.0          # shouldn't have been masked either (random paragraph FP)
 

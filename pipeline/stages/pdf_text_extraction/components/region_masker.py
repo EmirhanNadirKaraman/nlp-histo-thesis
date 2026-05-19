@@ -1,8 +1,26 @@
 """
-PyMuPDFRegionMasker
+PyMuPDFRegionMasker — paint opaque white rectangles on a PDF copy via PyMuPDF.
 
-Draws opaque white rectangles over detected table/figure regions, producing
-a clean masked PDF suitable for a second Docling extraction pass.
+Used in two distinct spots:
+
+* `collect_regions()` + `mask()` — Step 3 of the standard flow.  Collects
+  table regions (from `TableDetectionResult`), figure regions (from
+  `LayoutResult`), and optionally header/footer/sidebar regions (when
+  `MaskingConfig.mask_header_footer_sidebar=True`), then writes a masked
+  `<stem>_masked.pdf` for Step 4 re-extraction.
+* `mask_figures_only()` — Stage-2 detector-input helper used by
+  `PipelineRunner._detection_pdf_path()` when
+  `MaskingConfig.mask_figures_before_table_detection=True`.  Paints only
+  PICTURE / FIGURE bboxes from `LayoutResult` to give pixel-based table
+  detectors (TATR / Hybrid) a figure-free view of the PDF.  Writes
+  `<stem>_fig_masked.pdf`; returns `None` (and falls back to the original
+  PDF) when the layout contains no figures.  Downstream Step-7 cropping
+  always uses the original PDF — this helper only affects detector input.
+
+Header / footer / sidebar detection runs locally in
+`_detect_header_footer_sidebars` using the heuristics defined alongside
+the class (`_SIDEBAR_MAX_W`, `_COLUMN_GAP_MIN`, and the scispaCy
+`nlp_is_meaningful` helper from `parsers.layout_utils`).
 """
 from __future__ import annotations
 

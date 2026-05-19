@@ -59,6 +59,31 @@ class SweepSpec:
     name: str
     configure: Callable[[PipelineConfig], None]
     workers: int = 2
+    stage: str = "detector"  # one of STAGE_CHOICES (minus "all")
+
+
+# Ordered: each stage builds on the previous stage's winner.
+STAGE_ORDER = (
+    "detector",         # Stage 1 — detector / TATR threshold selection
+    "footnote_screen",  # Stage 2 — does footnote expansion shift the top detector ranking?
+    "footnote_tuning",  # Stage 3 — tune footnote_threshold_multiplier on selected best base
+    "two_pass",         # Stage 4 — two-pass extraction ablation
+    "merge_drop",       # Stage 5 — independent merge/drop flag ablations
+    "reconstruction",   # Stage 6 — table reconstruction interaction with selected expansion
+    "figure_premask",   # Stage 7 — pre-mask figures before table detection
+)
+STAGE_CHOICES = STAGE_ORDER + ("all",)
+
+# Human-readable one-liners for the stage menu printed when --stage is omitted.
+STAGE_BLURBS: dict = {
+    "detector":        "detector / TATR threshold selection",
+    "footnote_screen": "test whether footnote expansion changes the top detector ranking",
+    "footnote_tuning": "tune footnote_threshold_multiplier on selected best base",
+    "two_pass":        "two-pass extraction ablation",
+    "merge_drop":      "independent merge/drop flag ablations",
+    "reconstruction":  "table reconstruction interaction with selected expansion setting",
+    "figure_premask":  "pre-mask figures before table detection",
+}
 
 
 def _apply_stage1_baseline(cfg: PipelineConfig) -> None:
@@ -97,20 +122,44 @@ def _stage1(detector: TableDetectorType, threshold: Optional[float]):
 # _apply_stage1_baseline so this comparison isolates the detector.
 # ``workers=1`` for the docling-only variant avoids previously-observed OOM.
 ALL_SWEEPS: List[SweepSpec] = [
-    SweepSpec("01_docling",    _stage1(TableDetectorType.DOCLING, None), workers=1),
-    SweepSpec("02_tatr_090",   _stage1(TableDetectorType.TATR,    0.90), workers=2),
-    SweepSpec("03_tatr_095",   _stage1(TableDetectorType.TATR,    0.95), workers=2),
-    SweepSpec("04_tatr_099",   _stage1(TableDetectorType.TATR,    0.99), workers=2),
-    SweepSpec("05_hybrid_090", _stage1(TableDetectorType.HYBRID,  0.90), workers=2),
-    SweepSpec("06_hybrid_095", _stage1(TableDetectorType.HYBRID,  0.95), workers=2),
-    SweepSpec("07_hybrid_099", _stage1(TableDetectorType.HYBRID,  0.99), workers=2),
+    SweepSpec("01_docling",    _stage1(TableDetectorType.DOCLING, None), workers=1, stage="detector"),
+    SweepSpec("02_tatr_090",   _stage1(TableDetectorType.TATR,    0.90), workers=2, stage="detector"),
+    SweepSpec("03_tatr_095",   _stage1(TableDetectorType.TATR,    0.95), workers=2, stage="detector"),
+    SweepSpec("04_tatr_099",   _stage1(TableDetectorType.TATR,    0.99), workers=2, stage="detector"),
+    SweepSpec("05_hybrid_090", _stage1(TableDetectorType.HYBRID,  0.90), workers=2, stage="detector"),
+    SweepSpec("06_hybrid_095", _stage1(TableDetectorType.HYBRID,  0.95), workers=2, stage="detector"),
+    SweepSpec("07_hybrid_099", _stage1(TableDetectorType.HYBRID,  0.99), workers=2, stage="detector"),
 ]
 
 
-# Stage 5 — table_in_figure suppression strategies on BEST_BASE.
-# BEST_BASE is hardcoded to "07_hybrid_099" below; edit after Stage 1
-# F1 scoring to point at whichever Stage 1 variant won.
+# ---------------------------------------------------------------------------
+# Staged-sweep knobs.  Each BEST_* constant is the "winner" chosen after the
+# corresponding stage and feeds into every later stage.  Edit them in place
+# as each stage's scoring lands; the variants below pick them up.
+# ---------------------------------------------------------------------------
+
+# Stage 1 winner — detector / TATR threshold.  Drives Stages 2-6.
 BEST_BASE = "07_hybrid_099"
+
+# Stage 2 winner — footnote_threshold_multiplier picked from 11/12/13.
+# Used by Stages 3-6 whenever expand_tables_with_footnotes is ON.
+BEST_EXPAND_MULTIPLIER = 1.2
+
+# Stage 3 winner — two_pass on/off picked from 14/15.  Used by Stages 4-6.
+BEST_TWO_PASS = True
+
+# Stage 4 winners — independent post-processing flags kept from 16/17/18.
+# None of them are forced on by default; flip an entry to True once the
+# matching Stage 4 variant clearly wins to fold it into Stage 5 / 6 bases.
+BEST_STAGE4: dict = {
+    "merge_tables_by_caption":   False,
+    "merge_figures_by_caption":  False,
+    "drop_tables_inside_figures": False,
+}
+
+# Stage 6 only — whether the "selected setting" for expand_tables_with_footnotes
+# is ON (True) or OFF (False).  Set to whatever Stages 2/5 chose.
+BEST_EXPAND_SETTING = True
 
 _STAGE1_BASES = {
     "01_docling":    (TableDetectorType.DOCLING, None),
@@ -123,37 +172,156 @@ _STAGE1_BASES = {
 }
 
 
-def _apply_best_base(cfg: PipelineConfig) -> None:
-    """Apply Stage 1 baseline + the chosen detector/threshold from BEST_BASE."""
+def _apply_base(cfg: PipelineConfig, base_name: str) -> None:
+    """Apply Stage 1 baseline + the named detector/threshold base."""
     _apply_stage1_baseline(cfg)
-    if BEST_BASE not in _STAGE1_BASES:
+    if base_name not in _STAGE1_BASES:
         raise ValueError(
-            f"BEST_BASE={BEST_BASE!r} must be one of {sorted(_STAGE1_BASES)}"
+            f"base={base_name!r} must be one of {sorted(_STAGE1_BASES)}"
         )
-    detector, threshold = _STAGE1_BASES[BEST_BASE]
+    detector, threshold = _STAGE1_BASES[base_name]
     cfg.table_detector = detector
     if threshold is not None:
         cfg.tatr.threshold = threshold
 
 
-def _stage5(drop: bool, premask: bool):
-    """Build a Stage-5 configure() callable on the BEST_BASE config.
+def _apply_best_base(cfg: PipelineConfig) -> None:
+    """Apply Stage 1 baseline + the BEST_BASE detector/threshold."""
+    _apply_base(cfg, BEST_BASE)
 
-    drop:    masking.drop_tables_inside_figures
-    premask: masking.mask_figures_before_table_detection
-    """
+
+def _apply_stage4_kept(cfg: PipelineConfig) -> None:
+    """Fold in any Stage 4 flags marked as winners in BEST_STAGE4."""
+    if BEST_STAGE4.get("merge_tables_by_caption"):
+        cfg.cropping.merge_tables_by_caption  = True
+    if BEST_STAGE4.get("merge_figures_by_caption"):
+        cfg.cropping.merge_figures_by_caption = True
+    if BEST_STAGE4.get("drop_tables_inside_figures"):
+        cfg.masking.drop_tables_inside_figures = True
+
+
+# ---------- Stage 1.5 — expansion screening on top Stage 1 candidates -------
+
+def _stage1_5(base_name: str, multiplier: float):
+    """Build a Stage-1.5 configure() callable on a fixed Stage 1 base."""
+    def configure(cfg: PipelineConfig) -> None:
+        _apply_base(cfg, base_name)
+        cfg.cropping.expand_tables_with_footnotes = True
+        cfg.cropping.footnote_threshold_multiplier = multiplier
+    return configure
+
+
+ALL_SWEEPS.extend([
+    SweepSpec("08_docling_footnote_expand_1_2",
+              _stage1_5("01_docling",    1.2), workers=1, stage="footnote_screen"),
+    SweepSpec("09_tatr_099_footnote_expand_1_2",
+              _stage1_5("04_tatr_099",   1.2), workers=2, stage="footnote_screen"),
+    SweepSpec("10_hybrid_099_footnote_expand_1_2",
+              _stage1_5("07_hybrid_099", 1.2), workers=2, stage="footnote_screen"),
+])
+
+
+# ---------- Stage 2 — footnote multiplier tuning on BEST_BASE ---------------
+
+def _stage2(multiplier: float):
+    """Tune footnote_threshold_multiplier on BEST_BASE."""
     def configure(cfg: PipelineConfig) -> None:
         _apply_best_base(cfg)
+        cfg.cropping.expand_tables_with_footnotes  = True
+        cfg.cropping.footnote_threshold_multiplier = multiplier
+    return configure
+
+
+ALL_SWEEPS.extend([
+    SweepSpec("11_best_footnote_expand_1_2", _stage2(1.2), workers=2, stage="footnote_tuning"),
+    SweepSpec("12_best_footnote_expand_1_3", _stage2(1.3), workers=2, stage="footnote_tuning"),
+    SweepSpec("13_best_footnote_expand_1_5", _stage2(1.5), workers=2, stage="footnote_tuning"),
+])
+
+
+# ---------- Stage 3 — two-pass ablation on BEST_BASE + BEST_EXPAND ----------
+
+def _stage3(two_pass: bool):
+    def configure(cfg: PipelineConfig) -> None:
+        _apply_best_base(cfg)
+        cfg.cropping.expand_tables_with_footnotes  = True
+        cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
+        cfg.two_pass.enabled = two_pass
+    return configure
+
+
+ALL_SWEEPS.extend([
+    SweepSpec("14_best_twopass_on",  _stage3(True),  workers=2, stage="two_pass"),
+    SweepSpec("15_best_twopass_off", _stage3(False), workers=2, stage="two_pass"),
+])
+
+
+# ---------- Stage 4 — independent post-processing flags ---------------------
+
+def _stage4(*, merge_tables: bool = False, merge_figures: bool = False,
+            drop_tif: bool = False):
+    def configure(cfg: PipelineConfig) -> None:
+        _apply_best_base(cfg)
+        cfg.cropping.expand_tables_with_footnotes  = True
+        cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
+        cfg.two_pass.enabled = BEST_TWO_PASS
+        cfg.cropping.merge_tables_by_caption   = merge_tables
+        cfg.cropping.merge_figures_by_caption  = merge_figures
+        cfg.masking.drop_tables_inside_figures = drop_tif
+    return configure
+
+
+ALL_SWEEPS.extend([
+    SweepSpec("16_best_merge_tables_by_caption",  _stage4(merge_tables=True),  workers=2, stage="merge_drop"),
+    SweepSpec("17_best_merge_figures_by_caption", _stage4(merge_figures=True), workers=2, stage="merge_drop"),
+    SweepSpec("18_best_drop_tables_in_figures",   _stage4(drop_tif=True),      workers=2, stage="merge_drop"),
+])
+
+
+# ---------- Stage 5 — reconstruction interaction ----------------------------
+
+def _stage5(*, expand: bool):
+    """Reconstruct tables from lists, with or without selected footnote expand."""
+    def configure(cfg: PipelineConfig) -> None:
+        _apply_best_base(cfg)
+        cfg.docling.reconstruct_tables_from_lists  = True
+        cfg.cropping.expand_tables_with_footnotes  = expand
+        if expand:
+            cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
+        cfg.two_pass.enabled = BEST_TWO_PASS
+        _apply_stage4_kept(cfg)
+    return configure
+
+
+ALL_SWEEPS.extend([
+    SweepSpec("19_best_reconstruct_only",                 _stage5(expand=False), workers=2, stage="reconstruction"),
+    SweepSpec("20_best_reconstruct_plus_selected_expand", _stage5(expand=True),  workers=2, stage="reconstruction"),
+])
+
+
+# ---------- Stage 6 — pre-mask figures before table detection ---------------
+# Skip if BEST_BASE == "01_docling" — pre-masking targets pixel detectors
+# (TATR / Hybrid) and is a no-op for Docling-only.
+
+def _stage6(*, drop: bool, premask: bool):
+    def configure(cfg: PipelineConfig) -> None:
+        _apply_best_base(cfg)
+        cfg.cropping.expand_tables_with_footnotes  = BEST_EXPAND_SETTING
+        if BEST_EXPAND_SETTING:
+            cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
+        cfg.two_pass.enabled = BEST_TWO_PASS
+        _apply_stage4_kept(cfg)
         cfg.masking.drop_tables_inside_figures          = drop
         cfg.masking.mask_figures_before_table_detection = premask
     return configure
 
 
-ALL_SWEEPS.extend([
-    SweepSpec("20_best_drop_tables_inside_figures_on",                 _stage5(drop=True,  premask=False), workers=2),
-    SweepSpec("21_best_premask_figures_for_table_detection",           _stage5(drop=False, premask=True),  workers=2),
-    SweepSpec("22_best_drop_plus_premask_figures_for_table_detection", _stage5(drop=True,  premask=True),  workers=2),
-])
+if BEST_BASE != "01_docling":
+    ALL_SWEEPS.extend([
+        SweepSpec("21_best_drop_only_for_premask_control", _stage6(drop=True,  premask=False), workers=2, stage="figure_premask"),
+        SweepSpec("22_best_premask_figures_for_tables",    _stage6(drop=False, premask=True),  workers=2, stage="figure_premask"),
+        SweepSpec("23_best_drop_plus_premask_figures",     _stage6(drop=True,  premask=True),  workers=2, stage="figure_premask"),
+    ])
 
 
 def _build_config(spec: SweepSpec, *, pdf_dir: Path, sweeps_root: Path,
@@ -327,7 +495,8 @@ def _print_variants_table(
     so the printed flags match exactly what a real run would see.
     """
     header = ("variant", "detector", "tatr", "2pass",
-              "recon", "m_tbl", "m_fig", "exp", "drop", "premask", "out_dir")
+              "recon", "m_tbl", "m_fig", "exp", "ftn_x",
+              "drop", "premask", "out_dir")
     rows: List[tuple] = []
     for spec in sweeps:
         cfg = _build_config(spec, pdf_dir=pdf_dir, sweeps_root=sweeps_root,
@@ -336,6 +505,8 @@ def _print_variants_table(
         detector = cfg.table_detector.value
         tatr_thr = (f"{cfg.tatr.threshold:.2f}"
                     if detector in ("tatr", "hybrid") else "-")
+        ftn_x = (f"{cfg.cropping.footnote_threshold_multiplier:.2f}"
+                 if cfg.cropping.expand_tables_with_footnotes else "-")
         rows.append((
             spec.name,
             detector,
@@ -345,6 +516,7 @@ def _print_variants_table(
             "ON" if cfg.cropping.merge_tables_by_caption else "OFF",
             "ON" if cfg.cropping.merge_figures_by_caption else "OFF",
             "ON" if cfg.cropping.expand_tables_with_footnotes else "OFF",
+            ftn_x,
             "ON" if cfg.masking.drop_tables_inside_figures else "OFF",
             "ON" if cfg.masking.mask_figures_before_table_detection else "OFF",
             str(cfg.paths.output_root),
@@ -360,6 +532,29 @@ def _print_variants_table(
     print(_fmt(tuple("-" * w for w in widths)))
     for row in rows:
         print(_fmt(row))
+
+
+def _print_stage_menu() -> None:
+    """List every defined stage with its description and member variants."""
+    by_stage: dict = {s: [] for s in STAGE_ORDER}
+    for spec in ALL_SWEEPS:
+        by_stage.setdefault(spec.stage, []).append(spec.name)
+
+    print("Available --stage values:")
+    print()
+    for stage in STAGE_ORDER:
+        print(f"  {stage}")
+        print(f"      {STAGE_BLURBS.get(stage, '')}")
+        for name in by_stage.get(stage, []):
+            print(f"        - {name}")
+        print()
+    print("  all")
+    print(f"      every variant ({len(ALL_SWEEPS)} total)")
+    print()
+    print("Examples:")
+    print("  python scripts/eval/run_all_sweeps.py --stage detector")
+    print("  python scripts/eval/run_all_sweeps.py --stage two_pass --list-variants")
+    print("  python scripts/eval/run_all_sweeps.py --stage all --only 07_hybrid_099")
 
 
 def _post_run_share_map() -> None:
@@ -388,8 +583,15 @@ def main(argv: Optional[List[str]] = None) -> int:
                    help="Source PDF directory.  Default: eval/pdfs/")
     p.add_argument("--sweeps-root", type=Path, default=_DEFAULT_SWEEPS_ROOT,
                    help="Where to write each variant's outputs.")
+    p.add_argument("--stage", default=None, choices=STAGE_CHOICES,
+                   help="Which experiment stage to run (required). "
+                        "'all' = every variant; otherwise filters ALL_SWEEPS "
+                        "to variants tagged with that stage. "
+                        "Combine with --only to narrow further. "
+                        "Omit to print the stage menu.")
     p.add_argument("--only", nargs="+", default=None,
-                   help="Run only these sweep names (e.g. --only baseline tatr_090).")
+                   help="Run only these sweep names within the selected --stage "
+                        "(e.g. --only 07_hybrid_099). Intersects with --stage.")
     p.add_argument("--workers", type=int, default=None,
                    help="Override per-variant worker count.")
     p.add_argument("--skip-share-map", action="store_true",
@@ -412,18 +614,30 @@ def main(argv: Optional[List[str]] = None) -> int:
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
 
+    if args.stage is None:
+        _print_stage_menu()
+        return 0
+
     if not args.list_variants and not args.pdf_dir.exists():
         print(f"error: pdf-dir not found: {args.pdf_dir}", file=sys.stderr)
         return 2
 
     sweeps = ALL_SWEEPS
+    if args.stage != "all":
+        sweeps = [s for s in sweeps if s.stage == args.stage]
+        if not sweeps:
+            print(f"error: no variants defined for --stage {args.stage}", file=sys.stderr)
+            return 2
     if args.only:
         wanted = set(args.only)
-        sweeps = [s for s in ALL_SWEEPS if s.name in wanted]
-        missing = wanted - {s.name for s in ALL_SWEEPS}
+        sweeps = [s for s in sweeps if s.name in wanted]
+        all_in_stage = {s.name for s in ALL_SWEEPS
+                        if args.stage == "all" or s.stage == args.stage}
+        missing = wanted - all_in_stage
         if missing:
-            print(f"error: unknown sweep name(s): {sorted(missing)}", file=sys.stderr)
-            print(f"  available: {sorted(s.name for s in ALL_SWEEPS)}", file=sys.stderr)
+            print(f"error: unknown sweep name(s) for --stage {args.stage}: "
+                  f"{sorted(missing)}", file=sys.stderr)
+            print(f"  available: {sorted(all_in_stage)}", file=sys.stderr)
             return 2
 
     if args.list_variants:

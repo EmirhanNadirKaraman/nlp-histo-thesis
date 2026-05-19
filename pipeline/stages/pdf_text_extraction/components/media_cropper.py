@@ -1,17 +1,32 @@
 """
-PyMuPDFMediaCropper
+PyMuPDFMediaCropper — render figure / table crops to PNG via PyMuPDF.
 
-Crops figure and table regions from a PDF using PyMuPDF, saves each crop as a
-PNG image, and returns CroppedMedia metadata for both categories.
+Step 7 of `PipelineRunner._process`.  Returns `(figures, tables)` lists of
+`CroppedMedia` metadata pointing at the on-disk PNGs.
 
-Figures: sourced from PICTURE/FIGURE Docling elements, merged by caption number.
-Tables:  sourced from detection regions (TATR/hybrid) as primary, plus
-         TABLE/RECONSTRUCTED_TABLE Docling elements as supplementary,
-         merged by caption number.
+Sources:
+  * Figures — PICTURE / FIGURE elements from `LayoutResult`.
+  * Tables  — primary source is `TableDetectionResult.regions` from Step 2
+              (TATR / Hybrid).  Optional supplementary source is
+              TABLE / RECONSTRUCTED_TABLE elements from the layout itself
+              (selectable via the `docling_table_types` kwarg on `crop()`).
 
-Merging logic ported from merged_pipeline._crop_and_save:
-  - Elements sharing the same caption number are unioned via union_bbox().
-  - The longer caption string wins.
+Caption-aware merging (`CroppingConfig.merge_tables_by_caption`,
+`merge_figures_by_caption`): elements that share the same caption number
+are unioned with `parsers.layout_utils.union_bbox()` so a single crop
+spans every panel.  The longer caption string is retained.  Adjacent
+figures within `CroppingConfig.subfigure_proximity_pts` are merged as
+subfigure panels.
+
+Footnote expansion (`CroppingConfig.expand_tables_with_footnotes`):
+greedily extends each table crop downward to absorb nearby FOOTNOTE /
+LIST_ITEM / TEXT elements; see `CroppingConfig` for the proximity and
+multiplier knobs.
+
+Output filenames: `<pmcid>_Figure_<n>.png` / `<pmcid>_Table_<n>.png`.
+Collisions get `_1`, `_2`, … suffixes (relevant when sweep harnesses
+re-run the same PDF without first clearing the output dir; see
+`scripts/eval/run_all_sweeps.py::_clean_partial_pdf_outputs`).
 """
 from __future__ import annotations
 

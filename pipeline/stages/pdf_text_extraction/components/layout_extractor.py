@@ -1,8 +1,28 @@
 """
-DoclingLayoutExtractor
+DoclingLayoutExtractor — Docling DocumentConverter → typed `LayoutResult`.
 
-Wraps the Docling DocumentConverter to produce a typed LayoutResult.
-Model is loaded lazily on first use.
+Reused by both pipeline branches: the standard flow instantiates it twice
+(once for the original PDF in Step 1, once for the masked PDF in Step 4,
+each with its own `cache_dir`); the two-pass flow drives it through
+`TwoPassTextExtractor` (Pass 1 and Pass 2).
+
+Caching and laziness:
+
+  * The Docling DocumentConverter is loaded lazily on first `extract()`
+    and shared **process-wide** via `_DOCLING_CONVERTER_CACHE`, keyed by
+    the tuple of options that influence converter state.  Sweep harnesses
+    that run multiple variants in one process therefore pay the Docling
+    load once.
+  * When `DoclingConfig.export_intermediate_json=True` (default) and a
+    `cache_dir` is given, every extraction writes its raw Docling JSON to
+    `<cache_dir>/<pmcid>.json`.  Subsequent calls for the same PDF skip
+    Docling inference entirely and rebuild `LayoutResult` from JSON.
+
+Ghost-text deduplication: caption and body text emitted by Docling
+occasionally contains 2-5× exact repetitions of a phrase from ghost-text
+layers.  `_deduplicate_text` (delegating to
+`parsers.layout_utils._deduplicate_caption`) normalises those repetitions
+in place.
 """
 from __future__ import annotations
 

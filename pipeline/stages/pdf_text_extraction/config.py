@@ -1,3 +1,29 @@
+"""
+Typed configuration for the PDF text-extraction pipeline.
+
+`PipelineConfig` is the master dataclass.  It composes one sub-config per
+pipeline concern (paths, Docling, TATR, masking, filtering, cropping, text
+assembly, visualisation, database, runtime, two-pass) plus the
+`table_detector` enum selecting which detector implementation to use.
+
+Three usage rules:
+
+* Call `PipelineConfig.prepare()` once after constructing / mutating the
+  config — it validates value ranges (TATR threshold, cropping DPI, worker
+  count) and creates every output directory listed in `PathConfig`.
+* Defaults are tuned for the canonical sweep baseline (`hybrid` detector,
+  TATR threshold 0.99, two-pass ON, drop_tables_inside_figures ON,
+  database OFF).  `scripts/eval/run_all_sweeps.py::_apply_stage1_baseline`
+  sets every relevant field explicitly so future default tweaks here can't
+  silently shift experiment outcomes.
+* The output-affecting subset of fields participates in the per-stage
+  cache key (see `runner.py::_compute_config_hash`).  Adding a field that
+  alters cached stage output requires either including it in that hash or
+  bumping the matching `STAGE_CACHE_VERSION` entry.
+
+Enum values use lowercase strings so config snapshots round-trip cleanly
+through JSON without enum-class serialisation glue.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -8,6 +34,17 @@ from typing import Optional
 
 
 class TableDetectorType(str, Enum):
+    """Which detector backs `PipelineRunner` step 2.
+
+    * `DOCLING` reads TABLE/RECONSTRUCTED_TABLE elements from the existing
+      Docling layout (no extra inference).
+    * `TATR` runs the microsoft/table-transformer-detection model against
+      page rasterisations.
+    * `HYBRID` runs both and merges overlapping regions via
+      `parsers.layout_utils.merge_rects` — the production default.
+    * `VLM` is reserved; current behaviour falls back to `HYBRID`.
+    """
+
     TATR = "tatr"
     DOCLING = "docling"
     HYBRID = "hybrid"
@@ -15,6 +52,8 @@ class TableDetectorType(str, Enum):
 
 
 class LogLevel(str, Enum):
+    """Standard log-level mirror used by `RuntimeConfig.log_level`."""
+
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
@@ -22,6 +61,8 @@ class LogLevel(str, Enum):
 
 
 class OcrEngine(str, Enum):
+    """OCR backend selected when `DoclingConfig.do_ocr=True`."""
+
     EASYOCR = "easyocr"
     TESSERACT = "tesseract"
     RAPIDOCR = "rapidocr"
@@ -29,6 +70,14 @@ class OcrEngine(str, Enum):
 
 @dataclass(slots=True)
 class PathConfig:
+    """Output-directory layout for one pipeline run.
+
+    Every directory is created by `PipelineConfig.prepare()` (via
+    `ensure_dirs()`).  Sweep harnesses repoint these via
+    `runner._retarget_paths(cfg, out_root)` so each variant writes to its
+    own `out/sweeps/<name>/` tree without overwriting the canonical `out/`.
+    """
+
     project_root: Path = Path(".")
     output_root: Path = Path("out")
     files_root: Path = Path("files")
@@ -72,6 +121,22 @@ class PathConfig:
 
 @dataclass(slots=True)
 class DoclingConfig:
+    """Docling DocumentConverter options shared by Step 1 and Step 4.
+
+    `PipelineConfig.docling_text` can override this for the Step-4 masked
+    re-extraction only (useful for running OCR-enabled detection in Step 1
+    while keeping OCR off for cleaner body-text extraction in Step 4).
+
+    `reconstruct_tables_from_lists` post-processes Docling output to
+    promote list-shaped layouts that follow a table caption into a
+    synthetic `RECONSTRUCTED_TABLE` element (see
+    `components/table_reconstructor.py`).
+
+    `export_intermediate_json` controls whether the per-document Docling
+    JSON cache (`out/docling_full/` and `out/docling_masked/`) is written;
+    when on, repeated runs short-circuit Docling inference entirely.
+    """
+
     enabled: bool = True
     do_table_structure: bool = True
     do_ocr: bool = False
@@ -100,6 +165,13 @@ class DoclingConfig:
 
 @dataclass(slots=True)
 class TATRConfig:
+    """Settings for the TATR (Table Transformer) detector.
+
+    Used directly by `TableDetectorType.TATR` and indirectly by
+    `TableDetectorType.HYBRID`.  Has no effect when the detector is
+    `DOCLING` (which reads layout, not pixels).
+    """
+
     threshold: float = 0.99
     device: str = "cpu"  # "cpu", "cuda", "mps"
     model_name: str = "microsoft/table-transformer-detection"
@@ -110,6 +182,22 @@ class TATRConfig:
 
 @dataclass(slots=True)
 class MaskingConfig:
+    """Region-masking knobs for Step 3 and the Step-2 detector input.
+
+    Step 3 (canonical masking): table + figure + header/footer/sidebar
+    regions are painted white on a copy of the source PDF, then Docling
+    runs again on the masked PDF for clean body-text extraction (Step 4).
+
+    Step 2 inputs are independently influenced by:
+      * `drop_tables_inside_figures` — post-filter that drops table-detector
+        regions whose bbox is ≥80% inside any FIGURE/PICTURE element.
+      * `mask_figures_before_table_detection` — pre-mask helper that paints
+        figure bboxes white *before* the detector runs, so the pixel-based
+        detectors (TATR / Hybrid) never see table-grid pixels embedded in
+        figures.  Independent of `drop_tables_inside_figures`; the two
+        knobs can be combined.
+    """
+
     enabled: bool = True
     mask_tables: bool = True
     mask_figures: bool = True
@@ -142,6 +230,14 @@ class MaskingConfig:
 
 @dataclass(slots=True)
 class FilteringConfig:
+    """Step 5 artifact-filter knobs (`ArtifactFilter`).
+
+    `apply_ner_filtering` and `apply_paragraph_relevance_filtering` route
+    through scispaCy (`en_core_sci_sm`) when enabled.  When neither flag
+    nor `MaskingConfig.mask_header_footer_sidebar` is on, scispaCy is
+    never loaded — useful for low-RAM machines.
+    """
+
     enabled: bool = True
     apply_ner_filtering: bool = True
     apply_paragraph_relevance_filtering: bool = True
@@ -149,6 +245,21 @@ class FilteringConfig:
 
 @dataclass(slots=True)
 class CroppingConfig:
+    """Step 7 media-crop knobs (`PyMuPDFMediaCropper`).
+
+    Caption-aware merging: when `merge_tables_by_caption` /
+    `merge_figures_by_caption` is on, multiple Docling elements that share
+    the same caption number are unioned into a single crop.
+
+    Footnote expansion: when `expand_tables_with_footnotes` is on, each
+    table crop is extended downward to absorb FOOTNOTE / LIST_ITEM / TEXT
+    elements within `footnote_proximity_pts` (resp. `text_footnote_proximity_pts`
+    for TEXT-typed) of the table's bottom edge.  After the first
+    absorption, the gap threshold relaxes to
+    `first_gap * footnote_threshold_multiplier`, so cascading footnotes
+    are absorbed greedily.
+    """
+
     enabled: bool = True
     save_figure_crops: bool = True
     save_table_crops: bool = True
@@ -166,12 +277,26 @@ class CroppingConfig:
 
 @dataclass(slots=True)
 class TextAssemblyConfig:
+    """Step 6 hierarchical text-assembly knobs (`HierarchicalTextAssembler`).
+
+    `write_raw_text` is intercepted by Step 5b (pre-assembly text dump) and
+    by the optional `TextFileWriter` companion.  `pre_filter_relevance`
+    toggles per-paragraph relevance filtering inside `parsers.layout_utils.extract_text`.
+    """
+
     write_raw_text: bool = False  # dump pre-assembly elements to out/text_raw/
     pre_filter_relevance: bool = True  # False → skip is_relevant_para; use post-stitch boilerplate filter instead
 
 
 @dataclass(slots=True)
 class VisualizationConfig:
+    """Step 2b visualisation knobs (`DetectionVisualizer`).
+
+    Off by default in sweep runs.  When enabled, writes annotated PDFs to
+    `PathConfig.vis_dir` showing layout-element colours and detector bbox
+    overlays for auditing.
+    """
+
     enabled: bool = True
     save_tatr_visualization: bool = True
     save_combined_visualization: bool = True
@@ -180,12 +305,36 @@ class VisualizationConfig:
 
 @dataclass(slots=True)
 class DatabaseConfig:
+    """Step 8 PostgreSQL ingest toggle.
+
+    Off by default — sweep / eval runs do not write to the DB.  When on,
+    `db_url` is auto-populated from `database/.env` via
+    `database.db_connection.get_database_url()` if unset.
+    """
+
     enabled: bool = False
     db_url: Optional[str] = None
 
 
 @dataclass(slots=True)
 class RuntimeConfig:
+    """Run-control knobs (gating, resume, batch parallelism, seeding).
+
+    None of these influence cached stage output today (they're audited as
+    gating-only in `runner._compute_config_hash`).  In particular:
+
+      * `skip_blacklisted`, `update_blacklist_on_failure`,
+        `blacklist_if_rows_exceed` — `BlacklistManager` integration.
+      * `skip_existing_in_db`, `skip_existing_media_json` — coarse per-PDF
+        resume gates.
+      * `skip_existing_outputs` — toggles the per-stage cache in
+        `stage_cache._StageCache`.
+      * `multi_source_crops` — Step 7 writes three `media.json` variants
+        (full / docling / docling_recon) instead of one.
+      * `num_workers` — only consulted by `ParallelBatchRunner`.
+      * `seed` — passed to `PipelineRunner._seed_pipeline()`.
+    """
+
     log_level: LogLevel = LogLevel.INFO
     fail_fast: bool = False
     skip_blacklisted: bool = True
@@ -331,6 +480,21 @@ class TwoPassConfig:
 
 @dataclass(slots=True)
 class PipelineConfig:
+    """Master config consumed by `PipelineRunner` and `ParallelBatchRunner`.
+
+    Compose by mutating sub-configs in place::
+
+        cfg = PipelineConfig()
+        cfg.tatr.threshold     = 0.95
+        cfg.two_pass.enabled   = False
+        cfg.database.enabled   = True
+        cfg.prepare()                       # validate + create output dirs
+
+    `prepare()` is idempotent; `validate()` raises `ValueError` for
+    out-of-range values and auto-populates `database.db_url` from
+    `database/.env` when database ingest is enabled but no URL was set.
+    """
+
     paths: PathConfig = field(default_factory=PathConfig)
     # docling is used for Step 1 (full layout extraction / table-figure detection).
     # docling_text, if set, overrides docling for Step 4 (masked re-extraction / text assembly).
