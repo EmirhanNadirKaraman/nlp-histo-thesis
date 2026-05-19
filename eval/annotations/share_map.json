@@ -1,1404 +1,2989 @@
 {
   "PMC10123624_dermatopathology-10-00020_Table_1_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        165.0,
+        388.0,
+        559.0,
+        279.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        233.0,
+        382.0,
+        491.0,
+        281.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC10123624_dermatopathology-10-00020_Table_2_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        165.0,
+        244.0,
+        559.0,
+        69.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        239.0,
+        237.0,
+        493.0,
+        72.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC10123624_dermatopathology-10-00020_Table_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        166.0,
+        729.0,
+        559.0,
+        542.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        203.0,
+        724.0,
+        496.0,
+        545.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC10123624_dermatopathology-10-00020_Table_3_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        166.0,
+        408.0,
+        559.0,
+        101.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        179.0,
+        401.0,
+        532.0,
+        103.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC10123624_dermatopathology-10-00020_Table_4_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        165.0,
+        678.0,
+        559.0,
+        574.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        177.0,
+        671.0,
+        541.0,
+        577.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC10123624_dermatopathology-10-00020_Table_5_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        166.0,
+        440.0,
+        559.0,
+        150.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        173.0,
+        435.0,
+        535.0,
+        154.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC10201000_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        261.0,
+        702.0,
+        351.0,
+        603.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC10296831_dermatopathology-10-00026_Figure_1_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        169.0,
+        743.0,
+        521.0,
+        471.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC10296831_dermatopathology-10-00026_Figure_2_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        94.0,
+        381.0,
+        499.0,
+        164.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC10296831_dermatopathology-10-00026_Figure_3_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        91.0,
+        743.0,
+        502.0,
+        421.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC10296831_dermatopathology-10-00026_Table_1_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        165.0,
+        678.0,
+        559.0,
+        315.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        184.0,
+        673.0,
+        546.0,
+        316.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC10297671_dermatopathology-10-00024_Figure_1_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        81.0,
+        709.0,
+        513.0,
+        472.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC10297671_dermatopathology-10-00024_Figure_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        111.0,
+        745.0,
+        480.0,
+        403.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11649516_HIS-86-236_Figure_1_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        47.0,
+        695.0,
+        529.0,
+        410.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11649516_HIS-86-236_Figure_2_p7.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        62.0,
+        695.0,
+        543.0,
+        423.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11649516_HIS-86-236_Figure_3_p7.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        62.0,
+        343.0,
+        544.0,
+        167.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11649516_HIS-86-236_Figure_4_p9.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        63.0,
+        695.0,
+        544.0,
+        404.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11649516_HIS-86-236_Table_1_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        62.0,
+        671.0,
+        548.0,
+        196.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        64.0,
+        665.0,
+        546.0,
+        200.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11649516_HIS-86-236_Table_2_p8.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        47.0,
+        659.0,
+        282.0,
+        124.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        48.0,
+        653.0,
+        278.0,
+        125.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11674653_dermatopathology-11-00035_Figure_1_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        41.0,
+        398.0,
+        555.0,
+        181.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11674653_dermatopathology-11-00035_Figure_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        39.0,
+        702.0,
+        555.0,
+        514.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11674653_dermatopathology-11-00035_Figure_3_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        39.0,
+        375.0,
+        554.0,
+        122.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11674653_dermatopathology-11-00035_Table_1_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_tatr",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        167.0,
+        193.0,
+        327.0,
+        95.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11674653_dermatopathology-11-00035_Table_1_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_tatr",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        168.0,
+        733.0,
+        324.0,
+        436.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11674653_dermatopathology-11-00035_Table_2_p7.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        165.0,
+        724.0,
+        559.0,
+        475.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        173.0,
+        720.0,
+        553.0,
+        479.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11755463_dermatopathology-12-00002_Figure_1_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        76.0,
+        769.0,
+        519.0,
+        564.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11755463_dermatopathology-12-00002_Figure_2_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        76.0,
+        513.0,
+        518.0,
+        264.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
+  ],
+  "PMC11755463_dermatopathology-12-00002_Table_1_p1.png": [
+    {
+      "bbox": [
+        29.0,
+        317.0,
+        189.0,
+        73.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095"
+      ]
+    }
   ],
   "PMC11755463_dermatopathology-12-00002_Table_1_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        165.0,
+        751.0,
+        559.0,
+        492.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        190.0,
+        747.0,
+        553.0,
+        495.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11755463_dermatopathology-12-00002_Table_2_p1.png": [
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        29.0,
+        317.0,
+        189.0,
+        73.0
+      ],
+      "variants": [
+        "05_hybrid_090",
+        "06_hybrid_095"
+      ]
+    }
   ],
   "PMC11791726_HIS-86-485_Figure_1_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        64.0,
+        690.0,
+        541.0,
+        98.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11791726_HIS-86-485_Figure_2_p8.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        67.0,
+        694.0,
+        292.0,
+        491.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11791726_HIS-86-485_Figure_3_p9.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        48.0,
+        687.0,
+        524.0,
+        144.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11791726_HIS-86-485_Table_1_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        136.0,
+        695.0,
+        482.0,
+        64.0
+      ],
+      "variants": [
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        136.0,
+        695.0,
+        482.0,
+        65.0
+      ],
+      "variants": [
+        "01_docling"
+      ]
+    },
+    {
+      "bbox": [
+        144.0,
+        693.0,
+        473.0,
+        64.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11791726_HIS-86-485_Table_2_p7.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        70.0,
+        696.0,
+        516.0,
+        64.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        78.0,
+        694.0,
+        509.0,
+        65.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11791726_HIS-86-485_Table_3_p10.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        62.0,
+        671.0,
+        548.0,
+        440.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        64.0,
+        663.0,
+        547.0,
+        445.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
+  ],
+  "PMC11791726_HIS-86-485_Table_3_p9.png": [
+    {
+      "bbox": [
+        50.0,
+        534.0,
+        521.0,
+        402.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11791726_HIS-86-485_Table_4_p9.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        50.0,
+        534.0,
+        521.0,
+        402.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863705_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        36.0,
+        733.0,
+        97.0,
+        665.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863705_main_Figure_2_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        500.0,
+        739.0,
+        558.0,
+        666.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863705_main_Figure_3_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        69.0,
+        739.0,
+        526.0,
+        399.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863705_main_Figure_4_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        74.0,
+        737.0,
+        516.0,
+        188.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863705_main_Table_1_p1.png": [
-    "detector_tatr"
+    {
+      "bbox": [
+        40.0,
+        502.0,
+        558.0,
+        337.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863705_main_Table_1_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        306.0,
+        350.0,
+        558.0,
+        81.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        313.0,
+        343.0,
+        552.0,
+        83.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863705_main_Table_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        36.0,
+        719.0,
+        286.0,
+        69.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863705_main_Table_3_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        43.0,
+        717.0,
+        248.0,
+        90.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    },
+    {
+      "bbox": [
+        305.0,
+        728.0,
+        557.0,
+        148.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863705_main_Table_3_p6.png": [
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon"
+    {
+      "bbox": [
+        37.0,
+        720.0,
+        354.0,
+        178.0
+      ],
+      "variants": [
+        "01_docling"
+      ]
+    },
+    {
+      "bbox": [
+        43.0,
+        716.0,
+        284.0,
+        179.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863705_main_Table_4_p3.png": [
-    "detector_tatr"
+    {
+      "bbox": [
+        313.0,
+        724.0,
+        517.0,
+        150.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863705_main_Table_4_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        37.0,
+        720.0,
+        553.0,
+        79.0
+      ],
+      "variants": [
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        313.0,
+        716.0,
+        553.0,
+        79.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863705_main_Table_5_p7.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        37.0,
+        732.0,
+        289.0,
+        419.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863705_main_Table_6_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC11863705_main_Table_6_p7.png": [
-    "docling_recon"
+    {
+      "bbox": [
+        40.0,
+        502.0,
+        558.0,
+        337.0
+      ],
+      "variants": [
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863705_main_Table_7_p7.png": [
-    "detector_tatr"
+    {
+      "bbox": [
+        43.0,
+        726.0,
+        282.0,
+        422.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863984_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        36.0,
+        733.0,
+        97.0,
+        666.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863984_main_Figure_2_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        500.0,
+        739.0,
+        558.0,
+        667.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863984_main_Figure_3_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        39.0,
+        327.0,
+        287.0,
+        116.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863984_main_Figure_4_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        96.0,
+        738.0,
+        499.0,
+        612.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863984_main_Figure_5_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        37.0,
+        537.0,
+        558.0,
+        393.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11863984_main_Table_1_p1.png": [
-    "detector_tatr"
+    {
+      "bbox": [
+        38.0,
+        515.0,
+        558.0,
+        365.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863984_main_Table_1_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        36.0,
+        720.0,
+        558.0,
+        632.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        44.0,
+        716.0,
+        552.0,
+        636.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863984_main_Table_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        306.0,
+        285.0,
+        558.0,
+        52.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        312.0,
+        280.0,
+        552.0,
+        54.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863984_main_Table_3_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        36.0,
+        721.0,
+        290.0,
+        529.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        44.0,
+        715.0,
+        277.0,
+        533.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863984_main_Table_4_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        36.0,
+        148.0,
+        289.0,
+        52.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        43.0,
+        142.0,
+        281.0,
+        54.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC11863984_main_Table_5_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        38.0,
+        515.0,
+        558.0,
+        365.0
+      ],
+      "variants": [
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11984985_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        36.0,
+        733.0,
+        97.0,
+        665.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC11984985_main_Figure_2_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        500.0,
+        739.0,
+        558.0,
+        666.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12045760_HIS-86-1053_Figure_1_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        47.0,
+        695.0,
+        526.0,
+        254.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12045760_HIS-86-1053_Figure_2_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        64.0,
+        696.0,
+        543.0,
+        133.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12045760_HIS-86-1053_Figure_3_p8.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        66.0,
+        695.0,
+        546.0,
+        73.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12045760_HIS-86-1053_Table_1_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC12045760_HIS-86-1053_Table_1_p4_2.png": [
-    "docling_recon"
+    {
+      "bbox": [
+        62.0,
+        668.0,
+        297.0,
+        94.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        64.0,
+        663.0,
+        295.0,
+        96.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Figure_10_p17.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        298.0,
+        709.0,
+        538.0,
+        486.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Figure_1_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        54.0,
+        303.0,
+        428.0,
+        55.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Figure_2_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        54.0,
+        707.0,
+        424.0,
+        467.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Figure_3_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        54.0,
+        289.0,
+        422.0,
+        54.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Figure_4_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        54.0,
+        708.0,
+        395.0,
+        467.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Figure_5_p7.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        171.0,
+        706.0,
+        540.0,
+        483.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Figure_6_p9.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        74.0,
+        326.0,
+        500.0,
+        66.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Figure_7_p11.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        38.0,
+        709.0,
+        539.0,
+        424.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Figure_8_p13.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        198.0,
+        271.0,
+        541.0,
+        51.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Figure_9_p16.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        56.0,
+        708.0,
+        557.0,
+        374.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12129649_NEUP-45-177_Table_1_p8.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        54.0,
+        353.0,
+        560.0,
+        112.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        56.0,
+        347.0,
+        558.0,
+        113.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC12192205_dermatopathology-12-00018_Figure_1_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        168.0,
+        728.0,
+        550.0,
+        430.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12192205_dermatopathology-12-00018_Figure_2_p7.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        169.0,
+        769.0,
+        429.0,
+        225.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12192205_dermatopathology-12-00018_Figure_3_p8.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        65.0,
+        769.0,
+        528.0,
+        397.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12192205_dermatopathology-12-00018_Table_1_p1.png": [
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        28.0,
+        299.0,
+        196.0,
+        72.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "05_hybrid_090",
+        "06_hybrid_095"
+      ]
+    }
   ],
   "PMC12337196_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        36.0,
+        733.0,
+        97.0,
+        665.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12337196_main_Figure_2_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        500.0,
+        739.0,
+        558.0,
+        666.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12337196_main_Figure_3_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        76.0,
+        312.0,
+        518.0,
+        76.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12337196_main_Figure_4_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        39.0,
+        738.0,
+        557.0,
+        213.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC12337196_main_Table_1_p1.png": [
-    "baseline",
-    "detector_tatr",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC12337196_main_Table_1_p3.png": [
-    "baseline_evalcfg",
-    "docling_recon"
-  ],
-  "PMC12337196_main_Table_2_p1.png": [
-    "baseline_evalcfg"
+    {
+      "bbox": [
+        38.0,
+        504.0,
+        558.0,
+        385.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC4945808_dpa-0003-0055_Figure_1_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        232.0,
+        706.0,
+        503.0,
+        503.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC4945808_dpa-0003-0055_Figure_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        91.0,
+        707.0,
+        504.0,
+        403.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC4945808_dpa-0003-0055_Figure_3_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        232.0,
+        309.0,
+        503.0,
+        91.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC4945808_dpa-0003-0055_Table_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_tatr",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        216.0,
+        769.0,
+        494.0,
+        726.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC4945808_dpa-0003-0055_Table_2_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_tatr",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        227.0,
+        769.0,
+        502.0,
+        741.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC4945808_dpa-0003-0055_Table_3_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_tatr",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        216.0,
+        770.0,
+        498.0,
+        742.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC4945808_dpa-0003-0055_Table_4_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_tatr",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        220.0,
+        770.0,
+        500.0,
+        742.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC4945808_dpa-0003-0055_Table_5_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_tatr",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        221.0,
+        770.0,
+        500.0,
+        742.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC4945808_dpa-0003-0055_Table_6_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_tatr",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        223.0,
+        769.0,
+        500.0,
+        742.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC6851684_HIS-75-329_Figure_1_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        316.0,
+        692.0,
+        542.0,
+        285.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC6851684_HIS-75-329_Figure_2_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        47.0,
+        694.0,
+        528.0,
+        514.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC6851684_HIS-75-329_Figure_3_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        93.0,
+        694.0,
+        514.0,
+        140.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC6851684_HIS-75-329_Table_1_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        47.0,
+        681.0,
+        281.0,
+        70.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        48.0,
+        676.0,
+        280.0,
+        72.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC6851684_HIS-75-329_Table_1_p3_2.png": [
-    "baseline",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        298.0,
+        680.0,
+        532.0,
+        592.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        301.0,
+        676.0,
+        515.0,
+        598.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC6851684_HIS-75-329_Table_2_p7.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC7124083_978-1-61779-403-2_Chapter_21_Figure_1_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC7124083_978-1-61779-403-2_Chapter_21_Figure_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC7124083_978-1-61779-403-2_Chapter_21_Figure_3_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC7124083_978-1-61779-403-2_Chapter_21_Figure_4_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC7124083_978-1-61779-403-2_Chapter_21_Figure_5_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC7124083_978-1-61779-403-2_Chapter_21_Figure_6_p8.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC7124083_978-1-61779-403-2_Chapter_21_Figure_7_p8.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC7124083_978-1-61779-403-2_Chapter_21_Figure_8_p9.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC7124083_978-1-61779-403-2_Chapter_21_Table_1_p1.png": [
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        47.0,
+        681.0,
+        532.0,
+        210.0
+      ],
+      "variants": [
+        "01_docling"
+      ]
+    },
+    {
+      "bbox": [
+        47.0,
+        681.0,
+        533.0,
+        210.0
+      ],
+      "variants": [
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        48.0,
+        676.0,
+        533.0,
+        215.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC7150024_main_Figure_11_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        64.0,
+        754.0,
+        551.0,
+        594.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7150024_main_Figure_11_p4_2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        64.0,
+        510.0,
+        551.0,
+        350.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7150024_main_Figure_11_p4_3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        58.0,
+        254.0,
+        301.0,
+        93.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7150024_main_Figure_11_p4_4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        315.0,
+        265.0,
+        558.0,
+        104.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7150024_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        261.0,
+        702.0,
+        351.0,
+        603.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7152403_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        261.0,
+        702.0,
+        351.0,
+        603.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7152403_main_Figure_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        117.0,
+        731.0,
+        500.0,
+        432.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7152403_main_Figure_3_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        115.0,
+        342.0,
+        503.0,
+        93.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7317439_NEUP-40-302_Figure_1_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        39.0,
+        708.0,
+        276.0,
+        546.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7317439_NEUP-40-302_Figure_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        54.0,
+        709.0,
+        397.0,
+        368.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7317439_NEUP-40-302_Figure_3_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
-  ],
-  "PMC7317439_NEUP-40-302_Table_1_p4.png": [
-    "baseline_evalcfg",
-    "docling_recon"
+    {
+      "bbox": [
+        107.0,
+        709.0,
+        468.0,
+        227.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7436514_HIS-77-169_Figure_1_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        65.0,
+        682.0,
+        546.0,
+        460.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7543760_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        261.0,
+        702.0,
+        351.0,
+        603.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7543760_main_Figure_2_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        65.0,
+        766.0,
+        265.0,
+        585.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC7543760_main_Table_1_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        45.0,
+        752.0,
+        549.0,
+        365.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        51.0,
+        744.0,
+        543.0,
+        374.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC7543760_main_Table_2_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        46.0,
+        292.0,
+        549.0,
+        109.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        51.0,
+        282.0,
+        544.0,
+        115.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC7543760_main_Table_3_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        45.0,
+        520.0,
+        549.0,
+        109.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        51.0,
+        512.0,
+        544.0,
+        117.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC8008316_dermatopathology-08-00010_Figure_1_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        170.0,
+        656.0,
+        423.0,
+        457.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8008316_dermatopathology-08-00010_Figure_2_p2.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        170.0,
+        420.0,
+        417.0,
+        98.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8008316_dermatopathology-08-00010_Figure_3_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        171.0,
+        742.0,
+        428.0,
+        467.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8221903_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        261.0,
+        702.0,
+        351.0,
+        603.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8221903_main_Table_1_p3.png": [
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        318.0,
+        102.0,
+        535.0,
+        69.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "05_hybrid_090",
+        "06_hybrid_095"
+      ]
+    }
   ],
   "PMC8352662_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        261.0,
+        702.0,
+        351.0,
+        603.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8352662_main_Table_1_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        45.0,
+        752.0,
+        549.0,
+        563.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        51.0,
+        744.0,
+        543.0,
+        571.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC8352662_main_Table_2_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        45.0,
+        752.0,
+        549.0,
+        428.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        51.0,
+        745.0,
+        544.0,
+        436.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC8352662_main_Table_3_p6.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        46.0,
+        606.0,
+        548.0,
+        112.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        51.0,
+        597.0,
+        543.0,
+        116.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC8352662_main_Table_4_p7.png": [
-    "tatr_090"
+    {
+      "bbox": [
+        52.0,
+        744.0,
+        544.0,
+        396.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "05_hybrid_090"
+      ]
+    }
   ],
   "PMC8416649_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        261.0,
+        702.0,
+        351.0,
+        603.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8416649_main_Figure_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        314.0,
+        312.0,
+        544.0,
+        177.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8416649_main_Table_1_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        46.0,
+        453.0,
+        286.0,
+        154.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        51.0,
+        443.0,
+        277.0,
+        162.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC8420544_CYT-33-93_Figure_1_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        47.0,
+        736.0,
+        547.0,
+        553.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8420544_CYT-33-93_Figure_2_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        46.0,
+        484.0,
+        376.0,
+        347.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8420544_CYT-33-93_Figure_3_p5.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        130.0,
+        738.0,
+        464.0,
+        384.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8420544_CYT-33-93_Table_1_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        51.0,
+        710.0,
+        281.0,
+        360.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ],
   "PMC8420544_CYT-33-93_Table_2_p3.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        45.0,
+        317.0,
+        289.0,
+        172.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        52.0,
+        311.0,
+        279.0,
+        174.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC8420544_CYT-33-93_Table_3_p4.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        45.0,
+        313.0,
+        381.0,
+        213.0
+      ],
+      "variants": [
+        "01_docling",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    },
+    {
+      "bbox": [
+        52.0,
+        304.0,
+        369.0,
+        214.0
+      ],
+      "variants": [
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099"
+      ]
+    }
   ],
   "PMC9906788_main_Figure_1_p1.png": [
-    "baseline",
-    "baseline_evalcfg",
-    "detector_docling",
-    "detector_tatr",
-    "docling_recon",
-    "no_two_pass",
-    "tatr_090",
-    "tatr_095"
+    {
+      "bbox": [
+        261.0,
+        702.0,
+        351.0,
+        603.0
+      ],
+      "variants": [
+        "01_docling",
+        "02_tatr_090",
+        "03_tatr_095",
+        "04_tatr_099",
+        "05_hybrid_090",
+        "06_hybrid_095",
+        "07_hybrid_099"
+      ]
+    }
   ]
 }

@@ -544,64 +544,173 @@ def test_collect_label_menu_no_rubric_falls_back_to_recent(tmp_path, monkeypatch
     assert ann_mod._collect_label_menu(ann) == ["fresh label"]
 
 
-# ── Kind-aware menu filtering ────────────────────────────────────────────────
+# ── Kind-aware menu filtering (block-based, 2026-05-19) ──────────────────────
 
 
-def test_label_applies_figure_only() -> None:
-    assert ann_mod._label_applies_to("correct figure", "figure") is True
-    assert ann_mod._label_applies_to("correct figure", "table") is False
+_NEW_FORMAT_RUBRIC = (
+    "shared_labels:\n"
+    "  crop too big minor:\n    crop: 0.75\n"
+    "  wrong caption:\n    crop: 1.0\n"
+    "figure_labels:\n"
+    "  correct figure:\n    crop: 1.0\n"
+    "  icon:\n    crop: 0.0\n"
+    "table_labels:\n"
+    "  missing footnotes:\n    crop: 1.0\n"
+    "  table_in_figure:\n    crop: 0.0\n"
+)
 
 
-def test_label_applies_table_only() -> None:
-    assert ann_mod._label_applies_to("missing footnotes", "table") is True
-    assert ann_mod._label_applies_to("missing footnotes", "figure") is False
-    assert ann_mod._label_applies_to("table_in_figure", "table") is True
-    # 'table_in_figure' mentions both — current rule treats it as table-only
-    # because table+footnote match takes precedence in the table branch.
-    assert ann_mod._label_applies_to("table_in_figure", "figure") is True
+def test_load_rubric_labels_filters_figure_kind(tmp_path, monkeypatch) -> None:
+    p = tmp_path / "rubric.yaml"
+    p.write_text(_NEW_FORMAT_RUBRIC)
+    monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", p)
+    out = ann_mod._load_rubric_labels(item_kind="figure")
+    # shared + figure-only, no table-only
+    assert "crop too big minor" in out
+    assert "wrong caption" in out
+    assert "correct figure" in out
+    assert "icon" in out
+    assert "missing footnotes" not in out
+    assert "table_in_figure" not in out
 
 
-def test_label_applies_neutral_both_kinds() -> None:
-    # No figure/table/footnote keyword → always shown
-    for kind in ("figure", "table"):
-        assert ann_mod._label_applies_to("crop is too big", kind) is True
-        assert ann_mod._label_applies_to("incorrect", kind) is True
-        assert ann_mod._label_applies_to("icon", kind) is True
+def test_load_rubric_labels_filters_table_kind(tmp_path, monkeypatch) -> None:
+    p = tmp_path / "rubric.yaml"
+    p.write_text(_NEW_FORMAT_RUBRIC)
+    monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", p)
+    out = ann_mod._load_rubric_labels(item_kind="table")
+    assert "crop too big minor" in out
+    assert "wrong caption" in out
+    assert "missing footnotes" in out
+    assert "table_in_figure" in out
+    assert "correct figure" not in out
+    assert "icon" not in out
 
 
-def test_label_applies_unknown_kind_passes_through() -> None:
-    # Non-figure/table item kinds (e.g. text annotation) get the full menu.
-    assert ann_mod._label_applies_to("correct figure", "paragraph") is True
-    assert ann_mod._label_applies_to("missing footnotes", None) is True
+def test_load_rubric_labels_no_kind_returns_everything(tmp_path, monkeypatch) -> None:
+    p = tmp_path / "rubric.yaml"
+    p.write_text(_NEW_FORMAT_RUBRIC)
+    monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", p)
+    out = ann_mod._load_rubric_labels(item_kind=None)
+    assert {"crop too big minor", "wrong caption",
+            "correct figure", "icon",
+            "missing footnotes", "table_in_figure"}.issubset(set(out))
+
+
+def test_load_rubric_labels_legacy_format_still_works(tmp_path, monkeypatch) -> None:
+    """Old `labels:` block (no kind blocks) returns everything regardless
+    of item_kind — back-compat."""
+    p = tmp_path / "rubric.yaml"
+    p.write_text(
+        "labels:\n"
+        "  correct figure:\n    crop: 1.0\n"
+        "  missing footnotes:\n    crop: 1.0\n"
+        "  wrong caption:\n    crop: 1.0\n"
+    )
+    monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", p)
+    for kind in ("figure", "table", None):
+        out = ann_mod._load_rubric_labels(item_kind=kind)
+        assert "correct figure" in out
+        assert "missing footnotes" in out
+        assert "wrong caption" in out
 
 
 def test_collect_label_menu_filters_for_figure(tmp_path, monkeypatch) -> None:
     p = tmp_path / "rubric.yaml"
-    p.write_text(
-        "labels:\n"
-        "  correct figure:\n    crop: 1.0\n"
-        "  missing footnotes:\n    crop: 1.0\n"
-        "  crop is too big:\n    crop: 0.75\n"
-        "  table_in_figure:\n    crop: 0.0\n"
-    )
+    p.write_text(_NEW_FORMAT_RUBRIC)
     monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", p)
     menu = ann_mod._collect_label_menu({}, item_kind="figure")
-    # 'missing footnotes' is filtered out (footnote → table-only)
     assert "missing footnotes" not in menu
+    assert "table_in_figure" not in menu
     assert "correct figure" in menu
-    assert "crop is too big" in menu
+    assert "crop too big minor" in menu
 
 
 def test_collect_label_menu_filters_for_table(tmp_path, monkeypatch) -> None:
     p = tmp_path / "rubric.yaml"
-    p.write_text(
-        "labels:\n"
-        "  correct figure:\n    crop: 1.0\n"
-        "  missing footnotes:\n    crop: 1.0\n"
-        "  crop is too big:\n    crop: 0.75\n"
-    )
+    p.write_text(_NEW_FORMAT_RUBRIC)
     monkeypatch.setattr(ann_mod, "_RUBRIC_PATH", p)
     menu = ann_mod._collect_label_menu({}, item_kind="table")
     assert "correct figure" not in menu
+    assert "icon" not in menu
     assert "missing footnotes" in menu
-    assert "crop is too big" in menu
+    assert "crop too big minor" in menu
+
+
+# ── Bbox-aware propagation (new share-map format) ─────────────────────────────
+
+
+def test_propagate_label_bbox_aware_only_writes_matching_group(tmp_path, monkeypatch) -> None:
+    """Source bbox matches Group A → only A peers receive the label.
+    Group B (different bbox) is not touched even though it emits the same filename."""
+    monkeypatch.setattr(ann_mod, "ANN_DIR", tmp_path)
+    share_map = {
+        "k.png": [
+            {"bbox": [50.0, 500.0, 520.0, 300.0], "variants": ["E1", "E2"]},
+            {"bbox": [48.0, 540.0, 525.0, 200.0], "variants": ["E3_relaxed"]},
+        ],
+    }
+    source_bbox = {"x1": 50.0, "y1": 500.0, "x2": 520.0, "y2": 300.0}
+    peers = ann_mod.propagate_label(
+        "k.png", "correct", "json_tables_full",
+        source_variant="E1", share_map=share_map, source_bbox=source_bbox,
+    )
+    assert peers == ["E2"]
+    assert (tmp_path / "E2" / "json_tables_full.json").exists()
+    assert not (tmp_path / "E3_relaxed").exists()
+
+
+def test_propagate_label_bbox_no_match_propagates_nowhere(tmp_path, monkeypatch) -> None:
+    """Source bbox matches NO group → no propagation."""
+    monkeypatch.setattr(ann_mod, "ANN_DIR", tmp_path)
+    share_map = {
+        "k.png": [
+            {"bbox": [50.0, 500.0, 520.0, 300.0], "variants": ["E1", "E2"]},
+        ],
+    }
+    # Source has a wildly different bbox
+    src = {"x1": 999.0, "y1": 999.0, "x2": 1000.0, "y2": 1000.0}
+    peers = ann_mod.propagate_label(
+        "k.png", "correct", "json_tables_full",
+        source_variant="E1", share_map=share_map, source_bbox=src,
+    )
+    assert peers == []
+
+
+def test_propagate_label_bbox_quantized_to_tolerance(tmp_path, monkeypatch) -> None:
+    """Source bbox within 1pt of a group's bbox → matches via quantization."""
+    monkeypatch.setattr(ann_mod, "ANN_DIR", tmp_path)
+    share_map = {
+        "k.png": [
+            {"bbox": [50.0, 500.0, 520.0, 300.0], "variants": ["E1", "E2"]},
+        ],
+    }
+    # Source bbox jitter: .4 each direction — quantize_bbox rounds to .0
+    src = {"x1": 50.4, "y1": 500.3, "x2": 519.7, "y2": 300.2}
+    peers = ann_mod.propagate_label(
+        "k.png", "correct", "json_tables_full",
+        source_variant="E1", share_map=share_map, source_bbox=src,
+    )
+    assert peers == ["E2"]
+
+
+def test_propagate_label_legacy_format_still_works(tmp_path, monkeypatch) -> None:
+    """Old flat-list share_map still propagates (with no bbox check)."""
+    monkeypatch.setattr(ann_mod, "ANN_DIR", tmp_path)
+    share_map = {"k.png": ["E1", "E2", "E3"]}  # legacy flat list
+    peers = ann_mod.propagate_label(
+        "k.png", "correct", "json_tables_full",
+        source_variant="E1", share_map=share_map, source_bbox=None,
+    )
+    assert sorted(peers) == ["E2", "E3"]
+
+
+def test_quantize_bbox_handles_missing(tmp_path) -> None:
+    assert ann_mod._quantize_bbox(None) == (0.0, 0.0, 0.0, 0.0)
+    assert ann_mod._quantize_bbox({}) == (0.0, 0.0, 0.0, 0.0)
+    assert ann_mod._quantize_bbox({"x1": 50.4, "y1": 500.6}) == (50.0, 501.0, 0.0, 0.0)
+
+
+def test_find_peers_empty_entry_returns_empty() -> None:
+    assert ann_mod._find_peers(None, "E1", None) == []
+    assert ann_mod._find_peers([], "E1", None) == []

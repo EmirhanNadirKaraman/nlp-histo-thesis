@@ -1,0 +1,23 @@
+{
+  "PMC11674653_dermatopathology-11-00035_Table_1_p3.png": "correct",
+  "PMC11674653_dermatopathology-11-00035_Table_1_p4.png": "correct",
+  "PMC12337196_main_Table_1_p1.png": "incorrect",
+  "PMC4945808_dpa-0003-0055_Table_1_p1.png": "should be masked, not a table in the scientific sense",
+  "PMC4945808_dpa-0003-0055_Table_2_p2.png": "should be masked, not a table in the scientific sense",
+  "PMC4945808_dpa-0003-0055_Table_3_p3.png": "should be masked, not a table in the scientific sense",
+  "PMC4945808_dpa-0003-0055_Table_4_p4.png": "should be masked, not a table in the scientific sense",
+  "PMC4945808_dpa-0003-0055_Table_5_p5.png": "should be masked, not a table in the scientific sense",
+  "PMC4945808_dpa-0003-0055_Table_6_p6.png": "should be masked, not a table in the scientific sense",
+  "PMC8420544_CYT-33-93_Table_1_p3.png": "correct",
+  "PMC10123624_dermatopathology-10-00020_Table_1_p2.png": "correct",
+  "PMC10123624_dermatopathology-10-00020_Table_2_p2.png": "correct",
+  "PMC10123624_dermatopathology-10-00020_Table_2_p3.png": "correct",
+  "PMC10123624_dermatopathology-10-00020_Table_3_p3.png": "correct",
+  "PMC10123624_dermatopathology-10-00020_Table_4_p4.png": "correct",
+  "PMC10123624_dermatopathology-10-00020_Table_5_p4.png": "correct",
+  "PMC10296831_dermatopathology-10-00026_Table_1_p3.png": "missing footnotes",
+  "PMC11649516_HIS-86-236_Table_1_p5.png": "missing footnotes",
+  "PMC11649516_HIS-86-236_Table_2_p8.png": "missing footnotes",
+  "PMC11674653_dermatopathology-11-00035_Table_2_p7.png": "correct",
+  "PMC11755463_dermatopathology-12-00002_Table_1_p4.png": "correct"
+}

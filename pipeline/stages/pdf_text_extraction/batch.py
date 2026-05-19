@@ -39,6 +39,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
@@ -235,7 +236,14 @@ class ParallelBatchRunner:
                     for pdf, pmcid in work
                 }
 
-                with tqdm(total=len(future_to_pmcid), unit="pdf", desc="PDF extraction") as pbar:
+                with logging_redirect_tqdm(), tqdm(
+                    total=len(future_to_pmcid),
+                    unit="pdf",
+                    desc="PDF extraction",
+                    position=1,
+                    leave=False,
+                    dynamic_ncols=True,
+                ) as pbar:
                     for future in as_completed(future_to_pmcid):
                         pmcid = future_to_pmcid[future]
                         try:
@@ -248,6 +256,13 @@ class ParallelBatchRunner:
                             self._stats[outcome] += 1
 
                         pbar.update(1)
+                        logger.info(
+                            "[%d/%d] %s — %s  (ok=%d fail=%d skip=%d)",
+                            pbar.n, pbar.total, pmcid, outcome,
+                            self._stats["processed"],
+                            self._stats["failed"],
+                            self._stats["skipped"],
+                        )
                         pbar.set_postfix(
                             ok=self._stats["processed"],
                             fail=self._stats["failed"],

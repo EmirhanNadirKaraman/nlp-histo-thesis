@@ -15,16 +15,177 @@
 #   "skip" → exclude the entire item from this dim's denominator (use for
 #            ambiguous "needs check" labels that aren't a decision).
 #
-# Each label maps to exactly one (crop, caption, footnote) tuple via
-# direct lookup or longest-prefix match.  No automatic combination —
-# if you want a multi-failure semantic (e.g. "wrong caption AND missing
-# footnotes"), add an explicit entry for that label string here.
+# Structure (2026-05-19, no-shared variant):
+#   figure_labels — every label that may be used on a figure crop.
+#   table_labels  — every label that may be used on a table crop.
+#
+# Labels that semantically apply to both kinds (e.g. `correct`, `wrong
+# caption`, `crop too big minor`) are duplicated under both blocks with
+# kind-appropriate dim scores.  Figure copies have ``footnote: n/a``;
+# table copies carry the meaningful footnote score.  No shared block —
+# the rubric is the explicit source of truth, no runtime override needed.
+#
+# Each label maps to exactly one (crop, caption, footnote) tuple via direct
+# lookup. No automatic combination — multi-failure cases (e.g. "wrong
+# caption AND missing footnotes") have explicit composite entries.
 #
 # Adjust these to recompute F1 under different assumptions.  The scorer
 # stamps the active rubric path into the JSON report so the numbers are
 # reproducible.
 
-labels:
+# ── Figure-only ──────────────────────────────────────────────────────────────
+# Figures don't carry body footnotes (they have captions only), so every
+# label here uses ``footnote: n/a``.
+figure_labels:
+  # ── Standard single-keystroke outcomes ────────────────────────────────────
+  correct:
+    crop: 1.0
+    caption: 1.0
+    footnote: n/a
+    mask: 1.0
+
+  incorrect:
+    crop: 0.0          # not a figure at all
+    caption: n/a
+    footnote: n/a
+    mask: 0.0          # shouldn't have been masked either (random paragraph FP)
+
+  other:
+    crop: skip
+    caption: skip
+    footnote: skip
+    mask: skip
+
+  'check later':
+    crop: skip
+    caption: skip
+    footnote: skip
+    mask: skip
+
+  # ``[s]`` hotkey writes "skipped" verbatim.  Listed explicitly so it
+  # doesn't show up as ``unrecognised`` in scoring counts.
+  skipped:
+    crop: skip
+    caption: skip
+    footnote: skip
+    mask: skip
+
+  # ── Custom-label outcomes (typed via [l] in the annotator) ────────────────
+  wrong caption:
+    crop: 1.0
+    caption: 0.0
+    footnote: n/a
+    mask: 1.0          # region was masked correctly; caption mismatch is downstream
+
+  # Crop too big → over-masks (loses some adjacent text).
+  # Crop too small → under-masks (figure content leaks into body text).
+  # Severity split (2026-05-19): "minor" = boundary off by a small margin
+  # (a few pts, no functional content lost / leaked); "major" = boundary off
+  # by a wide margin (whole text blocks lost or content visibly leaked
+  # into body text).  caption dim unaffected by crop extent.
+  crop too big minor:
+    crop: 0.75
+    caption: 1.0
+    footnote: n/a
+    mask: 0.75
+
+  crop too big major:
+    crop: 0.25
+    caption: 1.0
+    footnote: n/a
+    mask: 0.25
+
+  crop too small minor:
+    crop: 0.75
+    caption: 1.0
+    footnote: n/a
+    mask: 0.25
+
+  crop too small major:
+    crop: 0.25
+    caption: 1.0
+    footnote: n/a
+    mask: 0.0
+
+  # ── Figure-specific ───────────────────────────────────────────────────────
+  # Decorative icons — image-like regions that should be masked (would
+  # otherwise leak inline graphics into body text) but shouldn't appear
+  # in the figure output.  crop=0 (figure-output FP), mask=1 (text-safety OK).
+  icon:
+    crop: 0.0
+    caption: n/a
+    footnote: n/a
+    mask: 1.0
+
+  correct figure:
+    crop: 1.0
+    caption: 1.0
+    footnote: n/a
+    mask: 1.0
+
+  'correct figure, no caption (caption in another page)':
+    crop: 1.0
+    caption: 0.0      # caption sits on a different page → not attached
+    footnote: n/a
+    mask: 1.0
+
+  'correct figure, partial caption':
+    crop: 1.0
+    caption: 0.5      # caption truncated — half credit
+    footnote: n/a
+    mask: 1.0
+
+  'correct figure, wrong caption (real caption in bottom left, confused page footer with caption)':
+    crop: 1.0
+    caption: 0.0
+    footnote: n/a
+    mask: 1.0
+
+  'correct figure, wrong caption (real caption in bottom right, confused page footer with caption)':
+    crop: 1.0
+    caption: 0.0
+    footnote: n/a
+    mask: 1.0
+
+  'correct-ish figure, caption not detected, caption in crop??':
+    crop: 0.75        # "correct-ish" — slight boundary issue
+    caption: 0.5      # uncertain
+    footnote: n/a
+    mask: 0.75        # boundary off → slight mask precision loss
+
+  # ── Annotation-time additions (2026-05-19) ────────────────────────────────
+  # Caption sits in a side column adjacent to the figure (typical 2-column
+  # layouts with side-mounted captions).  Attacher missed it.  Crop is OK.
+  'no caption, caption is to the right of the figure':
+    crop: 1.0
+    caption: 0.0
+    footnote: n/a
+    mask: 1.0
+
+  # Attacher pulled the real caption AND extra adjacent text (often a
+  # duplicated caption block or surrounding body text).  Real caption is
+  # in there but contaminated — half credit.
+  'the detected caption is too long and has copies of the real one.':
+    crop: 1.0
+    caption: 0.5
+    footnote: n/a
+    mask: 1.0
+
+  # ── Composites ────────────────────────────────────────────────────────────
+  crop too big major and wrong caption:
+    crop: 0.25
+    caption: 0.0
+    footnote: n/a
+    mask: 0.25
+
+  crop too big minor and wrong caption:
+    crop: 0.75
+    caption: 0.0
+    footnote: n/a
+    mask: 0.75
+
+# ── Table-only ───────────────────────────────────────────────────────────────
+table_labels:
   # ── Standard single-keystroke outcomes ────────────────────────────────────
   correct:
     crop: 1.0
@@ -36,16 +197,7 @@ labels:
     crop: 0.0          # not a table at all
     caption: n/a
     footnote: n/a
-    mask: 0.0          # shouldn't have been masked either (random paragraph FP)
-
-  # Icons get masked correctly (they ARE image-like regions whose content
-  # would otherwise leak into body text), but they shouldn't appear in the
-  # figure output.  crop=0 (figure-output FP), mask=1 (text-safety OK).
-  icon:
-    crop: 0.0
-    caption: n/a
-    footnote: n/a
-    mask: 1.0
+    mask: 0.0
 
   other:
     crop: skip
@@ -53,31 +205,63 @@ labels:
     footnote: skip
     mask: skip
 
-  # ── Custom-label outcomes (typed via [l] in the annotator) ────────────────
+  'check later':
+    crop: skip
+    caption: skip
+    footnote: skip
+    mask: skip
+
+  # ``[s]`` hotkey writes "skipped" verbatim.  Listed explicitly so it
+  # doesn't show up as ``unrecognised`` in scoring counts.
+  skipped:
+    crop: skip
+    caption: skip
+    footnote: skip
+    mask: skip
+
+  # ── Custom-label outcomes ─────────────────────────────────────────────────
   wrong caption:
     crop: 1.0
     caption: 0.0
     footnote: 1.0
-    mask: 1.0          # region was masked correctly; caption mismatch is downstream
+    mask: 1.0
+
+  crop too big minor:
+    crop: 0.75
+    caption: 1.0
+    footnote: 1.0
+    mask: 0.75
+
+  crop too big major:
+    crop: 0.25
+    caption: 1.0
+    footnote: 1.0
+    mask: 0.25
+
+  crop too small minor:
+    crop: 0.75
+    caption: 1.0
+    footnote: 1.0
+    mask: 0.25
+
+  crop too small major:
+    crop: 0.25
+    caption: 1.0
+    footnote: 1.0
+    mask: 0.0
+
+  # ── Table-specific ────────────────────────────────────────────────────────
+  missed caption:
+    crop: 1.0
+    caption: 0.0
+    footnote: 1.0
+    mask: 1.0
 
   missing footnotes:
     crop: 1.0
     caption: 1.0
     footnote: 0.0
     mask: 1.0          # table region masked; footnote omission affects crop completeness only
-
-  # Crop too big → over-masks (loses some adjacent text).
-  # Crop too small → under-masks (table cells leak into body text).
-  crop is too big:
-    crop: 0.75
-    caption: 1.0
-    footnote: 1.0
-    mask: 0.75         # over-mask: covers more than needed but no leak
-  crop is too small:
-    crop: 0.25
-    caption: 1.0
-    footnote: 1.0
-    mask: 0.25         # under-mask: table content leaks into body text
 
   # Discovered FP class — filter (drop_tables_inside_figures) catches these.
   # The containing figure WAS masked correctly though.
@@ -87,100 +271,16 @@ labels:
     footnote: n/a
     mask: 1.0
 
-  # Inspector-only — exclude from all dims; flag for re-review.
-  weird:
-    crop: skip
-    caption: skip
-    footnote: skip
-    mask: skip
-
-  # ── Legacy / phrased table labels ─────────────────────────────────────────
-  # These appear in pre-existing annotation files with subtle wording
-  # variations.  Map them to the appropriate semantics so they don't
-  # silently prefix-match "correct" and inflate F1.
-
-
-  # Two-failure case: missed one real table AND the crop boundary is
-  # oversized because it tried to cover both.  Conservative scoring:
-  # the crop captures the wrong table, so crop = under-correct (0.25)
-  # and the masking only covers the captured region.
-  missed table 3, table crop too big if only for table 4:
-    crop: 0.25
-    caption: 0.0
-    footnote: n/a
-    mask: 0.5
-
-  # ── Figure-specific labels ────────────────────────────────────────────────
-  # Figures don't carry body footnotes (they have captions only), so the
-  # footnote dimension is always n/a for figure labels.  Longest-prefix
-  # matching means specific entries below win over generic "correct figure",
-  # which in turn wins over bare "correct".
-
-  correct figure, no caption (caption in another page):
-    crop: 1.0
-    caption: 0.0      # caption sits on a different page → not attached
-    footnote: n/a
-    mask: 1.0
-
-  correct figure, no caption (caption is in another page):   # spelling variant
-    crop: 1.0
-    caption: 0.0
-    footnote: n/a
-    mask: 1.0
-
-  correct figure, partial caption:
-    crop: 1.0
-    caption: 0.5      # caption truncated — half credit
-    footnote: n/a
-    mask: 1.0
-
-  correct figure, wrong caption:    # any "correct figure, wrong caption (...)"
-    crop: 1.0
-    caption: 0.0
-    footnote: n/a
-    mask: 1.0
-
-  correct-ish figure, caption not detected, caption in crop??:
-    crop: 0.75        # "correct-ish" — slight boundary issue
-    caption: 0.5      # uncertain
-    footnote: n/a
-    mask: 0.75        # boundary off → slight mask precision loss
-
-  correct figure:    # bare prefix — any "correct figure, ..." not matched above
-    crop: 1.0
-    caption: 1.0
-    footnote: n/a
-    mask: 1.0
-
-  # ── Auto-added via --review-unknown (2026-05-18) ────────────────────────
-  # Variants of "correct figure, wrong caption" where the caption-attacher
-  # picked up page-footer text instead of the real caption.  Figure crop
-  # itself is fine; figures don't carry footnotes → n/a.
-  'correct figure, wrong caption (real caption is in bottom left, confused page footer with caption)':
-    crop: 1.0
-    caption: 0.0
-    footnote: n/a
-    mask: 1.0
-
-  'correct figure, wrong caption (real caption is in bottom right, confused page footer with caption)':
-    crop: 1.0
-    caption: 0.0
-    footnote: n/a
-    mask: 1.0
-
-  # Table crop is fine but no caption was attached at all.
-  'missed caption':
+  # Caption attacher pulled a "(continued)" header — typically left over
+  # from a multi-page table's continuation marker — and parse_caption_num
+  # parsed it as the current table's number.  Real caption is on a prior
+  # page.  Crop + mask are fine; only the assigned table number/caption
+  # is wrong.
+  wrong auto table number from continuation header:
     crop: 1.0
     caption: 0.0
     footnote: 1.0
     mask: 1.0
-
-  # Inspector-only — defer scoring entirely.
-  'weird crop? check later':
-    crop: skip
-    caption: skip
-    footnote: skip
-    mask: skip
 
   # Caption-attacher pulled footnote text up as the caption — both the
   # caption AND footnote dims are wrong.  Crop + mask still OK.
@@ -190,10 +290,78 @@ labels:
     footnote: 0.0
     mask: 1.0
 
-
-  # ── Restored aliases (revert of premature merge) ────────────────────────
   'wrong caption (footnotes matched to captions, rotated image)':
     crop: 1.0
     caption: 0.0
     footnote: 0.0
     mask: 1.0
+
+  # Annotation-time additions (2026-05-19) — scores subject to refinement.
+  # Region looks table-like (grid / columns) but isn't a scientific data
+  # table — e.g. a legend, key, or decorative grid.  Should be masked
+  # (image content) but not output as a table crop.  Same shape as
+  # ``icon`` / ``table_in_figure``.
+  'should be masked, not a table in the scientific sense':
+    crop: 0.0
+    caption: n/a
+    footnote: n/a
+    mask: 1.0
+
+  # Caption attacher concatenated the previous table's caption with the
+  # current one (multi-table page boundary).  Crop + mask OK; caption
+  # is a Frankenstein of two unrelated tables.
+  "wrong caption (continued table, caption merged with prev table's caption)":
+    crop: 1.0
+    caption: 0.0
+    footnote: 1.0
+    mask: 1.0
+
+  # Caption attacher pulled the descriptive text but dropped the "Table N"
+  # prefix.  Partial caption credit — content is right, identification is
+  # missing.
+  'caption missed "table" prefix, otherwise correct':
+    crop: 1.0
+    caption: 0.5
+    footnote: 1.0
+    mask: 1.0
+
+  # Two-failure case: missed one real table AND the crop boundary is
+  # oversized because it tried to cover both.  Conservative scoring:
+  # the crop captures the wrong table, so crop = under-correct (0.25)
+  # and the masking only covers the captured region.
+  'missed table 3, table crop too big if only for table 4':
+    crop: 0.25
+    caption: 0.0
+    footnote: n/a
+    mask: 0.5
+
+  # ── Composites ────────────────────────────────────────────────────────────
+  crop too big major and wrong caption:
+    crop: 0.25
+    caption: 0.0
+    footnote: 1.0
+    mask: 0.25
+
+  crop too big minor and wrong caption:
+    crop: 0.75
+    caption: 0.0
+    footnote: 1.0
+    mask: 0.75
+
+  missed caption and missing footnotes:
+    crop: 1.0
+    caption: 0.0
+    footnote: 0.0
+    mask: 1.0
+
+  crop too small major and missing footnotes:
+    crop: 0.25
+    caption: 1.0
+    footnote: 0.0
+    mask: 0.0
+
+  crop too small minor and missing footnotes:
+    crop: 0.75
+    caption: 1.0
+    footnote: 0.0
+    mask: 0.25

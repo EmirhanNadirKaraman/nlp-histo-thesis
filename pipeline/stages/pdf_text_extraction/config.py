@@ -129,6 +129,16 @@ class MaskingConfig:
     # to reproduce the historical behaviour.
     drop_tables_inside_figures: bool = True
 
+    # Experimental: white out PICTURE/FIGURE bboxes BEFORE running Step 2
+    # table detection so the detector never sees table-grid pixels embedded
+    # in figures (printed-table screenshots, spreadsheet images).
+    # Independent of ``drop_tables_inside_figures`` — the two can be
+    # combined for belt-and-suspenders coverage, or compared head-to-head.
+    # Only affects the detector input; final media cropping still uses the
+    # original PDF. Has no effect on DoclingTableDetector (which reads
+    # layout, not pixels) — only TATR / Hybrid see the change.
+    mask_figures_before_table_detection: bool = False
+
 
 @dataclass(slots=True)
 class FilteringConfig:

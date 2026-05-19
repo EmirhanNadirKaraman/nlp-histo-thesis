@@ -18,6 +18,14 @@ from parsers.layout_utils import CAPTION_PATTERN, _deduplicate_caption
 logger = logging.getLogger(__name__)
 
 
+# Process-wide cache of Docling DocumentConverter instances keyed by the
+# tuple of Docling options that influence converter state.  Enables
+# multi-sweep batch runners (scripts/eval/run_all_sweeps.py) to avoid
+# reloading the Docling model between variants when the relevant options
+# are unchanged.  Each entry is the loaded converter object.
+_DOCLING_CONVERTER_CACHE: dict[tuple, object] = {}
+
+
 def _deduplicate_text(text: str) -> str:
     """Remove exact repetitions produced by ghost text layers.
 
@@ -65,6 +73,16 @@ class DoclingLayoutExtractor:
     def _get_converter(self):
         if self._converter is not None:
             return self._converter
+        # Reuse a process-wide converter when this instance's Docling options
+        # match an already-loaded one.  Saves ~20s per sweep variant in
+        # multi-sweep batch scripts (the model state is identical when the
+        # config tuple matches, so this is safe).
+        cache_key = self._converter_cache_key()
+        cached = _DOCLING_CONVERTER_CACHE.get(cache_key)
+        if cached is not None:
+            self._converter = cached
+            return self._converter
+
         from docling.document_converter import DocumentConverter, PdfFormatOption  # type: ignore
         from docling.datamodel.pipeline_options import PdfPipelineOptions          # type: ignore
         from docling.datamodel.base_models import InputFormat                       # type: ignore
@@ -93,7 +111,24 @@ class DoclingLayoutExtractor:
         self._converter = DocumentConverter(
             format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
         )
+        _DOCLING_CONVERTER_CACHE[cache_key] = self._converter
+        logger.info("Docling DocumentConverter cached (key=%s)", cache_key)
         return self._converter
+
+    def _converter_cache_key(self) -> tuple:
+        """Tuple of Docling options that influence converter state.  Two
+        extractors with the same tuple can share a single converter."""
+        return (
+            bool(self._config.do_table_structure),
+            bool(self._config.do_ocr),
+            float(self._config.images_scale),
+            getattr(self._config, "ocr_engine", None).__class__.__name__
+                if getattr(self._config, "ocr_engine", None) else None,
+            getattr(self._config, "ocr_engine", None).value
+                if hasattr(getattr(self._config, "ocr_engine", None), "value") else None,
+            bool(self._config.force_full_page_ocr),
+            str(self._config.accelerator_device).lower(),
+        )
 
     def _apply_ocr_engine(self, opts) -> None:
         """Configure the OCR engine on ``opts`` based on ``self._config.ocr_engine``."""

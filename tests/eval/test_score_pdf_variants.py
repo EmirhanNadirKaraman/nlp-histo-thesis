@@ -518,24 +518,47 @@ def test_score_kind_rubric_incorrect_excludes_caption_footnote(scr) -> None:
     assert out["strict"]["tp"] == 0
 
 
-def test_score_kind_rubric_crop_too_big_partial(scr) -> None:
-    """Default rubric: crop is too big → crop=0.75, caption=1, footnote=1.
+def test_score_kind_rubric_crop_too_big_minor_partial(scr) -> None:
+    """Severity-split rubric (2026-05-19): crop too big minor → crop=0.75.
     At threshold 0.5 → crop TP.  Strict (threshold 1.0) → FP."""
     rubric = scr.load_rubric(None)
     emitted = {"a.png"}
-    labels = {"a.png": "crop is too big"}
+    labels = {"a.png": "crop too big minor"}
     out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
     assert out["by_dim"]["crop"]["tp"] == 1   # 0.75 >= 0.5
     assert out["strict"]["fp"] == 1            # 0.75 < 1.0
 
 
-def test_score_kind_rubric_crop_too_small_below_dim_threshold(scr) -> None:
-    """crop is too small → crop=0.25, below 0.5 threshold → crop FP."""
+def test_score_kind_rubric_crop_too_small_major_below_dim_threshold(scr) -> None:
+    """Severity-split rubric (2026-05-19): crop too small major → crop=0.25,
+    below 0.5 threshold → crop FP."""
     rubric = scr.load_rubric(None)
     emitted = {"a.png"}
-    labels = {"a.png": "crop is too small"}
+    labels = {"a.png": "crop too small major"}
     out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
     assert out["by_dim"]["crop"]["fp"] == 1
+
+
+def test_score_kind_rubric_figures_kind_overrides_footnote_to_na(scr) -> None:
+    """Fix A (2026-05-19): kind="figures" forces footnote=n/a regardless
+    of rubric value.  `correct` has footnote=1.0 in the rubric — without
+    the override it would count as a footnote TP for a figure item.
+    With every figure routed to footnote=n/a, the footnote dim has
+    tp+fp=0 and is reported as None (scorer collapses empty dims)."""
+    rubric = scr.load_rubric(None)
+    emitted = {"fig.png"}
+    labels = {"fig.png": "correct"}
+    out_fig = scr.score_kind_rubric(
+        emitted, labels, rubric, fn_count=0, kind="figures",
+    )
+    # footnote dim should be None (every item routed to n/a, no TP/FP).
+    assert out_fig["by_dim"]["footnote"] is None
+
+    # Same label on a table still counts as footnote TP.
+    out_tab = scr.score_kind_rubric(
+        emitted, labels, rubric, total_actual=1, kind="tables",
+    )
+    assert out_tab["by_dim"]["footnote"]["tp"] == 1
 
 
 def test_score_kind_rubric_unknown_label_unrecognised(scr) -> None:

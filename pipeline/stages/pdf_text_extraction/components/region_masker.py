@@ -244,3 +244,73 @@ class PyMuPDFRegionMasker:
         logger.info("Masked PDF written to %s (%d pages affected)",
                     out_path, len(by_page))
         return out_path
+
+    def mask_figures_only(
+        self,
+        pdf_path: Path,
+        layout: LayoutResult,
+    ) -> Optional[Path]:
+        """Write a PDF where only PICTURE/FIGURE bboxes from ``layout`` are
+        painted white.  Used to give the Step-2 table detector a clean
+        figure-free view of the PDF without affecting downstream cropping.
+
+        Returns the masked PDF path, or ``None`` if the layout contains no
+        figures (in which case the caller should fall back to the original
+        PDF).  Independent of ``MaskingConfig.mask_figures`` — that flag
+        gates the standard Step-3 mask, not this detector-input mask.
+
+        The output file is named ``<stem>_fig_masked.pdf`` to avoid
+        collision with the standard ``<stem>_masked.pdf`` produced by
+        :meth:`mask`.
+        """
+        import fitz  # type: ignore
+        from parsers.layout_utils import merge_rects
+
+        fig_regions = [
+            el.bbox for el in layout.elements if el.type in self._FIGURE_TYPES
+        ]
+        if not fig_regions:
+            return None
+
+        out_dir = self._output_dir or pdf_path.parent
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / f"{pdf_path.stem}_fig_masked.pdf"
+
+        doc = fitz.open(str(pdf_path))
+
+        by_page: dict = {}
+        for bbox in fig_regions:
+            by_page.setdefault(bbox.page, []).append(bbox)
+
+        exp = self._config.expand_box_px
+
+        for page_num in range(len(doc)):
+            page_no = page_num + 1
+            if page_no not in by_page:
+                continue
+            page = doc[page_num]
+            page_h = page.rect.height
+
+            rects = []
+            for b in by_page[page_no]:
+                r = b.to_fitz_rect(page_h)
+                if exp:
+                    r = fitz.Rect(r.x0 - exp, r.y0 - exp, r.x1 + exp, r.y1 + exp)
+                rects.append(r)
+
+            if self._config.merge_overlapping_boxes:
+                rects = merge_rects(rects)
+
+            for rect in rects:
+                if rect.is_empty:
+                    continue
+                page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
+
+        doc.save(str(out_path))
+        doc.close()
+        logger.info(
+            "Figure-only masked PDF (for table detection) written to %s "
+            "(%d figure(s), %d page(s) affected)",
+            out_path, len(fig_regions), len(by_page),
+        )
+        return out_path

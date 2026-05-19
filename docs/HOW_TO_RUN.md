@@ -172,6 +172,95 @@ Capture the per-comparison observations under
 `## Observations` in [`docs/THESIS_MATERIAL.md`](THESIS_MATERIAL.md) when a
 sweep informs a thesis decision.
 
+### 2.2. Stage 1 detector / threshold variants (run_all_sweeps.py)
+
+The PDF-extraction evaluation begins with detector / threshold selection.
+Seven named variants are defined in `scripts/eval/run_all_sweeps.py`. Each
+writes to its own directory under `out/sweeps/<NN_name>/`.
+
+#### What Stage 1 answers
+
+- Should the base detector be **Docling**, **TATR**, or **Hybrid**?
+- If TATR or Hybrid is chosen, what TATR threshold (`0.90` / `0.95` /
+  `0.99`) gives the best precision / recall tradeoff?
+
+Stage 1 deliberately keeps every helper flag OFF
+(`reconstruct_tables_from_lists`, `merge_tables_by_caption`,
+`merge_figures_by_caption`, `expand_tables_with_footnotes`,
+`drop_tables_inside_figures`) so the comparison isolates the detector.
+Two-pass extraction is ON and `render_dpi` is `150` across all seven
+variants.
+
+#### Variants
+
+```
+01_docling     — detector=docling
+02_tatr_090    — detector=tatr,   tatr_threshold=0.90
+03_tatr_095    — detector=tatr,   tatr_threshold=0.95
+04_tatr_099    — detector=tatr,   tatr_threshold=0.99
+05_hybrid_090  — detector=hybrid, tatr_threshold=0.90
+06_hybrid_095  — detector=hybrid, tatr_threshold=0.95
+07_hybrid_099  — detector=hybrid, tatr_threshold=0.99
+```
+
+#### Commands
+
+List resolved configs without running (no Docling/TATR models load, no
+output dirs are created):
+
+```bash
+python scripts/eval/run_all_sweeps.py --list-variants
+```
+
+Run all seven variants:
+
+```bash
+python scripts/eval/run_all_sweeps.py
+```
+
+Run a single variant:
+
+```bash
+python scripts/eval/run_all_sweeps.py --only 07_hybrid_099
+```
+
+Force a fresh re-run (wipes the variant's output dir first):
+
+```bash
+python scripts/eval/run_all_sweeps.py --only 07_hybrid_099 --restart
+```
+
+#### Resume / checkpoint semantics
+
+`run_all_sweeps.py` resumes by default. Three layers of checkpointing:
+
+1. **Per-variant marker.** On success, each variant writes
+   `out/sweeps/<variant>/_DONE.json` (`{"completed_at": ..., "pdf_count": N}`).
+   On the next run, variants whose marker matches the current PDF count
+   are skipped entirely. Adding new PDFs to the source dir invalidates
+   the marker so the new ones get processed; already-processed PDFs are
+   still skipped via the per-PDF cache.
+2. **Per-PDF cache.** `cfg.runtime.skip_existing_media_json = True` —
+   a PDF whose `<json_dir>/<pmcid>_media.json` already exists is
+   skipped before Docling loads. Cheapest possible resume.
+3. **Per-stage cache.** `cfg.runtime.skip_existing_outputs = True` —
+   `_StageCache` under `out/sweeps/<variant>/stage_cache/` lets a PDF
+   interrupted mid-pipeline resume from the last completed stage on the
+   next attempt. Invalidates on config-hash mismatch.
+
+So Ctrl-C is safe: finished variants stay finished (marker + skip),
+partially-finished variants pick up from the last completed PDF (per-PDF
+cache), and a PDF interrupted mid-pipeline picks up from its last
+completed stage (per-stage cache).
+
+#### Next steps after Stage 1
+
+After labelling the seven variants and computing F1 per (detector,
+threshold), the winner becomes the base for Stages 2–4 (two-pass
+ablation, helper-flag flips, reconstruction × footnote expansion). Those
+stages are not in `ALL_SWEEPS` yet — they will be added once a Stage 1
+winner is selected.
+
 ---
 
 ## 3. Summarisation pipeline

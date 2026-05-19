@@ -266,7 +266,9 @@ def save_annotations(mode: str, ann: dict[str, str], variant: str | None = None)
     _atomic_write(ann_path(mode, variant), ann)
 
 
-def load_share_map() -> dict[str, list[str]]:
+def load_share_map() -> dict[str, list[dict] | list[str]]:
+    """Load the share map.  Accepts both the new (bbox-aware) and legacy
+    (filename-only) formats — callers route on shape at use-time."""
     if SHARE_MAP_PATH.exists():
         try:
             return json.loads(SHARE_MAP_PATH.read_text())
@@ -275,21 +277,75 @@ def load_share_map() -> dict[str, list[str]]:
     return {}
 
 
+# Bbox quantization tolerance used when looking up the matching group.
+# Must match the value used by build_share_map.py.
+_SHARE_MAP_BBOX_TOL = 1.0
+
+
+def _quantize_bbox(bbox: dict | None, tol: float = _SHARE_MAP_BBOX_TOL) -> tuple:
+    """Quantize the source crop's bbox to the same tolerance used by
+    build_share_map.py.  Used to identify which bbox-group the current
+    label belongs to during propagation."""
+    bbox = bbox or {}
+    def q(v):
+        try:
+            return round(float(v) / tol) * tol
+        except (TypeError, ValueError):
+            return 0.0
+    return (q(bbox.get("x1")), q(bbox.get("y1")),
+            q(bbox.get("x2")), q(bbox.get("y2")))
+
+
+def _find_peers(
+    share_map_entry,
+    source_variant: str,
+    source_bbox: dict | None,
+) -> list[str]:
+    """Resolve peers for a single share-map entry.
+
+    Handles three input shapes:
+      1. List of {"bbox": [...], "variants": [...]} — NEW bbox-aware format.
+         Pick the group whose bbox matches ``source_bbox``; return peers.
+      2. Flat list of variant names — LEGACY format.  No bbox awareness;
+         return all peers minus source.
+      3. None / empty — return [].
+    """
+    if not share_map_entry:
+        return []
+    # New format: list of {bbox, variants} dicts
+    if isinstance(share_map_entry, list) and share_map_entry and isinstance(share_map_entry[0], dict):
+        src_key = _quantize_bbox(source_bbox)
+        for group in share_map_entry:
+            grp_key = tuple(group.get("bbox") or ())
+            if grp_key == src_key:
+                return [v for v in group.get("variants", []) if v != source_variant]
+        return []  # source bbox doesn't match any group → don't propagate
+    # Legacy format: flat list of variant names
+    if isinstance(share_map_entry, list):
+        return [v for v in share_map_entry if v != source_variant]
+    return []
+
+
 def propagate_label(
     key: str,
     label: str,
     mode: str,
     *,
     source_variant: str,
-    share_map: dict[str, list[str]],
+    share_map: dict,
+    source_bbox: dict | None = None,
 ) -> list[str]:
-    """Mirror ``key=label`` to every peer-variant annotation file that emitted
-    this crop, per the share map.  Returns the list of variant names written.
+    """Mirror ``key=label`` to peer-variant annotation files whose crop bbox
+    matches the source's bbox (per the bbox-aware share map).  Returns the
+    list of peer variants written.
 
-    Skips the source variant (already written by the caller).  Best-effort —
-    a single peer-write failure does not raise.
+    With the legacy filename-only share-map format, propagates to every
+    peer that emitted ``key``, regardless of bbox — caller should pass
+    ``source_bbox=None`` to opt into that behaviour.
+
+    Best-effort — a single peer-write failure does not raise.
     """
-    peers = [v for v in share_map.get(key, []) if v != source_variant]
+    peers = _find_peers(share_map.get(key), source_variant, source_bbox)
     written: list[str] = []
     for peer in peers:
         peer_path = ann_path(mode, peer)
@@ -319,12 +375,20 @@ _STANDARD_LABELS = frozenset({"correct", "incorrect", "other", "skipped"})
 _RUBRIC_PATH = HERE / "label_rubric.yaml"
 
 
-def _load_rubric_labels(path: Path | None = None) -> list[str]:
-    """Return all rubric-defined label strings (sorted).  Used to seed the
-    ``[l]`` quick-pick menu so fresh variants still get the canonical
-    label vocabulary, not just labels typed earlier in the session.
+def _load_rubric_labels(
+    path: Path | None = None,
+    item_kind: str | None = None,
+) -> list[str]:
+    """Return rubric-defined label strings (sorted) for the given item kind.
 
-    Returns ``[]`` on any failure (missing file, no yaml, malformed) — the
+    Reads the 3-block YAML format (2026-05-19):
+      * ``shared_labels`` — always returned.
+      * ``figure_labels`` — returned when ``item_kind == "figure"`` or None.
+      * ``table_labels``  — returned when ``item_kind == "table"``  or None.
+
+    Falls back to the legacy single ``labels:`` block if no kind-specific
+    blocks are found (returns everything regardless of kind).  Returns
+    ``[]`` on any failure (missing file, no yaml, malformed) — the
     annotator falls back to the recent-only behaviour transparently.
     """
     if path is None:
@@ -339,29 +403,29 @@ def _load_rubric_labels(path: Path | None = None) -> list[str]:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
     except Exception:
         return []
-    labels = (data or {}).get("labels", {}) or {}
-    return sorted({str(k) for k in labels.keys() if str(k) not in _STANDARD_LABELS})
+    data = data or {}
 
+    has_kind_blocks = any(
+        block in data
+        for block in ("shared_labels", "figure_labels", "table_labels")
+    )
+    if not has_kind_blocks:
+        # Legacy single-block format — return everything.
+        labels = data.get("labels", {}) or {}
+        return sorted({
+            str(k) for k in labels.keys() if str(k) not in _STANDARD_LABELS
+        })
 
-def _label_applies_to(label: str, item_kind: str | None) -> bool:
-    """Decide whether a rubric label belongs in the menu for the current
-    item kind (``"figure"`` / ``"table"`` / anything else).
+    collected: set[str] = set()
+    collected.update(data.get("shared_labels", {}) or {})
+    if item_kind in ("figure", None):
+        collected.update(data.get("figure_labels", {}) or {})
+    if item_kind in ("table", None):
+        collected.update(data.get("table_labels", {}) or {})
 
-    Rules:
-      * ``item_kind`` is ``None`` or unrecognised → show all labels.
-      * label mentions ``"figure"`` → figure-only.
-      * label mentions ``"table"`` or ``"footnote"`` → table-only.
-      * otherwise → both (always shown).
-    """
-    if item_kind not in ("figure", "table"):
-        return True
-    lower = label.lower()
-    is_figure_label = "figure" in lower
-    is_table_label = ("table" in lower) or ("footnote" in lower)
-    if item_kind == "figure":
-        return is_figure_label or not (is_figure_label or is_table_label)
-    # item_kind == "table"
-    return is_table_label or not (is_figure_label or is_table_label)
+    return sorted({
+        str(k) for k in collected if str(k) not in _STANDARD_LABELS
+    })
 
 
 def _collect_label_menu(ann: dict[str, str],
@@ -369,22 +433,16 @@ def _collect_label_menu(ann: dict[str, str],
     """Return the numbered-menu list for the ``[l]`` keystroke.
 
     Sources:
-      1. Every non-standard label defined in ``eval/label_rubric.yaml``
-         (canonical vocabulary — always offered).
+      1. Rubric labels for the current kind (shared + figure-only or
+         shared + table-only, based on ``item_kind``).
       2. Any custom label already in ``ann`` (in case the user typed
-         something outside the rubric earlier).
+         something outside the rubric earlier) — included regardless of
+         kind, since the user has already used it once.
 
-    When ``item_kind`` is ``"figure"`` or ``"table"``, the menu is filtered
-    to labels that apply to that kind (see ``_label_applies_to``).
     Deduplicated; rubric order preserved, with extras appended.
     """
-    rubric_labels = _load_rubric_labels()
-    if item_kind in ("figure", "table"):
-        rubric_labels = [l for l in rubric_labels
-                         if _label_applies_to(l, item_kind)]
+    rubric_labels = _load_rubric_labels(item_kind=item_kind)
     recent = sorted({v for v in ann.values() if v and v not in _STANDARD_LABELS})
-    if item_kind in ("figure", "table"):
-        recent = [l for l in recent if _label_applies_to(l, item_kind)]
     seen = set(rubric_labels)
     extras = [v for v in recent if v not in seen]
     return rubric_labels + extras
@@ -680,7 +738,8 @@ def render(item: Item, items: list[Item], ann: dict[str, str], mode: str,
         f"{c(CYAN, '[l]')} label/pick   "
         f"{c(YELLOW, '[s]')} skip   "
         f"{c(BLUE, '[b]')} back   "
-        f"{c(DIM, '[space]')} next   "
+        f"{c(DIM, '[space]')} next unlabelled   "
+        f"{c(DIM, '[f/tab]')} forward 1   "
         f"{c(DIM, '[p]')} source+bbox@page   "
         f"{c(DIM, '[r]')} metrics   "
         f"{c(DIM, '[q]')} quit"
@@ -766,6 +825,13 @@ def _parse_cli(argv: list[str] | None = None):
                         "resolved <pdf-dir>/<doc>.pdf path for each item and the "
                         "[p] key opens it in the default viewer.  When omitted, "
                         "auto-resolves from the sweep manifest if --sweep is set.")
+    p.add_argument("--no-propagate", action="store_true",
+                   help="Disable share-map propagation entirely.  Labels are "
+                        "written only to the current variant's annotation file; "
+                        "peer-variant files are never touched.  Use for variants "
+                        "with extent-sensitive bboxes (footnote-expansion / "
+                        "relaxed-threshold sweeps) when you do not trust the "
+                        "share map's bbox-grouping for cross-variant equivalence.")
     return p.parse_args(argv)
 
 
@@ -785,8 +851,12 @@ def main() -> None:
     items = load_items(mode, max_per_doc=MAX_PER_DOC, sweep_dir=sweep_dir)
     ann   = load_annotations(mode, variant=variant)
     total = len(items)
-    share_map = load_share_map() if variant else {}
-    if variant and not share_map:
+    no_propagate = bool(args.no_propagate)
+    share_map = load_share_map() if (variant and not no_propagate) else {}
+    if variant and no_propagate:
+        print(c(YELLOW,
+                "  (--no-propagate set — labels stay local to this variant)"))
+    elif variant and not share_map:
         print(c(YELLOW,
                 "  (no share_map.json — peer-variant propagation disabled; "
                 "run scripts/eval/build_share_map.py first)"))
@@ -797,12 +867,15 @@ def main() -> None:
         sys.exit(1)
 
     def _set(it: Item, label: str) -> None:
-        """Set a label, save to the variant file, propagate to peer variants."""
+        """Set a label, save to the variant file, propagate to peer variants
+        whose bbox matches this crop's bbox (when share_map is bbox-aware)."""
         k = ann_key(it)
         ann[k] = label
         save_annotations(mode, ann, variant=variant)
         if variant and share_map:
-            propagate_label(k, label, mode, source_variant=variant, share_map=share_map)
+            bbox = it.meta.get("bbox") if it.meta else None
+            propagate_label(k, label, mode, source_variant=variant,
+                            share_map=share_map, source_bbox=bbox)
 
     # Resume from first un-annotated item
     cursor = next(
@@ -835,6 +908,10 @@ def main() -> None:
             cursor = _next_unlabelled_index(items, ann, cursor + 1)
         elif key == " ":
             cursor = _next_unlabelled_index(items, ann, cursor + 1)
+        elif key in ("f", "F", "\t"):
+            # Forward one item, INCLUDING already-labelled crops.  Distinct
+            # from [space] which skips ahead to the next unlabelled item.
+            cursor = min(total - 1, cursor + 1)
         elif key in ("b", "B"):
             cursor = max(0, cursor - 1)
         elif key in ("p", "P"):

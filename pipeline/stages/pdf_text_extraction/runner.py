@@ -582,8 +582,30 @@ class PipelineRunner:
         if patched:
             logger.info("  Patched %d element(s) TEXT → SECTION_HEADER from full layout", patched)
 
+    def _detection_pdf_path(self, layout: LayoutResult, pdf_path: Path) -> Path:
+        """Return the PDF path to feed to the Step-2 table detector.
+
+        When ``MaskingConfig.mask_figures_before_table_detection`` is True,
+        builds a `<stem>_fig_masked.pdf` where PICTURE/FIGURE bboxes from
+        ``layout`` are whited out, so TATR / Hybrid never see table-grid
+        pixels embedded in figures.  Falls back to ``pdf_path`` if the
+        layout contains no figures, or if the flag is disabled.
+
+        Only affects detector input.  Downstream cropping (Step 7) still
+        uses the original ``pdf_path``.
+        """
+        if not self._cfg.masking.mask_figures_before_table_detection:
+            return pdf_path
+        masker = self._get_region_masker()
+        masked = masker.mask_figures_only(pdf_path, layout)
+        return masked if masked is not None else pdf_path
+
     def _run_table_detection(self, layout: LayoutResult, pdf_path: Path):
         """Run the configured table detector and return a TableDetectionResult.
+
+        ``pdf_path`` here is the *detection input* — may be a figure-masked
+        copy when ``MaskingConfig.mask_figures_before_table_detection`` is
+        on.  Callers must pass the original PDF to downstream cropping.
 
         If ``MaskingConfig.drop_tables_inside_figures`` is True, post-filters
         the detector output to drop regions whose bbox is mostly contained in
@@ -633,12 +655,13 @@ class PipelineRunner:
             layout = reconstruct_tables_from_lists(layout)
 
         logger.info("[%s] Step 2 — table detection (%s)", pmcid, self._cfg.table_detector)
+        detection_pdf = self._detection_pdf_path(layout, pdf_path)
         with self._stage("STEP2_TABLE_DETECTION"):
             detection = cache.get_or_compute(
                 stage_name=StageName.TABLE_DETECTION,
                 pmcid=pmcid,
                 config_hash=self._current_config_hash,
-                compute_fn=lambda: self._run_table_detection(layout, pdf_path),
+                compute_fn=lambda: self._run_table_detection(layout, detection_pdf),
                 loader_fn=load_table_detection,
                 dumper_fn=dump_table_detection,
                 summarise_fn=lambda r: f"{len(r.regions)} regions",
@@ -721,12 +744,13 @@ class PipelineRunner:
             # Same cache slot as the standard branch — `cfg.two_pass.enabled`
             # is in the config hash so a mode flip invalidates correctly.
             logger.info("[%s] Step 2 — table detection (%s)", pmcid, self._cfg.table_detector)
+            detection_pdf = self._detection_pdf_path(layout, pdf_path)
             with self._stage("STEP2_TABLE_DETECTION"):
                 detection = cache.get_or_compute(
                     stage_name=StageName.TABLE_DETECTION,
                     pmcid=pmcid,
                     config_hash=self._current_config_hash,
-                    compute_fn=lambda: self._run_table_detection(layout, pdf_path),
+                    compute_fn=lambda: self._run_table_detection(layout, detection_pdf),
                     loader_fn=load_table_detection,
                     dumper_fn=dump_table_detection,
                     summarise_fn=lambda r: f"{len(r.regions)} regions",

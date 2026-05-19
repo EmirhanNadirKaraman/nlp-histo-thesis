@@ -189,9 +189,18 @@ _BUILTIN_RUBRIC = {
 
 
 def load_rubric(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
-    """Load a YAML rubric file.  Returns a dict mapping label strings to
-    per-dimension scores.  Falls back to the built-in rubric if the file
-    is missing or the import fails."""
+    """Load a YAML rubric file.  Returns a flat dict mapping label strings
+    to per-dimension scores (merged across shared / figure / table blocks).
+
+    Supports two YAML formats:
+      * **New (2026-05-19):** three top-level blocks ``shared_labels:``,
+        ``figure_labels:``, ``table_labels:``.  The flat dict merges all
+        three so any label looked up by name still resolves.
+      * **Legacy:** a single top-level ``labels:`` block.
+
+    Falls back to the built-in rubric if the file is missing, YAML import
+    fails, or no recognised block is present.
+    """
     if path is None:
         path = _DEFAULT_RUBRIC_PATH
     if not path.exists():
@@ -204,9 +213,64 @@ def load_rubric(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
         data = yaml.safe_load(path.read_text())
     except Exception:
         return dict(_BUILTIN_RUBRIC)
-    labels = (data or {}).get("labels", {}) or {}
+    data = data or {}
+
+    merged: Dict[str, Dict[str, Any]] = {}
+    if "labels" in data:
+        # Legacy format.
+        merged.update(data.get("labels", {}) or {})
+    for block in ("shared_labels", "figure_labels", "table_labels"):
+        merged.update(data.get(block, {}) or {})
+
+    if not merged:
+        return dict(_BUILTIN_RUBRIC)
     # Lower-case keys for case-insensitive lookup
-    return {str(k).lower(): v for k, v in labels.items()}
+    return {str(k).lower(): v for k, v in merged.items()}
+
+
+def load_rubric_per_kind(
+    path: Optional[Path] = None,
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """Load the rubric split by kind.
+
+    Returns ``{"figures": {...}, "tables": {...}}`` where each inner dict
+    is ``shared_labels`` merged with the kind-specific block.  Used by
+    the annotator to filter the ``[l]`` picker per current mode.
+
+    Legacy single-block format gracefully degrades: both kinds receive
+    the same merged dict.
+    """
+    if path is None:
+        path = _DEFAULT_RUBRIC_PATH
+    if not path.exists():
+        builtin = dict(_BUILTIN_RUBRIC)
+        return {"figures": builtin, "tables": builtin}
+    try:
+        import yaml  # type: ignore
+    except ImportError:
+        builtin = dict(_BUILTIN_RUBRIC)
+        return {"figures": builtin, "tables": builtin}
+    try:
+        data = yaml.safe_load(path.read_text())
+    except Exception:
+        builtin = dict(_BUILTIN_RUBRIC)
+        return {"figures": builtin, "tables": builtin}
+    data = data or {}
+
+    shared = dict((data.get("shared_labels", {}) or {}))
+    fig    = dict((data.get("figure_labels", {}) or {}))
+    tab    = dict((data.get("table_labels",  {}) or {}))
+
+    if not (shared or fig or tab):
+        legacy = dict((data.get("labels", {}) or {}))
+        return {
+            "figures": {str(k).lower(): v for k, v in legacy.items()},
+            "tables":  {str(k).lower(): v for k, v in legacy.items()},
+        }
+
+    figures = {str(k).lower(): v for k, v in {**shared, **fig}.items()}
+    tables  = {str(k).lower(): v for k, v in {**shared, **tab}.items()}
+    return {"figures": figures, "tables": tables}
 
 
 
@@ -316,6 +380,7 @@ def score_kind_rubric(
     fn_count: Optional[int] = None,
     dim_pass_threshold: float = 0.5,
     strict_threshold: float = 1.0,
+    kind: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Rubric-based scoring.
 
@@ -332,6 +397,16 @@ def score_kind_rubric(
       * ``total_actual`` → FN = max(0, total_actual - TP)
       * ``fn_count`` → FN = fn_count
       * neither → recall + F1 reported as None
+
+    Kind override (Fix A, 2026-05-19):
+      * ``kind="figures"`` forces ``footnote = "n/a"`` for every item
+        regardless of what the rubric specifies.  Figures don't carry
+        body footnotes, so the rubric's generic labels (``correct``,
+        ``wrong caption``, ``crop too big minor``, …) which set
+        ``footnote: 1.0`` would otherwise inflate the footnote TP count
+        with figure items that should be excluded from that dim.
+      * ``kind="tables"`` (or ``None``) leaves footnote scoring as the
+        rubric dictates.
     """
     per_dim = {d: {"tp": 0, "fp": 0, "na": 0, "skipped": 0,
                     "fp_by_label": defaultdict(int)}
@@ -354,6 +429,15 @@ def score_kind_rubric(
             for d in _DIM_NAMES:
                 per_dim[d]["skipped"] += 1
             continue
+
+        # Fix A (2026-05-19): figures don't have body footnotes.  Override
+        # any rubric footnote score to "n/a" so generic labels like
+        # `correct`, `wrong caption`, `crop too big minor` (which set
+        # `footnote: 1.0`) don't inflate the footnote TP count when used
+        # on figures.  Per-figure-label rubric entries that already set
+        # `footnote: "n/a"` are unaffected.
+        if kind == "figures":
+            scored["footnote"] = "n/a"
 
         normalized_label = (raw_label or "").lower().strip()
         if normalized_label.startswith("icon"):
@@ -651,6 +735,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     tables_fn_total = sum(g.get("total_tables", 0) for g in gt.values())
 
     rubric = load_rubric(args.rubric) if not args.legacy else {}
+    per_kind_rubric = (
+        load_rubric_per_kind(args.rubric)
+        if not args.legacy
+        else {"figures": {}, "tables": {}}
+    )
 
     # ── Optional pre-scoring review of unknown labels ────────────────────────
     if args.review_unknown and not args.legacy:
@@ -701,17 +790,23 @@ def main(argv: Optional[List[str]] = None) -> int:
             tab_m = score_kind(tables_emitted,  tab_labels, classify_table,
                                total_actual=tables_fn_total)
         else:
+            # Use the per-kind rubric so figures get their kind-specific
+            # footnote scores (n/a) directly from the rubric, not from a
+            # runtime override.  Falls back to the flat dict on legacy
+            # rubrics without `figure_labels` / `table_labels` blocks.
             fig_m = score_kind_rubric(
-                figures_emitted, fig_labels, rubric,
+                figures_emitted, fig_labels, per_kind_rubric["figures"],
                 fn_count=figures_fn_total,
                 dim_pass_threshold=args.dim_pass_threshold,
                 strict_threshold=args.strict_threshold,
+                kind="figures",
             )
             tab_m = score_kind_rubric(
-                tables_emitted, tab_labels, rubric,
+                tables_emitted, tab_labels, per_kind_rubric["tables"],
                 total_actual=tables_fn_total,
                 dim_pass_threshold=args.dim_pass_threshold,
                 strict_threshold=args.strict_threshold,
+                kind="tables",
             )
 
         fig_m["variant"] = variant
