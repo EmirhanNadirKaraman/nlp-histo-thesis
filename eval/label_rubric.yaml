@@ -325,6 +325,20 @@ table_labels:
     footnote: 1.0
     mask: 1.0
 
+  # Annotation-time additions (2026-05-19, TATR family) — scores subject
+  # to refinement.  Distinct labels per user — not aliased to existing.
+  'crop too small minor, loses some info':
+    crop: 0.75
+    caption: 1.0
+    footnote: 1.0
+    mask: 0.25
+
+  'crop too small minor, loses some info, caption missed "table" prefix':
+    crop: 0.75
+    caption: 0.5
+    footnote: 1.0
+    mask: 0.25
+
   # Two-failure case: missed one real table AND the crop boundary is
   # oversized because it tried to cover both.  Conservative scoring:
   # the crop captures the wrong table, so crop = under-correct (0.25)
