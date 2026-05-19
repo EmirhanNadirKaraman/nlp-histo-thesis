@@ -495,7 +495,11 @@ def test_score_kind_rubric_all_correct(scr) -> None:
 
 
 def test_score_kind_rubric_wrong_caption_breaks_strict_only(scr) -> None:
-    rubric = scr.load_rubric(None)
+    # Use an in-memory rubric so the test doesn't depend on which labels
+    # happen to exist in the live YAML.
+    rubric = {
+        "wrong caption": {"crop": 1.0, "caption": 0.0, "footnote": 1.0, "mask": 1.0},
+    }
     emitted = {"a.png"}
     labels = {"a.png": "wrong caption"}
     out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
@@ -537,9 +541,14 @@ def test_score_kind_rubric_crop_too_big_minor_partial(scr) -> None:
 
 
 def test_score_kind_rubric_crop_too_small_major_below_dim_threshold(scr) -> None:
-    """Severity-split rubric (2026-05-19): crop too small major → crop=0.25,
-    below 0.5 threshold → crop FP."""
-    rubric = scr.load_rubric(None)
+    """Severity-split rubric: crop score 0.25, below 0.5 threshold → crop FP.
+
+    Uses an in-memory rubric so the test doesn't depend on whether the
+    `crop too small major` label is in the live YAML at any given moment.
+    """
+    rubric = {
+        "crop too small major": {"crop": 0.25, "caption": 1.0, "footnote": 1.0, "mask": 0.0},
+    }
     emitted = {"a.png"}
     labels = {"a.png": "crop too small major"}
     out = scr.score_kind_rubric(emitted, labels, rubric, total_actual=1)
