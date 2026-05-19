@@ -184,7 +184,6 @@ _BUILTIN_RUBRIC = {
     "crop is too small": {"crop": 0.25,"caption": 1.0,   "footnote": 1.0,   "mask": 0.25},
     "table_in_figure":   {"crop": 0.0, "caption": "n/a", "footnote": "n/a", "mask": 1.0},
     "weird":             {"crop": "skip","caption": "skip","footnote": "skip","mask": "skip"},
-    "other":             {"crop": "skip","caption": "skip","footnote": "skip","mask": "skip"},
 }
 
 
@@ -591,6 +590,96 @@ def _fmt(v) -> str:
     return str(v)
 
 
+def render_aligned(rows: List[Dict[str, Any]], *, mode: str = "rubric") -> str:
+    """Render rows as a tab-aligned ASCII table for terminal output.
+
+    Each cell is space-padded to its column's max observed width and
+    separated by a tab character.  Looks aligned in any monospace
+    terminal regardless of tab-stop interpretation.
+
+    ``mode`` selects the column set:
+      * ``"rubric"`` — per-dim P/R/F1 + strict (default; matches the rubric
+        scorer output).
+      * ``"legacy"`` — simple variant × kind P/R/F1 (matches the legacy
+        single-dim scorer output).
+    """
+    if not rows:
+        return ""
+
+    if mode == "legacy":
+        columns: List[tuple[str, Any]] = [
+            ("variant",    lambda r: r["variant"]),
+            ("kind",       lambda r: r["kind"]),
+            ("P",          lambda r: _fmt(r.get("precision"))),
+            ("R",          lambda r: _fmt(r.get("recall"))),
+            ("F1",         lambda r: _fmt(r.get("f1"))),
+            ("TP",         lambda r: r.get("tp", 0)),
+            ("FP",         lambda r: r.get("fp", 0)),
+            ("FN",         lambda r: r.get("fn", 0)),
+            ("labelled",   lambda r: r.get("labelled", 0)),
+            ("unlabelled", lambda r: r.get("unlabelled", 0)),
+            ("emitted",    lambda r: r.get("emitted", 0)),
+        ]
+    else:
+        def _bd(r, dim, field):
+            d = (r.get("by_dim") or {}).get(dim) or {}
+            return d.get(field)
+
+        def _tpfp(r, dim):
+            d = (r.get("by_dim") or {}).get(dim) or {}
+            return f"{d.get('tp', 0)}/{d.get('fp', 0)}"
+
+        def _strict(r, field):
+            s = r.get("strict") or {}
+            return s.get(field)
+
+        def _strict_tpfpfn(r):
+            s = r.get("strict") or {}
+            return f"{s.get('tp', 0)}/{s.get('fp', 0)}/{s.get('fn', 0)}"
+
+        def _cnt(r, field):
+            c = r.get("counts") or {}
+            return c.get(field, 0)
+
+        columns = [
+            ("variant",          lambda r: r["variant"]),
+            ("kind",             lambda r: r["kind"]),
+            ("crop P",           lambda r: _fmt(_bd(r, "crop", "precision"))),
+            ("crop R",           lambda r: _fmt(_bd(r, "crop", "recall"))),
+            ("crop F1",          lambda r: _fmt(_bd(r, "crop", "f1"))),
+            ("mask P",           lambda r: _fmt(_bd(r, "mask", "precision"))),
+            ("mask R",           lambda r: _fmt(_bd(r, "mask", "recall"))),
+            ("mask F1",          lambda r: _fmt(_bd(r, "mask", "f1"))),
+            ("cap P",            lambda r: _fmt(_bd(r, "caption", "precision"))),
+            ("cap tp/fp",        lambda r: _tpfp(r, "caption")),
+            ("foot P",           lambda r: _fmt(_bd(r, "footnote", "precision"))),
+            ("foot tp/fp",       lambda r: _tpfp(r, "footnote")),
+            ("strict P",         lambda r: _fmt(_strict(r, "precision"))),
+            ("strict R",         lambda r: _fmt(_strict(r, "recall"))),
+            ("strict F1",        lambda r: _fmt(_strict(r, "f1"))),
+            ("strict tp/fp/fn",  lambda r: _strict_tpfpfn(r)),
+            ("emitted",          lambda r: _cnt(r, "emitted")),
+            ("unlabelled",       lambda r: _cnt(r, "unlabelled")),
+            ("unrecog",          lambda r: _cnt(r, "unrecognised")),
+            ("icons",            lambda r: _cnt(r, "icon")),
+        ]
+
+    headers = [h for h, _ in columns]
+    body = [[str(getter(r)) for _, getter in columns] for r in rows]
+
+    widths = [max(len(h), *(len(row[i]) for row in body)) for i, h in enumerate(headers)]
+
+    def _fmt_row(cells: List[str]) -> str:
+        return "\t".join(c.ljust(w) for c, w in zip(cells, widths))
+
+    lines = [
+        _fmt_row(headers),
+        _fmt_row(["-" * w for w in widths]),
+    ]
+    lines.extend(_fmt_row(row) for row in body)
+    return "\n".join(lines) + "\n"
+
+
 def render_markdown(rows: List[Dict[str, Any]]) -> str:
     out: List[str] = []
     out.append("# Per-variant PDF-extraction P/R/F1")
@@ -816,16 +905,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         rows.append(fig_m)
         rows.append(tab_m)
 
-    if args.legacy:
-        md = render_markdown(rows)
-    else:
-        md = render_markdown_rubric(rows, rubric_path=args.rubric)
+    # Markdown goes to --md-out (file); stdout gets the tab-aligned format.
     if args.md_out:
+        md = (render_markdown(rows) if args.legacy
+              else render_markdown_rubric(rows, rubric_path=args.rubric))
         args.md_out.parent.mkdir(parents=True, exist_ok=True)
         args.md_out.write_text(md)
         print(f"wrote markdown → {args.md_out}", file=sys.stderr)
-    else:
-        sys.stdout.write(md)
+
+    aligned = render_aligned(
+        rows,
+        mode="legacy" if args.legacy else "rubric",
+    )
+    sys.stdout.write(aligned)
 
     if args.json_out:
         args.json_out.parent.mkdir(parents=True, exist_ok=True)

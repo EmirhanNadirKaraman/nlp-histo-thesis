@@ -50,18 +50,6 @@ figure_labels:
     footnote: n/a
     mask: 0.0          # shouldn't have been masked either (random paragraph FP)
 
-  other:
-    crop: skip
-    caption: skip
-    footnote: skip
-    mask: skip
-
-  'check later':
-    crop: skip
-    caption: skip
-    footnote: skip
-    mask: skip
-
   # ``[s]`` hotkey writes "skipped" verbatim.  Listed explicitly so it
   # doesn't show up as ``unrecognised`` in scoring counts.
   skipped:
@@ -117,12 +105,6 @@ figure_labels:
     footnote: n/a
     mask: 1.0
 
-  correct figure:
-    crop: 1.0
-    caption: 1.0
-    footnote: n/a
-    mask: 1.0
-
   'correct figure, no caption (caption in another page)':
     crop: 1.0
     caption: 0.0      # caption sits on a different page → not attached
@@ -171,19 +153,6 @@ figure_labels:
     footnote: n/a
     mask: 1.0
 
-  # ── Composites ────────────────────────────────────────────────────────────
-  crop too big major and wrong caption:
-    crop: 0.25
-    caption: 0.0
-    footnote: n/a
-    mask: 0.25
-
-  crop too big minor and wrong caption:
-    crop: 0.75
-    caption: 0.0
-    footnote: n/a
-    mask: 0.75
-
 # ── Table-only ───────────────────────────────────────────────────────────────
 table_labels:
   # ── Standard single-keystroke outcomes ────────────────────────────────────
@@ -198,18 +167,6 @@ table_labels:
     caption: n/a
     footnote: n/a
     mask: 0.0
-
-  other:
-    crop: skip
-    caption: skip
-    footnote: skip
-    mask: skip
-
-  'check later':
-    crop: skip
-    caption: skip
-    footnote: skip
-    mask: skip
 
   # ``[s]`` hotkey writes "skipped" verbatim.  Listed explicitly so it
   # doesn't show up as ``unrecognised`` in scoring counts.
@@ -350,32 +307,8 @@ table_labels:
     mask: 0.5
 
   # ── Composites ────────────────────────────────────────────────────────────
-  crop too big major and wrong caption:
-    crop: 0.25
-    caption: 0.0
-    footnote: 1.0
-    mask: 0.25
-
-  crop too big minor and wrong caption:
-    crop: 0.75
-    caption: 0.0
-    footnote: 1.0
-    mask: 0.75
-
   missed caption and missing footnotes:
     crop: 1.0
     caption: 0.0
     footnote: 0.0
     mask: 1.0
-
-  crop too small major and missing footnotes:
-    crop: 0.25
-    caption: 1.0
-    footnote: 0.0
-    mask: 0.0
-
-  crop too small minor and missing footnotes:
-    crop: 0.75
-    caption: 1.0
-    footnote: 0.0
-    mask: 0.25

@@ -371,7 +371,7 @@ def ann_key(item: Item) -> str:
 
 # ── Input helpers ──────────────────────────────────────────────────────────────
 
-_STANDARD_LABELS = frozenset({"correct", "incorrect", "other", "skipped"})
+_STANDARD_LABELS = frozenset({"correct", "incorrect", "skipped"})
 _RUBRIC_PATH = HERE / "label_rubric.yaml"
 
 
@@ -658,7 +658,7 @@ def open_pdf(pdf_path: Path, page: int | None = None) -> None:
 def render(item: Item, items: list[Item], ann: dict[str, str], mode: str,
            pdf_dir: Path | None = None,
            sweep_dir: Path | None = None) -> None:
-    _known       = {"correct", "incorrect", "other", "skipped"}
+    _known       = {"correct", "incorrect", "skipped"}
     total        = len(items)
     # Count only annotations that belong to items in the current items list.
     # ``ann`` may contain extra keys propagated in from peer variants whose
@@ -668,10 +668,9 @@ def render(item: Item, items: list[Item], ann: dict[str, str], mode: str,
     scoped       = {k: v for k, v in ann.items() if k in in_scope}
     n_correct    = sum(1 for v in scoped.values() if v == "correct")
     n_incorrect  = sum(1 for v in scoped.values() if v == "incorrect")
-    n_other      = sum(1 for v in scoped.values() if v == "other")
     n_skipped    = sum(1 for v in scoped.values() if v == "skipped")
     n_custom     = sum(1 for v in scoped.values() if v not in _known)
-    annotated    = n_correct + n_incorrect + n_other + n_custom
+    annotated    = n_correct + n_incorrect + n_custom
     pct          = annotated / total * 100 if total else 0
 
     CLEAR()
@@ -684,7 +683,7 @@ def render(item: Item, items: list[Item], ann: dict[str, str], mode: str,
     print(
         f"  {c(CYAN, f'{annotated}/{total}')}  [{c(GREEN, bar)}]  {pct:.1f}%  "
         f"{c(GREEN, f'✓{n_correct}')}  {c(RED, f'✗{n_incorrect}')}  "
-        f"{c(MAGENTA, f'?{n_other}')}  {c(CYAN, f'#{n_custom}')}  {c(DIM, f'~{n_skipped}')}"
+        f"{c(CYAN, f'#{n_custom}')}  {c(DIM, f'~{n_skipped}')}"
     )
     print(c(BOLD, "─" * TERM_WIDTH))
 
@@ -725,7 +724,7 @@ def render(item: Item, items: list[Item], ann: dict[str, str], mode: str,
     key = ann_key(item)
     if key in ann:
         val    = ann[key]
-        colour = GREEN if val == "correct" else (RED if val == "incorrect" else (MAGENTA if val == "other" else (YELLOW if val == "skipped" else CYAN)))
+        colour = GREEN if val == "correct" else (RED if val == "incorrect" else (YELLOW if val == "skipped" else CYAN))
         print(f"  current: {c(colour, val)}")
     else:
         print(f"  {c(DIM, 'not yet annotated')}")
@@ -734,7 +733,6 @@ def render(item: Item, items: list[Item], ann: dict[str, str], mode: str,
     print(
         f"  {c(GREEN, '[y/→]')} correct   "
         f"{c(RED, '[n/←]')} incorrect   "
-        f"{c(MAGENTA, '[o]')} other   "
         f"{c(CYAN, '[l]')} label/pick   "
         f"{c(YELLOW, '[s]')} skip   "
         f"{c(BLUE, '[b]')} back   "
@@ -748,18 +746,17 @@ def render(item: Item, items: list[Item], ann: dict[str, str], mode: str,
 
 
 def show_metrics(items: list[Item], ann: dict[str, str], mode: str) -> None:
-    known     = {"correct", "incorrect", "other", "skipped"}
+    known     = {"correct", "incorrect", "skipped"}
     # Restrict counting to items currently in scope; peer-variant
     # propagation can leave extra keys in ``ann`` that don't belong here.
     in_scope    = {ann_key(it) for it in items}
     scoped      = {k: v for k, v in ann.items() if k in in_scope}
     n_correct   = sum(1 for v in scoped.values() if v == "correct")
     n_incorrect = sum(1 for v in scoped.values() if v == "incorrect")
-    n_other     = sum(1 for v in scoped.values() if v == "other")
     custom_labels = {v: sum(1 for x in scoped.values() if x == v)
                      for v in scoped.values() if v not in known}
     n_custom    = sum(custom_labels.values())
-    annotated   = n_correct + n_incorrect + n_other + n_custom
+    annotated   = n_correct + n_incorrect + n_custom
     total       = len(items)
     accuracy    = n_correct / annotated if annotated else 0.0
 
@@ -771,7 +768,6 @@ def show_metrics(items: list[Item], ann: dict[str, str], mode: str) -> None:
     print(f"  Annotated     : {annotated}")
     print(f"  Correct       : {c(GREEN,   str(n_correct))}")
     print(f"  Incorrect     : {c(RED,     str(n_incorrect))}")
-    print(f"  Other         : {c(MAGENTA, str(n_other))}")
     for lbl, cnt in sorted(custom_labels.items()):
         print(f"  {lbl:<14}: {c(CYAN, str(cnt))}")
     print(f"  Accuracy      : {c(BOLD, f'{accuracy:.1%}')}")
@@ -893,9 +889,6 @@ def main() -> None:
             cursor = _next_unlabelled_index(items, ann, cursor + 1)
         elif key in ("n", "N", "LEFT"):
             _set(item, "incorrect")
-            cursor = _next_unlabelled_index(items, ann, cursor + 1)
-        elif key in ("o", "O"):
-            _set(item, "other")
             cursor = _next_unlabelled_index(items, ann, cursor + 1)
         elif key in ("l", "L"):
             label = read_label(recent=_collect_label_menu(ann, item_kind=item.label))

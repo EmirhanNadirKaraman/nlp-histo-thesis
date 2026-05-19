@@ -373,9 +373,12 @@ def test_main_to_stdout_when_no_md_out(tmp_path, scr, monkeypatch, capsys) -> No
         "--legacy","--sweeps-root", str(s["sweeps_root"])])
     assert rc == 0
     out = capsys.readouterr().out
-    assert "# Per-variant PDF-extraction P/R/F1" in out
+    # Tab-aligned terminal format (2026-05-19): header row + data rows
+    # separated by tabs.  No markdown title.
+    assert "variant" in out
     assert "baseline" in out
     assert "detector_docling" in out
+    assert "\t" in out
 
 
 # ── Rubric: load_rubric ───────────────────────────────────────────────────────
@@ -682,10 +685,15 @@ def test_main_no_legacy_fallback_drops_to_zero_when_no_per_variant(
     ])
     assert rc == 0
     out = capsys.readouterr().out
-    # Without legacy fallback, no per-variant files exist → TP=0 everywhere
-    assert "| baseline | tables | — | 0.0% | — | 0 |" in out or \
-           "| baseline | tables | 0.0% | 0.0% | — | 0 |" in out or \
-           "| baseline | tables | — | — | — | 0 |" in out
+    # Tab-aligned terminal format (2026-05-19): the "baseline" + "tables"
+    # row exists, and its TP column is 0 (no per-variant labels exist and
+    # legacy fallback is disabled).  Format-agnostic assertion: find the
+    # baseline tables row and confirm TP=0 (column index after F1).
+    lines = [ln for ln in out.splitlines() if "baseline" in ln and "tables" in ln]
+    assert lines, "expected a 'baseline tables' row in stdout"
+    cells = [c.strip() for c in lines[0].split("\t")]
+    # Legacy columns: variant, kind, P, R, F1, TP, FP, FN, ...
+    assert cells[5] == "0", f"expected TP=0, got {cells[5]!r} in row: {cells}"
 
 
 # ── Review-unknown helpers ────────────────────────────────────────────────────

@@ -370,7 +370,7 @@ def test_open_pdf_skips_osascript_on_non_darwin(tmp_path, monkeypatch) -> None:
 
 def test_collect_recent_labels_returns_only_custom() -> None:
     ann = {
-        "a.png": "correct", "b.png": "incorrect", "c.png": "other",
+        "a.png": "correct", "b.png": "incorrect",
         "d.png": "skipped", "e.png": "table_in_figure", "f.png": "wrong caption",
         "g.png": "",  # empty value — ignored
     }
