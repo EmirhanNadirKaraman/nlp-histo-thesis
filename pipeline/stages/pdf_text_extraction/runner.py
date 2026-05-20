@@ -855,7 +855,10 @@ class PipelineRunner:
         logger.info("[%s] Step 7 — media cropping", pmcid)
         with self._stage("STEP7_MEDIA_CROPPING"):
             cropper = self._get_media_cropper()
-            figures, tables = cropper.crop(pdf_path, layout, detection=detection)
+            figures, tables = cropper.crop(
+                pdf_path, layout, detection=detection,
+                drop_tables_inside_figures=self._cfg.masking.drop_tables_inside_figures,
+            )
         self._record(lambda s: s.set_count("figures_cropped", len(figures)))
         self._record(lambda s: s.set_count("tables_cropped", len(tables)))
 
@@ -883,6 +886,7 @@ class PipelineRunner:
             _, tables_docling = cropper_docling.crop(
                 pdf_path, layout_pre_recon, detection=None,
                 docling_table_types=("TABLE",),
+                drop_tables_inside_figures=self._cfg.masking.drop_tables_inside_figures,
             )
             MediaJsonWriter(json_dir.parent / "docling").write(
                 pmcid, rows, figures, tables_docling,
@@ -897,6 +901,7 @@ class PipelineRunner:
             _, tables_docling_recon = cropper_docling_recon.crop(
                 pdf_path, layout, detection=None,
                 docling_table_types=("TABLE", "RECONSTRUCTED_TABLE"),
+                drop_tables_inside_figures=self._cfg.masking.drop_tables_inside_figures,
             )
             MediaJsonWriter(json_dir.parent / "docling_recon").write(
                 pmcid, rows, figures, tables_docling_recon,

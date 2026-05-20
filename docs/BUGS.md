@@ -79,7 +79,121 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-052 | Fixed (2026-05-16) | Medium | Tooling, cost estimation script | `scripts/estimate_selection_cost.py:per_chunk_input_tokens` modelled the average sentences per MAP chunk as `min(chunk_size, n_sentences / n_chunks * (1 + 0))`. At production defaults (`chunk_size=10`, `chunk_overlap=2`, stride=8) `n_sentences / n_chunks ≈ stride = 8`, so the clamp returned ~8 sentences per chunk — but `MapStage._make_chunks` (`map_stage.py:1263-1267`) slices `sentences[i:i+chunk_size]` so each non-tail chunk actually sees 10 sentences. The trailing `* (1 + 0)` was a leftover from a removed overlap term. Net: every cost number in the projection table was ~15–20% low, exactly the headline figure a thesis budget review reads. Fixed by replacing the formula with a sum over `min(chunk_size, n_sentences - start) for start in range(0, n_sentences, stride)` divided by `n_chunks` — matches `_make_chunks` line-for-line, accounts for the truncated tail, and rounds with `ceil` for conservative budget estimates. Function signature gained `chunk_overlap` (caller updated); also validates `0 <= chunk_overlap < chunk_size`. Co-fixed in the same change: `.order_by(TextElement.position_in_section)` (the B-039 bug) flipped to `.order_by(TextElement.id)` to actually mirror `SummarizationRunner.load_paper_from_db`. Dead `import math` cleaned up. Regression test in `tests/test_estimate_selection_cost.py`. | [Bug 52](#bug-52--cost-estimation-script-underestimates-per-chunk-input-tokens) |
 | B-051 | Fixed (2026-05-15) | High | Summarisation, MAP agreement gate | `EmbeddingScorer._polarity` applied only a 20% multiplicative penalty; opposite-polarity paraphrases with cos≈1.0 produced score=0.80, passing `theta=0.7` and accepting the chunk as KEEP despite a direct voter contradiction. Fixed: new pure helper `agreement/polarity_conflict.detect_polarity_conflict` invoked from `AgreementChecker.compute` after the scorer runs but before theta — when two **comparable** findings (same `subject_entity` / `outcome_entity` / `relation_type` / `category`, all four required, strings `.strip().casefold()`d) carry opposite `{positive, negative}` directions, decision is forced to `ChunkDecision.ESCALATE` with `score_details["hard_fail_reason"] = "polarity_conflict"`. `MapOutputRouter._agreement_gate` emits ONLY `ReasonCode.POLARITY_CONFLICT` (never co-emits low-agreement codes — the score was high; only the structural check failed); explanation makes the override explicit. v1 conservative: scope fields excluded from comparability (cross-cohort false-escalate cheaper than missed contradiction); `absent`/`partial`/`unclear`/`no_direction` excluded from the hard-polarity set pending B-025 calibration. Cache invalidation: bumped `MAP_SCHEMA_VERSION` → `"map_v9_polarity_hard_fail"` (invalidates `PipelineCache`); added `MAP_AGREEMENT_POLICY_VERSION = "polarity_hard_fail_v1"` routed into `compute_pipeline_config_hash` on both runners (invalidates per-paper result cache). 11 deterministic regression tests in `tests/summarization/agreement/test_b051_hard_fail_polarity.py` + 3 hash regression tests in `tests/summarization/test_pipeline_config_hash.py`. | [Bug 51](#bug-51--map-agreement-gate-treats-opposite-polarity-as-soft-disagreement) |
 
+| B-058 | Fixed (2026-05-20) | Medium | PDF extraction, media cropper | `MaskingConfig.drop_tables_inside_figures` runs at Step 2 (post-detection filter in `runner.py::_drop_tables_inside_figures`) but the dropped table re-enters at Step 7 via the cropper's supplementary source (`media_cropper.py:245` — iterates layout TABLE/RECONSTRUCTED_TABLE elements and re-adds any that don't overlap an existing detection). When the Step-2 drop removes a `table_in_figure` FP, that table is no longer in `detection.regions` → no overlap match in cropper → re-added. Final `source` field is `"docling"` (one source) instead of `"docling+docling"` (two), confirming the bypass. Discovered while inspecting variant 18 (`drop=ON`) on PMC11791726/p9 — the FP was still emitted as Table_4_p9 despite `table_regions_dropped_inside_figures=1` in the run metadata. Fixed: `media_cropper.crop()` takes a new `drop_tables_inside_figures: bool = False` parameter; when True it skips layout TABLE elements ≥0.8 inside any FIGURE/PICTURE on the same page (same threshold as Step 2). `runner.py` plumbs `self._cfg.masking.drop_tables_inside_figures` into all three `cropper.crop()` call sites (main + two multi-source crops). No new config field — single `MaskingConfig.drop_tables_inside_figures` flag now governs both Step-2 detection filter and Step-7 supplementary-source filter. Pre-fix variant 18 had drop=ON behaving identically to drop=OFF on docling, invalidating its Stage 3 verdict (treated as "no effect" — actually the bug). | [Bug 58](#bug-58--drop_tables_inside_figures-bypassed-by-cropper-supplementary-source) |
+
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
+
+---
+
+## Bug 58 — `drop_tables_inside_figures` bypassed by cropper supplementary source
+
+### Status / Severity / Surface
+Fixed (2026-05-20) · Medium · PDF extraction, media cropper Step-7 supplementary source.
+
+### Symptom
+Variant 18 (`MaskingConfig.drop_tables_inside_figures = True`) on
+PMC11791726 page 9 emits `Table_4_p9.png` — a `table_in_figure` FP
+(human-labelled) — despite the run metadata reporting
+`table_regions_dropped_inside_figures = 1`. Crop-precision improvement
+that the flag was supposed to deliver did not materialise in Stage 3
+scoring (variant 18 was bbox-identical to variant 08 / drop=OFF on this
+metric).
+
+### Evidence
+Same bbox `(49.8, 533.6, 520.6, 402.4)` on page 9 across variants:
+
+```
+01 (drop=OFF):  source = "docling+docling"
+08 (drop=OFF):  source = "docling+docling"
+18 (drop=ON):   source = "docling"          ← one source, not two
+```
+
+The shortened `source` field showed the table came in through only ONE
+of the cropper's two sources after the drop filter ran. The Step-1
+docling layout for that page:
+
+```
+TABLE   bbox=(49.77, 533.64) → (520.61, 402.35)
+PICTURE bbox=(48.02, 686.61) → (524.11, 143.87)
+```
+
+The TABLE is 100% inside the PICTURE — both share the same page; the
+0.8 threshold would trigger.  `_drop_tables_inside_figures` in
+`runner.py:140` correctly removed it from `detection.regions`.
+
+### Diagnosis
+`PyMuPDFMediaCropper.crop` (`media_cropper.py:245-265`) has two
+ordered sources for tables:
+
+1. **Primary source**: `detection.regions` — already filtered by
+   `_drop_tables_inside_figures` in Step 2. The page-9 FP is gone here.
+2. **Supplementary source**: layout TABLE/RECONSTRUCTED_TABLE elements
+   (line 246 onwards). For each, the code checks
+   `_overlap_ratio(b, existing.bbox) > 0.5` against entries already in
+   `merged_tables`. With the FP removed from source #1, there's no
+   overlap match → the cropper adds the layout TABLE as a fresh entry.
+
+So the Step-2 drop is reduced to a no-op for any TABLE that docling's
+layout independently emits — the supplementary source rehydrates
+exactly the bboxes that drop tried to suppress.
+
+### Fix
+`media_cropper.py::crop()` takes a new keyword-only parameter
+`drop_tables_inside_figures: bool = False`. When True, the
+"Supplementary source" loop skips any layout TABLE/RECONSTRUCTED_TABLE
+element whose bbox area is ≥0.8 inside any FIGURE/PICTURE on the same
+page (same threshold as `_drop_tables_inside_figures` in the runner;
+coordinate-system-agnostic min/max normalization, matching
+`_bbox_intersect_area`).
+
+`runner.py` plumbs `self._cfg.masking.drop_tables_inside_figures`
+into all three `cropper.crop()` call sites (Step 7 main pass + the
+two multi-source `docling` / `docling_recon` passes inside
+`if self._cfg.runtime.multi_source_crops`).
+
+Single config flag still governs both filters — no new field added to
+`MaskingConfig` or `CroppingConfig`.
+
+### Verification
+1. Manually inspected `out/sweeps/18_best_drop_tables_in_figures/json/PMC11791726_HIS-86-485_media.json`
+   pre-fix: 4 tables emitted including the FP.  Re-run with the fix to
+   verify the FP no longer appears in the emitted table list (drops to
+   3 tables for that PMC).
+2. Stage 3 verdict for variant 18 needs re-evaluation: pre-fix it was
+   "no effect" (the bug); post-fix it should show a measurable Δ in
+   table crop precision (~+2.7pp on this 28-PDF corpus, eliminating 1
+   `table_in_figure` FP out of 38 emitted tables).
+3. Re-run command:
+   ```bash
+   rm -rf out/sweeps/18_best_drop_tables_in_figures
+   python3 scripts/eval/run_all_sweeps.py --stage merge_drop --only 18_best_drop_tables_in_figures
+   python3 scripts/eval/build_share_map.py
+   python3 scripts/eval/backfill_shared_labels.py
+   python3 scripts/eval/score_pdf_variants.py --md-out reports/stage3_PR.md
+   ```
+
+### Downstream impact
+- **Stage 3 verdict (`BEST_STAGE3["drop_tables_inside_figures"]`)** must
+  be re-decided after re-running variant 18.  If drop=True now wins,
+  flip the dict entry to True and re-run Stage 4 variants 19/20 (their
+  base inherits `BEST_STAGE3` via `_apply_stage3_kept`).
+- **Freeze defaults**: existing default `MaskingConfig.drop_tables_inside_figures = True`
+  (`config.py:218`) is now load-bearing.  If the new verdict keeps
+  drop=False, the freeze must change the default to `False`.
+
+### Related labels
+Only label-class affected: `table_in_figure` (2026-05-19 rubric entry).
+1 underlying instance on this corpus (PMC11791726/p9), appearing under
+different filenames depending on variant numbering:
+* `Table_3_p9.png` — variants where docling numbering keeps the FP at
+  position 3 (01, 05/06/07 hybrid, 08, 10 hybrid, 16, 17, 19, 20).
+* `Table_4_p9.png` — variants where pre-fix drop shifted numbering
+  (02/03/04 TATR, 09 TATR, 18).
+
+Post-fix, the FP filename disappears from variant 18's emission; that
+label becomes orphaned (harmless).  All other 37 table labels per
+variant + 80 figure labels stay valid; `share_map.json` carries them
+across re-runs.
 
 ---
 

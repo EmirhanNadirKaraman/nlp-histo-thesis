@@ -77,6 +77,7 @@ class PyMuPDFMediaCropper:
         layout: LayoutResult,
         detection: Optional[TableDetectionResult] = None,
         docling_table_types: Tuple[str, ...] = ("TABLE", "RECONSTRUCTED_TABLE"),
+        drop_tables_inside_figures: bool = False,
     ) -> Tuple[List[CroppedMedia], List[CroppedMedia]]:
         """
         Crop and save figure and table regions.
@@ -87,6 +88,13 @@ class PyMuPDFMediaCropper:
             detection: Table detection result (TATR/hybrid) used as primary
                        source for table crops.  Docling TABLE elements are
                        used as a supplementary source regardless.
+            drop_tables_inside_figures:
+                When True, skip layout TABLE/RECONSTRUCTED_TABLE elements
+                whose bbox is ≥80% inside any FIGURE/PICTURE element on the
+                same page.  Mirrors the Step-2 `_drop_tables_inside_figures`
+                filter on the cropper's *supplementary source* — without
+                this, dropped detections re-enter via the layout TABLE
+                pass (see media_cropper.py docstring + runner.py drop site).
 
         Returns:
             ``(figures, tables)`` — two lists of CroppedMedia.
@@ -242,6 +250,38 @@ class PyMuPDFMediaCropper:
                             existing["rotated"] = True
                         logger.debug("Merged duplicate TATR Table %s", num)
 
+            # Pre-compute figure bboxes per page for the drop-inside-figures
+            # filter on the supplementary source.  Same 0.8 threshold as
+            # runner._drop_tables_inside_figures.
+            _figure_bboxes_by_page: dict = {}
+            if drop_tables_inside_figures:
+                for fe in element_dicts:
+                    if fe.get("type") not in ("FIGURE", "PICTURE"):
+                        continue
+                    pg = fe.get("page")
+                    fb = fe.get("bbox") or {}
+                    if pg is None or not fb:
+                        continue
+                    _figure_bboxes_by_page.setdefault(pg, []).append(fb)
+
+            def _table_inside_figure(table_bbox: dict, page: int) -> bool:
+                figs = _figure_bboxes_by_page.get(page)
+                if not figs:
+                    return False
+                area_a = (table_bbox["x2"] - table_bbox["x1"]) * abs(table_bbox["y1"] - table_bbox["y2"])
+                if area_a <= 0:
+                    return False
+                for fb in figs:
+                    ix1 = max(table_bbox["x1"], fb["x1"])
+                    ix2 = min(table_bbox["x2"], fb["x2"])
+                    iy1 = max(min(table_bbox["y1"], table_bbox["y2"]), min(fb["y1"], fb["y2"]))
+                    iy2 = min(max(table_bbox["y1"], table_bbox["y2"]), max(fb["y1"], fb["y2"]))
+                    iw, ih = max(0.0, ix2 - ix1), max(0.0, iy2 - iy1)
+                    inter = iw * ih
+                    if inter / area_a >= 0.8:
+                        return True
+                return False
+
             # Supplementary source: Docling TABLE / RECONSTRUCTED_TABLE elements
             for el in element_dicts:
                 el_type = el.get("type")
@@ -250,6 +290,9 @@ class PyMuPDFMediaCropper:
                 page_no = el.get("page")
                 b       = el.get("bbox") or {}
                 if page_no is None or not b:
+                    continue
+                if drop_tables_inside_figures and _table_inside_figure(b, page_no):
+                    logger.debug("Dropped supplementary %s page=%s — ≥80%% inside figure", el_type, page_no)
                     continue
                 docling_source = "docling_reconstructed" if el_type == "RECONSTRUCTED_TABLE" else "docling"
                 # If this element substantially overlaps an existing detection, merge source and skip

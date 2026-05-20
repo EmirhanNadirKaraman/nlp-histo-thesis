@@ -21,7 +21,8 @@ automatically (same as the old shell flow's tail).
 Usage::
 
     python scripts/eval/run_all_sweeps.py
-    python scripts/eval/run_all_sweeps.py --only baseline tatr_090
+    python scripts/eval/run_all_sweeps.py --stage detector_docling
+    python scripts/eval/run_all_sweeps.py --stage table_in_figure --list-variants
     python scripts/eval/run_all_sweeps.py --pdf-dir eval/pdfs --workers 2
     python scripts/eval/run_all_sweeps.py --skip-share-map
 """
@@ -59,112 +60,72 @@ class SweepSpec:
     name: str
     configure: Callable[[PipelineConfig], None]
     workers: int = 2
-    stage: str = "detector"  # one of STAGE_CHOICES (minus "all")
+    stage: str = "detector_docling"  # one of STAGE_CHOICES (minus "all")
 
 
 # Ordered: each stage builds on the previous stage's winner.
 STAGE_ORDER = (
-    "detector",         # Stage 1 — detector / TATR threshold selection
-    "footnote_screen",  # Stage 2 — does footnote expansion shift the top detector ranking?
-    "merge_drop",       # Stage 3 — independent merge/drop flag ablations
-    "reconstruction",   # Stage 4 — table reconstruction interaction with selected expansion
-    "figure_premask",   # Stage 5 — pre-mask figures before table detection
+    "detector_docling",   # Stage 1.1 — Docling baseline
+    "detector_tatr",      # Stage 1.2 — TATR threshold selection
+    "detector_hybrid",    # Stage 1.3 — Hybrid threshold selection
+    "table_in_figure",    # Stage 2   — table_in_figure fixes for TATR / Hybrid
+    "footnote_screen",    # Stage 3   — footnote expansion per detector family
+    "merge_flags",        # Stage 4   — merge_tables / merge_figures on BEST_BASE
+    "reconstruction",     # Stage 5   — reconstruction × expand on BEST_BASE
 )
 STAGE_CHOICES = STAGE_ORDER + ("all",)
 
 # Human-readable one-liners for the stage menu printed when --stage is omitted.
 STAGE_BLURBS: dict = {
-    "detector":        "detector / TATR threshold selection",
-    "footnote_screen": "test whether footnote expansion changes the top detector ranking",
-    "merge_drop":      "independent merge/drop flag ablations",
-    "reconstruction":  "table reconstruction interaction with selected expansion setting",
-    "figure_premask":  "pre-mask figures before table detection",
+    "detector_docling": "Stage 1.1 — Docling baseline",
+    "detector_tatr":    "Stage 1.2 — TATR threshold selection",
+    "detector_hybrid":  "Stage 1.3 — Hybrid threshold selection",
+    "table_in_figure":  "Stage 2 — table_in_figure fixes for TATR / Hybrid",
+    "footnote_screen":  "Stage 3 — footnote_expand=1.2 per detector family",
+    "merge_flags":      "Stage 4 — merge_tables / merge_figures on BEST_BASE",
+    "reconstruction":   "Stage 5 — reconstruction × expand setting on BEST_BASE",
 }
 
 
-def _apply_stage1_baseline(cfg: PipelineConfig) -> None:
-    """Canonical Stage 1 baseline: helpers OFF, two-pass ON.
-
-    Every field is set explicitly so a future change to PipelineConfig
-    defaults cannot silently shift the experiment baseline.  In particular
-    MaskingConfig.drop_tables_inside_figures defaults to True since
-    2026-05-18, so we must force it False here.
-    """
-    cfg.two_pass.enabled                       = True
-    cfg.two_pass.render_dpi                    = 150
-    cfg.tatr.render_dpi                        = 150
-    cfg.docling.reconstruct_tables_from_lists  = False
-    cfg.cropping.merge_tables_by_caption       = False
-    cfg.cropping.merge_figures_by_caption      = False
-    cfg.cropping.expand_tables_with_footnotes  = False
-    cfg.masking.drop_tables_inside_figures     = False
-
-
-def _stage1(detector: TableDetectorType, threshold: Optional[float]):
-    """Build a Stage-1 configure() callable.
-
-    threshold=None for docling-only (no TATR threshold relevant).
-    """
-    def configure(cfg: PipelineConfig) -> None:
-        _apply_stage1_baseline(cfg)
-        cfg.table_detector = detector
-        if threshold is not None:
-            cfg.tatr.threshold = threshold
-    return configure
-
-
-# Stage 1 — detector / threshold selection.
-# Helper flags (reconstruct/merge/expand/drop) are explicitly OFF in
-# _apply_stage1_baseline so this comparison isolates the detector.
-# ``workers=1`` for the docling-only variant avoids previously-observed OOM.
-ALL_SWEEPS: List[SweepSpec] = [
-    SweepSpec("01_docling",    _stage1(TableDetectorType.DOCLING, None), workers=1, stage="detector"),
-    SweepSpec("02_tatr_090",   _stage1(TableDetectorType.TATR,    0.90), workers=2, stage="detector"),
-    SweepSpec("03_tatr_095",   _stage1(TableDetectorType.TATR,    0.95), workers=2, stage="detector"),
-    SweepSpec("04_tatr_099",   _stage1(TableDetectorType.TATR,    0.99), workers=2, stage="detector"),
-    SweepSpec("05_hybrid_090", _stage1(TableDetectorType.HYBRID,  0.90), workers=2, stage="detector"),
-    SweepSpec("06_hybrid_095", _stage1(TableDetectorType.HYBRID,  0.95), workers=2, stage="detector"),
-    SweepSpec("07_hybrid_099", _stage1(TableDetectorType.HYBRID,  0.99), workers=2, stage="detector"),
-]
-
-
 # ---------------------------------------------------------------------------
-# Staged-sweep knobs.  Each BEST_* constant is the "winner" chosen after the
+# Staged-sweep knobs.  Each constant is the "winner" chosen after the
 # corresponding stage and feeds into every later stage.  Edit them in place
 # as each stage's scoring lands; the variants below pick them up.
 # ---------------------------------------------------------------------------
 
-# Stage 1 winner — detector / TATR threshold.  Drives Stages 2-5.
+# Stage 1 winners — detector / threshold per family.  Drive Stages 2-5.
+STAGE1_BASE_DOCLING = "01_docling"
+STAGE1_BASE_TATR    = "04_tatr_099"
+STAGE1_BASE_HYBRID  = "07_hybrid_099"
+
+# Stage 2 winners — table_in_figure mode per detector family.  Each is
+# one of: "none", "drop", "premask", "drop_plus_premask".  Drives Stages 3-5
+# whenever the selected family is TATR or Hybrid.  Docling skips Stage 2
+# entirely (premasking is a no-op for Docling; see runner.py:651-653 and
+# media_cropper.py B-058 fix — for Docling, only `drop_tables_inside_figures`
+# actually changes behaviour, and it lives in the table_in_figure mode dial).
+BEST_TATR_TABLE_IN_FIGURE_MODE   = "none"
+BEST_HYBRID_TABLE_IN_FIGURE_MODE = "none"
+
+# Stage 3 winner — final detector family after footnote expansion.  Drives
+# Stages 4-5.  One of the seven Stage-1 base names.
 BEST_BASE = "01_docling"
 
-# Footnote multiplier — pinned at 1.2 (the value validated in Stage 2).
-# The original Stage 3 (`footnote_tuning`, variants 11/12/13) was removed
-# on 2026-05-20: Stage 2 docling@1.2 already eliminated 94% of missed
-# footnotes (17 → 1), and raising the multiplier only risks crop overshoot.
-# Used by Stages 3-5 whenever expand_tables_with_footnotes is ON.
-BEST_EXPAND_MULTIPLIER = 1.2
+# Stage 4 winners — merge flags chosen on BEST_BASE.  Drive Stage 5.
+BEST_MERGE_TABLES_BY_CAPTION  = False
+BEST_MERGE_FIGURES_BY_CAPTION = False
 
-# Two-pass — pinned ON.  Originally Stage 3 (`two_pass`, variants 14/15)
-# tested two_pass on/off via the crop rubric.  Removed on 2026-05-20: the
-# rubric scores figure/table crops, and two_pass touches body text only
-# (R1 pixel rule, header masking).  Variant 15 produced bbox-identical
-# outputs to variant 08, so the sweep yielded zero signal.  The two_pass=ON
-# decision stands on the 2026-05-13 ghost-text evidence
-# (`scripts/verify_ghost_text_detection.py`).  Used by Stages 3-5.
-BEST_TWO_PASS = True
+# Stage 5 winners — chosen after the reconstruction × expand sweep.
+# These don't feed any later variant (Stage 5 is terminal); they're
+# documentation for the freeze step that bakes defaults into
+# PipelineConfig.  See docs/THESIS.md Decisions log.
+BEST_RECONSTRUCTION_SETTING = False
+BEST_EXPAND_SETTING         = True
 
-# Stage 3 winners — independent merge/drop flags kept from 16/17/18.
-# None of them are forced on by default; flip an entry to True once the
-# matching Stage 3 variant clearly wins to fold it into Stage 4 / 5 bases.
-BEST_STAGE3: dict = {
-    "merge_tables_by_caption":   False,
-    "merge_figures_by_caption":  False,
-    "drop_tables_inside_figures": False,
-}
+# Pinned knobs (no sweep).
+BEST_TWO_PASS          = True   # ghost-text safety; see 2026-05-13 decision
+BEST_EXPAND_MULTIPLIER = 1.2    # Stage-2 winner from earlier sweep (94% missed-footnote reduction)
 
-# Stage 5 only — whether the "selected setting" for expand_tables_with_footnotes
-# is ON (True) or OFF (False).  Set to whatever Stage 4 (reconstruction) chose.
-BEST_EXPAND_SETTING = True
 
 _STAGE1_BASES = {
     "01_docling":    (TableDetectorType.DOCLING, None),
@@ -175,6 +136,29 @@ _STAGE1_BASES = {
     "06_hybrid_095": (TableDetectorType.HYBRID,  0.95),
     "07_hybrid_099": (TableDetectorType.HYBRID,  0.99),
 }
+
+_VALID_TIF_MODES = ("none", "drop", "premask", "drop_plus_premask")
+
+
+# ---------------------------------------------------------------------------
+# Helper functions.
+# ---------------------------------------------------------------------------
+
+def _apply_stage1_baseline(cfg: PipelineConfig) -> None:
+    """Canonical Stage 1 baseline: every helper flag explicit.
+
+    Every field is set explicitly so a future change to PipelineConfig
+    defaults cannot silently shift the experiment baseline.
+    """
+    cfg.two_pass.enabled                              = True
+    cfg.two_pass.render_dpi                           = 150
+    cfg.tatr.render_dpi                               = 150
+    cfg.docling.reconstruct_tables_from_lists         = False
+    cfg.cropping.expand_tables_with_footnotes         = False
+    cfg.cropping.merge_tables_by_caption              = False
+    cfg.cropping.merge_figures_by_caption             = False
+    cfg.masking.drop_tables_inside_figures            = False
+    cfg.masking.mask_figures_before_table_detection   = False
 
 
 def _apply_base(cfg: PipelineConfig, base_name: str) -> None:
@@ -190,119 +174,231 @@ def _apply_base(cfg: PipelineConfig, base_name: str) -> None:
         cfg.tatr.threshold = threshold
 
 
-def _apply_best_base(cfg: PipelineConfig) -> None:
-    """Apply Stage 1 baseline + the BEST_BASE detector/threshold."""
+def _apply_table_in_figure_mode(cfg: PipelineConfig, mode: str) -> None:
+    """Set drop / premask flags from a single dial.
+
+    ``mode`` ∈ {"none", "drop", "premask", "drop_plus_premask"}.
+    """
+    if mode not in _VALID_TIF_MODES:
+        raise ValueError(f"mode={mode!r} must be one of {_VALID_TIF_MODES}")
+    cfg.masking.drop_tables_inside_figures          = mode in ("drop", "drop_plus_premask")
+    cfg.masking.mask_figures_before_table_detection = mode in ("premask", "drop_plus_premask")
+
+
+def _base_family(base_name: str) -> str:
+    """Return 'docling' | 'tatr' | 'hybrid' from a Stage-1 base name."""
+    if "docling" in base_name: return "docling"
+    if "tatr" in base_name:    return "tatr"
+    if "hybrid" in base_name:  return "hybrid"
+    raise ValueError(f"unrecognised base family: {base_name!r}")
+
+
+def _tif_mode_for_base(base_name: str) -> str:
+    """Pick the right Stage-2-winner mode for a given base."""
+    fam = _base_family(base_name)
+    if fam == "docling": return "none"
+    if fam == "tatr":    return BEST_TATR_TABLE_IN_FIGURE_MODE
+    if fam == "hybrid":  return BEST_HYBRID_TABLE_IN_FIGURE_MODE
+    return "none"
+
+
+def _apply_best_base_with_mode(cfg: PipelineConfig) -> None:
+    """Apply BEST_BASE + its corresponding table_in_figure mode."""
     _apply_base(cfg, BEST_BASE)
+    _apply_table_in_figure_mode(cfg, _tif_mode_for_base(BEST_BASE))
 
 
-def _apply_stage3_kept(cfg: PipelineConfig) -> None:
-    """Fold in any Stage 3 flags marked as winners in BEST_STAGE3."""
-    if BEST_STAGE3.get("merge_tables_by_caption"):
-        cfg.cropping.merge_tables_by_caption  = True
-    if BEST_STAGE3.get("merge_figures_by_caption"):
-        cfg.cropping.merge_figures_by_caption = True
-    if BEST_STAGE3.get("drop_tables_inside_figures"):
-        cfg.masking.drop_tables_inside_figures = True
+def _workers_for_base(base_name: str) -> int:
+    """Docling-only base avoids previously-observed OOM by using 1 worker."""
+    return 1 if _base_family(base_name) == "docling" else 2
 
 
-# ---------- Stage 2 — footnote-expansion screen on top Stage 1 candidates ---
+# ---------------------------------------------------------------------------
+# Stage 1.1 — Docling baseline.
+# ---------------------------------------------------------------------------
 
-def _stage2(base_name: str, multiplier: float):
-    """Build a Stage-2 configure() callable on a fixed Stage 1 base."""
+def _stage1_variant(base_name: str, stage_slug: str):
+    """Build a configure() callable for a Stage-1 variant by base name."""
     def configure(cfg: PipelineConfig) -> None:
         _apply_base(cfg, base_name)
-        cfg.cropping.expand_tables_with_footnotes = True
-        cfg.cropping.footnote_threshold_multiplier = multiplier
+    return configure
+
+
+ALL_SWEEPS: List[SweepSpec] = [
+    SweepSpec("01_docling", _stage1_variant("01_docling", "detector_docling"),
+              workers=1, stage="detector_docling"),
+]
+
+
+# ---------------------------------------------------------------------------
+# Stage 1.2 — TATR threshold selection.
+# ---------------------------------------------------------------------------
+
+ALL_SWEEPS.extend([
+    SweepSpec("02_tatr_090", _stage1_variant("02_tatr_090", "detector_tatr"),
+              workers=2, stage="detector_tatr"),
+    SweepSpec("03_tatr_095", _stage1_variant("03_tatr_095", "detector_tatr"),
+              workers=2, stage="detector_tatr"),
+    SweepSpec("04_tatr_099", _stage1_variant("04_tatr_099", "detector_tatr"),
+              workers=2, stage="detector_tatr"),
+])
+
+
+# ---------------------------------------------------------------------------
+# Stage 1.3 — Hybrid threshold selection.
+# ---------------------------------------------------------------------------
+
+ALL_SWEEPS.extend([
+    SweepSpec("05_hybrid_090", _stage1_variant("05_hybrid_090", "detector_hybrid"),
+              workers=2, stage="detector_hybrid"),
+    SweepSpec("06_hybrid_095", _stage1_variant("06_hybrid_095", "detector_hybrid"),
+              workers=2, stage="detector_hybrid"),
+    SweepSpec("07_hybrid_099", _stage1_variant("07_hybrid_099", "detector_hybrid"),
+              workers=2, stage="detector_hybrid"),
+])
+
+
+# ---------------------------------------------------------------------------
+# Stage 2 — table_in_figure fixes for TATR / Hybrid.
+# Docling skips this stage; premask is a no-op for Docling and the drop
+# post-filter is part of the table_in_figure mode dial we'll sweep here.
+# ---------------------------------------------------------------------------
+
+def _stage2(base_constant_name: str, mode: str):
+    """Stage-2 variant: apply STAGE1_BASE_{TATR,HYBRID} + a TIF mode.
+
+    ``base_constant_name`` is the *name* of the module-level constant
+    (e.g. "STAGE1_BASE_TATR") so the variant tracks edits to the
+    constant — the actual base name is dereferenced at config-build
+    time (not at variant-spec build time).
+    """
+    def configure(cfg: PipelineConfig) -> None:
+        base = globals()[base_constant_name]
+        _apply_base(cfg, base)
+        _apply_table_in_figure_mode(cfg, mode)
     return configure
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("08_docling_footnote_expand_1_2",
-              _stage2("01_docling",    1.2), workers=1, stage="footnote_screen"),
-    SweepSpec("09_tatr_099_footnote_expand_1_2",
-              _stage2("04_tatr_099",   1.2), workers=2, stage="footnote_screen"),
-    SweepSpec("10_hybrid_099_footnote_expand_1_2",
-              _stage2("07_hybrid_099", 1.2), workers=2, stage="footnote_screen"),
+    SweepSpec("08_tatr_099_drop_tables_in_figures",
+              _stage2("STAGE1_BASE_TATR", "drop"),
+              workers=2, stage="table_in_figure"),
+    SweepSpec("09_tatr_099_premask_figures_for_tables",
+              _stage2("STAGE1_BASE_TATR", "premask"),
+              workers=2, stage="table_in_figure"),
+    SweepSpec("10_tatr_099_drop_plus_premask",
+              _stage2("STAGE1_BASE_TATR", "drop_plus_premask"),
+              workers=2, stage="table_in_figure"),
+    SweepSpec("11_hybrid_099_drop_tables_in_figures",
+              _stage2("STAGE1_BASE_HYBRID", "drop"),
+              workers=2, stage="table_in_figure"),
+    SweepSpec("12_hybrid_099_premask_figures_for_tables",
+              _stage2("STAGE1_BASE_HYBRID", "premask"),
+              workers=2, stage="table_in_figure"),
+    SweepSpec("13_hybrid_099_drop_plus_premask",
+              _stage2("STAGE1_BASE_HYBRID", "drop_plus_premask"),
+              workers=2, stage="table_in_figure"),
 ])
 
 
-# ---------- Stage 3 — independent merge/drop flag ablations -----------------
-# (Original Stage 3 — footnote multiplier tuning, variants 11/12/13 — was
-# removed on 2026-05-20.  Multiplier pinned at BEST_EXPAND_MULTIPLIER = 1.2;
-# see Decisions log in docs/THESIS.md.)
-#
-# Old Stage 3 — two_pass ablation, variants 14/15 — was also removed on
-# 2026-05-20.  The crop rubric is blind to two_pass effects (which touch
-# body text via R1 pixel rule + header masking, not figure/table
-# detection); variant 15's outputs were bbox-identical to variant 08, so
-# the sweep yielded zero signal.  `BEST_TWO_PASS = True` stands on the
-# 2026-05-13 ghost-text evidence.
+# ---------------------------------------------------------------------------
+# Stage 3 — footnote_expand=1.2 per detector family.
+# Each variant: best-of-its-family base + that family's Stage-2 TIF mode +
+# expand=ON, multiplier=1.2.  Compare 14 / 15 / 16 to pick BEST_BASE.
+# ---------------------------------------------------------------------------
 
-def _stage3(*, merge_tables: bool = False, merge_figures: bool = False,
-            drop_tif: bool = False):
+def _stage3_for_family(base_constant_name: str, family: str):
+    """Stage-3 variant: family-best base + that family's TIF mode + expand=1.2."""
     def configure(cfg: PipelineConfig) -> None:
-        _apply_best_base(cfg)
+        base = globals()[base_constant_name]
+        _apply_base(cfg, base)
+        if family == "docling":
+            mode = "none"
+        elif family == "tatr":
+            mode = BEST_TATR_TABLE_IN_FIGURE_MODE
+        elif family == "hybrid":
+            mode = BEST_HYBRID_TABLE_IN_FIGURE_MODE
+        else:
+            mode = "none"
+        _apply_table_in_figure_mode(cfg, mode)
         cfg.cropping.expand_tables_with_footnotes  = True
         cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
-        cfg.two_pass.enabled = BEST_TWO_PASS
-        cfg.cropping.merge_tables_by_caption   = merge_tables
-        cfg.cropping.merge_figures_by_caption  = merge_figures
-        cfg.masking.drop_tables_inside_figures = drop_tif
     return configure
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("16_best_merge_tables_by_caption",  _stage3(merge_tables=True),  workers=2, stage="merge_drop"),
-    SweepSpec("17_best_merge_figures_by_caption", _stage3(merge_figures=True), workers=2, stage="merge_drop"),
-    SweepSpec("18_best_drop_tables_in_figures",   _stage3(drop_tif=True),      workers=2, stage="merge_drop"),
+    SweepSpec("14_docling_footnote_expand_1_2",
+              _stage3_for_family("STAGE1_BASE_DOCLING", "docling"),
+              workers=1, stage="footnote_screen"),
+    SweepSpec("15_tatr_best_tif_fix_footnote_expand_1_2",
+              _stage3_for_family("STAGE1_BASE_TATR", "tatr"),
+              workers=2, stage="footnote_screen"),
+    SweepSpec("16_hybrid_best_tif_fix_footnote_expand_1_2",
+              _stage3_for_family("STAGE1_BASE_HYBRID", "hybrid"),
+              workers=2, stage="footnote_screen"),
 ])
 
 
-# ---------- Stage 4 — reconstruction interaction ----------------------------
+# ---------------------------------------------------------------------------
+# Stage 4 — merge flags on BEST_BASE.
+# Base: BEST_BASE + corresponding TIF mode + expand=ON, multiplier=1.2.
+# Each variant flips exactly one merge flag.
+# ---------------------------------------------------------------------------
 
-def _stage4(*, expand: bool):
-    """Reconstruct tables from lists, with or without selected footnote expand."""
+def _stage4(*, merge_tables: bool = False, merge_figures: bool = False):
     def configure(cfg: PipelineConfig) -> None:
-        _apply_best_base(cfg)
+        _apply_best_base_with_mode(cfg)
+        cfg.cropping.expand_tables_with_footnotes  = True
+        cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
+        cfg.cropping.merge_tables_by_caption  = merge_tables
+        cfg.cropping.merge_figures_by_caption = merge_figures
+    return configure
+
+
+ALL_SWEEPS.extend([
+    SweepSpec("17_best_merge_tables_by_caption",
+              _stage4(merge_tables=True),
+              workers=_workers_for_base(BEST_BASE), stage="merge_flags"),
+    SweepSpec("18_best_merge_figures_by_caption",
+              _stage4(merge_figures=True),
+              workers=_workers_for_base(BEST_BASE), stage="merge_flags"),
+])
+
+
+# ---------------------------------------------------------------------------
+# Stage 5 — reconstruction × expand setting on BEST_BASE.
+# Base: BEST_BASE + corresponding TIF mode + BEST_MERGE_*_BY_CAPTION.
+#   19: reconstruct=ON, expand=OFF
+#   20: reconstruct=ON, expand=ON (multiplier=BEST_EXPAND_MULTIPLIER)
+# Compare 19 vs 20 vs Stage-3 winner to pick BEST_RECONSTRUCTION_SETTING
+# and BEST_EXPAND_SETTING.
+# ---------------------------------------------------------------------------
+
+def _stage5(*, expand: bool):
+    def configure(cfg: PipelineConfig) -> None:
+        _apply_best_base_with_mode(cfg)
         cfg.docling.reconstruct_tables_from_lists  = True
+        cfg.cropping.merge_tables_by_caption       = BEST_MERGE_TABLES_BY_CAPTION
+        cfg.cropping.merge_figures_by_caption      = BEST_MERGE_FIGURES_BY_CAPTION
         cfg.cropping.expand_tables_with_footnotes  = expand
         if expand:
             cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
-        cfg.two_pass.enabled = BEST_TWO_PASS
-        _apply_stage3_kept(cfg)
     return configure
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("19_best_reconstruct_only",                 _stage4(expand=False), workers=2, stage="reconstruction"),
-    SweepSpec("20_best_reconstruct_plus_selected_expand", _stage4(expand=True),  workers=2, stage="reconstruction"),
+    SweepSpec("19_best_reconstruct_only",
+              _stage5(expand=False),
+              workers=_workers_for_base(BEST_BASE), stage="reconstruction"),
+    SweepSpec("20_best_reconstruct_plus_selected_expand",
+              _stage5(expand=True),
+              workers=_workers_for_base(BEST_BASE), stage="reconstruction"),
 ])
 
 
-# ---------- Stage 5 — pre-mask figures before table detection ---------------
-# Skip if BEST_BASE == "01_docling" — pre-masking targets pixel detectors
-# (TATR / Hybrid) and is a no-op for Docling-only.
-
-def _stage5(*, drop: bool, premask: bool):
-    def configure(cfg: PipelineConfig) -> None:
-        _apply_best_base(cfg)
-        cfg.cropping.expand_tables_with_footnotes  = BEST_EXPAND_SETTING
-        if BEST_EXPAND_SETTING:
-            cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
-        cfg.two_pass.enabled = BEST_TWO_PASS
-        _apply_stage3_kept(cfg)
-        cfg.masking.drop_tables_inside_figures          = drop
-        cfg.masking.mask_figures_before_table_detection = premask
-    return configure
-
-
-if BEST_BASE != "01_docling":
-    ALL_SWEEPS.extend([
-        SweepSpec("21_best_drop_only_for_premask_control", _stage5(drop=True,  premask=False), workers=2, stage="figure_premask"),
-        SweepSpec("22_best_premask_figures_for_tables",    _stage5(drop=False, premask=True),  workers=2, stage="figure_premask"),
-        SweepSpec("23_best_drop_plus_premask_figures",     _stage5(drop=True,  premask=True),  workers=2, stage="figure_premask"),
-    ])
-
+# ---------------------------------------------------------------------------
+# Build / run plumbing (unchanged from the prior layout).
+# ---------------------------------------------------------------------------
 
 def _build_config(spec: SweepSpec, *, pdf_dir: Path, sweeps_root: Path,
                   workers_override: Optional[int],
@@ -474,9 +570,13 @@ def _print_variants_table(
     Builds the PipelineConfig for each variant (without running extraction)
     so the printed flags match exactly what a real run would see.
     """
-    header = ("variant", "detector", "tatr", "2pass",
-              "recon", "m_tbl", "m_fig", "exp", "ftn_x",
-              "drop", "premask", "out_dir")
+    header = (
+        "variant", "stage", "detector", "tatr", "two_pass",
+        "recon", "expand", "ftn_x",
+        "merge_tables", "merge_figures",
+        "drop_tables_inside_figures", "premask_figures_before_table_detection",
+        "out_dir",
+    )
     rows: List[tuple] = []
     for spec in sweeps:
         cfg = _build_config(spec, pdf_dir=pdf_dir, sweeps_root=sweeps_root,
@@ -489,14 +589,15 @@ def _print_variants_table(
                  if cfg.cropping.expand_tables_with_footnotes else "-")
         rows.append((
             spec.name,
+            spec.stage,
             detector,
             tatr_thr,
             "ON" if cfg.two_pass.enabled else "OFF",
             "ON" if cfg.docling.reconstruct_tables_from_lists else "OFF",
-            "ON" if cfg.cropping.merge_tables_by_caption else "OFF",
-            "ON" if cfg.cropping.merge_figures_by_caption else "OFF",
             "ON" if cfg.cropping.expand_tables_with_footnotes else "OFF",
             ftn_x,
+            "ON" if cfg.cropping.merge_tables_by_caption else "OFF",
+            "ON" if cfg.cropping.merge_figures_by_caption else "OFF",
             "ON" if cfg.masking.drop_tables_inside_figures else "OFF",
             "ON" if cfg.masking.mask_figures_before_table_detection else "OFF",
             str(cfg.paths.output_root),
@@ -532,8 +633,8 @@ def _print_stage_menu() -> None:
     print(f"      every variant ({len(ALL_SWEEPS)} total)")
     print()
     print("Examples:")
-    print("  python scripts/eval/run_all_sweeps.py --stage detector")
-    print("  python scripts/eval/run_all_sweeps.py --stage merge_drop --list-variants")
+    print("  python scripts/eval/run_all_sweeps.py --stage detector_docling")
+    print("  python scripts/eval/run_all_sweeps.py --stage table_in_figure --list-variants")
     print("  python scripts/eval/run_all_sweeps.py --stage all --only 07_hybrid_099")
 
 
