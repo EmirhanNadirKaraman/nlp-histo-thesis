@@ -1,3 +1,6 @@
+# Private thesis-chapter draft (do not publish)
+/docs/thesis/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

@@ -879,6 +879,25 @@ def main() -> None:
         0,
     )
 
+    # All-labelled short-circuit: when every item already has a label,
+    # the cursor would silently land on index 0 (an already-labelled crop)
+    # with no indication everything's done.  Surface that and let the
+    # user opt out before re-entering the loop.
+    labelled_count = sum(1 for it in items if ann_key(it) in ann)
+    if labelled_count == total:
+        scope = f"variant '{variant}'" if variant else "default annotations"
+        print()
+        print(c(GREEN, f"  All {total} item(s) already labelled for {scope} (mode={mode})."))
+        print(f"  File: {ann_path(mode, variant)}")
+        try:
+            resp = input("  Revisit labels anyway? [y/N] ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            resp = ""
+        if resp not in ("y", "yes"):
+            show_metrics(items, ann, mode)
+            return
+        cursor = 0  # user opted in — start from the top
+
     while 0 <= cursor < total:
         item = items[cursor]
         render(item, items, ann, mode, pdf_dir=pdf_dir, sweep_dir=sweep_dir)

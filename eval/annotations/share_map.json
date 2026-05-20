@@ -12,13 +12,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -32,7 +28,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -49,13 +47,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -69,7 +63,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -86,13 +82,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -106,7 +98,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -123,13 +117,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -143,7 +133,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -160,13 +152,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -180,7 +168,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -197,13 +187,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -217,7 +203,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -237,14 +225,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -264,14 +250,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -291,14 +275,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -318,14 +300,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -342,34 +322,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
-      ]
-    },
-    {
-      "bbox": [
-        165.0,
-        678.0,
-        561.0,
-        295.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
-    {
-      "bbox": [
-        166.0,
-        673.0,
-        561.0,
-        295.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -382,7 +337,10 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -402,14 +360,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -429,14 +385,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -456,14 +410,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -483,14 +435,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -510,14 +460,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -537,34 +485,16 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
   "PMC11649516_HIS-86-236_Table_1_p5.png": [
-    {
-      "bbox": [
-        62.0,
-        671.0,
-        548.0,
-        143.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         62.0,
@@ -577,7 +507,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -590,38 +522,14 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
-      ]
-    },
-    {
-      "bbox": [
-        64.0,
-        665.0,
-        547.0,
-        143.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
   "PMC11649516_HIS-86-236_Table_2_p8.png": [
-    {
-      "bbox": [
-        47.0,
-        659.0,
-        282.0,
-        70.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         47.0,
@@ -634,7 +542,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -647,18 +557,10 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
-      ]
-    },
-    {
-      "bbox": [
-        48.0,
-        653.0,
-        281.0,
-        70.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -678,14 +580,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -705,14 +605,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -732,30 +630,16 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
   "PMC11674653_dermatopathology-11-00035_Table_1_p3.png": [
-    {
-      "bbox": [
-        167.0,
-        193.0,
-        327.0,
-        82.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2"
-      ]
-    },
     {
       "bbox": [
         167.0,
@@ -769,7 +653,13 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -788,8 +678,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -806,13 +700,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -826,7 +716,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -846,14 +738,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -873,14 +763,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -911,13 +799,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -931,7 +815,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -965,14 +851,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -992,14 +876,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1019,14 +901,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1042,7 +922,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "10_hybrid_099_footnote_expand_1_2"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -1053,13 +935,7 @@
         65.0
       ],
       "variants": [
-        "01_docling",
-        "08_docling_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "01_docling"
       ]
     },
     {
@@ -1073,7 +949,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1090,13 +968,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -1110,27 +984,13 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
   "PMC11791726_HIS-86-485_Table_3_p10.png": [
-    {
-      "bbox": [
-        62.0,
-        671.0,
-        548.0,
-        431.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         62.0,
@@ -1143,18 +1003,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
-      ]
-    },
-    {
-      "bbox": [
-        64.0,
-        663.0,
-        547.0,
-        431.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -1167,7 +1018,10 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1184,12 +1038,7 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "12_hybrid_099_premask_figures_for_tables"
       ]
     }
   ],
@@ -1205,8 +1054,7 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2",
-        "18_best_drop_tables_in_figures"
+        "09_tatr_099_premask_figures_for_tables"
       ]
     }
   ],
@@ -1226,14 +1074,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1253,14 +1099,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1280,14 +1124,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1307,14 +1149,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1330,7 +1170,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1347,34 +1189,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
-      ]
-    },
-    {
-      "bbox": [
-        306.0,
-        350.0,
-        560.0,
-        51.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
-    {
-      "bbox": [
-        307.0,
-        343.0,
-        560.0,
-        51.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -1387,7 +1204,10 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1404,13 +1224,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1426,7 +1242,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     },
     {
@@ -1441,13 +1259,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1460,13 +1274,7 @@
         178.0
       ],
       "variants": [
-        "01_docling",
-        "08_docling_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "01_docling"
       ]
     },
     {
@@ -1479,18 +1287,10 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
-      ]
-    },
-    {
-      "bbox": [
-        43.0,
-        716.0,
-        548.0,
-        164.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1506,22 +1306,13 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
   "PMC11863705_main_Table_4_p6.png": [
-    {
-      "bbox": [
-        37.0,
-        720.0,
-        553.0,
-        59.0
-      ],
-      "variants": [
-        "10_hybrid_099_footnote_expand_1_2"
-      ]
-    },
     {
       "bbox": [
         37.0,
@@ -1532,18 +1323,10 @@
       "variants": [
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
-      ]
-    },
-    {
-      "bbox": [
-        313.0,
-        716.0,
-        553.0,
-        59.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "07_hybrid_099",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -1556,29 +1339,10 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
-      ]
-    },
-    {
-      "bbox": [
-        346.0,
-        714.0,
-        378.0,
-        567.0
-      ],
-      "variants": [
-        "19_best_reconstruct_only"
-      ]
-    },
-    {
-      "bbox": [
-        346.0,
-        714.0,
-        542.0,
-        549.0
-      ],
-      "variants": [
-        "20_best_reconstruct_plus_selected_expand"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1595,11 +1359,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1615,21 +1377,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "10_hybrid_099_footnote_expand_1_2"
-      ]
-    }
-  ],
-  "PMC11863705_main_Table_6_p7.png": [
-    {
-      "bbox": [
-        37.0,
-        732.0,
-        289.0,
-        419.0
-      ],
-      "variants": [
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1645,7 +1395,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1665,14 +1417,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1692,14 +1442,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1719,14 +1467,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1746,14 +1492,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1773,14 +1517,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -1796,7 +1538,19 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures"
+      ]
+    },
+    {
+      "bbox": [
+        38.0,
+        516.0,
+        558.0,
+        365.0
+      ],
+      "variants": [
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1813,13 +1567,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -1833,7 +1583,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1850,13 +1602,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -1870,7 +1618,19 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures"
+      ]
+    },
+    {
+      "bbox": [
+        315.0,
+        280.0,
+        552.0,
+        54.0
+      ],
+      "variants": [
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1887,23 +1647,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
-      ]
-    },
-    {
-      "bbox": [
-        36.0,
-        721.0,
-        558.0,
-        459.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -1916,18 +1662,10 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
-      ]
-    },
-    {
-      "bbox": [
-        44.0,
-        715.0,
-        558.0,
-        459.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1944,13 +1682,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -1964,7 +1698,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -1980,7 +1716,19 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "10_hybrid_099_footnote_expand_1_2"
+        "11_hybrid_099_drop_tables_in_figures"
+      ]
+    },
+    {
+      "bbox": [
+        38.0,
+        516.0,
+        558.0,
+        365.0
+      ],
+      "variants": [
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2000,14 +1748,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2027,14 +1773,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2054,14 +1798,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2081,14 +1823,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2108,14 +1848,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2132,13 +1870,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -2152,21 +1886,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
-      ]
-    }
-  ],
-  "PMC12045760_HIS-86-1053_Table_1_p4_2.png": [
-    {
-      "bbox": [
-        315.0,
-        693.0,
-        547.0,
-        290.0
-      ],
-      "variants": [
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -2186,14 +1908,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2213,14 +1933,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2240,14 +1958,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2267,14 +1983,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2294,14 +2008,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2321,14 +2033,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2348,14 +2058,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2375,14 +2083,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2402,14 +2108,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2429,34 +2133,16 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
   "PMC12129649_NEUP-45-177_Table_1_p8.png": [
-    {
-      "bbox": [
-        54.0,
-        353.0,
-        560.0,
-        49.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         54.0,
@@ -2469,18 +2155,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
-      ]
-    },
-    {
-      "bbox": [
-        55.0,
-        347.0,
-        559.0,
-        49.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -2493,7 +2170,10 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -2513,14 +2193,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2540,14 +2218,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2567,14 +2243,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2610,14 +2284,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2637,14 +2309,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2664,14 +2334,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2691,18 +2359,30 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
   "PMC12337196_main_Table_1_p1.png": [
+    {
+      "bbox": [
+        38.0,
+        503.0,
+        558.0,
+        384.0
+      ],
+      "variants": [
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
+      ]
+    },
     {
       "bbox": [
         38.0,
@@ -2717,22 +2397,8 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2"
-      ]
-    }
-  ],
-  "PMC12337196_main_Table_1_p3.png": [
-    {
-      "bbox": [
-        38.0,
-        142.0,
-        107.0,
-        135.0
-      ],
-      "variants": [
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "11_hybrid_099_drop_tables_in_figures"
       ]
     }
   ],
@@ -2752,14 +2418,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2779,14 +2443,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2806,14 +2468,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2831,35 +2491,27 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "11_hybrid_099_drop_tables_in_figures"
       ]
     },
     {
       "bbox": [
-        216.0,
+        226.0,
         769.0,
-        503.0,
-        700.0
+        497.0,
+        726.0
       ],
       "variants": [
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2"
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
   "PMC4945808_dpa-0003-0055_Table_2_p2.png": [
-    {
-      "bbox": [
-        227.0,
-        769.0,
-        502.0,
-        729.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2"
-      ]
-    },
     {
       "bbox": [
         227.0,
@@ -2873,7 +2525,23 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "11_hybrid_099_drop_tables_in_figures"
+      ]
+    },
+    {
+      "bbox": [
+        228.0,
+        769.0,
+        503.0,
+        742.0
+      ],
+      "variants": [
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2883,18 +2551,6 @@
         216.0,
         770.0,
         498.0,
-        729.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2"
-      ]
-    },
-    {
-      "bbox": [
-        216.0,
-        770.0,
-        498.0,
         742.0
       ],
       "variants": [
@@ -2903,7 +2559,23 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "11_hybrid_099_drop_tables_in_figures"
+      ]
+    },
+    {
+      "bbox": [
+        228.0,
+        769.0,
+        502.0,
+        742.0
+      ],
+      "variants": [
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2913,18 +2585,6 @@
         220.0,
         770.0,
         500.0,
-        729.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2"
-      ]
-    },
-    {
-      "bbox": [
-        220.0,
-        770.0,
-        500.0,
         742.0
       ],
       "variants": [
@@ -2933,7 +2593,23 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "11_hybrid_099_drop_tables_in_figures"
+      ]
+    },
+    {
+      "bbox": [
+        227.0,
+        770.0,
+        502.0,
+        742.0
+      ],
+      "variants": [
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2943,18 +2619,6 @@
         221.0,
         770.0,
         500.0,
-        729.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2"
-      ]
-    },
-    {
-      "bbox": [
-        221.0,
-        770.0,
-        500.0,
         742.0
       ],
       "variants": [
@@ -2963,7 +2627,23 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "11_hybrid_099_drop_tables_in_figures"
+      ]
+    },
+    {
+      "bbox": [
+        227.0,
+        770.0,
+        502.0,
+        742.0
+      ],
+      "variants": [
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -2973,18 +2653,6 @@
         223.0,
         769.0,
         500.0,
-        729.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2"
-      ]
-    },
-    {
-      "bbox": [
-        223.0,
-        769.0,
-        500.0,
         742.0
       ],
       "variants": [
@@ -2993,7 +2661,23 @@
         "04_tatr_099",
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "11_hybrid_099_drop_tables_in_figures"
+      ]
+    },
+    {
+      "bbox": [
+        226.0,
+        770.0,
+        501.0,
+        742.0
+      ],
+      "variants": [
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3013,14 +2697,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3040,14 +2722,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3067,14 +2747,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3091,23 +2769,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
-    {
-      "bbox": [
-        47.0,
-        681.0,
-        532.0,
-        70.0
-      ],
-      "variants": [
-        "16_best_merge_tables_by_caption"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -3121,26 +2785,13 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
   "PMC6851684_HIS-75-329_Table_1_p3_2.png": [
-    {
-      "bbox": [
-        298.0,
-        680.0,
-        532.0,
-        569.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         298.0,
@@ -3153,7 +2804,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -3167,7 +2820,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -3177,37 +2832,10 @@
         47.0,
         681.0,
         532.0,
-        198.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
-    {
-      "bbox": [
-        47.0,
-        681.0,
-        532.0,
         210.0
       ],
       "variants": [
-        "01_docling",
-        "19_best_reconstruct_only"
-      ]
-    },
-    {
-      "bbox": [
-        47.0,
-        681.0,
-        533.0,
-        198.0
-      ],
-      "variants": [
-        "10_hybrid_099_footnote_expand_1_2"
+        "01_docling"
       ]
     },
     {
@@ -3220,7 +2848,10 @@
       "variants": [
         "05_hybrid_090",
         "06_hybrid_095",
-        "07_hybrid_099"
+        "07_hybrid_099",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -3234,7 +2865,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -3254,14 +2887,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3281,14 +2912,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3308,14 +2937,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3335,14 +2962,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3362,14 +2987,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3389,14 +3012,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3416,14 +3037,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3443,14 +3062,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3470,14 +3087,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3497,14 +3112,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3524,28 +3137,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    }
-  ],
-  "PMC7317439_NEUP-40-302_Table_1_p4.png": [
-    {
-      "bbox": [
-        36.0,
-        709.0,
-        559.0,
-        23.0
-      ],
-      "variants": [
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3565,14 +3162,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3592,14 +3187,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3619,34 +3212,16 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
   "PMC7543760_main_Table_1_p4.png": [
-    {
-      "bbox": [
-        45.0,
-        752.0,
-        549.0,
-        333.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         45.0,
@@ -3659,7 +3234,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -3673,27 +3250,13 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
   "PMC7543760_main_Table_2_p5.png": [
-    {
-      "bbox": [
-        46.0,
-        292.0,
-        549.0,
-        77.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         46.0,
@@ -3706,18 +3269,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
-      ]
-    },
-    {
-      "bbox": [
-        47.0,
-        282.0,
-        544.0,
-        77.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -3730,27 +3284,14 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
   "PMC7543760_main_Table_3_p6.png": [
-    {
-      "bbox": [
-        45.0,
-        520.0,
-        549.0,
-        77.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         45.0,
@@ -3763,18 +3304,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
-      ]
-    },
-    {
-      "bbox": [
-        47.0,
-        512.0,
-        544.0,
-        77.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -3787,7 +3319,10 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -3807,14 +3342,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3834,14 +3367,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3861,14 +3392,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3888,14 +3417,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -3931,34 +3458,16 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
   "PMC8352662_main_Table_1_p3.png": [
-    {
-      "bbox": [
-        45.0,
-        752.0,
-        549.0,
-        523.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         45.0,
@@ -3971,7 +3480,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -3985,27 +3496,13 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
   "PMC8352662_main_Table_2_p4.png": [
-    {
-      "bbox": [
-        45.0,
-        752.0,
-        549.0,
-        414.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         45.0,
@@ -4018,7 +3515,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -4032,7 +3531,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -4049,13 +3550,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -4069,7 +3566,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -4103,14 +3602,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -4130,34 +3627,16 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
   "PMC8416649_main_Table_1_p3.png": [
-    {
-      "bbox": [
-        46.0,
-        453.0,
-        286.0,
-        77.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         46.0,
@@ -4170,18 +3649,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
-      ]
-    },
-    {
-      "bbox": [
-        47.0,
-        443.0,
-        285.0,
-        77.0
-      ],
-      "variants": [
-        "09_tatr_099_footnote_expand_1_2"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -4194,7 +3664,10 @@
       "variants": [
         "02_tatr_090",
         "03_tatr_095",
-        "04_tatr_099"
+        "04_tatr_099",
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -4214,14 +3687,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -4241,14 +3712,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -4268,14 +3737,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
@@ -4294,40 +3761,16 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2"
-      ]
-    },
-    {
-      "bbox": [
-        52.0,
-        708.0,
-        284.0,
-        361.0
-      ],
-      "variants": [
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ],
   "PMC8420544_CYT-33-93_Table_2_p3.png": [
-    {
-      "bbox": [
-        45.0,
-        317.0,
-        289.0,
-        158.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         45.0,
@@ -4340,7 +3783,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -4354,27 +3799,13 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
   "PMC8420544_CYT-33-93_Table_3_p4.png": [
-    {
-      "bbox": [
-        45.0,
-        313.0,
-        381.0,
-        189.0
-      ],
-      "variants": [
-        "08_docling_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "20_best_reconstruct_plus_selected_expand"
-      ]
-    },
     {
       "bbox": [
         45.0,
@@ -4387,7 +3818,9 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "19_best_reconstruct_only"
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     },
     {
@@ -4401,7 +3834,9 @@
         "02_tatr_090",
         "03_tatr_095",
         "04_tatr_099",
-        "09_tatr_099_footnote_expand_1_2"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask"
       ]
     }
   ],
@@ -4421,14 +3856,12 @@
         "05_hybrid_090",
         "06_hybrid_095",
         "07_hybrid_099",
-        "08_docling_footnote_expand_1_2",
-        "09_tatr_099_footnote_expand_1_2",
-        "10_hybrid_099_footnote_expand_1_2",
-        "16_best_merge_tables_by_caption",
-        "17_best_merge_figures_by_caption",
-        "18_best_drop_tables_in_figures",
-        "19_best_reconstruct_only",
-        "20_best_reconstruct_plus_selected_expand"
+        "08_tatr_099_drop_tables_in_figures",
+        "09_tatr_099_premask_figures_for_tables",
+        "10_tatr_099_drop_plus_premask",
+        "11_hybrid_099_drop_tables_in_figures",
+        "12_hybrid_099_premask_figures_for_tables",
+        "13_hybrid_099_drop_plus_premask"
       ]
     }
   ]

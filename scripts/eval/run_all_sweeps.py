@@ -109,7 +109,7 @@ BEST_HYBRID_TABLE_IN_FIGURE_MODE = "none"
 
 # Stage 3 winner — final detector family after footnote expansion.  Drives
 # Stages 4-5.  One of the seven Stage-1 base names.
-BEST_BASE = "01_docling"
+BEST_BASE = "none"
 
 # Stage 4 winners — merge flags chosen on BEST_BASE.  Drive Stage 5.
 BEST_MERGE_TABLES_BY_CAPTION  = False
@@ -209,7 +209,17 @@ def _apply_best_base_with_mode(cfg: PipelineConfig) -> None:
 
 
 def _workers_for_base(base_name: str) -> int:
-    """Docling-only base avoids previously-observed OOM by using 1 worker."""
+    """Docling-only base avoids previously-observed OOM by using 1 worker.
+
+    Tolerates placeholder values (e.g. ``"none"`` before Stage 3 picks
+    BEST_BASE) by returning the safe default of 1.  The actual variant
+    will still fail at configure-time when ``_apply_base`` tries to look
+    up the placeholder in ``_STAGE1_BASES`` — that's the right time for
+    the error (the user is actively trying to run the stage), not at
+    module-import time.
+    """
+    if base_name not in _STAGE1_BASES:
+        return 1
     return 1 if _base_family(base_name) == "docling" else 2
 
 
