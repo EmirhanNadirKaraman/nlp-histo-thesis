@@ -66,11 +66,10 @@ class SweepSpec:
 STAGE_ORDER = (
     "detector",         # Stage 1 — detector / TATR threshold selection
     "footnote_screen",  # Stage 2 — does footnote expansion shift the top detector ranking?
-    "footnote_tuning",  # Stage 3 — tune footnote_threshold_multiplier on selected best base
-    "two_pass",         # Stage 4 — two-pass extraction ablation
-    "merge_drop",       # Stage 5 — independent merge/drop flag ablations
-    "reconstruction",   # Stage 6 — table reconstruction interaction with selected expansion
-    "figure_premask",   # Stage 7 — pre-mask figures before table detection
+    "two_pass",         # Stage 3 — two-pass extraction ablation
+    "merge_drop",       # Stage 4 — independent merge/drop flag ablations
+    "reconstruction",   # Stage 5 — table reconstruction interaction with selected expansion
+    "figure_premask",   # Stage 6 — pre-mask figures before table detection
 )
 STAGE_CHOICES = STAGE_ORDER + ("all",)
 
@@ -78,7 +77,6 @@ STAGE_CHOICES = STAGE_ORDER + ("all",)
 STAGE_BLURBS: dict = {
     "detector":        "detector / TATR threshold selection",
     "footnote_screen": "test whether footnote expansion changes the top detector ranking",
-    "footnote_tuning": "tune footnote_threshold_multiplier on selected best base",
     "two_pass":        "two-pass extraction ablation",
     "merge_drop":      "independent merge/drop flag ablations",
     "reconstruction":  "table reconstruction interaction with selected expansion setting",
@@ -138,27 +136,30 @@ ALL_SWEEPS: List[SweepSpec] = [
 # as each stage's scoring lands; the variants below pick them up.
 # ---------------------------------------------------------------------------
 
-# Stage 1 winner — detector / TATR threshold.  Drives Stages 2-7.
-BEST_BASE = "07_hybrid_099"
+# Stage 1 winner — detector / TATR threshold.  Drives Stages 2-6.
+BEST_BASE = "01_docling"
 
-# Stage 3 winner — footnote_threshold_multiplier picked from 11/12/13.
-# Used by Stages 4-7 whenever expand_tables_with_footnotes is ON.
+# Footnote multiplier — pinned at 1.2 (the value validated in Stage 2).
+# The original Stage 3 (`footnote_tuning`, variants 11/12/13) was removed
+# on 2026-05-20: Stage 2 docling@1.2 already eliminated 94% of missed
+# footnotes (17 → 1), and raising the multiplier only risks crop overshoot.
+# Used by Stages 3-6 whenever expand_tables_with_footnotes is ON.
 BEST_EXPAND_MULTIPLIER = 1.2
 
-# Stage 4 winner — two_pass on/off picked from 14/15.  Used by Stages 5-7.
+# Stage 3 winner — two_pass on/off picked from 14/15.  Used by Stages 4-6.
 BEST_TWO_PASS = True
 
-# Stage 5 winners — independent merge/drop flags kept from 16/17/18.
+# Stage 4 winners — independent merge/drop flags kept from 16/17/18.
 # None of them are forced on by default; flip an entry to True once the
-# matching Stage 5 variant clearly wins to fold it into Stage 6 / 7 bases.
+# matching Stage 4 variant clearly wins to fold it into Stage 5 / 6 bases.
 BEST_STAGE5: dict = {
     "merge_tables_by_caption":   False,
     "merge_figures_by_caption":  False,
     "drop_tables_inside_figures": False,
 }
 
-# Stage 7 only — whether the "selected setting" for expand_tables_with_footnotes
-# is ON (True) or OFF (False).  Set to whatever Stages 3/6 chose.
+# Stage 6 only — whether the "selected setting" for expand_tables_with_footnotes
+# is ON (True) or OFF (False).  Set to whatever Stage 5 (reconstruction) chose.
 BEST_EXPAND_SETTING = True
 
 _STAGE1_BASES = {
@@ -191,7 +192,7 @@ def _apply_best_base(cfg: PipelineConfig) -> None:
 
 
 def _apply_stage5_kept(cfg: PipelineConfig) -> None:
-    """Fold in any Stage 5 flags marked as winners in BEST_STAGE5."""
+    """Fold in any Stage 4 flags marked as winners in BEST_STAGE5."""
     if BEST_STAGE5.get("merge_tables_by_caption"):
         cfg.cropping.merge_tables_by_caption  = True
     if BEST_STAGE5.get("merge_figures_by_caption"):
@@ -221,42 +222,32 @@ ALL_SWEEPS.extend([
 ])
 
 
-# ---------- Stage 3 — footnote multiplier tuning on BEST_BASE ---------------
+# ---------- Stage 3 — two-pass ablation on BEST_BASE + BEST_EXPAND ----------
+# (Original Stage 3 — footnote multiplier tuning, variants 11/12/13 — was
+# removed on 2026-05-20.  Multiplier pinned at BEST_EXPAND_MULTIPLIER = 1.2;
+# see Decisions log in docs/THESIS.md.)
+#
+# Variant 14 (two_pass=ON arm) was deleted on 2026-05-20: it resolved to
+# the same config as `08_docling_footnote_expand_1_2` (BEST_BASE=01_docling,
+# expand=ON, multiplier=1.2, two_pass=ON), so variant 08's already-labelled
+# outputs serve as the two_pass=ON baseline.  Only the OFF arm (15) needs
+# fresh labelling.
 
-def _stage3(multiplier: float):
-    """Tune footnote_threshold_multiplier on BEST_BASE."""
-    def configure(cfg: PipelineConfig) -> None:
-        _apply_best_base(cfg)
-        cfg.cropping.expand_tables_with_footnotes  = True
-        cfg.cropping.footnote_threshold_multiplier = multiplier
-    return configure
-
-
-ALL_SWEEPS.extend([
-    SweepSpec("11_best_footnote_expand_1_2", _stage3(1.2), workers=2, stage="footnote_tuning"),
-    SweepSpec("12_best_footnote_expand_1_3", _stage3(1.3), workers=2, stage="footnote_tuning"),
-    SweepSpec("13_best_footnote_expand_1_5", _stage3(1.5), workers=2, stage="footnote_tuning"),
-])
-
-
-# ---------- Stage 4 — two-pass ablation on BEST_BASE + BEST_EXPAND ----------
-
-def _stage4(two_pass: bool):
+def _stage4_off():
     def configure(cfg: PipelineConfig) -> None:
         _apply_best_base(cfg)
         cfg.cropping.expand_tables_with_footnotes  = True
         cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
-        cfg.two_pass.enabled = two_pass
+        cfg.two_pass.enabled = False
     return configure
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("14_best_twopass_on",  _stage4(True),  workers=2, stage="two_pass"),
-    SweepSpec("15_best_twopass_off", _stage4(False), workers=2, stage="two_pass"),
+    SweepSpec("15_best_twopass_off", _stage4_off(), workers=2, stage="two_pass"),
 ])
 
 
-# ---------- Stage 5 — independent merge/drop flag ablations -----------------
+# ---------- Stage 4 — independent merge/drop flag ablations -----------------
 
 def _stage5(*, merge_tables: bool = False, merge_figures: bool = False,
             drop_tif: bool = False):
@@ -278,7 +269,7 @@ ALL_SWEEPS.extend([
 ])
 
 
-# ---------- Stage 6 — reconstruction interaction ----------------------------
+# ---------- Stage 5 — reconstruction interaction ----------------------------
 
 def _stage6(*, expand: bool):
     """Reconstruct tables from lists, with or without selected footnote expand."""
@@ -299,7 +290,7 @@ ALL_SWEEPS.extend([
 ])
 
 
-# ---------- Stage 7 — pre-mask figures before table detection ---------------
+# ---------- Stage 6 — pre-mask figures before table detection ---------------
 # Skip if BEST_BASE == "01_docling" — pre-masking targets pixel detectors
 # (TATR / Hybrid) and is a no-op for Docling-only.
 

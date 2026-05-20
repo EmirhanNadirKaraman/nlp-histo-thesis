@@ -108,11 +108,22 @@ unfixed bug, not addressable by `expand_tables_with_footnotes`.
 3. **TATR is the laggard** — still 8 missed footnotes vs 1 for
    docling/hybrid.  TATR-detected bboxes presumably extend close enough
    to the table edge that the default `footnote_proximity_pts=20` doesn't
-   absorb every cascading footnote.  Worth probing in Stage 3.
+   absorb every cascading footnote.  Not pursued — docling is the
+   selected base.
+
+### Stage 3 (`footnote_tuning`) skipped
+
+The original Stage 3 (variants `11`/`12`/`13`, multiplier ∈ {1.2, 1.3, 1.5})
+was removed on 2026-05-20.  Docling at 1.2 already eliminated 94% of
+missed footnotes (17 → 1); the remaining 1 miss plus 2 rotated-image
+labels are not addressable by raising the multiplier.  Higher multipliers
+only enlarge the crop and risk "crop too big" labels.
+`BEST_EXPAND_MULTIPLIER` is pinned at `1.2`.  See the 2026-05-20 row in
+[`THESIS.md` Decisions log](THESIS.md#decisions-log).
 
 ---
 
-## Stages 3–7 — pending
+## Stages 3–6 — pending
 
 Will be appended as each stage's scoring lands.  See
 [`PDF_EXTRACTION_EXPERIMENT_PLAN.md`](PDF_EXTRACTION_EXPERIMENT_PLAN.md)
