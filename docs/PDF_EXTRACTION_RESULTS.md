@@ -121,13 +121,128 @@ only enlarge the crop and risk "crop too big" labels.
 `BEST_EXPAND_MULTIPLIER` is pinned at `1.2`.  See the 2026-05-20 row in
 [`THESIS.md` Decisions log](THESIS.md#decisions-log).
 
+### Stage 3 (`two_pass`) inconclusive — stage removed
+
+A second Stage-3 attempt swept `two_pass` on/off (variants `14`/`15`).
+Variant 15 (two_pass=OFF) scored **identically** to variant 08
+(two_pass=ON) across every crop metric — same figures emitted (80),
+same tables (38), same crop F1, strict F1, footnote precision.  The
+rubric scores figure/table crops; two_pass operates on body-text nodes
+via the R1 pixel rule and per-page header masking (see
+`pipeline/stages/pdf_text_extraction/components/two_pass_extractor.py`
+docstring), so the crop sweep has no signal to measure.
+
+Stage removed 2026-05-20.  `BEST_TWO_PASS = True` stands on the
+2026-05-13 ghost-text evidence (`scripts/verify_ghost_text_detection.py`),
+not on this sweep.  Variant IDs 14/15 reserved and unused.  See the
+2026-05-20 Decisions-log row in
+[`THESIS.md`](THESIS.md#decisions-log).
+
 ---
 
-## Stages 3–6 — pending
+## Stage 3 — `merge_drop` (single-flag flips on top of variant 08)
 
-Will be appended as each stage's scoring lands.  See
-[`PDF_EXTRACTION_EXPERIMENT_PLAN.md`](PDF_EXTRACTION_EXPERIMENT_PLAN.md)
-for what each stage answers.
+Three independent flag flips, each scored against variant 08 (the base
+config with all merge/drop flags OFF).
+
+| Variant | Crop F1 | Strict F1 | Tables emitted | Δ vs 08 |
+|---|---|---|---|---|
+| `08` (baseline) | 88.9% | 71.6% | 38 | — |
+| `16` `merge_tables_by_caption` | **85.0%** | **67.5%** | 37 | regression |
+| `17` `merge_figures_by_caption` | 88.9% | 71.6% | 38 | no effect |
+| `18` `drop_tables_inside_figures` | 88.9% | 71.6% | 38 | no effect |
+
+Figures stayed identical (88.9% / 83.2%) across all four — none of the
+flags affect figure detection on this corpus.
+
+### Per-flag verdicts
+
+* **`merge_tables_by_caption` (16)** — actively hurts.  −3.9pp crop F1,
+  −4.1pp strict F1.  Tables 38 → 37, and the merged crop becomes an FP
+  (TP 29 → 27, FN 14 → 16).  Heuristic wrongly merges distinct tables
+  that happen to share a caption stub.  **Lock False.**
+* **`merge_figures_by_caption` (17)** — zero impact.  No figure-pair
+  shares a caption on this 28-PDF corpus, so nothing merged.
+  **Lock False (no signal to flip).**
+* **`drop_tables_inside_figures` (18)** — zero impact.  No detected
+  table lives inside a figure bbox on this corpus.
+  **Lock False (no signal to flip).**
+
+### No combinations tested
+
+17 and 18 are null on this corpus, so combining them with anything
+yields the same result as the singleton.  16 regresses on its own and
+combining only inherits the regression.
+
+### Outcome
+
+`BEST_STAGE3 = {merge_tables_by_caption: False, merge_figures_by_caption: False,
+drop_tables_inside_figures: False}` — every flag stays at its
+`_apply_stage1_baseline` default.  See the 2026-05-20 row in
+[`THESIS.md` Decisions log](THESIS.md#decisions-log).
+
+---
+
+## Stage 4 — `reconstruction` (does `reconstruct_tables_from_lists` add real tables?)
+
+Two variants on top of variant 08, both with
+`reconstruct_tables_from_lists = ON`.
+
+| Variant | Crop F1 | Strict F1 | TP / FP / FN | Tables emitted | Footnote P |
+|---|---|---|---|---|---|
+| `08` (baseline, recon OFF, expand ON) | **88.9%** | **71.6%** | 29 / 9 / 14 | 38 | 91.9% |
+| `19_best_reconstruct_only` (expand OFF) | 88.4% | **34.9%** | 15 / 28 / 28 | 43 | 50.0% |
+| `20_best_reconstruct_plus_selected_expand` (expand ON) | 86.0% | 69.8% | 30 / 13 / 13 | 43 | 92.3% |
+
+### Per-variant read
+
+**Variant 19 — disaster (−36.7pp strict F1).**  Reconstruction adds five
+new tables, but turning expand OFF collapses footnote precision
+91.9% → 50.0% — every reconstructed table loses its footnotes too.
+This is the experiment that proves `expand_tables_with_footnotes = ON`
+is non-negotiable.  Recall climbs (+4.7pp on crop, +4.7pp on mask) but
+strict F1 plummets because crops fail the footnote dim.
+
+**Variant 20 — marginal regression (−1.8pp strict F1).**  Reconstruction
++ expand gives a clean test of whether reconstruction adds real tables.
+The five new tables decompose as:
+
+* +1 TP — one real table recovered that docling missed
+* +4 FP — four list-like regions misclassified as tables
+* −1 FN — the recovered TP offsets one prior miss
+
+Net precision drops (94.7% → 86.0% crop, 97.4% → 88.4% mask); recall
+gains (+2.3pp) don't compensate.  Reconstruction adds mostly noise on
+this corpus.
+
+### Verdicts
+
+1. **`reconstruct_tables_from_lists` — lock OFF.**  4-FP/1-TP trade is
+   not worth it; the +2.3pp recall is bought at −8.7pp precision.
+2. **`BEST_EXPAND_SETTING = True` — confirmed.**  Variant 19's collapse
+   is the empirical proof.
+3. **Variant matrix done.**  Stage 5 (`figure_premask`) auto-skips on
+   `BEST_BASE = 01_docling`, so no further sweeps are pending.
+
+### Final winning config
+
+`08_docling_footnote_expand_1_2`:
+
+```
+table_detector                            = docling
+two_pass.enabled                          = True
+cropping.expand_tables_with_footnotes     = True
+cropping.footnote_threshold_multiplier    = 1.2
+cropping.merge_tables_by_caption          = False
+cropping.merge_figures_by_caption         = False
+masking.drop_tables_inside_figures        = False
+docling.reconstruct_tables_from_lists     = False
+masking.mask_figures_before_table_detection = False
+```
+
+Next: freeze these into `pipeline/stages/pdf_text_extraction/config.py`
+defaults per the TODO in [`THESIS.md`](THESIS.md#todos).  See the
+2026-05-20 Decisions-log entries for full reasoning.
 
 ---
 
@@ -150,46 +265,15 @@ python3 scripts/eval/seed_variant_labels.py
 
 If new variants were sweeped but their per-variant label files already
 exist (e.g. with a stray manual entry), shared labels from peer Stage 1
-variants don't backfill automatically.  One-shot fix:
+variants don't backfill automatically — `annotate.py`'s propagation only
+writes forward at label time.  One-shot fix:
 
 ```bash
-python3 - <<'PY'
-import json
-from pathlib import Path
-from collections import defaultdict
-ANN = Path('eval/annotations')
-SHARE_MAP = ANN / 'share_map.json'
-MODES = ('json_figures', 'json_tables_full', 'json_tables_docling')
-labels = defaultdict(lambda: defaultdict(dict))
-for vdir in ANN.iterdir():
-    if not vdir.is_dir() or vdir.name.startswith('_'): continue
-    for m in MODES:
-        p = vdir / f'{m}.json'
-        if p.exists():
-            try: labels[vdir.name][m] = json.loads(p.read_text())
-            except json.JSONDecodeError: pass
-sm = json.loads(SHARE_MAP.read_text())
-copies = defaultdict(int)
-for fname, groups in sm.items():
-    for g in groups:
-        for m in MODES:
-            canon = None
-            for v in g['variants']:
-                lbl = labels[v][m].get(fname)
-                if lbl: canon = lbl; break
-            if canon is None: continue
-            for v in g['variants']:
-                if fname in labels[v][m]: continue
-                labels[v][m][fname] = canon
-                copies[(v, m)] += 1
-for v, by_m in labels.items():
-    for m, content in by_m.items():
-        if content:
-            p = ANN / v / f'{m}.json'
-            p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(json.dumps(content, indent=2, ensure_ascii=False) + '\n')
-print(f"Backfilled {sum(copies.values())} labels across {len(copies)} (variant, mode) buckets")
-PY
+python3 scripts/eval/backfill_shared_labels.py
+# scope to a single variant:
+python3 scripts/eval/backfill_shared_labels.py --variant 15_best_twopass_off
+# preview without writing:
+python3 scripts/eval/backfill_shared_labels.py --dry-run
 ```
 
 ### 1. Stage 1 — `detector`

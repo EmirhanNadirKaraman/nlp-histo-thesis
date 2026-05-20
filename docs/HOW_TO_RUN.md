@@ -206,8 +206,8 @@ variants.
 #### Commands
 
 `--stage` is **required** and selects which experiment stage to run:
-one of `{detector, footnote_screen, two_pass, merge_drop,
-reconstruction, figure_premask, all}`.  Running the script
+one of `{detector, footnote_screen, merge_drop, reconstruction,
+figure_premask, all}`.  Running the script
 without `--stage` prints the full menu (name, blurb, member variants)
 and exits.  `--only` further narrows to specific variant names *within*
 the selected stage.
@@ -216,8 +216,8 @@ List resolved configs without running (no Docling/TATR models load, no
 output dirs are created):
 
 ```bash
-python scripts/eval/run_all_sweeps.py --stage all      --list-variants
-python scripts/eval/run_all_sweeps.py --stage two_pass --list-variants   # just 14/15
+python scripts/eval/run_all_sweeps.py --stage all        --list-variants
+python scripts/eval/run_all_sweeps.py --stage merge_drop --list-variants   # just 16/17/18
 ```
 
 Run all seven Stage 1 (`detector`) variants:
@@ -263,7 +263,7 @@ completed stage (per-stage cache).
 
 #### Next steps after Stage 1 (`detector`)
 
-The full staged sweep plan — Stages 2–6, the `BEST_*` knob table, every
+The full staged sweep plan — Stages 2–5, the `BEST_*` knob table, every
 variant's resolved config, and the end-to-end walkthrough — lives in
 [`PDF_EXTRACTION_EXPERIMENT_PLAN.md`](PDF_EXTRACTION_EXPERIMENT_PLAN.md).
 That document is the source of truth for what each stage answers;
@@ -275,21 +275,21 @@ Quick recap of the stage slugs (run with `--stage <slug>`):
 ```
 detector             Stage 1 — detector / TATR threshold selection      (01–07)
 footnote_screen      Stage 2 — footnote-expansion screen                (08–10)
-two_pass             Stage 3 — two-pass extraction ablation             (15; ON arm = variant 08)
-merge_drop           Stage 4 — independent merge/drop flag ablations    (16–18)
-reconstruction       Stage 5 — table reconstruction × selected expand   (19–20)
-figure_premask       Stage 6 — pre-mask figures before table detection  (21–23)
+merge_drop           Stage 3 — independent merge/drop flag ablations    (16–18)
+reconstruction       Stage 4 — table reconstruction × selected expand   (19–20)
+figure_premask       Stage 5 — pre-mask figures before table detection  (21–23)
 all                  every variant
 ```
 
-Variant IDs `11`/`12`/`13` are reserved and unused (former
-`footnote_tuning` stage, removed 2026-05-20; `BEST_EXPAND_MULTIPLIER`
-pinned at 1.2 — see [`PDF_EXTRACTION_EXPERIMENT_PLAN.md`](PDF_EXTRACTION_EXPERIMENT_PLAN.md)).
+Variant IDs `11`/`12`/`13`/`14`/`15` are reserved and unused (former
+`footnote_tuning` and `two_pass` stages, both removed 2026-05-20;
+`BEST_EXPAND_MULTIPLIER` and `BEST_TWO_PASS` pinned — see
+[`PDF_EXTRACTION_EXPERIMENT_PLAN.md`](PDF_EXTRACTION_EXPERIMENT_PLAN.md)).
 
 `--stage <name> --list-variants` confirms the resolved config for that
 stage's variants after each `BEST_*` edit.  Caching is per-variant
 (independent of `--stage`), so picking up later — e.g.
-`--stage two_pass` after `--stage detector` — reuses every
+`--stage merge_drop` after `--stage detector` — reuses every
 `_DONE.json` marker and per-stage cache already on disk.
 
 ---

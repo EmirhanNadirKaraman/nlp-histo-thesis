@@ -223,3 +223,12 @@ table_labels:
     caption: 0.5
     footnote: 1.0
     mask: 0.25
+
+  # Symmetric to ``crop too big major``: crop is materially incomplete, but
+  # caption/footnote attachment + masking penalty unchanged from the minor
+  # variant (still some content leaked).
+  'crop too small major, loses a lot of info':
+    crop: 0.25
+    caption: 1.0
+    footnote: 1.0
+    mask: 0.25
