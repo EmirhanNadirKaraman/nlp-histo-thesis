@@ -25,10 +25,11 @@ default changes can never silently shift the experiment baseline.
 | 1.2 | `detector_tatr` | 02–04 | `STAGE1_BASE_TATR` |
 | 1.3 | `detector_hybrid` | 05–07 | `STAGE1_BASE_HYBRID` |
 | 2 | `table_in_figure` | 08–13 | `BEST_TATR_TABLE_IN_FIGURE_MODE`, `BEST_HYBRID_TABLE_IN_FIGURE_MODE` |
-| 3 | `footnote_screen` | 14–16 | `BEST_BASE` |
-| 4 | `footnote_multiplier` | 17–19 | `BEST_EXPAND_MULTIPLIER` (Docling-only multiplier sweep on top of `BEST_BASE`) |
-| 5 | `merge_flags` | 20–22 | `BEST_MERGE_TABLES_BY_CAPTION`, `BEST_MERGE_FIGURES_BY_CAPTION` (variant 22 = docling-specific drop_tables_inside_figures check) |
-| 6 | `reconstruction` | 23–24 | `BEST_RECONSTRUCTION_SETTING`, `BEST_EXPAND_SETTING` |
+| 3 | `header_fix` | 14–15 | `BEST_TATR_HEADER_ZONE_PTS`, `BEST_HYBRID_HEADER_ZONE_PTS` (Docling skipped — no header-band FPs) |
+| 4 | `footnote_screen` | 16–18 | `BEST_BASE` |
+| 5 | `footnote_multiplier` | 19–27 | `BEST_*_EXPAND_MULTIPLIER` per family — 3 multipliers × 3 families (Docling 19–21, TATR 22–24, Hybrid 25–27).  May trigger a `BEST_BASE` re-pick if a non-Docling family's best multiplier beats Docling's. |
+| 6 | `merge_flags` | 28–30 | `BEST_MERGE_TABLES_BY_CAPTION`, `BEST_MERGE_FIGURES_BY_CAPTION` (variant 30 = docling-specific drop_tables_inside_figures check) |
+| 7 | `reconstruction` | 31–32 | `BEST_RECONSTRUCTION_SETTING`, `BEST_EXPAND_SETTING` |
 
 Pinned constants (no sweep):
 

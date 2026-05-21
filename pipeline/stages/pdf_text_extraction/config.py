@@ -227,6 +227,16 @@ class MaskingConfig:
     # layout, not pixels) — only TATR / Hybrid see the change.
     mask_figures_before_table_detection: bool = False
 
+    # Drop detected table regions whose top edge lies within this many points
+    # of the page top.  Targets page-header bands that pixel detectors
+    # (TATR / Hybrid) misclassify as tables (running headers tagged as
+    # plain TEXT by Docling so the layout type can't be used as an anchor).
+    # 0.0 = disabled; typical activation value is ~50 (real scientific tables
+    # almost never start in the top 50pt of a page).  Same filter site as
+    # `drop_tables_inside_figures` — runs in Step 2 after detection, and is
+    # also re-applied in Step 7's supplementary-source pass for symmetry.
+    drop_tables_in_top_pts: float = 0.0
+
 
 @dataclass(slots=True)
 class FilteringConfig:

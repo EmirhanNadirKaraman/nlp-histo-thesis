@@ -185,6 +185,48 @@ def _drop_tables_inside_figures(
     return replace(detection, regions=kept), dropped
 
 
+def _drop_tables_in_top_pts(
+    detection,
+    layout,
+    *,
+    threshold_pts: float,
+):
+    """Filter ``detection.regions`` whose top edge sits within ``threshold_pts``
+    of the page top.  Catches page-header bands that pixel detectors
+    (TATR / Hybrid) misclassify as tables.
+
+    Uses ``layout.page_dims[page] = (width, height)`` to convert each
+    region's top (Docling coords: y1 = top, y1 is high when near top of
+    page) into a distance-from-top measurement.
+
+    Returns ``(filtered_detection, n_dropped)``.
+    """
+    from dataclasses import replace
+    if threshold_pts <= 0:
+        return detection, 0
+    page_dims = getattr(layout, "page_dims", None) or {}
+
+    kept = []
+    dropped = 0
+    for region in detection.regions:
+        page = region.bbox.page
+        dims = page_dims.get(page) or page_dims.get(str(page))
+        if not dims:
+            kept.append(region)
+            continue
+        page_height = dims[1] if isinstance(dims, (list, tuple)) else dims.get("height")
+        if not page_height:
+            kept.append(region)
+            continue
+        top_from_top = page_height - max(region.bbox.y1, region.bbox.y2)
+        if top_from_top < threshold_pts:
+            dropped += 1
+        else:
+            kept.append(region)
+
+    return replace(detection, regions=kept), dropped
+
+
 def _detector_name(detector) -> str:
     """TableDetectorType enum → short name (HYBRID/TATR/DOCLING/VLM)."""
     return getattr(detector, "name", str(detector))
@@ -662,6 +704,17 @@ class PipelineRunner:
                     n_dropped,
                 )
             self._record(lambda s: s.set_count("table_regions_dropped_inside_figures", n_dropped))
+        if self._cfg.masking.drop_tables_in_top_pts > 0:
+            result, n_dropped = _drop_tables_in_top_pts(
+                result, layout,
+                threshold_pts=self._cfg.masking.drop_tables_in_top_pts,
+            )
+            if n_dropped:
+                logger.info(
+                    "  filter: dropped %d table detection(s) within top %.1fpt of page",
+                    n_dropped, self._cfg.masking.drop_tables_in_top_pts,
+                )
+            self._record(lambda s: s.set_count("table_regions_dropped_in_top_pts", n_dropped))
         return result
 
     def _steps_1_3_4_standard(

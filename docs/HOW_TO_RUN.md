@@ -206,36 +206,39 @@ variants.
 #### Commands
 
 `--stage` is **required** and selects which experiment stage to run:
-one of `{detector, footnote_screen, merge_drop, reconstruction,
-figure_premask, all}`.  Running the script
-without `--stage` prints the full menu (name, blurb, member variants)
-and exits.  `--only` further narrows to specific variant names *within*
+one of `{detector_docling, detector_tatr, detector_hybrid,
+table_in_figure, header_fix, footnote_screen, footnote_multiplier,
+merge_flags, reconstruction, all}`.  Running the script without
+`--stage` prints the full menu (name, blurb, member variants) and
+exits.  `--only` further narrows to specific variant names *within*
 the selected stage.
 
 List resolved configs without running (no Docling/TATR models load, no
 output dirs are created):
 
 ```bash
-python scripts/eval/run_all_sweeps.py --stage all        --list-variants
-python scripts/eval/run_all_sweeps.py --stage merge_drop --list-variants   # just 16/17/18
+python scripts/eval/run_all_sweeps.py --stage all         --list-variants
+python scripts/eval/run_all_sweeps.py --stage merge_flags --list-variants
 ```
 
-Run all seven Stage 1 (`detector`) variants:
+Run all seven Stage 1 variants (one per family sub-stage):
 
 ```bash
-python scripts/eval/run_all_sweeps.py --stage detector
+python scripts/eval/run_all_sweeps.py --stage detector_docling
+python scripts/eval/run_all_sweeps.py --stage detector_tatr
+python scripts/eval/run_all_sweeps.py --stage detector_hybrid
 ```
 
 Run a single variant (must match the stage):
 
 ```bash
-python scripts/eval/run_all_sweeps.py --stage detector --only 07_hybrid_099
+python scripts/eval/run_all_sweeps.py --stage detector_hybrid --only 07_hybrid_099
 ```
 
 Force a fresh re-run (wipes the variant's output dir first):
 
 ```bash
-python scripts/eval/run_all_sweeps.py --stage detector --only 07_hybrid_099 --restart
+python scripts/eval/run_all_sweeps.py --stage footnote_screen --only 17_tatr_best_family_fixes_footnote_expand_1_2 --restart
 ```
 
 #### Resume / checkpoint semantics
@@ -263,9 +266,9 @@ completed stage (per-stage cache).
 
 #### Next steps after Stage 1 (`detector`)
 
-The full staged sweep plan — Stages 2–5, the `BEST_*` knob table, every
-variant's resolved config, and the end-to-end walkthrough — lives in
-[`PDF_EXTRACTION_EXPERIMENT_PLAN.md`](PDF_EXTRACTION_EXPERIMENT_PLAN.md).
+The full staged sweep plan — all sub-stages, the `BEST_*` knob table,
+every variant's resolved config, and the end-to-end walkthrough — lives
+in [`PDF_EXTRACTION_EXPERIMENT_PLAN.md`](PDF_EXTRACTION_EXPERIMENT_PLAN.md).
 That document is the source of truth for what each stage answers;
 `scripts/eval/run_all_sweeps.py` is the source of truth for what each
 variant actually does.
@@ -273,23 +276,22 @@ variant actually does.
 Quick recap of the stage slugs (run with `--stage <slug>`):
 
 ```
-detector             Stage 1 — detector / TATR threshold selection      (01–07)
-footnote_screen      Stage 2 — footnote-expansion screen                (08–10)
-merge_drop           Stage 3 — independent merge/drop flag ablations    (16–18)
-reconstruction       Stage 4 — table reconstruction × selected expand   (19–20)
-figure_premask       Stage 5 — pre-mask figures before table detection  (21–23)
-all                  every variant
+detector_docling      Stage 1.1 — Docling baseline                            (01)
+detector_tatr         Stage 1.2 — TATR threshold selection                    (02–04)
+detector_hybrid       Stage 1.3 — Hybrid threshold selection                  (05–07)
+table_in_figure       Stage 2   — TIF fixes for TATR / Hybrid                 (08–13)
+header_fix            Stage 3   — drop_tables_in_top_pts on TATR / Hybrid     (14–15)
+footnote_screen       Stage 4   — footnote_expand=1.2 per detector family    (16–18)
+footnote_multiplier   Stage 5   — multiplier × family grid (3 × 3 = 9)        (19–27)
+merge_flags           Stage 6   — merge_tables / merge_figures on BEST_BASE  (28–30)
+reconstruction        Stage 7   — reconstruction × expand on BEST_BASE       (31–32)
+all                   every variant
 ```
-
-Variant IDs `11`/`12`/`13`/`14`/`15` are reserved and unused (former
-`footnote_tuning` and `two_pass` stages, both removed 2026-05-20;
-`BEST_EXPAND_MULTIPLIER` and `BEST_TWO_PASS` pinned — see
-[`PDF_EXTRACTION_EXPERIMENT_PLAN.md`](PDF_EXTRACTION_EXPERIMENT_PLAN.md)).
 
 `--stage <name> --list-variants` confirms the resolved config for that
 stage's variants after each `BEST_*` edit.  Caching is per-variant
 (independent of `--stage`), so picking up later — e.g.
-`--stage merge_drop` after `--stage detector` — reuses every
+`--stage merge_flags` after `--stage detector_tatr` — reuses every
 `_DONE.json` marker and per-stage cache already on disk.
 
 ---

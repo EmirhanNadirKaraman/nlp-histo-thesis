@@ -69,10 +69,11 @@ STAGE_ORDER = (
     "detector_tatr",        # Stage 1.2 — TATR threshold selection
     "detector_hybrid",      # Stage 1.3 — Hybrid threshold selection
     "table_in_figure",      # Stage 2   — table_in_figure fixes for TATR / Hybrid
-    "footnote_screen",      # Stage 3   — footnote expansion per detector family
-    "footnote_multiplier",  # Stage 4   — multiplier sweep on the Stage-3 winner
-    "merge_flags",          # Stage 5   — merge_tables / merge_figures on BEST_BASE
-    "reconstruction",       # Stage 6   — reconstruction × expand on BEST_BASE
+    "header_fix",           # Stage 3   — header-band drop filter for TATR / Hybrid
+    "footnote_screen",      # Stage 4   — footnote expansion per detector family
+    "footnote_multiplier",  # Stage 5   — multiplier sweep on the Stage-4 winner
+    "merge_flags",          # Stage 6   — merge_tables / merge_figures on BEST_BASE
+    "reconstruction",       # Stage 7   — reconstruction × expand on BEST_BASE
 )
 STAGE_CHOICES = STAGE_ORDER + ("all",)
 
@@ -82,10 +83,11 @@ STAGE_BLURBS: dict = {
     "detector_tatr":       "Stage 1.2 — TATR threshold selection",
     "detector_hybrid":     "Stage 1.3 — Hybrid threshold selection",
     "table_in_figure":     "Stage 2 — table_in_figure fixes for TATR / Hybrid",
-    "footnote_screen":     "Stage 3 — footnote_expand=1.2 per detector family",
-    "footnote_multiplier": "Stage 4 — footnote_threshold_multiplier sweep on BEST_BASE",
-    "merge_flags":         "Stage 5 — merge_tables / merge_figures on BEST_BASE",
-    "reconstruction":      "Stage 6 — reconstruction × expand setting on BEST_BASE",
+    "header_fix":          "Stage 3 — drop_tables_in_top_pts on TATR / Hybrid",
+    "footnote_screen":     "Stage 4 — footnote_expand=1.2 per detector family",
+    "footnote_multiplier": "Stage 5 — footnote_threshold_multiplier sweep on BEST_BASE",
+    "merge_flags":         "Stage 6 — merge_tables / merge_figures on BEST_BASE",
+    "reconstruction":      "Stage 7 — reconstruction × expand setting on BEST_BASE",
 }
 
 
@@ -95,13 +97,13 @@ STAGE_BLURBS: dict = {
 # as each stage's scoring lands; the variants below pick them up.
 # ---------------------------------------------------------------------------
 
-# Stage 1 winners — detector / threshold per family.  Drive Stages 2-5.
+# Stage 1 winners — detector / threshold per family.  Drive Stages 2-7.
 STAGE1_BASE_DOCLING = "01_docling"
 STAGE1_BASE_TATR    = "04_tatr_099"
 STAGE1_BASE_HYBRID  = "07_hybrid_099"
 
 # Stage 2 winners — table_in_figure mode per detector family.  Each is
-# one of: "none", "drop", "premask", "drop_plus_premask".  Drives Stages 3-5
+# one of: "none", "drop", "premask", "drop_plus_premask".  Drives Stages 3-7
 # whenever the selected family is TATR or Hybrid.  Docling skips Stage 2
 # entirely (premasking is a no-op for Docling; see runner.py:651-653 and
 # media_cropper.py B-058 fix — for Docling, only `drop_tables_inside_figures`
@@ -109,16 +111,41 @@ STAGE1_BASE_HYBRID  = "07_hybrid_099"
 BEST_TATR_TABLE_IN_FIGURE_MODE   = "drop"
 BEST_HYBRID_TABLE_IN_FIGURE_MODE = "drop"
 
-# Stage 3 winner — final detector family after footnote expansion.  Drives
-# Stages 4-5.  One of the seven Stage-1 base names.
-BEST_BASE = "01_docling"
+# Stage 3 winners — drop_tables_in_top_pts threshold per TATR / Hybrid.
+# 0.0 = disabled (don't apply the header-band drop filter).  Typical
+# activation value is ~50 (real scientific tables almost never start in
+# the top 50pt of a page; TATR/Hybrid misdetect running headers as
+# tables in this zone — see PMC4945808).  Docling has no header_fix
+# variants because its layout classifies headers correctly enough that
+# pixel-zone bogus tables don't appear.  Drives Stages 4-7.
+BEST_TATR_HEADER_ZONE_PTS   = 50.0
+BEST_HYBRID_HEADER_ZONE_PTS = 50.0
 
-# Stage 5 winners — merge flags chosen on BEST_BASE.  Drive Stage 6.
+# Stage 4 winner — *provisional* final detector family after footnote
+# expansion + best Stages 2+3 family fixes.  Stage 4 picks BEST_BASE at
+# multiplier=1.2 across the three families.  Stage 5's 9-variant grid
+# (3 multipliers × 3 families) may surface a non-Docling family that
+# beats Docling at a non-1.2 multiplier — when that happens, re-pick
+# BEST_BASE + BEST_EXPAND_MULTIPLIER from the Stage-5 results.  Drives
+# Stages 5-7.  One of the seven Stage-1 base names.
+BEST_BASE = "07_hybrid_099"
+
+# Stage 5 winners — best footnote_threshold_multiplier per family.  After
+# Stage 5 the BEST_BASE-family value gets copied into BEST_EXPAND_MULTIPLIER
+# (the production knob used by all downstream stages).  Defaults match
+# BEST_EXPAND_MULTIPLIER's pinned value until Stage 5 lands.  Three
+# constants instead of one keeps the family-vs-family comparison
+# traceable for thesis writeup.
+BEST_DOCLING_EXPAND_MULTIPLIER = 1.2
+BEST_TATR_EXPAND_MULTIPLIER    = 1.2
+BEST_HYBRID_EXPAND_MULTIPLIER  = 1.2
+
+# Stage 6 winners — merge flags chosen on BEST_BASE.  Drive Stage 7.
 BEST_MERGE_TABLES_BY_CAPTION  = False
 BEST_MERGE_FIGURES_BY_CAPTION = False
 
-# Stage 6 winners — chosen after the reconstruction × expand sweep.
-# These don't feed any later variant (Stage 5 is terminal); they're
+# Stage 7 winners — chosen after the reconstruction × expand sweep.
+# These don't feed any later variant (Stage 7 is terminal); they're
 # documentation for the freeze step that bakes defaults into
 # PipelineConfig.  See docs/THESIS.md Decisions log.
 BEST_RECONSTRUCTION_SETTING = False
@@ -126,7 +153,10 @@ BEST_EXPAND_SETTING         = True
 
 # Pinned knobs (no sweep).
 BEST_TWO_PASS          = True   # ghost-text safety; see 2026-05-13 decision
-BEST_EXPAND_MULTIPLIER = 1.2    # Stage-2 winner from earlier sweep (94% missed-footnote reduction)
+BEST_EXPAND_MULTIPLIER = 1.2    # Set to the BEST_BASE-family multiplier
+                                # after Stage 5 (i.e. = BEST_DOCLING_EXPAND_MULTIPLIER
+                                # if BEST_BASE family is Docling, etc.).
+                                # Used by Stages 6-7 (merge_flags + reconstruction).
 
 
 _STAGE1_BASES = {
@@ -161,6 +191,7 @@ def _apply_stage1_baseline(cfg: PipelineConfig) -> None:
     cfg.cropping.merge_figures_by_caption             = False
     cfg.masking.drop_tables_inside_figures            = False
     cfg.masking.mask_figures_before_table_detection   = False
+    cfg.masking.drop_tables_in_top_pts                = 0.0
 
 
 def _apply_base(cfg: PipelineConfig, base_name: str) -> None:
@@ -204,10 +235,30 @@ def _tif_mode_for_base(base_name: str) -> str:
     return "none"
 
 
+def _header_zone_pts_for_base(base_name: str) -> float:
+    """Pick the right Stage-3-winner header-zone threshold for a given base.
+
+    Docling always returns 0.0 (no header_fix sweep — Docling's layout
+    classifies headers correctly).  TATR / Hybrid return the value picked
+    after Stage 3 (default 0.0 = disabled before that decision lands).
+    """
+    fam = _base_family(base_name)
+    if fam == "docling": return 0.0
+    if fam == "tatr":    return BEST_TATR_HEADER_ZONE_PTS
+    if fam == "hybrid":  return BEST_HYBRID_HEADER_ZONE_PTS
+    return 0.0
+
+
+def _apply_family_fixes(cfg: PipelineConfig, base_name: str) -> None:
+    """Apply the per-family Stage-2 + Stage-3 fixes (TIF mode + header zone)."""
+    _apply_table_in_figure_mode(cfg, _tif_mode_for_base(base_name))
+    cfg.masking.drop_tables_in_top_pts = _header_zone_pts_for_base(base_name)
+
+
 def _apply_best_base_with_mode(cfg: PipelineConfig) -> None:
-    """Apply BEST_BASE + its corresponding table_in_figure mode."""
+    """Apply BEST_BASE + its corresponding Stage 2 + Stage 3 family fixes."""
     _apply_base(cfg, BEST_BASE)
-    _apply_table_in_figure_mode(cfg, _tif_mode_for_base(BEST_BASE))
+    _apply_family_fixes(cfg, BEST_BASE)
 
 
 def _workers_for_base(base_name: str) -> int:
@@ -314,129 +365,168 @@ ALL_SWEEPS.extend([
 
 
 # ---------------------------------------------------------------------------
-# Stage 3 — footnote_expand=1.2 per detector family.
-# Each variant: best-of-its-family base + that family's Stage-2 TIF mode +
-# expand=ON, multiplier=1.2.  Compare 14 / 15 / 16 to pick BEST_BASE.
+# Stage 3 — header_fix: drop_tables_in_top_pts sweep on TATR / Hybrid.
+# Each variant: family Stage-1 base + family Stage-2 TIF mode +
+# drop_tables_in_top_pts > 0.  Compare 14 / 15 to pick
+# BEST_*_HEADER_ZONE_PTS per family.  Docling skips this stage because
+# its layout doesn't produce header-band TABLE detections.
 # ---------------------------------------------------------------------------
 
-def _stage3_for_family(base_constant_name: str, family: str):
-    """Stage-3 variant: family-best base + that family's TIF mode + expand=1.2."""
+def _stage3_header_fix(base_constant_name: str, threshold_pts: float):
+    """Stage-3 variant: STAGE1_BASE_{TATR,HYBRID} + family TIF mode + header clip."""
     def configure(cfg: PipelineConfig) -> None:
         base = globals()[base_constant_name]
         _apply_base(cfg, base)
-        if family == "docling":
-            mode = "none"
-        elif family == "tatr":
-            mode = BEST_TATR_TABLE_IN_FIGURE_MODE
-        elif family == "hybrid":
-            mode = BEST_HYBRID_TABLE_IN_FIGURE_MODE
-        else:
-            mode = "none"
-        _apply_table_in_figure_mode(cfg, mode)
+        _apply_table_in_figure_mode(cfg, _tif_mode_for_base(base))
+        cfg.masking.drop_tables_in_top_pts = threshold_pts
+    return configure
+
+
+ALL_SWEEPS.extend([
+    SweepSpec("14_tatr_099_header_clip_50pts",
+              _stage3_header_fix("STAGE1_BASE_TATR", 50.0),
+              workers=2, stage="header_fix"),
+    SweepSpec("15_hybrid_099_header_clip_50pts",
+              _stage3_header_fix("STAGE1_BASE_HYBRID", 50.0),
+              workers=2, stage="header_fix"),
+])
+
+
+# ---------------------------------------------------------------------------
+# Stage 4 — footnote_expand=1.2 per detector family.
+# Each variant: best-of-its-family base + that family's Stage-2 TIF mode +
+# Stage-3 header_fix (TATR/Hybrid) + expand=ON, multiplier=1.2.
+# Compare 16 / 17 / 18 to pick BEST_BASE.
+# ---------------------------------------------------------------------------
+
+def _stage4_for_family(base_constant_name: str, family: str):
+    """Stage-4 variant: family-best base + family Stage-2 TIF + Stage-3 header_fix + expand=1.2."""
+    def configure(cfg: PipelineConfig) -> None:
+        base = globals()[base_constant_name]
+        _apply_base(cfg, base)
+        _apply_family_fixes(cfg, base)
         cfg.cropping.expand_tables_with_footnotes  = True
         cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
     return configure
 
 
-def _stage3_docling_multiplier(multiplier: float):
-    """Stage-3 docling-base variant with explicit footnote_threshold_multiplier override.
+def _stage5_family_multiplier(base_constant_name: str, multiplier: float):
+    """Stage-5 variant: family base + family Stage-2/3 fixes + explicit multiplier override.
 
-    Used to sweep the multiplier on Docling (the Stage-3 winner) so we can
-    pick the value that best balances footnote recall against
-    ``crop too big`` over-expansion.  Compare against variant 14 (1.2,
-    the prior pinned default).
+    Sweep the multiplier on each family so we can pick the value that
+    best balances footnote recall against ``crop too big`` over-expansion
+    PER family.  Compare against the matching Stage-4 family variant
+    (16/17/18, all at multiplier=1.2).
     """
     def configure(cfg: PipelineConfig) -> None:
-        _apply_base(cfg, STAGE1_BASE_DOCLING)
-        _apply_table_in_figure_mode(cfg, "none")
+        base = globals()[base_constant_name]
+        _apply_base(cfg, base)
+        _apply_family_fixes(cfg, base)
         cfg.cropping.expand_tables_with_footnotes  = True
         cfg.cropping.footnote_threshold_multiplier = multiplier
     return configure
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("14_docling_footnote_expand_1_2",
-              _stage3_for_family("STAGE1_BASE_DOCLING", "docling"),
+    SweepSpec("16_docling_footnote_expand_1_2",
+              _stage4_for_family("STAGE1_BASE_DOCLING", "docling"),
               workers=1, stage="footnote_screen"),
-    SweepSpec("15_tatr_best_tif_fix_footnote_expand_1_2",
-              _stage3_for_family("STAGE1_BASE_TATR", "tatr"),
+    SweepSpec("17_tatr_best_family_fixes_footnote_expand_1_2",
+              _stage4_for_family("STAGE1_BASE_TATR", "tatr"),
               workers=2, stage="footnote_screen"),
-    SweepSpec("16_hybrid_best_tif_fix_footnote_expand_1_2",
-              _stage3_for_family("STAGE1_BASE_HYBRID", "hybrid"),
+    SweepSpec("18_hybrid_best_family_fixes_footnote_expand_1_2",
+              _stage4_for_family("STAGE1_BASE_HYBRID", "hybrid"),
               workers=2, stage="footnote_screen"),
 ])
 
 
 # ---------------------------------------------------------------------------
-# Stage 4 — footnote_threshold_multiplier sweep on the Stage-3 winner.
-# Compares against variant 14 (current 1.2 pinned default).  Smaller
-# multipliers mean stricter cascade — fewer "crop too big" cases at the
-# cost of potentially missing some far-spaced footnotes.  Sweeps run only
-# on the Docling base; the helper just hard-codes it.
+# Stage 5 — footnote_threshold_multiplier sweep on ALL three families.
+# 3 multipliers × 3 families = 9 variants.  Compare each family's three
+# multiplier variants against the corresponding Stage-4 family variant
+# (16/17/18, all at multiplier=1.2) to pick BEST_*_EXPAND_MULTIPLIER per
+# family.  After Stage 5 the BEST_BASE choice can be revisited if a
+# non-Docling family's best multiplier setting beats Docling's best.
+# Smaller multipliers mean stricter cascade — fewer "crop too big" cases
+# at the cost of potentially missing some far-spaced footnotes.
 # ---------------------------------------------------------------------------
 
 ALL_SWEEPS.extend([
-    SweepSpec("17_docling_footnote_expand_1_0",
-              _stage3_docling_multiplier(1.0),
+    SweepSpec("19_docling_footnote_expand_1_0",
+              _stage5_family_multiplier("STAGE1_BASE_DOCLING", 1.0),
               workers=1, stage="footnote_multiplier"),
-    SweepSpec("18_docling_footnote_expand_1_1",
-              _stage3_docling_multiplier(1.1),
+    SweepSpec("20_docling_footnote_expand_1_1",
+              _stage5_family_multiplier("STAGE1_BASE_DOCLING", 1.1),
               workers=1, stage="footnote_multiplier"),
-    SweepSpec("19_docling_footnote_expand_1_15",
-              _stage3_docling_multiplier(1.15),
+    SweepSpec("21_docling_footnote_expand_1_15",
+              _stage5_family_multiplier("STAGE1_BASE_DOCLING", 1.15),
               workers=1, stage="footnote_multiplier"),
+    SweepSpec("22_tatr_best_family_fixes_footnote_expand_1_0",
+              _stage5_family_multiplier("STAGE1_BASE_TATR", 1.0),
+              workers=2, stage="footnote_multiplier"),
+    SweepSpec("23_tatr_best_family_fixes_footnote_expand_1_1",
+              _stage5_family_multiplier("STAGE1_BASE_TATR", 1.1),
+              workers=2, stage="footnote_multiplier"),
+    SweepSpec("24_tatr_best_family_fixes_footnote_expand_1_15",
+              _stage5_family_multiplier("STAGE1_BASE_TATR", 1.15),
+              workers=2, stage="footnote_multiplier"),
+    SweepSpec("25_hybrid_best_family_fixes_footnote_expand_1_0",
+              _stage5_family_multiplier("STAGE1_BASE_HYBRID", 1.0),
+              workers=2, stage="footnote_multiplier"),
+    SweepSpec("26_hybrid_best_family_fixes_footnote_expand_1_1",
+              _stage5_family_multiplier("STAGE1_BASE_HYBRID", 1.1),
+              workers=2, stage="footnote_multiplier"),
+    SweepSpec("27_hybrid_best_family_fixes_footnote_expand_1_15",
+              _stage5_family_multiplier("STAGE1_BASE_HYBRID", 1.15),
+              workers=2, stage="footnote_multiplier"),
 ])
 
 
 # ---------------------------------------------------------------------------
-# Stage 5 — single-flag flips on BEST_BASE.
+# Stage 6 — merge-flag flips on BEST_BASE.
 # Base: BEST_BASE + corresponding TIF mode + expand=ON, multiplier=1.2.
-# Each variant flips exactly one extra flag.
-#   20: merge_tables_by_caption=ON
-#   21: merge_figures_by_caption=ON
-#   22: drop_tables_inside_figures=ON (forced even if BEST_BASE's family TIF
-#       mode would otherwise be "none"; meaningful only when BEST_BASE is
-#       docling, since TATR/Hybrid bases already get drop=ON via the family
-#       TIF mode from Stage 2.  Variant 14 had a `table_in_figure` FP that
-#       drop should suppress post-B-058 fix.)
+# Each variant flips exactly one merge flag.
+#   28: merge_tables_by_caption=ON
+#   29: merge_figures_by_caption=ON
+#
+# Original variant 30 (`drop_tables_inside_figures=ON` forced via
+# force_drop_tif) was removed on 2026-05-21 because with BEST_BASE =
+# "07_hybrid_099", the family TIF mode is already "drop" — variant 30's
+# resolved config was bbox-identical to variant 18.  If BEST_BASE ever
+# flips to Docling (family TIF = "none"), restore variant 30 to test
+# the equivalent of variant 24 from Stage 5.
 # ---------------------------------------------------------------------------
 
-def _stage4(*, merge_tables: bool = False, merge_figures: bool = False,
-            force_drop_tif: bool = False):
+def _stage6(*, merge_tables: bool = False, merge_figures: bool = False):
     def configure(cfg: PipelineConfig) -> None:
         _apply_best_base_with_mode(cfg)
         cfg.cropping.expand_tables_with_footnotes  = True
         cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
         cfg.cropping.merge_tables_by_caption  = merge_tables
         cfg.cropping.merge_figures_by_caption = merge_figures
-        if force_drop_tif:
-            cfg.masking.drop_tables_inside_figures = True
     return configure
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("20_best_merge_tables_by_caption",
-              _stage4(merge_tables=True),
+    SweepSpec("28_best_merge_tables_by_caption",
+              _stage6(merge_tables=True),
               workers=_workers_for_base(BEST_BASE), stage="merge_flags"),
-    SweepSpec("21_best_merge_figures_by_caption",
-              _stage4(merge_figures=True),
-              workers=_workers_for_base(BEST_BASE), stage="merge_flags"),
-    SweepSpec("22_best_drop_tables_inside_figures",
-              _stage4(force_drop_tif=True),
+    SweepSpec("29_best_merge_figures_by_caption",
+              _stage6(merge_figures=True),
               workers=_workers_for_base(BEST_BASE), stage="merge_flags"),
 ])
 
 
 # ---------------------------------------------------------------------------
-# Stage 6 — reconstruction × expand setting on BEST_BASE.
+# Stage 7 — reconstruction × expand setting on BEST_BASE.
 # Base: BEST_BASE + corresponding TIF mode + BEST_MERGE_*_BY_CAPTION.
-#   23: reconstruct=ON, expand=OFF
-#   24: reconstruct=ON, expand=ON (multiplier=BEST_EXPAND_MULTIPLIER)
-# Compare 23 vs 24 vs Stage-3 winner to pick BEST_RECONSTRUCTION_SETTING
+#   31: reconstruct=ON, expand=OFF
+#   32: reconstruct=ON, expand=ON (multiplier=BEST_EXPAND_MULTIPLIER)
+# Compare 31 vs 32 vs Stage-4 winner to pick BEST_RECONSTRUCTION_SETTING
 # and BEST_EXPAND_SETTING.
 # ---------------------------------------------------------------------------
 
-def _stage5(*, expand: bool):
+def _stage7(*, expand: bool):
     def configure(cfg: PipelineConfig) -> None:
         _apply_best_base_with_mode(cfg)
         cfg.docling.reconstruct_tables_from_lists  = True
@@ -449,11 +539,11 @@ def _stage5(*, expand: bool):
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("23_best_reconstruct_only",
-              _stage5(expand=False),
+    SweepSpec("31_best_reconstruct_only",
+              _stage7(expand=False),
               workers=_workers_for_base(BEST_BASE), stage="reconstruction"),
-    SweepSpec("24_best_reconstruct_plus_selected_expand",
-              _stage5(expand=True),
+    SweepSpec("32_best_reconstruct_plus_selected_expand",
+              _stage7(expand=True),
               workers=_workers_for_base(BEST_BASE), stage="reconstruction"),
 ])
 
@@ -637,6 +727,7 @@ def _print_variants_table(
         "recon", "expand", "ftn_x",
         "merge_tables", "merge_figures",
         "drop_tables_inside_figures", "premask_figures_before_table_detection",
+        "drop_tables_in_top_pts",
         "out_dir",
     )
     rows: List[tuple] = []
@@ -662,6 +753,8 @@ def _print_variants_table(
             "ON" if cfg.cropping.merge_figures_by_caption else "OFF",
             "ON" if cfg.masking.drop_tables_inside_figures else "OFF",
             "ON" if cfg.masking.mask_figures_before_table_detection else "OFF",
+            (f"{cfg.masking.drop_tables_in_top_pts:.1f}"
+             if cfg.masking.drop_tables_in_top_pts > 0 else "OFF"),
             str(cfg.paths.output_root),
         ))
 

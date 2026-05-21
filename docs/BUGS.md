@@ -81,7 +81,206 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 
 | B-058 | Fixed (2026-05-20) | Medium | PDF extraction, media cropper | `MaskingConfig.drop_tables_inside_figures` runs at Step 2 (post-detection filter in `runner.py::_drop_tables_inside_figures`) but the dropped table re-enters at Step 7 via the cropper's supplementary source (`media_cropper.py:245` — iterates layout TABLE/RECONSTRUCTED_TABLE elements and re-adds any that don't overlap an existing detection). When the Step-2 drop removes a `table_in_figure` FP, that table is no longer in `detection.regions` → no overlap match in cropper → re-added. Final `source` field is `"docling"` (one source) instead of `"docling+docling"` (two), confirming the bypass. Discovered while inspecting variant 18 (`drop=ON`) on PMC11791726/p9 — the FP was still emitted as Table_4_p9 despite `table_regions_dropped_inside_figures=1` in the run metadata. Fixed: `media_cropper.crop()` takes a new `drop_tables_inside_figures: bool = False` parameter; when True it skips layout TABLE elements ≥0.8 inside any FIGURE/PICTURE on the same page (same threshold as Step 2). `runner.py` plumbs `self._cfg.masking.drop_tables_inside_figures` into all three `cropper.crop()` call sites (main + two multi-source crops). No new config field — single `MaskingConfig.drop_tables_inside_figures` flag now governs both Step-2 detection filter and Step-7 supplementary-source filter. Pre-fix variant 18 had drop=ON behaving identically to drop=OFF on docling, invalidating its Stage 3 verdict (treated as "no effect" — actually the bug). | [Bug 58](#bug-58--drop_tables_inside_figures-bypassed-by-cropper-supplementary-source) |
 
+| B-059 | Observed (2026-05-21) | Medium | PDF extraction, figure cropping | Decorative icons emitted as figure crops.  ~70% of figure-side error labels across all variants are `icon` (304 of 437 figure errors aggregated across 16 variants on the 28-PDF corpus).  These are small image-like layout elements that Docling correctly identifies as PICTURE/FIGURE elements geometrically but that are decorative graphics (publisher logos, small inline ornaments, watermark-style icons), not scientific figures.  Crops are emitted (FP for figure-output) but masking is correct (image content shouldn't appear in body text either way).  No current pipeline stage filters them.  Possible fix path: heuristic filter based on size (`min_figure_pts` already exists in `CroppingConfig` but doesn't address this — icons can be moderately sized), bbox aspect ratio, low text density inside the bbox, or appearance on every page of a multi-page paper (publisher logo case).  Need a figure-side analogue of `_drop_tables_inside_figures` or a stand-alone `drop_icon_figures` filter.  Decision/scope: outside the 2026-05-21 thesis-day budget; document as known limitation in `docs/THESIS.md` future-work section. | [Bug 59](#bug-59--decorative-icons-emitted-as-figure-crops) |
+| B-060 | Observed (2026-05-21) | Medium | PDF extraction, caption parser | Cluster of `nearest_caption()` + `parse_caption_num()` defects in `parsers/layout_utils.py`.  Six recurring failure modes seen across all variants of the 28-PDF corpus (counts are aggregated label occurrences across variants):  (1) **Rotated-image footnote-as-caption** — 49 table cases (`wrong caption (footnotes matched to captions, rotated image)`); attacher pulls footnote text up because the image rotation messes up vertical proximity ordering.  (2) **Continuation-marker parsed as new table number** — 30 table cases; `(continued)` next to a table caption is parsed as the table's number by `parse_caption_num()` / `TAB_NUM_RE`.  (3) **Caption "Table N" prefix dropped** — 22 table cases; parser returns the descriptive caption body without the "Table N" identifier, breaking strict-match scoring on the caption dim.  (4) **Multi-caption merge across page boundaries** — 30 table cases; when a continued table caption sits adjacent to the next table's caption, the attacher concatenates them.  (5) **Side-mounted figure caption missed** — 19 figure cases (`no caption, caption is to the right of the figure`); spatial proximity heuristic in `nearest_caption()` doesn't handle 2-column layouts with side-mounted captions.  (6) **Page footer treated as caption** — 38 figure cases combined (bottom-left + bottom-right variants); attacher confuses page footers with figure captions when the real caption is on a different position of the page.  These bugs are interconnected via the shared caption-attacher logic — touching one risks regressing another, so they need a focused investigation rather than ad-hoc patches.  Affects ~18% of table errors and ~17% of figure errors; second-largest unaddressed bucket after `should be masked` for tables and `icon` for figures.  Decision/scope: outside the 2026-05-21 thesis-day budget; document as known limitation. | [Bug 60](#bug-60--caption-parser-bug-cluster) |
+| B-061 | Observed (2026-05-21) | Low | PDF extraction, table cropping geometry | `crop too small minor` family of labels — 16 aggregated table cases across all variants (8 with caption issue + 6 stand-alone + 2 unmasked-letters variant).  Tables whose emitted crop bbox is smaller than the true table extent, missing some content.  Currently no config knob or filter tests this.  Symmetric to `crop too big` (which the Stage 5 `footnote_multiplier` sweep partially addresses).  Possible fix: dilate detection bboxes by a small margin before cropping, gated by a new `CroppingConfig.table_crop_dilation_pts` field, sweep values in {0, 2, 4, 8}.  Risk: dilation increases overlap with adjacent layout elements (captions, footnotes — though expand_tables_with_footnotes handles the latter). Decision/scope: outside the 2026-05-21 thesis-day budget; document as known limitation. | [Bug 61](#bug-61--crop-too-small-table-geometry-no-config-knob) |
+
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
+
+---
+
+## Bug 61 — `crop too small` table geometry, no config knob
+
+### Status / Severity / Surface
+Observed (2026-05-21) · Low · PDF extraction, table cropping geometry.
+
+### Symptom
+16 aggregated table-error labels of the form `crop too small minor, …`
+across all 16 variants on the 28-PDF corpus.  The emitted table crop is
+smaller than the true table extent, missing some rows or columns.
+Caption + footnote dims are correct; only the crop dim is hurt.
+
+### Evidence
+Label counts (aggregated across all variants):
+* 8 × `crop too small minor, loses some info, caption missed "table" prefix`
+* 6 × `crop too small minor, loses some info`
+* 2 × `crop too small minor, might cause unmasked random letters in text`
+
+Total: 16 instances (~2% of all table errors).
+
+### Diagnosis
+No config knob currently exists for tightening or loosening the table
+detection bbox post-detection.  The crop bbox comes directly from the
+table detector (Docling/TATR/Hybrid).  The pipeline's `expand_tables_with_footnotes`
+extends the crop downward to absorb footnotes, but it doesn't dilate the
+table bbox upward / sideways.
+
+### Fix (planned, not implemented)
+Add a new `CroppingConfig.table_crop_dilation_pts: float = 0.0` field;
+when > 0, dilate each table bbox by that many points in all four
+directions before cropping.  Sweep values in {0, 2, 4, 8} as a new
+stage variant block (or fold into Stage 5 `merge_flags` as a single-flag
+flip on `BEST_BASE`).
+
+### Risk
+Dilation could increase overlap with adjacent captions or footnotes.
+The existing `_drop_tables_inside_figures` and
+`expand_tables_with_footnotes` filters handle the figure / footnote
+boundary, but a dilation on top could re-introduce overlap with the
+caption itself (already attached separately).  Need to test on the 16
+existing `crop too small` cases.
+
+### Decision / Scope
+Outside the 2026-05-21 thesis-day budget.  Document as known
+limitation in `docs/THESIS.md` future-work section.
+
+---
+
+## Bug 60 — Caption-parser bug cluster
+
+### Status / Severity / Surface
+Observed (2026-05-21) · Medium · PDF extraction, caption parser
+(`parsers/layout_utils.py::nearest_caption` and `::parse_caption_num`).
+
+### Symptom
+Six recurring failure modes in caption attachment / parsing.  Counts are
+aggregated label occurrences across all 16 variants on the 28-PDF
+corpus.
+
+| Mode | Cases | Label |
+|---|---|---|
+| Rotated-image footnote→caption | 49 | `wrong caption (footnotes matched to captions, rotated image)` |
+| `(continued)` parsed as table number | 30 | `wrong auto table number from continuation header` |
+| Multi-caption merge across page boundary | 30 | `wrong caption (continued table, caption merged with prev table's caption)` |
+| Page footer mistaken for figure caption (bottom-right) | 19 | `correct figure, wrong caption (real caption in bottom right, confused page footer with caption)` |
+| Page footer mistaken for figure caption (bottom-left) | 19 | `correct figure, wrong caption (real caption in bottom left, confused page footer with caption)` |
+| Detected caption too long (duplicated content) | 19 | `the detected caption is too long and has copies of the real one.` |
+| Side-mounted figure caption missed | 19 | `no caption, caption is to the right of the figure` |
+| Caption "Table N" prefix dropped | 22 | `caption missed "table" prefix, otherwise correct` |
+
+Total: ~207 label instances ≈ 18% of all table errors + 17% of all
+figure errors.  Second-largest unaddressed error bucket overall.
+
+### Evidence
+All six modes share root causes in two functions:
+* `nearest_caption(element, captions)` (`parsers/layout_utils.py`)
+  uses spatial proximity (vertical distance) to attach a caption to a
+  figure/table element.  Fails when:
+  - Element is rotated (rotated-image bug → vertical proximity is
+    measured in unrotated coords, so footnote text below the table —
+    which is "above" in the rotated frame — gets pulled as the caption).
+  - Page footer text sits closer to the figure than the real caption
+    (figure footer-as-caption bugs).
+  - Caption is side-mounted (2-column layouts with caption in the
+    adjacent column → spatial-proximity heuristic picks the wrong text).
+  - Two captions sit adjacent across a page break (continued-table
+    bug → attacher merges them).
+* `parse_caption_num(caption, regex)` (`parsers/layout_utils.py`) uses
+  `TAB_NUM_RE` / `FIG_NUM_RE` to extract the table/figure number.
+  Fails when:
+  - Caption starts with `(continued)` rather than `Table N` (parser
+    grabs whatever number appears next, often the next figure's number).
+  - Caption lacks the `Table N` prefix entirely (parser returns no
+    number, "table" prefix label is dropped from caption text).
+
+### Diagnosis
+The two functions are tightly coupled: `nearest_caption` decides WHICH
+text becomes the caption, then `parse_caption_num` extracts the
+identifier.  A fix to either can regress the other:
+* Tightening vertical-proximity heuristics in `nearest_caption` to
+  handle rotation would shift the attachment for non-rotated cases.
+* Adding `(continued)` handling to `parse_caption_num` would require
+  the attacher to ALSO recognise continuation markers as belonging to
+  a different (already-emitted) table.
+
+The interconnection means a focused investigation is needed, not
+ad-hoc patches.
+
+### Fix (planned, not implemented)
+* Add rotation-aware vertical-proximity logic to `nearest_caption` —
+  detect rotated layout elements (Docling element has `rotation` or
+  page-coord orientation differs) and rotate the bbox into a "caption
+  reading frame" before measuring distances.
+* Handle `(continued)` markers in `parse_caption_num` by returning
+  `None` (signalling "continuation, defer to previous emit") instead
+  of grabbing the next number on the line.
+* Score caption candidates by spatial bracket (above / below /
+  side / footer) and reject footer candidates when the figure bbox
+  doesn't touch the page-footer band.
+* Add a "caption deduplicator" pass that detects when two adjacent
+  captions reference the same table number and merges them into a
+  single attribution to the FIRST table.
+
+Each of these fixes warrants its own bug entry once scoped.
+
+### Risk
+High — touching either function risks regressing the other 80+% of
+captions that are currently being attached correctly.  Needs a
+fixture-based regression suite (sample of correct captions across the
+28-PDF corpus) before any code change.
+
+### Decision / Scope
+Outside the 2026-05-21 thesis-day budget.  Document as known
+limitation in `docs/THESIS.md` future-work section.  When time permits,
+spend a focused day on `nearest_caption` + `parse_caption_num` with a
+golden-fixture regression suite built up front.
+
+---
+
+## Bug 59 — Decorative icons emitted as figure crops
+
+### Status / Severity / Surface
+Observed (2026-05-21) · Medium · PDF extraction, figure cropping.
+
+### Symptom
+Decorative icons (publisher logos, small inline ornaments,
+watermark-style graphics) are emitted as separate figure crops.  Label
+`icon` accounts for **304 of 437 figure errors (~70%)** aggregated
+across 16 variants on the 28-PDF corpus — by far the largest figure-side
+error class.
+
+### Evidence
+Across all 16 variants, every variant emits the same ~16 icon crops per
+PDF (consistent because figure detection is detector-invariant — all
+variants share the docling layout for the figure pass).  The icons are
+correctly identified as PICTURE/FIGURE element geometry-wise by Docling,
+so they get cropped + emitted.  But they're not scientific figures —
+they're decorative.  Mask dim is fine (`mask=1.0` for the `icon` rubric
+entry), only crop dim is hurt (`crop=0.0`).
+
+### Diagnosis
+No current pipeline stage filters them.  Existing
+`CroppingConfig.min_figure_pts` (`config.py`) drops figures smaller than
+a threshold, but icons can be moderately sized (e.g. publisher logos
+that are 40-60pt tall) — raising `min_figure_pts` to catch them would
+also drop legitimate small scientific figures.
+
+Three signals that could distinguish icons from real figures:
+1. **Repetition** — publisher logo / icon appears on EVERY page of a
+   multi-page paper.  Real scientific figures appear once.
+2. **Text density** — icons typically contain no text (or just the
+   publisher name).  Real figures often have axis labels, callouts.
+3. **No caption** — icons typically have no nearby CAPTION element.
+
+### Fix (planned, not implemented)
+Add a heuristic filter `drop_icon_figures` to
+`MaskingConfig` (or `CroppingConfig`) that combines the above signals:
+* Drop figure elements that appear in the same bbox position on N+ pages
+  (publisher logo).
+* Drop figure elements with zero overlapping CAPTION element and bbox
+  area below some threshold (e.g. < 5% of page area).
+
+Test as a new stage variant block similar to `drop_tables_inside_figures`.
+
+### Risk
+False-positives on real figures that happen to lack captions or repeat
+across pages (rare in scientific papers but possible).  Needs corpus
+tuning.
+
+### Decision / Scope
+Outside the 2026-05-21 thesis-day budget.  Document as known
+limitation in `docs/THESIS.md` future-work section.  Worth pursuing in
+a follow-up sprint — 70% of figure errors is a high-value target.
 
 ---
 
