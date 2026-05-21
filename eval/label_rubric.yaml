@@ -232,3 +232,13 @@ table_labels:
     caption: 1.0
     footnote: 1.0
     mask: 0.25
+
+  # Variant of ``crop too small minor`` where mask leakage is only
+  # incidental (a few stray letters) rather than meaningful content —
+  # mask scores higher (0.75) since the body of the table region is
+  # still masked correctly.
+  'crop too small minor, might cause unmasked random letters in text':
+    crop: 0.75
+    caption: 1.0
+    footnote: 1.0
+    mask: 0.75

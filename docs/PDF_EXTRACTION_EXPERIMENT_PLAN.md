@@ -26,8 +26,8 @@ default changes can never silently shift the experiment baseline.
 | 1.3 | `detector_hybrid` | 05–07 | `STAGE1_BASE_HYBRID` |
 | 2 | `table_in_figure` | 08–13 | `BEST_TATR_TABLE_IN_FIGURE_MODE`, `BEST_HYBRID_TABLE_IN_FIGURE_MODE` |
 | 3 | `footnote_screen` | 14–16 | `BEST_BASE` |
-| 4 | `merge_flags` | 17–18 | `BEST_MERGE_TABLES_BY_CAPTION`, `BEST_MERGE_FIGURES_BY_CAPTION` |
-| 5 | `reconstruction` | 19–20 | `BEST_RECONSTRUCTION_SETTING`, `BEST_EXPAND_SETTING` |
+| 4 | `merge_flags` | 17–19 | `BEST_MERGE_TABLES_BY_CAPTION`, `BEST_MERGE_FIGURES_BY_CAPTION` (variant 19 = docling-specific drop_tables_inside_figures check) |
+| 5 | `reconstruction` | 20–21 | `BEST_RECONSTRUCTION_SETTING`, `BEST_EXPAND_SETTING` |
 
 Pinned constants (no sweep):
 
@@ -137,18 +137,28 @@ base names).
 
 ---
 
-## Stage 4 — `merge_flags` (merge flags on BEST_BASE)
+## Stage 4 — `merge_flags` (single-flag flips on BEST_BASE)
 
 Base: `BEST_BASE` + corresponding TIF mode + expand=ON, multiplier=1.2.
-Each variant flips exactly one merge flag.
+Each variant flips exactly one extra flag.
 
 ```
-17_best_merge_tables_by_caption    + merge_tables_by_caption = ON
-18_best_merge_figures_by_caption   + merge_figures_by_caption = ON
+17_best_merge_tables_by_caption     + merge_tables_by_caption = ON
+18_best_merge_figures_by_caption    + merge_figures_by_caption = ON
+19_best_drop_tables_inside_figures  + drop_tables_inside_figures = ON
 ```
 
 Locks `BEST_MERGE_TABLES_BY_CAPTION` and `BEST_MERGE_FIGURES_BY_CAPTION`
 independently — each flag picked if it clearly wins on its own.
+
+Variant 19 forces `drop_tables_inside_figures = ON` regardless of the
+family's Stage-2 TIF mode.  Meaningful only when `BEST_BASE` is the
+Docling family (where the family TIF mode is otherwise locked at
+`"none"` because Stage 2 skipped Docling).  When `BEST_BASE` is TATR
+or Hybrid, the family TIF mode from Stage 2 may already be `"drop"`,
+making variant 19 a duplicate of variant 15 / 16 — note and skip
+analysis if so.  See [`docs/BUGS.md`](BUGS.md#bug-58--drop_tables_inside_figures-bypassed-by-cropper-supplementary-source)
+for the B-058 fix that made this flag actually work on Docling.
 
 ---
 
@@ -158,8 +168,8 @@ Base: `BEST_BASE` + corresponding TIF mode + selected merge flags +
 `reconstruct_tables_from_lists = ON`.
 
 ```
-19_best_reconstruct_only                  expand=OFF
-20_best_reconstruct_plus_selected_expand  expand=ON, ftn_x=BEST_EXPAND_MULTIPLIER
+20_best_reconstruct_only                  expand=OFF
+21_best_reconstruct_plus_selected_expand  expand=ON, ftn_x=BEST_EXPAND_MULTIPLIER
 ```
 
 Locks `BEST_RECONSTRUCTION_SETTING` and `BEST_EXPAND_SETTING` — the

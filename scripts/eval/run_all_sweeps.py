@@ -104,12 +104,12 @@ STAGE1_BASE_HYBRID  = "07_hybrid_099"
 # entirely (premasking is a no-op for Docling; see runner.py:651-653 and
 # media_cropper.py B-058 fix — for Docling, only `drop_tables_inside_figures`
 # actually changes behaviour, and it lives in the table_in_figure mode dial).
-BEST_TATR_TABLE_IN_FIGURE_MODE   = "none"
-BEST_HYBRID_TABLE_IN_FIGURE_MODE = "none"
+BEST_TATR_TABLE_IN_FIGURE_MODE   = "drop"
+BEST_HYBRID_TABLE_IN_FIGURE_MODE = "drop"
 
 # Stage 3 winner — final detector family after footnote expansion.  Drives
 # Stages 4-5.  One of the seven Stage-1 base names.
-BEST_BASE = "none"
+BEST_BASE = "01_docling"
 
 # Stage 4 winners — merge flags chosen on BEST_BASE.  Drive Stage 5.
 BEST_MERGE_TABLES_BY_CAPTION  = False
@@ -336,6 +336,22 @@ def _stage3_for_family(base_constant_name: str, family: str):
     return configure
 
 
+def _stage3_docling_multiplier(multiplier: float):
+    """Stage-3 docling-base variant with explicit footnote_threshold_multiplier override.
+
+    Used to sweep the multiplier on Docling (the Stage-3 winner) so we can
+    pick the value that best balances footnote recall against
+    ``crop too big`` over-expansion.  Compare against variant 14 (1.2,
+    the prior pinned default).
+    """
+    def configure(cfg: PipelineConfig) -> None:
+        _apply_base(cfg, STAGE1_BASE_DOCLING)
+        _apply_table_in_figure_mode(cfg, "none")
+        cfg.cropping.expand_tables_with_footnotes  = True
+        cfg.cropping.footnote_threshold_multiplier = multiplier
+    return configure
+
+
 ALL_SWEEPS.extend([
     SweepSpec("14_docling_footnote_expand_1_2",
               _stage3_for_family("STAGE1_BASE_DOCLING", "docling"),
@@ -346,22 +362,44 @@ ALL_SWEEPS.extend([
     SweepSpec("16_hybrid_best_tif_fix_footnote_expand_1_2",
               _stage3_for_family("STAGE1_BASE_HYBRID", "hybrid"),
               workers=2, stage="footnote_screen"),
+    # Multiplier sweep on the Stage-3 winner (Docling).  Smaller multipliers
+    # mean stricter cascade — fewer "crop too big" cases at the cost of
+    # potentially missing some far-spaced footnotes.
+    SweepSpec("22_docling_footnote_expand_1_0",
+              _stage3_docling_multiplier(1.0),
+              workers=1, stage="footnote_screen"),
+    SweepSpec("23_docling_footnote_expand_1_1",
+              _stage3_docling_multiplier(1.1),
+              workers=1, stage="footnote_screen"),
+    SweepSpec("24_docling_footnote_expand_1_15",
+              _stage3_docling_multiplier(1.15),
+              workers=1, stage="footnote_screen"),
 ])
 
 
 # ---------------------------------------------------------------------------
-# Stage 4 — merge flags on BEST_BASE.
+# Stage 4 — single-flag flips on BEST_BASE.
 # Base: BEST_BASE + corresponding TIF mode + expand=ON, multiplier=1.2.
-# Each variant flips exactly one merge flag.
+# Each variant flips exactly one extra flag.
+#   17: merge_tables_by_caption=ON
+#   18: merge_figures_by_caption=ON
+#   19: drop_tables_inside_figures=ON (forced even if BEST_BASE's family TIF
+#       mode would otherwise be "none"; meaningful only when BEST_BASE is
+#       docling, since TATR/Hybrid bases already get drop=ON via the family
+#       TIF mode from Stage 2.  Variant 14 had a `table_in_figure` FP that
+#       drop should suppress post-B-058 fix.)
 # ---------------------------------------------------------------------------
 
-def _stage4(*, merge_tables: bool = False, merge_figures: bool = False):
+def _stage4(*, merge_tables: bool = False, merge_figures: bool = False,
+            force_drop_tif: bool = False):
     def configure(cfg: PipelineConfig) -> None:
         _apply_best_base_with_mode(cfg)
         cfg.cropping.expand_tables_with_footnotes  = True
         cfg.cropping.footnote_threshold_multiplier = BEST_EXPAND_MULTIPLIER
         cfg.cropping.merge_tables_by_caption  = merge_tables
         cfg.cropping.merge_figures_by_caption = merge_figures
+        if force_drop_tif:
+            cfg.masking.drop_tables_inside_figures = True
     return configure
 
 
@@ -372,15 +410,18 @@ ALL_SWEEPS.extend([
     SweepSpec("18_best_merge_figures_by_caption",
               _stage4(merge_figures=True),
               workers=_workers_for_base(BEST_BASE), stage="merge_flags"),
+    SweepSpec("19_best_drop_tables_inside_figures",
+              _stage4(force_drop_tif=True),
+              workers=_workers_for_base(BEST_BASE), stage="merge_flags"),
 ])
 
 
 # ---------------------------------------------------------------------------
 # Stage 5 — reconstruction × expand setting on BEST_BASE.
 # Base: BEST_BASE + corresponding TIF mode + BEST_MERGE_*_BY_CAPTION.
-#   19: reconstruct=ON, expand=OFF
-#   20: reconstruct=ON, expand=ON (multiplier=BEST_EXPAND_MULTIPLIER)
-# Compare 19 vs 20 vs Stage-3 winner to pick BEST_RECONSTRUCTION_SETTING
+#   20: reconstruct=ON, expand=OFF
+#   21: reconstruct=ON, expand=ON (multiplier=BEST_EXPAND_MULTIPLIER)
+# Compare 20 vs 21 vs Stage-3 winner to pick BEST_RECONSTRUCTION_SETTING
 # and BEST_EXPAND_SETTING.
 # ---------------------------------------------------------------------------
 
@@ -397,10 +438,10 @@ def _stage5(*, expand: bool):
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("19_best_reconstruct_only",
+    SweepSpec("20_best_reconstruct_only",
               _stage5(expand=False),
               workers=_workers_for_base(BEST_BASE), stage="reconstruction"),
-    SweepSpec("20_best_reconstruct_plus_selected_expand",
+    SweepSpec("21_best_reconstruct_plus_selected_expand",
               _stage5(expand=True),
               workers=_workers_for_base(BEST_BASE), stage="reconstruction"),
 ])

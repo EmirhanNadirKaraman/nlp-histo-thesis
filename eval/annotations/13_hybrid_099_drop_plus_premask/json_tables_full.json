@@ -39,5 +39,13 @@
   "PMC8416649_main_Table_1_p3.png": "missing footnotes",
   "PMC8420544_CYT-33-93_Table_1_p3.png": "correct",
   "PMC8420544_CYT-33-93_Table_2_p3.png": "missing footnotes",
-  "PMC8420544_CYT-33-93_Table_3_p4.png": "missing footnotes"
+  "PMC8420544_CYT-33-93_Table_3_p4.png": "missing footnotes",
+  "PMC12337196_main_Table_1_p1.png": "incorrect",
+  "PMC4945808_dpa-0003-0055_Table_1_p1.png": "should be masked, not a table in the scientific sense",
+  "PMC4945808_dpa-0003-0055_Table_2_p2.png": "should be masked, not a table in the scientific sense",
+  "PMC4945808_dpa-0003-0055_Table_3_p3.png": "should be masked, not a table in the scientific sense",
+  "PMC4945808_dpa-0003-0055_Table_4_p4.png": "should be masked, not a table in the scientific sense",
+  "PMC4945808_dpa-0003-0055_Table_5_p5.png": "should be masked, not a table in the scientific sense",
+  "PMC4945808_dpa-0003-0055_Table_6_p6.png": "should be masked, not a table in the scientific sense",
+  "PMC11863984_main_Table_5_p1.png": "incorrect"
 }
