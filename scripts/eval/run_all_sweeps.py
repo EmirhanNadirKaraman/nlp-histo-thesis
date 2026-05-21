@@ -65,25 +65,27 @@ class SweepSpec:
 
 # Ordered: each stage builds on the previous stage's winner.
 STAGE_ORDER = (
-    "detector_docling",   # Stage 1.1 — Docling baseline
-    "detector_tatr",      # Stage 1.2 — TATR threshold selection
-    "detector_hybrid",    # Stage 1.3 — Hybrid threshold selection
-    "table_in_figure",    # Stage 2   — table_in_figure fixes for TATR / Hybrid
-    "footnote_screen",    # Stage 3   — footnote expansion per detector family
-    "merge_flags",        # Stage 4   — merge_tables / merge_figures on BEST_BASE
-    "reconstruction",     # Stage 5   — reconstruction × expand on BEST_BASE
+    "detector_docling",     # Stage 1.1 — Docling baseline
+    "detector_tatr",        # Stage 1.2 — TATR threshold selection
+    "detector_hybrid",      # Stage 1.3 — Hybrid threshold selection
+    "table_in_figure",      # Stage 2   — table_in_figure fixes for TATR / Hybrid
+    "footnote_screen",      # Stage 3   — footnote expansion per detector family
+    "footnote_multiplier",  # Stage 4   — multiplier sweep on the Stage-3 winner
+    "merge_flags",          # Stage 5   — merge_tables / merge_figures on BEST_BASE
+    "reconstruction",       # Stage 6   — reconstruction × expand on BEST_BASE
 )
 STAGE_CHOICES = STAGE_ORDER + ("all",)
 
 # Human-readable one-liners for the stage menu printed when --stage is omitted.
 STAGE_BLURBS: dict = {
-    "detector_docling": "Stage 1.1 — Docling baseline",
-    "detector_tatr":    "Stage 1.2 — TATR threshold selection",
-    "detector_hybrid":  "Stage 1.3 — Hybrid threshold selection",
-    "table_in_figure":  "Stage 2 — table_in_figure fixes for TATR / Hybrid",
-    "footnote_screen":  "Stage 3 — footnote_expand=1.2 per detector family",
-    "merge_flags":      "Stage 4 — merge_tables / merge_figures on BEST_BASE",
-    "reconstruction":   "Stage 5 — reconstruction × expand setting on BEST_BASE",
+    "detector_docling":    "Stage 1.1 — Docling baseline",
+    "detector_tatr":       "Stage 1.2 — TATR threshold selection",
+    "detector_hybrid":     "Stage 1.3 — Hybrid threshold selection",
+    "table_in_figure":     "Stage 2 — table_in_figure fixes for TATR / Hybrid",
+    "footnote_screen":     "Stage 3 — footnote_expand=1.2 per detector family",
+    "footnote_multiplier": "Stage 4 — footnote_threshold_multiplier sweep on BEST_BASE",
+    "merge_flags":         "Stage 5 — merge_tables / merge_figures on BEST_BASE",
+    "reconstruction":      "Stage 6 — reconstruction × expand setting on BEST_BASE",
 }
 
 
@@ -111,11 +113,11 @@ BEST_HYBRID_TABLE_IN_FIGURE_MODE = "drop"
 # Stages 4-5.  One of the seven Stage-1 base names.
 BEST_BASE = "01_docling"
 
-# Stage 4 winners — merge flags chosen on BEST_BASE.  Drive Stage 5.
+# Stage 5 winners — merge flags chosen on BEST_BASE.  Drive Stage 6.
 BEST_MERGE_TABLES_BY_CAPTION  = False
 BEST_MERGE_FIGURES_BY_CAPTION = False
 
-# Stage 5 winners — chosen after the reconstruction × expand sweep.
+# Stage 6 winners — chosen after the reconstruction × expand sweep.
 # These don't feed any later variant (Stage 5 is terminal); they're
 # documentation for the freeze step that bakes defaults into
 # PipelineConfig.  See docs/THESIS.md Decisions log.
@@ -362,28 +364,37 @@ ALL_SWEEPS.extend([
     SweepSpec("16_hybrid_best_tif_fix_footnote_expand_1_2",
               _stage3_for_family("STAGE1_BASE_HYBRID", "hybrid"),
               workers=2, stage="footnote_screen"),
-    # Multiplier sweep on the Stage-3 winner (Docling).  Smaller multipliers
-    # mean stricter cascade — fewer "crop too big" cases at the cost of
-    # potentially missing some far-spaced footnotes.
-    SweepSpec("22_docling_footnote_expand_1_0",
-              _stage3_docling_multiplier(1.0),
-              workers=1, stage="footnote_screen"),
-    SweepSpec("23_docling_footnote_expand_1_1",
-              _stage3_docling_multiplier(1.1),
-              workers=1, stage="footnote_screen"),
-    SweepSpec("24_docling_footnote_expand_1_15",
-              _stage3_docling_multiplier(1.15),
-              workers=1, stage="footnote_screen"),
 ])
 
 
 # ---------------------------------------------------------------------------
-# Stage 4 — single-flag flips on BEST_BASE.
+# Stage 4 — footnote_threshold_multiplier sweep on the Stage-3 winner.
+# Compares against variant 14 (current 1.2 pinned default).  Smaller
+# multipliers mean stricter cascade — fewer "crop too big" cases at the
+# cost of potentially missing some far-spaced footnotes.  Sweeps run only
+# on the Docling base; the helper just hard-codes it.
+# ---------------------------------------------------------------------------
+
+ALL_SWEEPS.extend([
+    SweepSpec("17_docling_footnote_expand_1_0",
+              _stage3_docling_multiplier(1.0),
+              workers=1, stage="footnote_multiplier"),
+    SweepSpec("18_docling_footnote_expand_1_1",
+              _stage3_docling_multiplier(1.1),
+              workers=1, stage="footnote_multiplier"),
+    SweepSpec("19_docling_footnote_expand_1_15",
+              _stage3_docling_multiplier(1.15),
+              workers=1, stage="footnote_multiplier"),
+])
+
+
+# ---------------------------------------------------------------------------
+# Stage 5 — single-flag flips on BEST_BASE.
 # Base: BEST_BASE + corresponding TIF mode + expand=ON, multiplier=1.2.
 # Each variant flips exactly one extra flag.
-#   17: merge_tables_by_caption=ON
-#   18: merge_figures_by_caption=ON
-#   19: drop_tables_inside_figures=ON (forced even if BEST_BASE's family TIF
+#   20: merge_tables_by_caption=ON
+#   21: merge_figures_by_caption=ON
+#   22: drop_tables_inside_figures=ON (forced even if BEST_BASE's family TIF
 #       mode would otherwise be "none"; meaningful only when BEST_BASE is
 #       docling, since TATR/Hybrid bases already get drop=ON via the family
 #       TIF mode from Stage 2.  Variant 14 had a `table_in_figure` FP that
@@ -404,24 +415,24 @@ def _stage4(*, merge_tables: bool = False, merge_figures: bool = False,
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("17_best_merge_tables_by_caption",
+    SweepSpec("20_best_merge_tables_by_caption",
               _stage4(merge_tables=True),
               workers=_workers_for_base(BEST_BASE), stage="merge_flags"),
-    SweepSpec("18_best_merge_figures_by_caption",
+    SweepSpec("21_best_merge_figures_by_caption",
               _stage4(merge_figures=True),
               workers=_workers_for_base(BEST_BASE), stage="merge_flags"),
-    SweepSpec("19_best_drop_tables_inside_figures",
+    SweepSpec("22_best_drop_tables_inside_figures",
               _stage4(force_drop_tif=True),
               workers=_workers_for_base(BEST_BASE), stage="merge_flags"),
 ])
 
 
 # ---------------------------------------------------------------------------
-# Stage 5 — reconstruction × expand setting on BEST_BASE.
+# Stage 6 — reconstruction × expand setting on BEST_BASE.
 # Base: BEST_BASE + corresponding TIF mode + BEST_MERGE_*_BY_CAPTION.
-#   20: reconstruct=ON, expand=OFF
-#   21: reconstruct=ON, expand=ON (multiplier=BEST_EXPAND_MULTIPLIER)
-# Compare 20 vs 21 vs Stage-3 winner to pick BEST_RECONSTRUCTION_SETTING
+#   23: reconstruct=ON, expand=OFF
+#   24: reconstruct=ON, expand=ON (multiplier=BEST_EXPAND_MULTIPLIER)
+# Compare 23 vs 24 vs Stage-3 winner to pick BEST_RECONSTRUCTION_SETTING
 # and BEST_EXPAND_SETTING.
 # ---------------------------------------------------------------------------
 
@@ -438,10 +449,10 @@ def _stage5(*, expand: bool):
 
 
 ALL_SWEEPS.extend([
-    SweepSpec("20_best_reconstruct_only",
+    SweepSpec("23_best_reconstruct_only",
               _stage5(expand=False),
               workers=_workers_for_base(BEST_BASE), stage="reconstruction"),
-    SweepSpec("21_best_reconstruct_plus_selected_expand",
+    SweepSpec("24_best_reconstruct_plus_selected_expand",
               _stage5(expand=True),
               workers=_workers_for_base(BEST_BASE), stage="reconstruction"),
 ])

@@ -26,8 +26,9 @@ default changes can never silently shift the experiment baseline.
 | 1.3 | `detector_hybrid` | 05–07 | `STAGE1_BASE_HYBRID` |
 | 2 | `table_in_figure` | 08–13 | `BEST_TATR_TABLE_IN_FIGURE_MODE`, `BEST_HYBRID_TABLE_IN_FIGURE_MODE` |
 | 3 | `footnote_screen` | 14–16 | `BEST_BASE` |
-| 4 | `merge_flags` | 17–19 | `BEST_MERGE_TABLES_BY_CAPTION`, `BEST_MERGE_FIGURES_BY_CAPTION` (variant 19 = docling-specific drop_tables_inside_figures check) |
-| 5 | `reconstruction` | 20–21 | `BEST_RECONSTRUCTION_SETTING`, `BEST_EXPAND_SETTING` |
+| 4 | `footnote_multiplier` | 17–19 | `BEST_EXPAND_MULTIPLIER` (Docling-only multiplier sweep on top of `BEST_BASE`) |
+| 5 | `merge_flags` | 20–22 | `BEST_MERGE_TABLES_BY_CAPTION`, `BEST_MERGE_FIGURES_BY_CAPTION` (variant 22 = docling-specific drop_tables_inside_figures check) |
+| 6 | `reconstruction` | 23–24 | `BEST_RECONSTRUCTION_SETTING`, `BEST_EXPAND_SETTING` |
 
 Pinned constants (no sweep):
 
@@ -137,15 +138,34 @@ base names).
 
 ---
 
-## Stage 4 — `merge_flags` (single-flag flips on BEST_BASE)
+## Stage 4 — `footnote_multiplier` (multiplier sweep on BEST_BASE — Docling-only)
+
+After Stage 3 picks `BEST_BASE`, sweep the footnote-cascade multiplier
+to balance footnote recall against `crop too big` over-expansion.
+All three variants run on the Docling base (`BEST_BASE = 01_docling` is
+the current Stage-3 winner; if a future Stage 3 picks a different
+family, refactor this stage to use `BEST_BASE` instead of hard-coded
+docling).
+
+```
+17_docling_footnote_expand_1_0     multiplier=1.00 (no cascade growth)
+18_docling_footnote_expand_1_1     multiplier=1.10
+19_docling_footnote_expand_1_15    multiplier=1.15
+```
+
+Compare 17 / 18 / 19 / 14 (1.2) to pick `BEST_EXPAND_MULTIPLIER`.
+
+---
+
+## Stage 5 — `merge_flags` (single-flag flips on BEST_BASE)
 
 Base: `BEST_BASE` + corresponding TIF mode + expand=ON, multiplier=1.2.
 Each variant flips exactly one extra flag.
 
 ```
-17_best_merge_tables_by_caption     + merge_tables_by_caption = ON
-18_best_merge_figures_by_caption    + merge_figures_by_caption = ON
-19_best_drop_tables_inside_figures  + drop_tables_inside_figures = ON
+20_best_merge_tables_by_caption     + merge_tables_by_caption = ON
+21_best_merge_figures_by_caption    + merge_figures_by_caption = ON
+22_best_drop_tables_inside_figures  + drop_tables_inside_figures = ON
 ```
 
 Locks `BEST_MERGE_TABLES_BY_CAPTION` and `BEST_MERGE_FIGURES_BY_CAPTION`
@@ -162,14 +182,14 @@ for the B-058 fix that made this flag actually work on Docling.
 
 ---
 
-## Stage 5 — `reconstruction` (reconstruction × expand on BEST_BASE)
+## Stage 6 — `reconstruction` (reconstruction × expand on BEST_BASE)
 
 Base: `BEST_BASE` + corresponding TIF mode + selected merge flags +
 `reconstruct_tables_from_lists = ON`.
 
 ```
-20_best_reconstruct_only                  expand=OFF
-21_best_reconstruct_plus_selected_expand  expand=ON, ftn_x=BEST_EXPAND_MULTIPLIER
+23_best_reconstruct_only                  expand=OFF
+24_best_reconstruct_plus_selected_expand  expand=ON, ftn_x=BEST_EXPAND_MULTIPLIER
 ```
 
 Locks `BEST_RECONSTRUCTION_SETTING` and `BEST_EXPAND_SETTING` — the
