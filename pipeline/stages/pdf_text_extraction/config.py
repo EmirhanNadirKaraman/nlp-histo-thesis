@@ -235,7 +235,9 @@ class MaskingConfig:
     # almost never start in the top 50pt of a page).  Same filter site as
     # `drop_tables_inside_figures` — runs in Step 2 after detection, and is
     # also re-applied in Step 7's supplementary-source pass for symmetry.
-    drop_tables_in_top_pts: float = 0.0
+    # Frozen to 50.0 on 2026-05-21 (Stage 3 sweep winner — +6.1pp crop F1
+    # on Hybrid, 0 TPs lost; see docs/THESIS.md Decisions log).
+    drop_tables_in_top_pts: float = 50.0
 
 
 @dataclass(slots=True)
@@ -279,7 +281,7 @@ class CroppingConfig:
     merge_figures_by_caption: bool = False  # merge PICTURE elements sharing the same caption number
     merge_tables_by_caption: bool = False   # merge TABLE/detection regions sharing the same caption number
     subfigure_proximity_pts: int = 20       # max edge-to-edge gap to treat adjacent figures as subfigure panels
-    expand_tables_with_footnotes: bool = False   # absorb nearby TEXT/LIST_ITEM/FOOTNOTE elements below each table
+    expand_tables_with_footnotes: bool = True    # absorb nearby TEXT/LIST_ITEM/FOOTNOTE elements below each table.  Frozen to True on 2026-05-21 (Stages 4/7 — collapses strict F1 by 35pp when OFF).
     footnote_proximity_pts: float = 20.0         # max gap for FOOTNOTE / LIST_ITEM elements (adaptive)
     text_footnote_proximity_pts: float = 8.0     # fixed max gap for TEXT elements (non-adaptive)
     footnote_threshold_multiplier: float = 1.2   # after first absorption: max_gap = first_gap * this
