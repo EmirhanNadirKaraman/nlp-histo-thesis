@@ -9,6 +9,15 @@ and the order in which the `BEST_*` knobs get frozen.
 For run / resume / scoring commands see
 [`HOW_TO_RUN.md` §2.2](HOW_TO_RUN.md#22-stage-1-detector--threshold-variants-run_all_sweepspy).
 
+> **Outcome (2026-05-21).** The sweep completed. The final frozen config is
+> **hybrid @ 0.99 (variant 18)**, strict F1 74.4 % — *not* the Docling base
+> that some per-stage descriptions below assume (`BEST_BASE = 01_docling` and
+> "Docling-only" are design-time assumptions, superseded by the full
+> variant-matrix result). For the actual outcome see
+> [`thesis/12_final_config.md`](thesis/12_final_config.md) and
+> [`PDF_EXTRACTION_RESULTS.md`](PDF_EXTRACTION_RESULTS.md); the `BEST_*` knobs
+> are now baked into `pipeline/stages/pdf_text_extraction/config.py` defaults.
+
 ---
 
 ## Overview

@@ -154,7 +154,7 @@ class BatchSummarizationRunner:
         # decision boundary to the checker.
         self._agreement = AgreementChecker(
             scorer=SemanticAgreementScorer(
-                strategy=EmbeddingSimilarityStrategy(embed_fn=self._embed_fn),
+                strategy=EmbeddingSimilarityStrategy.from_config(cfg.agreement, embed_fn=self._embed_fn),
             ),
             theta=cfg.map.theta,
             reject_theta=cfg.map.reject_theta,
@@ -1127,7 +1127,9 @@ class BatchSummarizationRunner:
         # pre-embedded claim cache is reused for every pair.
         agreement = AgreementChecker(
             scorer=SemanticAgreementScorer(
-                strategy=EmbeddingSimilarityStrategy(embed_fn=_cached_embed),
+                strategy=EmbeddingSimilarityStrategy.from_config(
+                    self._cfg_full.agreement, embed_fn=_cached_embed,
+                ),
             ),
             theta=self._agreement.theta,
             reject_theta=self._agreement.reject_theta,

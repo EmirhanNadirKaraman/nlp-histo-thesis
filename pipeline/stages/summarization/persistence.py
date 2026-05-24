@@ -738,9 +738,22 @@ def replace_verbatim_from_db(db, chunk_summaries: list) -> None:
 
 
 def persist_map_findings(db, db_id: int | None, pmcid: str, chunk_summaries: list) -> None:
-    """Persist scored MAP findings (post-grounding) to ``sum_map_findings``."""
+    """Persist scored MAP findings (post-grounding) to ``sum_map_findings``.
+
+    Unlike the sibling ``persist_*`` helpers this re-raises on failure rather
+    than swallowing — a silent 0-row insert here corrupts every downstream
+    experiment that reads ``sum_map_findings`` while the run still reports
+    ``success`` (B-055). Both runners wrap the call in a finalize-level handler
+    that marks the ``pipeline_run`` failed, so re-raising surfaces the real DB
+    error instead of hiding it behind a WARNING that goes to unrecorded stdout.
+    """
     if db_id is None or db is None:
         return
+    total_findings = sum(len(cs.findings) for cs in chunk_summaries)
+    logger.info(
+        "[%s] persist_map_findings: entering with %d chunks (%d findings) run_id=%s",
+        pmcid, len(chunk_summaries), total_findings, db_id,
+    )
     try:
         from database.models import SumMapFinding  # noqa: PLC0415
         from .models import FindingScope  # noqa: PLC0415
@@ -789,7 +802,14 @@ def persist_map_findings(db, db_id: int | None, pmcid: str, chunk_summaries: lis
             pmcid, len(rows), db_id,
         )
     except Exception as exc:
-        logger.warning("[%s] DB: failed to persist map findings: %s", pmcid, exc, exc_info=True)
+        # B-055: do NOT swallow. A failed bulk insert here means zero map
+        # findings persist while the run otherwise completes — silent
+        # corruption. Re-raise so the finalize-level handler fails the run.
+        logger.error(
+            "[%s] DB: failed to persist map findings (run_id=%s) — re-raising: %s",
+            pmcid, db_id, exc, exc_info=True,
+        )
+        raise
 
 
 def persist_normal_findings(

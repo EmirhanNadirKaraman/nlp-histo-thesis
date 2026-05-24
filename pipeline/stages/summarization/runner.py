@@ -210,7 +210,7 @@ class SummarizationRunner:
         if scorer is None:
             from .agreement import EmbeddingSimilarityStrategy, SemanticAgreementScorer
             scorer = SemanticAgreementScorer(
-                strategy=EmbeddingSimilarityStrategy(embed_fn=embed_fn),
+                strategy=EmbeddingSimilarityStrategy.from_config(cfg.agreement, embed_fn=embed_fn),
             )
 
         # Optional routing layer: grounding-first MapOutputRouter. Drops voters

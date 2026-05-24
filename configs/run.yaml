@@ -84,6 +84,12 @@ summarization:
     chunk_size: 10
     chunk_overlap: 2
     chunk_workers: 5
+    enable_router: false        # cascade path — false → legacy AgreementChecker (theta/reject_theta);
+                                # true → grounding-first MapOutputRouter (L1→L3 skip). Pinned for
+                                # reproducibility: build_runner AND build_batch_runner read this, so the
+                                # sync and batch paths cannot diverge. The θ sweep replays the legacy
+                                # path only — re-validate any chosen θ against the router before flipping.
+    router_single_voter_policy: escalate   # only when enable_router=true: 'escalate' lone voter to L3, or 'keep'
 
   normalize:
     extra_synonyms: {}          # surface → canonical overrides on top of synonyms.yaml (B-037)
@@ -112,5 +118,13 @@ summarization:
   cost:
     enable_cost_report: true
     write_usage_jsonl: true
+
+  agreement:                    # MAP embedding soft-alignment weights (H-EMB-01)
+    tau: 0.15                   # weak-match threshold; sims below this are zeroed
+    count_alpha: 0.25          # soft claim-count-mismatch penalty exponent
+    reuse_weight: 0.15         # reuse-concentration penalty weight
+    contradiction_weight: 0.20  # polarity-flip + numeric contradiction penalty
+                               # NOTE: in the per-paper result-cache hash but not the
+                               # chunk-level MAP cache (like theta) — sweep via replay.
 
   contradiction_similarity_threshold: 0.7

@@ -92,6 +92,27 @@ def test_summarization_section_independent(tmp_path: Path):
     assert sumcfg.map.reject_theta == 0.2
 
 
+def test_map_router_pins_loaded(tmp_path: Path):
+    """B-062: the cascade-path pins must load from YAML so both runner builders
+    (`build_runner` / `build_batch_runner` read `sum_cfg.map.*`) are governed by
+    config. Strict loader would reject the keys if the dataclass fields went
+    missing, so this also guards against the field being renamed/dropped."""
+    # Defaults when unspecified → legacy cascade.
+    _, default_cfg = load_config(_write(tmp_path, ""))
+    assert default_cfg.map.enable_router is False
+    assert default_cfg.map.router_single_voter_policy == "escalate"
+    # Explicit override round-trips (bool coercion + str pass-through).
+    p = _write(tmp_path, """
+        summarization:
+          map:
+            enable_router: true
+            router_single_voter_policy: keep
+    """)
+    _, sumcfg = load_config(p)
+    assert sumcfg.map.enable_router is True
+    assert sumcfg.map.router_single_voter_policy == "keep"
+
+
 def test_normalize_extra_synonyms_loaded_as_mapping(tmp_path: Path):
     """B-037: NormalizeConfig.extra_synonyms is a `dict[str, str]` and must
     pass through the loader without being mistaken for a nested dataclass."""

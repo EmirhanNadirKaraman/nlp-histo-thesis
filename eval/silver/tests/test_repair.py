@@ -1,4 +1,4 @@
-"""Tests for the finding-field repair layer and the 'demographics' category addition."""
+"""Tests for the finding-field repair layer and the singular 'demographic' canonical category."""
 from __future__ import annotations
 
 import logging
@@ -13,18 +13,18 @@ from eval.silver.schemas import SilverFinding
 
 # ── _repair_finding_fields ─────────────────────────────────────────────────────
 
-def test_repair_category_demographic_to_demographics(caplog):
-    """LLM alias 'demographic' (no trailing s) is repaired to 'demographics'."""
+def test_repair_category_demographics_to_demographic(caplog):
+    """LLM alias 'demographics' (trailing s) is repaired to canonical 'demographic'."""
     with caplog.at_level(logging.WARNING, logger="eval.silver.generator"):
-        repaired = _repair_finding_fields({"category": "demographic", "claim": "test"}, "case1")
-    assert repaired["category"] == "demographics"
+        repaired = _repair_finding_fields({"category": "demographics", "claim": "test"}, "case1")
+    assert repaired["category"] == "demographic"
     assert "demographic" in caplog.text
 
 
-def test_repair_category_demographics_passthrough():
-    """Canonical value 'demographics' passes through unchanged."""
-    repaired = _repair_finding_fields({"category": "demographics", "claim": "test"})
-    assert repaired["category"] == "demographics"
+def test_repair_category_demographic_passthrough():
+    """Canonical value 'demographic' passes through unchanged."""
+    repaired = _repair_finding_fields({"category": "demographic", "claim": "test"})
+    assert repaired["category"] == "demographic"
 
 
 def test_repair_does_not_touch_valid_category():
@@ -55,10 +55,10 @@ def test_repair_relation_type_demographic_unchanged():
 
 # ── SilverFinding schema ───────────────────────────────────────────────────────
 
-def test_silver_finding_demographics_valid():
-    """category='demographics' passes Pydantic validation."""
+def test_silver_finding_demographic_valid():
+    """category='demographic' passes Pydantic validation."""
     sf = SilverFinding(
-        category="demographics",
+        category="demographic",
         claim="Slight male predominance (37 men/29 women)",
         relation_type="demographic",
         # direction="positive" is closest existing value for "more frequent / male predominance"
@@ -67,15 +67,15 @@ def test_silver_finding_demographics_valid():
         confidence="high",
         verbatim_support="slight, but probably non-significant, male predominance (37 men/29 women)",
     )
-    assert sf.category == "demographics"
+    assert sf.category == "demographic"
     assert sf.relation_type == "demographic"
     assert sf.direction == "positive"
 
 
-def test_silver_finding_demographic_category_rejected():
-    """'demographic' (no trailing s) is NOT a valid category — repair layer must be applied first."""
+def test_silver_finding_demographics_category_rejected():
+    """'demographics' (trailing s) is NOT a valid category — repair layer must be applied first."""
     with pytest.raises(ValidationError):
-        SilverFinding(category="demographic", claim="x", confidence="medium")
+        SilverFinding(category="demographics", claim="x", confidence="medium")
 
 
 def test_silver_finding_unknown_category_rejected():
@@ -86,30 +86,34 @@ def test_silver_finding_unknown_category_rejected():
 
 # ── Tool schema ────────────────────────────────────────────────────────────────
 
-def test_tool_schema_includes_demographics():
-    """Regression guard: the LLM tool schema must list 'demographics' in the category enum."""
+def test_tool_schema_includes_demographic():
+    """Regression guard: the LLM tool schema must list 'demographic' in the category enum."""
     category_enum = (
         EXTRACT_FINDINGS_TOOL["input_schema"]["properties"]["findings"]
         ["items"]["properties"]["category"]["enum"]
     )
-    assert "demographics" in category_enum
+    assert "demographic" in category_enum
 
 
-def test_tool_schema_excludes_demographic_singular():
-    """The tool schema must NOT expose the bare alias 'demographic' as a valid category."""
+def test_tool_schema_excludes_demographics_plural():
+    """The tool schema must NOT expose the plural alias 'demographics' as a valid category."""
     category_enum = (
         EXTRACT_FINDINGS_TOOL["input_schema"]["properties"]["findings"]
         ["items"]["properties"]["category"]["enum"]
     )
-    assert "demographic" not in category_enum
+    assert "demographics" not in category_enum
 
 
 # ── End-to-end: the bug-report example no longer gets dropped ─────────────────
 
 def test_example_finding_survives_repair_and_validation():
-    """The malformed example from the bug report parses correctly after repair."""
+    """The malformed example from the bug report parses correctly after repair.
+
+    Opus occasionally emits the plural 'demographics'; the repair layer maps it to
+    the canonical singular 'demographic' before Pydantic validation.
+    """
     raw = {
-        "category": "demographic",
+        "category": "demographics",
         "claim": "Slight male predominance (37 men/29 women), probably non-significant",
         "subject_entity": "CEAN patients",
         "outcome_entity": "sex distribution",
@@ -120,7 +124,7 @@ def test_example_finding_survives_repair_and_validation():
     }
     repaired = _repair_finding_fields(raw, "test_case")
     sf = SilverFinding(**{k: v for k, v in repaired.items() if k in SilverFinding.model_fields})
-    assert sf.category == "demographics"
+    assert sf.category == "demographic"
     assert sf.relation_type == "demographic"  # kept: pipeline RelationTypeEnum.demographic
     assert sf.direction == "positive"
     assert "male predominance" in sf.claim

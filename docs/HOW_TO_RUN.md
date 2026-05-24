@@ -75,6 +75,11 @@ Or use the CLI in `runner.py` (recommended for sweeps — see §2.1):
 ```bash
 # Canonical run (matches the legacy `python runner.py` behaviour)
 python pipeline/stages/pdf_text_extraction/runner.py
+
+# Skip the annotated audit PDFs (out/visualization/) — saves ~5 GB + per-page
+# render time, and they are NOT needed for the downstream ILP / silver / cascade.
+# Recommended for bulk re-extraction. Crops/text/DB rows are still written.
+python pipeline/stages/pdf_text_extraction/runner.py --no-visualization
 ```
 
 Outputs land under `out/`:
@@ -371,14 +376,36 @@ in [`readmes/PAPER_SELECTION.md`](readmes/PAPER_SELECTION.md).
 
 ## 5. Cost estimation
 
-`estimate_selection_cost.py` requires `--profile` and either positional
-PMCIDs or `--from-selection`:
+`estimate_selection_cost.py` requires `--profile` and at least one of:
+positional PMCIDs, `--from-selection`, or `--source-cases` (combinable):
 
 ```bash
 # Project MAP cost for the calibration set under the cheap cascade profile
 python scripts/estimate_selection_cost.py \
     --from-selection configs/paper_selection/calibration_set_v1.yaml \
     --profile cheap
+```
+
+### Calibration cost (`--source-cases`): silver prime + Opus judge
+
+`--source-cases PATH` (bare flag → `eval/data/source_cases.jsonl`) projects the
+**calibration** spend instead of (or alongside) the production cascade. Two
+distinct steps, *not* one Opus prime:
+
+* **PRIME** (`map_theta_sweep prime`) — every L1+L2+L3 **voter** on every chunk,
+  no escalation. Always priced at the **real** cascade (the primer ignores
+  `--profile`).
+* **OPUS SILVER** (`eval.silver.generate`, `claude-opus-4-7`) — one judge call
+  per source case, over **all** cases (no dev/test split). Silver prompt size is
+  measured live so the estimate tracks `PROMPT_VERSION`.
+
+```bash
+python scripts/estimate_selection_cost.py \
+    --source-cases eval/data/source_cases.jsonl --profile real
+# → prints PRIME + OPUS SILVER + CALIBRATION TOTAL, each with sync AND batch $.
+# 273-case dev set (2026-05-24): prime $3.66 batch, silver $6.35 batch,
+# total ≈ $10 batch / $20 sync. Tunables: --split, --dev-fraction, --seed
+# (match map_theta_sweep), --silver-model, --silver-output-tokens.
 ```
 
 `estimate_pipeline_cost_percentiles.py` takes no arguments — it loads
@@ -592,6 +619,66 @@ SELECT canonical_id, subject_entity, outcome_entity, relation_type, predicate_te
 FROM sum_canonical_rules
 WHERE pmcid LIKE 'PMC7150310%';"
 ```
+
+### B-055 — diagnose `sum_map_findings` persistence (zero LLM cost)
+
+Replays the on-disk batch handles in `out/summaries/batch_handles.prepatch/`
+through `persist_map_findings` (which now re-raises) against a throwaway
+`pipeline_run` per paper, then deletes the scratch run via FK CASCADE.
+Surfaces the real DB exception without spending any LLM batch dollars, since
+the bug is entirely post-MAP.
+
+```bash
+mkdir -p logs && python -m scripts.diagnose_b055 2>&1 | tee logs/b055_diag_$(date +%s).log
+# specific papers:        python -m scripts.diagnose_b055 PMC10047158 PMC10047213
+# keep scratch runs (for back-population): python -m scripts.diagnose_b055 --keep
+```
+
+### LLM/API pre-flight (all providers) — run before silver generation or a re-prime
+
+`scripts/check_apis.py` does tiny **sync** calls across every model the pipeline
+uses, hitting the same SDKs + model IDs production uses, so a missing key /
+revoked model / renamed ID surfaces in seconds:
+* OpenAI (`OPENAI_API_KEY`) — L1/L2 voter chat + `text-embedding-3-small`
+* Anthropic (`ANTHROPIC_API_KEY`) — L2/L3 voter chat + silver Opus (`claude-opus-4-7`)
+* Gemini (`GOOGLE_API_KEY`) — L1/L2 voter chat + `gemini-embedding-001`
+
+`batch` submits a tiny 1-request batch to **each provider's** Batch API (the
+prime uses batch for all three) with the strict `OPENAI_MAP_TOOL` schema, polls,
+and reports per provider; on an OpenAI failure it dumps the OpenAI error file
+(the real per-request reason). Incurs small API cost.
+
+```bash
+python scripts/check_apis.py sync                          # all providers: chat + embeddings (toy prompt, ~seconds)
+python scripts/check_apis.py sync-real                     # SYNC + real MAP prompt + structured output, per provider
+python scripts/check_apis.py batch --wait 600             # batch submit + poll, all providers
+python scripts/check_apis.py batch-check claude <id>      # re-check one batch (openai|claude|gemini)
+python scripts/check_apis.py list --limit 10             # list recent batches per provider (recover orphaned ids)
+```
+
+`sync-real` runs the actual `build_map_chain` (real MAP system prompt +
+`with_structured_output(strict=True)`) on one real source case per provider and
+checks it parses into `AuditableSummary` — the sync analogue of the scratch
+prime. Note Gemini sync uses its OpenAI-compatible endpoint (a different schema
+mechanism than the Gemini *batch* path), so this adds real coverage.
+
+`check_apis.py` uses a **toy** prompt — it validates auth + model + that the
+strict tool schema is *accepted*. To exercise the **real** MAP prompt + schema
++ output parse round-trip end-to-end (the full prompt-schema mechanism), run a
+tiny real prime into a scratch dir instead:
+
+```bash
+python -m eval.silver.map_theta_sweep prime   --n-cases 2 --primer-dir eval/data/_preflight
+caffeinate -imsu python3 -m eval.silver.map_theta_sweep collect --primer-dir eval/data/_preflight
+python scripts/verify_voter_cache_l3.py eval/data/_preflight/voter_cache.json
+```
+`collect` runs `parse_result` on every voter output, so a schema/parse failure
+surfaces as a "Failed to parse" warning + a low parsed-output count.
+
+Notes: `batch` validates auth at submit immediately; if a batch is still running
+when `--wait` elapses it prints the job id + a `batch-check` command. Gemini
+`batch-check` can only report *status* later (its per-request retrieve needs the
+id list from the original submit) — re-run `batch` to validate Gemini content.
 
 ---
 

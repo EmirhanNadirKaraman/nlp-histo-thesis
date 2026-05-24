@@ -88,12 +88,37 @@ class HybridStructuredSimilarity:
         w_embedding: float = 0.40,
         w_entity: float = 0.25,
         w_evidence: float = 0.10,
+        tau: float = 0.15,
+        count_alpha: float = 0.25,
+        reuse_weight: float = 0.15,
+        contradiction_weight: float = 0.20,
     ) -> None:
         self._embed: EmbedFn = embed_fn or OpenAIEmbedder()
         self._w_category = w_category
         self._w_embedding = w_embedding
         self._w_entity = w_entity
         self._w_evidence = w_evidence
+        # H-EMB-01 soft-alignment weights for the embedding sub-signal — kept in
+        # sync with EmbeddingSimilarityStrategy so the scorer-choice experiment
+        # tunes both strategies through the same AgreementConfig knobs.
+        self._tau = tau
+        self._count_alpha = count_alpha
+        self._reuse_weight = reuse_weight
+        self._contradiction_weight = contradiction_weight
+
+    @classmethod
+    def from_config(cls, agreement_cfg, embed_fn: EmbedFn | None = None,
+                    **signal_weights) -> "HybridStructuredSimilarity":
+        """Build with H-EMB-01 alignment weights from an ``AgreementConfig``.
+        Signal weights (``w_category`` etc.) stay at defaults unless overridden."""
+        return cls(
+            embed_fn=embed_fn,
+            tau=agreement_cfg.tau,
+            count_alpha=agreement_cfg.count_alpha,
+            reuse_weight=agreement_cfg.reuse_weight,
+            contradiction_weight=agreement_cfg.contradiction_weight,
+            **signal_weights,
+        )
 
     def similarity(self, a: AuditableSummary, b: AuditableSummary) -> float:
         """Single-pair weighted combination (for unit tests and one-off calls)."""
@@ -101,7 +126,13 @@ class HybridStructuredSimilarity:
         if self._w_category > 0.0:
             score += self._w_category * _cat_jaccard(a, b)
         if self._w_embedding > 0.0:
-            score += self._w_embedding * _align(self._embed, _claims(a), _claims(b))
+            score += self._w_embedding * _align(
+                self._embed, _claims(a), _claims(b),
+                tau=self._tau,
+                count_alpha=self._count_alpha,
+                reuse_weight=self._reuse_weight,
+                contradiction_weight=self._contradiction_weight,
+            )
         if self._w_entity > 0.0:
             score += self._w_entity * _jaccard(
                 _extract_entities([f.claim for f in a.findings]),
@@ -111,18 +142,29 @@ class HybridStructuredSimilarity:
             score += self._w_evidence * _evidence_jaccard(a, b)
         return score
 
-    def compute_matrix(self, outputs: list[AuditableSummary]) -> np.ndarray:
+    def compute_matrix(self, outputs: list[AuditableSummary], context=None) -> np.ndarray:
         """
         Build N×N matrix with a single embedding API call.
 
         The embedding component is batched via EmbeddingSimilarityStrategy.
         Category, entity, and evidence signals are computed CPU-only per pair.
+
+        ``context`` (optional ``AgreementContext``) is forwarded to the embedding
+        sub-signal so per-pair grounding penalties apply consistently. Accepting
+        it is also required for ``SemanticAgreementScorer``, which always calls
+        ``strategy.compute_matrix(outputs, context=...)``.
         """
         n = len(outputs)
 
         # Pre-compute per-voter signals (only for non-zero weights).
         emb_matrix = (
-            EmbeddingSimilarityStrategy(self._embed).compute_matrix(outputs)
+            EmbeddingSimilarityStrategy(
+                self._embed,
+                tau=self._tau,
+                count_alpha=self._count_alpha,
+                reuse_weight=self._reuse_weight,
+                contradiction_weight=self._contradiction_weight,
+            ).compute_matrix(outputs, context=context)
             if self._w_embedding > 0.0
             else None
         )

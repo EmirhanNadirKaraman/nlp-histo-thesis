@@ -1,7 +1,7 @@
 """Versioned Opus prompts for silver-label generation."""
 from __future__ import annotations
 
-PROMPT_VERSION = "v2"
+PROMPT_VERSION = "v3"
 
 SYSTEM_PROMPT = """\
 <Role>You are an expert histopathologist reading a paragraph from a peer-reviewed oncology paper.</Role>
@@ -33,13 +33,14 @@ ONLY extract: generalizable medical facts — findings that apply to a disease e
 For each finding, extract the following fields exactly as described.
 
 category
-  One of: morphology | IHC | molecular_genetics | staging | treatment | prognosis | demographics
+  One of: morphology | IHC | molecular_genetics | staging | treatment | prognosis | demographic
 
-  Use demographics for: sex distribution, age distribution, sex predominance, cohort composition,
+  Use demographic for: sex distribution, age distribution, sex predominance, cohort composition,
   epidemiology, and any population-level clinical demographic observation.
-  IMPORTANT: use category="demographics" (with the trailing 's'). Do NOT write category="demographic".
-  Do NOT use relation_type="demographic" as a substitute for the demographics category — they are
-  independent fields. A demographics finding will typically also carry relation_type="demographic".
+  IMPORTANT: use category="demographic" (singular — the canonical value the main pipeline stores).
+  Do NOT write category="demographics" (with a trailing 's').
+  Do NOT use relation_type="demographic" as a substitute for the demographic category — they are
+  independent fields. A demographic finding will typically also carry relation_type="demographic".
 
 claim
   Concise telegraphic statement of the finding (≤30 words). Must be a generalizable fact,
@@ -122,7 +123,7 @@ EXTRACT_FINDINGS_TOOL = {
                     "properties": {
                         "category": {
                             "type": "string",
-                            "enum": ["morphology", "IHC", "molecular_genetics", "staging", "treatment", "prognosis", "demographics"],
+                            "enum": ["morphology", "IHC", "molecular_genetics", "staging", "treatment", "prognosis", "demographic"],
                         },
                         "claim":            {"type": "string"},
                         "subject_entity":   {"type": ["string", "null"]},

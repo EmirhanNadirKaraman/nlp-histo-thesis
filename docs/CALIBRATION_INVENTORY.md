@@ -155,9 +155,13 @@ cascade.
 | S-M-04 | `map.chunk_overlap` | `2` | `< chunk_size` | YAML | Sentence overlap between chunks | duplicate-finding rate |
 | S-M-05 | `map.chunk_workers` | `5` | int ≥1 | YAML | Parallel chunk threads | wall-time only |
 
-**Blocker:** θ / reject_theta sweeps require per-voter MAP outputs to be
-persisted (B-052). Today the cache stores only the resolved finding list per
-chunk. See plan `i-want-you-to-reactive-quiche.md` §"θ / reject_theta sweep".
+**Sweep path (2026-05-24):** the θ / reject_theta sweep runs through
+`eval/silver/map_theta_sweep.py`, which **primes all L1+L2+L3 voters directly**
+into `eval/data/map_primer/voter_cache.json` and replays the cascade offline.
+This sidesteps the production per-voter-persistence gap (B-056: the batch runner
+does not write `sum_map_voter_outputs`) — the primer path does **not** read the
+production DB cache, so the sweep is runnable today. A *DB-replay* sweep (reusing
+production voter outputs) would still be blocked by B-056.
 
 ### 2.2 Voter cascade (`batch/voter_configs.py`)
 
@@ -181,7 +185,7 @@ that the cascade decision step compares to θ.
 
 | ID | Scorer | Class | Key knobs | Wired via | Measurement |
 |---|---|---|---|---|---|
-| AG-EMB | `EmbeddingScorer` | `agreement/embedding.py` | `tau=0.15`, `count_alpha=0.25`, `reuse_weight=0.15`, `contradiction_weight=0.20` (all hardcoded in `_align`) | HARD | Calibration data in `agreement/calibration/`; experiment M-3 |
+| AG-EMB | `EmbeddingScorer` (legacy) / `EmbeddingSimilarityStrategy` (production, via `SemanticAgreementScorer`) | `agreement/embedding.py`, `agreement/embedding_similarity.py` | `tau=0.15`, `count_alpha=0.25`, `reuse_weight=0.15`, `contradiction_weight=0.20` — now read from `AgreementConfig` (H-EMB-01) via `_align` | **YAML** (`summarization.agreement.*`) | Calibration data in `agreement/calibration/`; experiment M-3; swept by `map_theta_sweep` |
 | AG-SEM | `SemanticAgreementScorer` | `agreement/semantic_scorer.py` | `theta` (optional override) | CODE | M-3 |
 | AG-HYB | `HybridScorer` | `agreement/hybrid_scorer.py` | scorer-list, weights | CODE | M-3 |
 | AG-NER | `NerScorer` | `agreement/ner_scorer.py` | NER overlap | CODE | M-3 |
@@ -334,19 +338,29 @@ These are calibratable knobs that currently live as Python constants. They
 appear in zany-pnueli Tier 2 + this audit. Surfacing → YAML is a precondition
 for sweeping any of them.
 
-| ID | Constant | Value | File:line | Why it matters |
-|---|---|---|---|---|
-| H-LLM-01 | `DEFAULT_MAX_TOKENS` | `16384` | `summarization/config.py:23` | Voter / escalation truncation cap |
-| H-LLM-02 | `temperature` (per provider factory) | `0.1` (6 factories) | `llm_providers.py:77, 125, 185, 241, 261, 285` | Global default; per-voter overrides in `VoterBatchConfig` |
-| H-LLM-03 | `stop_after_attempt` | `2` | `prompts.py:430, 438, 445` | LLM retry budget per chain |
-| H-MASK-01 | `_SIDEBAR_MAX_W` | `150` pts | `region_masker.py:19` + `two_pass_extractor.py:109` | Annotation-column heuristic; **duplicated** |
-| H-MASK-02 | `_COLUMN_GAP_MIN` | `50` pts | same files :20 / :110 | Column-boundary heuristic; **duplicated** |
-| H-LAY-01 | `MIN_ANCHOR_H` | `15` pts | `parsers/layout_utils.py:251` | Min bbox height to qualify as substantial block |
-| H-EV-01 | `_INK_LUMINANCE_THRESHOLD` | `200` | `evidence_gatherer.py:52` | Pixel-darkness cutoff for "ink present" |
-| H-EV-02 | `_WHITE_COLOR_THRESHOLD` | `240` | `evidence_gatherer.py:57` | Per-channel cutoff for "near-white" |
-| H-TR-01 | `threshold_multiplier` | `1.2` | `table_reconstructor.py:38` | Table reconstruction grouping multiplier |
-| H-EMB-01 | `EmbeddingScorer._align` defaults | `tau=0.15`, `count_alpha=0.25`, `reuse_weight=0.15`, `contradiction_weight=0.20` | `agreement/embedding.py:304-307` | Soft-alignment weighting |
-| H-CONF-01 | `_CONFIDENCE_VALID` enum | `("high", "medium", "low")` | `models.py:307` | Allowed confidence levels |
+**Re-scoped 2026-05-23.** On inspection only **H-EMB-01** was a genuine
+summarisation sweep knob, and it is now surfaced (`Status` column). The
+"surface temp / max_tokens / retries" items were dropped — temperature is
+intentionally per-voter (`VoterBatchConfig`, L3=0.0 deterministic) not a
+global constant; `max_tokens` is already a `VoterBatchConfig` field + every
+factory param; `stop_after_attempt=2` lives only in the off-by-default
+REDUCE/RULES/judge chains (`build_map_chain`, the active path, has none).
+The masking / layout / evidence / table-reconstructor rows are
+PDF-extraction constants, deferred with the PDF-extraction experiments.
+
+| ID | Constant | Value | File:line | Why it matters | Status |
+|---|---|---|---|---|---|
+| H-LLM-01 | `DEFAULT_MAX_TOKENS` | `16384` | `summarization/config.py:23` | Voter / escalation truncation cap | Dropped — already a `VoterBatchConfig` field + factory param |
+| H-LLM-02 | `temperature` (per provider factory) | `0.1` (6 factories) | `llm_providers.py:77, 125, 185, 241, 261, 285` | Global default; per-voter overrides in `VoterBatchConfig` | Dropped — intentionally per-voter, not a global knob |
+| H-LLM-03 | `stop_after_attempt` | `2` | `prompts.py:430, 438, 445` | LLM retry budget per chain | Dropped — only in off-by-default REDUCE/RULES/judge chains |
+| H-MASK-01 | `_SIDEBAR_MAX_W` | `150` pts | `region_masker.py:19` + `two_pass_extractor.py:109` | Annotation-column heuristic; **duplicated** | Deferred (PDF extraction) |
+| H-MASK-02 | `_COLUMN_GAP_MIN` | `50` pts | same files :20 / :110 | Column-boundary heuristic; **duplicated** | Deferred (PDF extraction) |
+| H-LAY-01 | `MIN_ANCHOR_H` | `15` pts | `parsers/layout_utils.py:251` | Min bbox height to qualify as substantial block | Deferred (PDF extraction) |
+| H-EV-01 | `_INK_LUMINANCE_THRESHOLD` | `200` | `evidence_gatherer.py:52` | Pixel-darkness cutoff for "ink present" | Deferred (PDF extraction) |
+| H-EV-02 | `_WHITE_COLOR_THRESHOLD` | `240` | `evidence_gatherer.py:57` | Per-channel cutoff for "near-white" | Deferred (PDF extraction) |
+| H-TR-01 | `threshold_multiplier` | `1.2` | `table_reconstructor.py:38` | Table reconstruction grouping multiplier | Deferred (PDF extraction) |
+| H-EMB-01 | soft-alignment weights | `tau=0.15`, `count_alpha=0.25`, `reuse_weight=0.15`, `contradiction_weight=0.20` | `config.py:AgreementConfig` (was `agreement/embedding.py:304-307`) | Soft-alignment weighting; tuned in the scorer-choice experiment | **Surfaced 2026-05-23** → `AgreementConfig` (YAML `summarization.agreement.*`); read by both `EmbeddingSimilarityStrategy` + `HybridStructuredSimilarity` via `_align()`. **Caveat:** in the per-paper result-cache hash but not the chunk-level `PipelineCache` key (same as `theta`) — sweep via replay. |
+| H-CONF-01 | `_CONFIDENCE_VALID` enum | `("high", "medium", "low")` | `models.py:307` | Allowed confidence levels | Dropped — a `Literal` type alias, not a sweepable knob |
 
 ---
 

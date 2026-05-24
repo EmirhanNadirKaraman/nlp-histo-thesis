@@ -26,10 +26,10 @@ python -m eval.llm_judge \
 
 | Test | File | What it measures |
 |------|------|-----------------|
-| Q1 — MAP precision | `tests/q1_precision.py` | Is each extracted claim grounded in its verbatim source? Are subject/outcome/relation/direction/category fields correct? |
-| Q2 — Relation accuracy | `tests/q2_relations.py` | Is the Opus-assigned label (SUPPORT / CONTRADICT / SCOPE_QUALIFY / UNRELATED) correct for persisted relation pairs? Blind by default. Phase 1 only evaluates pairs the pipeline persisted — see limitations. |
-| Q3 — Recall gap | `tests/q3_recall.py` | What generalizable findings did the pipeline miss from sampled paragraphs? Zero-extraction paragraphs are filtered to skip obvious boilerplate before sampling. |
-| Q5 — Paragraph F1 | `tests/q5_f1.py` | Opus returns silver findings and alignment decisions; Python computes TP/FP/FN/precision/recall/F1 from those alignments. Opus-provided counts are not trusted directly. |
+| Q1 — MAP precision | `eval/llm_judge/tests/q1_precision.py` | Is each extracted claim grounded in its verbatim source? Are subject/outcome/relation/direction/category fields correct? |
+| Q2 — Relation accuracy | `eval/llm_judge/tests/q2_relations.py` | Is the Opus-assigned label (SUPPORT / CONTRADICT / SCOPE_QUALIFY / UNRELATED) correct for persisted relation pairs? Blind by default. Phase 1 only evaluates pairs the pipeline persisted — see limitations. |
+| Q3 — Recall gap | `eval/llm_judge/tests/q3_recall.py` | What generalizable findings did the pipeline miss from sampled paragraphs? Zero-extraction paragraphs are filtered to skip obvious boilerplate before sampling. |
+| Q5 — Paragraph F1 | `eval/llm_judge/tests/q5_f1.py` | Opus returns silver findings and alignment decisions; Python computes TP/FP/FN/precision/recall/F1 from those alignments. Opus-provided counts are not trusted directly. |
 
 ## Tests intentionally deferred
 

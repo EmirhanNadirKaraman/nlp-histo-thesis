@@ -43,6 +43,21 @@ class MapConfig:
     chunk_workers: int = 5
     """Max parallel threads for chunk processing."""
 
+    enable_router: bool = False
+    """Cascade-path selector. False → legacy ``AgreementChecker`` (theta /
+    reject_theta deferral). True → grounding-first ``MapOutputRouter`` (L1→L3
+    skip path). Pinned here so the cascade path is reproducible from the config
+    alone and the sync (`build_runner`) and batch (`build_batch_runner`) entry
+    points cannot silently diverge — both read this field. The MAP calibration
+    sweep replays the legacy path only (`CASCADE_PATH='legacy_agreement_checker'`
+    in `eval/silver/map_theta_sweep.py`), so any sweep-chosen (theta, reject_theta,
+    scorer) must be re-validated against the router before flipping this True."""
+
+    router_single_voter_policy: str = "escalate"
+    """Only consulted when ``enable_router=True``: how ``MapOutputRouter`` treats
+    a chunk with a single eligible voter. ``"escalate"`` (default) → send to L3;
+    ``"keep"`` → accept the lone voter. Ignored on the legacy path."""
+
 
 @dataclass
 class NormalizeConfig:
@@ -140,6 +155,31 @@ class CostConfig:
 
 
 @dataclass
+class AgreementConfig:
+    """Soft-alignment weights for embedding-based MAP agreement scoring (H-EMB-01).
+
+    Both ``EmbeddingSimilarityStrategy`` (production) and
+    ``HybridStructuredSimilarity`` (the scorer-choice experiment's alternative)
+    route claim alignment through ``agreement.embedding._align`` — surfacing
+    these here is the precondition for sweeping the scorer. Defaults match the
+    historical hardcoded values in ``_align`` so production behaviour is
+    unchanged.
+    """
+
+    tau: float = 0.15
+    """Weak-match threshold; pairwise similarities below tau are zeroed before coverage."""
+
+    count_alpha: float = 0.25
+    """Exponent for the soft claim-count-mismatch penalty (0.25 → 4:1 ratio ≈ 0.71×)."""
+
+    reuse_weight: float = 0.15
+    """Reuse-concentration penalty weight; at most a 15% reduction by default."""
+
+    contradiction_weight: float = 0.20
+    """Polarity-flip + numeric contradiction penalty weight; up to 20% reduction."""
+
+
+@dataclass
 class SummarizationConfig:
     """
     All numeric/boolean knobs for SummarizationRunner in one place.
@@ -154,6 +194,7 @@ class SummarizationConfig:
     relate: RelateConfig = field(default_factory=RelateConfig)
     resolve: ResolveConfig = field(default_factory=ResolveConfig)
     cost: CostConfig = field(default_factory=CostConfig)
+    agreement: AgreementConfig = field(default_factory=AgreementConfig)
 
     contradiction_similarity_threshold: float | None = 0.7
     """Cosine similarity threshold for ContradictionDetector candidate pairs.

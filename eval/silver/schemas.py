@@ -32,7 +32,7 @@ class SilverFindingScope(BaseModel):
 
 
 class SilverFinding(BaseModel):
-    category: Literal["morphology", "IHC", "molecular_genetics", "staging", "treatment", "prognosis", "demographics"]
+    category: Literal["morphology", "IHC", "molecular_genetics", "staging", "treatment", "prognosis", "demographic"]
     claim: str
     subject_entity: str | None = None
     outcome_entity: str | None = None

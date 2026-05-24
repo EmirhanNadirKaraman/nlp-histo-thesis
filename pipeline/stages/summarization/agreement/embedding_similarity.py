@@ -55,6 +55,18 @@ class EmbeddingSimilarityStrategy:
         self._contradiction_weight = contradiction_weight
         self._grounding_floor = grounding_floor
 
+    @classmethod
+    def from_config(cls, agreement_cfg, embed_fn: EmbedFn | None = None) -> "EmbeddingSimilarityStrategy":
+        """Build from an ``AgreementConfig`` (H-EMB-01). Single mapping site for
+        the soft-alignment weights; ``grounding_floor`` keeps its class default."""
+        return cls(
+            embed_fn=embed_fn,
+            tau=agreement_cfg.tau,
+            count_alpha=agreement_cfg.count_alpha,
+            reuse_weight=agreement_cfg.reuse_weight,
+            contradiction_weight=agreement_cfg.contradiction_weight,
+        )
+
     def similarity(self, a: AuditableSummary, b: AuditableSummary) -> float:
         """Single-pair similarity (for unit tests and single-call use)."""
         return _align(

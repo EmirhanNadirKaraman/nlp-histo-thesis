@@ -1,5 +1,12 @@
 # PDF Extraction — Sweep Results
 
+> **Final config = `variant 18`: HYBRID @ 0.99, strict F1 74.4 %** (2026-05-21,
+> baked into `pipeline/stages/pdf_text_extraction/config.py`). The per-stage
+> "`BEST_BASE = 01_docling`" verdicts below are the **2026-05-20 intermediate**
+> run (docling, 71.6 %); the completed matrix flipped the winner to hybrid. See
+> [§ Final winning config](#final-winning-config) and the 2026-05-21
+> Decisions-log entry in [`THESIS.md`](THESIS.md#decisions-log).
+
 Empirical results from `scripts/eval/run_all_sweeps.py`.  Companion to
 [`PDF_EXTRACTION_EXPERIMENT_PLAN.md`](PDF_EXTRACTION_EXPERIMENT_PLAN.md)
 (stage plan) and
@@ -221,28 +228,42 @@ this corpus.
    not worth it; the +2.3pp recall is bought at −8.7pp precision.
 2. **`BEST_EXPAND_SETTING = True` — confirmed.**  Variant 19's collapse
    is the empirical proof.
-3. **Variant matrix done.**  Stage 5 (`figure_premask`) auto-skips on
-   `BEST_BASE = 01_docling`, so no further sweeps are pending.
+3. **Matrix extended on 2026-05-21.**  The run documented above concluded on
+   the *docling* base. The matrix was then **completed** with the TATR/hybrid
+   families (Stages 3–7), which **flipped the winner to hybrid** — see below.
 
 ### Final winning config
 
-`08_docling_footnote_expand_1_2`:
+> **Two distinct results — do not conflate.** Everything above is the
+> **2026-05-20 *intermediate*** run on the docling base. The **2026-05-21
+> completed matrix** is the authoritative final, and it is what is frozen in
+> the code.
+
+**Intermediate winner (2026-05-20, superseded):**
+`08_docling_footnote_expand_1_2` — `table_detector = docling`, **strict F1 = 71.6 %**.
+
+**Final winner (2026-05-21, baked into `config.py` — authoritative): `variant 18`**
 
 ```
-table_detector                            = docling
-two_pass.enabled                          = True
-cropping.expand_tables_with_footnotes     = True
-cropping.footnote_threshold_multiplier    = 1.2
-cropping.merge_tables_by_caption          = False
-cropping.merge_figures_by_caption         = False
-masking.drop_tables_inside_figures        = False
-docling.reconstruct_tables_from_lists     = False
+table_detector                              = HYBRID    # Docling + TATR, merged
+tatr.threshold                              = 0.99
+two_pass.enabled                            = True
+cropping.expand_tables_with_footnotes       = True
+cropping.footnote_threshold_multiplier      = 1.2
+cropping.merge_tables_by_caption            = False
+cropping.merge_figures_by_caption           = False
+masking.drop_tables_inside_figures          = True
+masking.drop_tables_in_top_pts              = 50.0
+docling.reconstruct_tables_from_lists       = False
 masking.mask_figures_before_table_detection = False
 ```
 
-Next: freeze these into `pipeline/stages/pdf_text_extraction/config.py`
-defaults per the TODO in [`THESIS.md`](THESIS.md#todos).  See the
-2026-05-20 Decisions-log entries for full reasoning.
+**Strict F1 = 74.4 %** (+2.8 pp over the docling intermediate). These defaults
+are now frozen in `pipeline/stages/pdf_text_extraction/config.py` (verified
+against the code); see the **2026-05-21** entry in the
+[`THESIS.md`](THESIS.md#decisions-log) Decisions log and
+`reports/stage4_PR.md … stage7_PR.md` for the full per-stage reasoning. The
+earlier "freeze these into config.py" TODO is closed.
 
 ---
 

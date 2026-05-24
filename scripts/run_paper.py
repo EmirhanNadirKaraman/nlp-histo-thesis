@@ -139,9 +139,10 @@ def _load_summarization_config(config_path: str | Path | None):
     _pdf_cfg, sum_cfg = load_config(path)
     logger.info(
         "Summarisation config loaded from %s "
-        "(grounding.threshold=%s, map.theta=%s, relate.entailment_threshold=%s)",
+        "(grounding.threshold=%s, map.theta=%s, map.enable_router=%s, "
+        "relate.entailment_threshold=%s)",
         path, sum_cfg.grounding.threshold, sum_cfg.map.theta,
-        sum_cfg.relate.entailment_threshold,
+        sum_cfg.map.enable_router, sum_cfg.relate.entailment_threshold,
     )
     return sum_cfg
 
@@ -166,7 +167,7 @@ def build_runner(
     ``SummarizationConfig`` defaults; pass ``None`` to skip YAML loading.
     """
     from pipeline.stages.summarization import SummarizationRunner
-    from pipeline.stages.summarization.agreement.providers import OpenAIEmbedder
+    from pipeline.stages.summarization.agreement.providers import GeminiEmbedder
     from pipeline.stages.summarization.batch.voter_configs import get_profile
     from dataclasses import replace as _dc_replace
     from pipeline.stages.summarization.llm_providers import (
@@ -222,8 +223,10 @@ def build_runner(
         voter_llms=voter_llms,
         level2_voter_llms=level2_voter_llms,
         escalation_llm=escalation_llm,
-        embed_fn=OpenAIEmbedder(),
+        embed_fn=GeminiEmbedder(),
         config=sum_cfg,
+        enable_router=sum_cfg.map.enable_router,
+        router_single_voter_policy=sum_cfg.map.router_single_voter_policy,
         output_dir=Path("out/summaries"),
         trace_enabled=trace,
         voter_specs=voter_specs,
@@ -276,6 +279,8 @@ def build_batch_runner(
         l3_model=profile.l3_voter,
         escalation_llm=escalation_llm,
         config=sum_cfg,
+        enable_router=sum_cfg.map.enable_router,
+        router_single_voter_policy=sum_cfg.map.router_single_voter_policy,
         output_dir=Path("out/summaries"),
         embed_fn=GeminiEmbedder(),
         cascade_profile=profile.name,

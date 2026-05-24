@@ -18,7 +18,7 @@ DEFAULT_MAX_TOKENS = 8192
 # Known category aliases the LLM produces that map to canonical values.
 # Only documented aliases are listed — unknown invalid values are left for Pydantic to reject.
 _CATEGORY_ALIASES: dict[str, str] = {
-    "demographic": "demographics",  # LLM drops the trailing 's'
+    "demographics": "demographic",  # canonical is singular (matches pipeline models.py:279, B-016)
 }
 
 # relation_type="demographic" is intentionally NOT repaired: RelationTypeEnum.demographic

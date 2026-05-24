@@ -451,3 +451,37 @@ def test_runner_exposes_artifact_root_and_does_not_create_dirs_when_none(tmp_pat
     assert sig.parameters["artifact_root"].default is None
     assert sig.parameters["artifact_run_id"].default is None
     assert not (tmp_path / "runs").exists()
+
+
+# ── B-055: persist_map_findings must NOT swallow DB errors ────────────────────
+
+def test_persist_map_findings_reraises_on_db_error():
+    """Regression for B-055: a failed bulk insert must propagate, not be
+    swallowed into a silent 0-row run that still reports success."""
+    from pipeline.stages.summarization.persistence import persist_map_findings
+
+    class _BoomEngine:
+        def begin(self):
+            raise RuntimeError("simulated bulk-insert failure")
+
+    class _FakeDB:
+        engine = _BoomEngine()
+
+    cs = _audit_summary("C1", [_finding()])
+    with pytest.raises(RuntimeError, match="simulated bulk-insert failure"):
+        persist_map_findings(_FakeDB(), 1, PMCID, [cs])
+
+
+def test_persist_map_findings_noop_when_no_db_id():
+    """The db_id/db None guard returns before touching the DB (no raise)."""
+    from pipeline.stages.summarization.persistence import persist_map_findings
+
+    class _BoomEngine:
+        def begin(self):
+            raise AssertionError("DB must not be touched when db_id is None")
+
+    class _FakeDB:
+        engine = _BoomEngine()
+
+    # Returns silently — guard short-circuits before the engine is used.
+    persist_map_findings(_FakeDB(), None, PMCID, [_audit_summary("C1", [_finding()])])

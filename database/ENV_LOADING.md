@@ -137,8 +137,8 @@ DB_USER=postgres
 DB_PASSWORD=test123
 EOF
 
-# 2. Run any database script
-python database/setup_db.py --check
+# 2. Run any database script (anything that imports the `database` package)
+alembic current
 
 # It will automatically use your .env settings!
 ```
@@ -163,7 +163,7 @@ Example:
 ```bash
 # If you set an env var explicitly, it overrides .env
 export DB_NAME=custom_db
-python database/setup_db.py  # Uses 'custom_db', not the .env value
+alembic current  # Uses 'custom_db', not the .env value
 ```
 
 ---

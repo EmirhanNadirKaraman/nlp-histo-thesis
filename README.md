@@ -135,10 +135,7 @@ nlp-histo/
 │
 ├── database/                           # Database Layer
 │   ├── models.py                       # SQLAlchemy ORM models
-│   ├── db_connection.py                # Connection management
-│   ├── setup_db.py                     # Schema initialization
-│   └── migrations/
-│       └── add_semantic_types.py       # Add semantic type fields
+│   └── db_connection.py                # Connection mgmt; schema via Alembic (alembic/ at repo root)
 │
 ├── named_entity_recognition/           # NER Pipeline
 │   ├── batch_ner.py                    # Parallel NER + UMLS linking
@@ -198,8 +195,8 @@ createdb -U postgres nlp_histo
 cp .env.example .env
 # Edit .env with DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
-# Initialize schema
-python database/setup_db.py
+# Initialize schema (Alembic-managed)
+alembic upgrade head
 ```
 
 ### 3. Run Data Pipeline

@@ -73,7 +73,7 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-050 | Fixed (2026-05-15) | Low | Scripts, batch poll interval | `scripts/run_paper.py` carried three diverging defaults for `--poll-interval`: argparse `60` (line 331), `_run_all_batch(poll_interval=20)` (line 787), `_run_batch(poll_interval=60)` (line 885). CLI flows passed `args.poll_interval` so the call-site defaults rarely fired — but a direct programmatic caller of either batch helper got 20s or 60s depending on which one they imported. Consolidated onto module-level `DEFAULT_POLL_INTERVAL_SEC = 60` referenced by argparse + both function signatures. Regression: `tests/test_poll_interval_defaults.py` introspects via `inspect.signature` (not `__defaults__` tuple indexing) and asserts all three resolve to 60. **Note**: if another agent's parallel work also claims B-050, renumber to B-051 at commit time. | [Bug 50](#bug-50--poll_interval-default-mismatch-across-cli-and-batch-helpers) |
 | B-057 | Fixed (2026-05-17) | High | PDF extraction, committed merge-conflict markers | Three files on `eval-speedrun` HEAD shipped with unresolved git merge-conflict markers (`<<<<<<< Updated upstream` / `=======` / `>>>>>>> Stashed changes`): `pipeline/stages/pdf_text_extraction/components/visualizer.py` (lines 113–121), `pipeline/stages/pdf_text_extraction/table_detectors/tatr_detector.py` (lines 68–78), and `eval/run.py` (lines 120–125). `components/__init__.py:7` and `table_detectors/__init__.py:3` re-export these modules eagerly, so any pipeline import (e.g. `DoclingLayoutExtractor`) crashed with `SyntaxError`. Discovered while running the Stage-1 observability-patch smoke test (2026-05-17). Resolved by picking the "Updated upstream" branch in each file: (1) visualizer — `setdefault(pg, []).append(...)`, semantically identical to the alternative; (2) tatr — preserves configurable `self._config.device` per B-034 (the alternative hardcoded `to("cpu")` plus `low_cpu_mem_usage=False, device_map=None` kwargs that were a transformers-loading workaround no longer needed); (3) eval/run.py — log format `"Eligible PDFs: %d / %d (%.1f–%.1f MB)"` matching the actual min+max byte filter applied earlier in the same function. All three resolutions are no-op behaviour changes relative to the documented intent of the surrounding code. | [Bug 57](#bug-57--committed-merge-conflict-markers-in-visualizerpy) |
 | B-056 | Observed (2026-05-16) | Medium | Summarisation, batch runner → `sum_map_voter_outputs` | `BatchSummarizationRunner.finalize()` has no code path that buffers per-voter `AuditableSummary` rows or writes them to `sum_map_voter_outputs`; no `_persist_voter_outputs` method exists on the batch class. Discovered during the Phase 0 audit per [`CALIBRATION_EXECUTION_PLAN.md`](CALIBRATION_EXECUTION_PLAN.md) §10. Blocks θ / reject_θ sweeps over batch-processed papers; sync runs are unaffected. B-055's empirical claim that `sum_map_voter_outputs` was populated on batch runs 38–48 contradicts code-level inspection and requires runtime re-verification on a paper never previously processed via sync. | [Bug 56](#bug-56--batch-runner-omits-per-voter-map-persistence-code-path-absent) |
-| B-055 | Observed (2026-05-16) | High | Summarisation, batch runner → `sum_map_findings` | `sum_map_findings` rows missing for 9 of the last 10 batch-mode pipeline runs (ids 38–48 across 5 papers), despite each paper's `rejection_summary.map_findings_total` recording 100–230 MAP findings produced. Other `sum_*` tables (`sum_normal_findings`, `sum_finding_groups`, `sum_canonical_rules`, `sum_final_rules`, `sum_rejection_summaries`, `sum_map_voter_outputs`) get rows on the same runs, so the DB connection + `pipeline_run_db_id` + persistence wiring are not at fault. The function itself works: a direct call to `persist_map_findings(db, 48, pmcid, chunk_summaries)` against the same paper's batch handle on disk wrote 154 rows successfully, with `verbatim_support` exactly matching `text_elements.text_content`. Bug pre-dates the 2026-05-16 B-005 dedup (same behaviour on HEAD `7ea254a`); the dedup rewrote the wrapper but the production failure mode was already present. Suspect call-path issue inside `BatchSummarizationRunner.finalize()` between L483 (`chunk_summaries = [AuditableSummary.model_validate(v) for v in handle.finalized.values()]`) and L522 (`self._persist_map_findings(...)`) — either `chunk_summaries` is empty at the call site (which would also break downstream `all_findings = [f for cs in chunk_summaries for f in cs.findings]` at L536, contradicted by 214 `sum_normal_findings` rows on run 48), or an exception in the bulk `INSERT` is being swallowed by `except Exception as exc: logger.warning(...)` and the run's stdout went unrecorded. Adjacent inconsistency: runs 47/46/44/43 wrote `sum_canonical_rules` (100+ rows) with **zero** `sum_normal_findings` — physically impossible from the in-process flow, suggests these were cache short-circuits whose `_load_result` path skipped MAP/NORMALIZE persistence but still wrote canonical/final from the cached JSON. | [Bug 55](#bug-55--sum_map_findings-not-populated-by-batch-runner) |
+| B-055 | Mitigated (2026-05-23) | High | Summarisation, batch runner → `sum_map_findings` | `sum_map_findings` rows missing for 9 of the last 10 batch-mode pipeline runs (ids 38–48 across 5 papers), despite each paper's `rejection_summary.map_findings_total` recording 100–230 MAP findings produced. Other `sum_*` tables (`sum_normal_findings`, `sum_finding_groups`, `sum_canonical_rules`, `sum_final_rules`, `sum_rejection_summaries`, `sum_map_voter_outputs`) get rows on the same runs, so the DB connection + `pipeline_run_db_id` + persistence wiring are not at fault. The function itself works: a direct call to `persist_map_findings(db, 48, pmcid, chunk_summaries)` against the same paper's batch handle on disk wrote 154 rows successfully, with `verbatim_support` exactly matching `text_elements.text_content`. Bug pre-dates the 2026-05-16 B-005 dedup (same behaviour on HEAD `7ea254a`); the dedup rewrote the wrapper but the production failure mode was already present. Suspect call-path issue inside `BatchSummarizationRunner.finalize()` between L483 (`chunk_summaries = [AuditableSummary.model_validate(v) for v in handle.finalized.values()]`) and L522 (`self._persist_map_findings(...)`) — either `chunk_summaries` is empty at the call site (which would also break downstream `all_findings = [f for cs in chunk_summaries for f in cs.findings]` at L536, contradicted by 214 `sum_normal_findings` rows on run 48), or an exception in the bulk `INSERT` is being swallowed by `except Exception as exc: logger.warning(...)` and the run's stdout went unrecorded. Adjacent inconsistency: runs 47/46/44/43 wrote `sum_canonical_rules` (100+ rows) with **zero** `sum_normal_findings` — physically impossible from the in-process flow, suggests these were cache short-circuits whose `_load_result` path skipped MAP/NORMALIZE persistence but still wrote canonical/final from the cached JSON. | [Bug 55](#bug-55--sum_map_findings-not-populated-by-batch-runner) |
 | B-054 | Fixed (2026-05-16) | High | Summarisation, NER stage scispaCy singleton bypass | `named_entity_recognition/ner.py`'s `load_ner_model()` and `load_linker_model()` issued direct `spacy.load("en_core_sci_lg", …)` calls — completely bypassing the `umls_resources.get_nlp()` singleton documented in CLAUDE.md and MEMORY.md. `SummarizationRunner._run_stages` calls `run_ner_on_db(pmcid, save_to_db=True, force=False)` per paper *without* passing `nlp=` / `linker_nlp=`, so the loaders fired with `None` defaults and freshly loaded ~2.6 GB of scispaCy + UMLS twice per paper. Concretely visible in production runs: `[pmcid] NER done [136.4s]` on a paper that bailed out (already had entities) — the time was pure model-load waste. Compounded by `umls_resources.get_nlp()` already holding its own copy for NORMALIZE / UMLS_ENRICH, so peak RSS hit ~3 copies of en_core_sci_lg in memory. Same class of bug as B-029 (PDF runner) / B-038 (summariser load_paper_from_db), missed because `named_entity_recognition/` lives outside `pipeline/stages/` and the existing singleton-guard test only scanned the stages tree. Fixed by routing both loaders through `umls_resources.get_nlp()`; the "fast NER" pass wraps the span-extraction loop in `nlp.select_pipes(disable=["scispacy_linker"])` so it stays cheap on the linker-attached singleton; the "Document already has entities" skip check moved *above* the model-load block so a skipped paper now costs ~0 s (was ~150 s). Regression test in `tests/summarization/test_scispacy_singleton.py::test_ner_module_routes_through_singleton` asserts neither loader contains a direct `spacy.load(` call. `batch_ner.py` inherits the fix automatically (it imports the same functions). | [Bug 54](#bug-54--ner-stage-scispacy-singleton-bypass) |
 | B-053 | Fixed (2026-05-16) | Low | Tooling, percentiles cost estimator | `scripts/estimate_pipeline_cost_percentiles.py` hygiene cluster — dead `import json` + `import statistics`; two never-called helpers (`estimate_non_llm_stages`, `render_paper_table`) that duplicated the markdown rendering inline in `main()`; misleading inline comment claiming `est_chunks = ceil((n - overlap) / stride)` while the code (correctly, matching `MapStage._make_chunks`) did `ceil(n / stride)`; `pick_percentile` had no guard for an empty paper list (`idx = ceil(0.5*0) - 1 = -1` → silent off-end indexing) or out-of-range `p`; `CHUNK_SIZE`/`CHUNK_OVERLAP` duplicated as module constants instead of sourced from `MapConfig.chunk_size`/`chunk_overlap`, leaving a silent drift hazard if production config changes. Fixed: dead imports + helpers removed, comment rewritten to cite `_make_chunks`, `pick_percentile` raises `ValueError` on empty corpus / `p ∉ (0, 1]`, chunk constants now read off `MapConfig()` at module load. Numbers unchanged — none of this moved the printed cost (the percentiles report is an intentional upper-bound budget for the top-decile/P80–P90 papers by `n_te`). Regression test `tests/test_estimate_pipeline_cost_percentiles.py` (15 cases). | [Bug 53](#bug-53--percentiles-cost-estimator-hygiene-cluster) |
 | B-052 | Fixed (2026-05-16) | Medium | Tooling, cost estimation script | `scripts/estimate_selection_cost.py:per_chunk_input_tokens` modelled the average sentences per MAP chunk as `min(chunk_size, n_sentences / n_chunks * (1 + 0))`. At production defaults (`chunk_size=10`, `chunk_overlap=2`, stride=8) `n_sentences / n_chunks ≈ stride = 8`, so the clamp returned ~8 sentences per chunk — but `MapStage._make_chunks` (`map_stage.py:1263-1267`) slices `sentences[i:i+chunk_size]` so each non-tail chunk actually sees 10 sentences. The trailing `* (1 + 0)` was a leftover from a removed overlap term. Net: every cost number in the projection table was ~15–20% low, exactly the headline figure a thesis budget review reads. Fixed by replacing the formula with a sum over `min(chunk_size, n_sentences - start) for start in range(0, n_sentences, stride)` divided by `n_chunks` — matches `_make_chunks` line-for-line, accounts for the truncated tail, and rounds with `ceil` for conservative budget estimates. Function signature gained `chunk_overlap` (caller updated); also validates `0 <= chunk_overlap < chunk_size`. Co-fixed in the same change: `.order_by(TextElement.position_in_section)` (the B-039 bug) flipped to `.order_by(TextElement.id)` to actually mirror `SummarizationRunner.load_paper_from_db`. Dead `import math` cleaned up. Regression test in `tests/test_estimate_selection_cost.py`. | [Bug 52](#bug-52--cost-estimation-script-underestimates-per-chunk-input-tokens) |
@@ -84,6 +84,8 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-059 | Observed (2026-05-21) | Medium | PDF extraction, figure cropping | Decorative icons emitted as figure crops.  ~70% of figure-side error labels across all variants are `icon` (304 of 437 figure errors aggregated across 16 variants on the 28-PDF corpus).  These are small image-like layout elements that Docling correctly identifies as PICTURE/FIGURE elements geometrically but that are decorative graphics (publisher logos, small inline ornaments, watermark-style icons), not scientific figures.  Crops are emitted (FP for figure-output) but masking is correct (image content shouldn't appear in body text either way).  No current pipeline stage filters them.  Possible fix path: heuristic filter based on size (`min_figure_pts` already exists in `CroppingConfig` but doesn't address this — icons can be moderately sized), bbox aspect ratio, low text density inside the bbox, or appearance on every page of a multi-page paper (publisher logo case).  Need a figure-side analogue of `_drop_tables_inside_figures` or a stand-alone `drop_icon_figures` filter.  Decision/scope: outside the 2026-05-21 thesis-day budget; document as known limitation in `docs/THESIS.md` future-work section. | [Bug 59](#bug-59--decorative-icons-emitted-as-figure-crops) |
 | B-060 | Observed (2026-05-21) | Medium | PDF extraction, caption parser | Cluster of `nearest_caption()` + `parse_caption_num()` defects in `parsers/layout_utils.py`.  Six recurring failure modes seen across all variants of the 28-PDF corpus (counts are aggregated label occurrences across variants):  (1) **Rotated-image footnote-as-caption** — 49 table cases (`wrong caption (footnotes matched to captions, rotated image)`); attacher pulls footnote text up because the image rotation messes up vertical proximity ordering.  (2) **Continuation-marker parsed as new table number** — 30 table cases; `(continued)` next to a table caption is parsed as the table's number by `parse_caption_num()` / `TAB_NUM_RE`.  (3) **Caption "Table N" prefix dropped** — 22 table cases; parser returns the descriptive caption body without the "Table N" identifier, breaking strict-match scoring on the caption dim.  (4) **Multi-caption merge across page boundaries** — 30 table cases; when a continued table caption sits adjacent to the next table's caption, the attacher concatenates them.  (5) **Side-mounted figure caption missed** — 19 figure cases (`no caption, caption is to the right of the figure`); spatial proximity heuristic in `nearest_caption()` doesn't handle 2-column layouts with side-mounted captions.  (6) **Page footer treated as caption** — 38 figure cases combined (bottom-left + bottom-right variants); attacher confuses page footers with figure captions when the real caption is on a different position of the page.  These bugs are interconnected via the shared caption-attacher logic — touching one risks regressing another, so they need a focused investigation rather than ad-hoc patches.  Affects ~18% of table errors and ~17% of figure errors; second-largest unaddressed bucket after `should be masked` for tables and `icon` for figures.  Decision/scope: outside the 2026-05-21 thesis-day budget; document as known limitation. | [Bug 60](#bug-60--caption-parser-bug-cluster) |
 | B-061 | Observed (2026-05-21) | Low | PDF extraction, table cropping geometry | `crop too small minor` family of labels — 16 aggregated table cases across all variants (8 with caption issue + 6 stand-alone + 2 unmasked-letters variant).  Tables whose emitted crop bbox is smaller than the true table extent, missing some content.  Currently no config knob or filter tests this.  Symmetric to `crop too big` (which the Stage 5 `footnote_multiplier` sweep partially addresses).  Possible fix: dilate detection bboxes by a small margin before cropping, gated by a new `CroppingConfig.table_crop_dilation_pts` field, sweep values in {0, 2, 4, 8}.  Risk: dilation increases overlap with adjacent layout elements (captions, footnotes — though expand_tables_with_footnotes handles the latter). Decision/scope: outside the 2026-05-21 thesis-day budget; document as known limitation. | [Bug 61](#bug-61--crop-too-small-table-geometry-no-config-knob) |
+| B-062 | Fixed (2026-05-23) | High | Summarisation, MAP cascade / config | `scripts/run_paper.py` never set `enable_router`, so both production entry points (`build_runner`, `build_batch_runner`) used the runner default `False` → **production ran the legacy `AgreementChecker` cascade, not `MapOutputRouter`**. Yet THESIS.md asserted router-on production in four places + `eval/silver/map_theta_sweep.py` in three comments. Documented production cascade ≠ actual behaviour. Found while wiring the config pin (calibration review item 3). Fix: path made config-governed (`summarization.map.enable_router`, default `false`) + logged at load; user decided production keeps the legacy L1→L2→L3 cascade (the router L1→L3-skip path is opt-in/experimental); stale docs corrected. | [Bug 62](#bug-62--documented-router-on-production-cascade-never-actually-enabled) |
+| B-063 | Fixed (2026-05-24) | Low | Tooling, cost estimation script | `scripts/estimate_selection_cost.py` imports `from pipeline.stages.summarization.costing import PriceBook` inside `main()` but never bootstraps the repo root onto `sys.path`. Run as the documented bare `python scripts/estimate_selection_cost.py …` (HOW_TO_RUN §5) it dies with `ModuleNotFoundError: No module named 'pipeline'` — Python puts the script's own dir (`scripts/`) on `sys.path`, not the CWD. Only `PYTHONPATH=. python …` worked, which the script's own docstring documented. Every sibling script (`run_paper.py`, `check_apis.py`) self-bootstraps with `_REPO_ROOT = Path(__file__).resolve().parents[1]`; this one was the lone violator of the CLAUDE.md "scripts must bootstrap their own path" convention. Hit while running the cost estimate for `related15_full`. Distinct from [B-052](#bug-52--cost-estimation-script-underestimates-per-chunk-input-tokens) (same file, token-formula fix). Fixed by adding the standard 3-line bootstrap before the first repo import + dropping `PYTHONPATH=.` from the docstring. | [Bug 63](#bug-63--estimate_selection_costpy-missing-syspath-bootstrap) |
 
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
 
@@ -4150,7 +4152,7 @@ root and was outside the scan.
 
 ## Bug 55 — `sum_map_findings` not populated by batch runner
 
-**Status:** Observed (2026-05-16) · **Severity:** High · **Surface:**
+**Status:** Mitigated (2026-05-23) · **Severity:** High · **Surface:**
 Summarisation, `BatchSummarizationRunner.finalize()` → `sum_map_findings` DB persistence.
 
 ### Symptom
@@ -4261,6 +4263,89 @@ Order of work, cheapest first:
   asserts that all `sum_*` tables (including `sum_map_findings`) get
   rows.
 
+### Mitigation shipped (2026-05-23)
+
+The *silent corruption* is the defect — a failed insert that leaves zero
+rows while the run reports `success`. That is now closed regardless of the
+still-unconfirmed underlying insert failure:
+
+* `persist_map_findings` (`pipeline/stages/summarization/persistence.py:740`)
+  no longer swallows. It logs an entry line
+  (`persist_map_findings: entering with N chunks (M findings) run_id=…`) then
+  **re-raises** on any exception. Both runners wrap the call in a
+  finalize-level handler that flips the `pipeline_runs` row to `failed`
+  (sync `runner.py:793`; batch `finalize()` re-raises at `runner.py:713`),
+  so a bad insert now fails loudly with the real DB traceback instead of a
+  lost WARNING. Sibling `persist_*` helpers still swallow by design — out of
+  scope here; the canonical-without-normal pattern (runs 47/46/44/43) is a
+  separate follow-up.
+* The all-or-nothing `engine.begin()` bulk insert (one bad finding aborts
+  the whole paper's batch) is retained intentionally — partial inserts would
+  be a quieter version of the same corruption. Root cause must be fixed in
+  the data, not papered over.
+* `scripts/diagnose_b055.py` replays every on-disk handle in
+  `out/summaries/batch_handles.prepatch/` through the now-loud persist path
+  against a throwaway `pipeline_run` (deleted via FK CASCADE) — **zero LLM
+  cost** since the bug is entirely post-MAP. It reports PASS/FAIL with the
+  exact DB exception per paper, doubling as the back-population tool for
+  Fix-step 3 (runs 38–47) once the root cause is known.
+
+### Diagnostic replay (2026-05-23) — hypothesis #2 ruled out
+
+`python scripts/diagnose_b055.py` replayed **all 26** on-disk handles through
+`persist_map_findings`. **Every one persisted cleanly** — including the
+production failures: PMC9826086 (run 48) 154/154 rows, PMC7539961 (run 47)
+112/112, PMC6635746 (run 46) 119/119. Eight handles show `0/0 rows (0
+chunks)` because their `finalized` dict is *empty* on disk (MAP never
+finalised) — among them PMC10100421 (run 43) and PMC4329418 (run 44), which
+nonetheless reported 100+ `sum_canonical_rules` in production.
+
+**Conclusion:** the bad-data / column-constraint hypothesis (#2) is **ruled
+out** — `persist_map_findings` is correct for every paper's data. The
+failure is **upstream in `finalize()` control flow**, elevating hypothesis
+#1 (cache short-circuit). Two distinct patterns now visible:
+
+* **run 48** (full handle, `map=0` but `normal=214` in prod): both derive
+  from the same `chunk_summaries` and `persist_map_findings` runs *before*
+  NORMALIZE — the only way map=0/normal=214 happens in-process is the old
+  swallow firing on a **transient** insert error (deadlock / connection
+  blip), letting NORMALIZE proceed. The 2026-05-23 re-raise addresses
+  exactly this: a transient failure now fails the run loudly instead of
+  silently dropping MAP rows. *Not reproducible offline* (no transient
+  condition in isolated replay), consistent with a non-deterministic cause.
+* **runs 43/44/46/47** (`map=0` AND `normal=0`, yet 100+ canonical): these
+  ran the *full* pipeline (4-min runtimes, `pipeline_run` rows created — not
+  the `submit()` cache short-circuit, which sets no `db_id` and persists
+  nothing). Canonical derives from in-*memory* normal findings, so the
+  in-process flow had data; only the MAP + NORMALIZE *DB writes* produced
+  zero rows while CANONICAL/FINAL wrote 100+. **This is the remaining open
+  follow-up** (THESIS TODO B-055 step 3) — the re-raise does *not* fix it.
+
+**DB ground truth (2026-05-23, current state).** `pipeline_runs` 38–48: ids
+40/45 `failed`, 41/42/45 `interrupted`, rest `success`. Row counts by
+`pipeline_run_id`: `sum_map_findings` = `{48:154}` (only the manual
+back-fill); `sum_normal_findings` = `{48:214}`; `sum_canonical_rules` /
+`sum_final_rules` = `{38:185, 39:146, 43:185, 44:146, 46:173, 47:147,
+48:203}`. So **every** successful run wrote canonical/final, **none** wrote
+map/normal (except run 48's manual fix).
+
+**Cross-run deletion ruled out:** `clear_normalized_run_data` deletes on
+`(pipeline_run_id == db_id) AND (pmcid)` — run-scoped, not pmcid-wide, so a
+later same-paper run does not wipe an earlier run's rows.
+
+**Lead for the next instrumented run.** The two writers that fail
+(`persist_map_findings`, and `clear_normalized_run_data` invoked by
+`persist_normal_findings`) both use `db.engine.begin()`; the writers that
+succeed (`persist_canonical_rules`, `persist_final_rules`) use
+`db.session_scope()`. Suspect the `engine.begin()` Core-transaction path —
+not the row data — fails in the batch finalize context (pool/transaction
+state), is swallowed pre-2026-05-23, and the in-memory pipeline continues to
+CANONICAL. The failure is **production-only / non-deterministic** (clean in
+isolated replay), so the fix path is: run one paper end-to-end now that
+`persist_map_findings` re-raises — it will fail loudly at the exact call with
+the real `engine.begin()` traceback, or succeed (confirming a transient
+cause). Static analysis + frozen artifacts cannot go further.
+
 
 ## Bug 56 — Batch runner omits per-voter MAP persistence (code path absent)
 
@@ -4361,5 +4446,128 @@ Mirrors the sync wiring. Order of work, cheapest first:
 * Regression test asserts `SumMapVoterOutput` rows are written by
   the batch path (mirrors the sync regression test that ships with this
   audit, `tests/summarization/test_persist_voter_outputs.py`).
+
+---
+
+## Bug 62 — documented router-on production cascade never actually enabled
+
+**Status / Severity / Surface:** Observed (2026-05-23) / High / Summarisation, MAP
+cascade selection + config reproducibility.
+
+**Symptom:** The thesis docs describe `MapOutputRouter` (grounding-first gating,
+L1→L3 skip) as the production MAP cascade, but production has been running the
+legacy `AgreementChecker` 3-tier cascade. No runtime error — the legacy path is
+a valid, working cascade — so the divergence was invisible until audited.
+
+**Evidence:**
+* `pipeline/stages/summarization/runner.py:188` and
+  `pipeline/stages/summarization/batch/runner.py:140` both default
+  `enable_router: bool = False`.
+* `scripts/run_paper.py` (as committed before 2026-05-23) contained **zero**
+  `router` references — neither `build_runner` nor `build_batch_runner` passed
+  `enable_router`, so both took the `False` default. Exhaustive grep:
+  `grep -ni router scripts/run_paper.py` → no matches; repo-wide
+  `grep -rn "enable_router=True"` → only comments/docstrings, never executable.
+* Contradicting docs: `docs/THESIS.md` TODO lines 56, 57, 76 and Decisions-log
+  row 2026-05-15 ("`MapOutputRouter` wired into both runners **by default**");
+  `eval/silver/map_theta_sweep.py` lines 23, 112, 975/977 ("production enables
+  the router via `enable_router=True` in `scripts/run_paper.py`").
+
+**Diagnosis:** The router was built (ABC_IMPLEMENTATION_COMPARISON Gap 2/Gap 8)
+and the *intent* recorded as "on by default", but the wiring that would flip it
+on at the `run_paper` entry point was never present (or was lost in a refactor —
+`run_paper.py` was not in the working tree's modified set this session, so the
+omission predates it). The runner default `False` therefore won, silently. This
+also means the in-flight MAP θ calibration (which replays the legacy
+`AgreementChecker`, `CASCADE_PATH="legacy_agreement_checker"`) happens to match
+*actual* production — but not *documented* production.
+
+**Fix (2026-05-23):** Made the cascade path explicit and config-governed
+instead of an implicit runner default. `MapConfig` gained `enable_router` /
+`router_single_voter_policy`; `build_runner` and `build_batch_runner` now read
+`sum_cfg.map.*` and pass them through; the load log prints `map.enable_router`.
+Pinned `enable_router: false` in `configs/run.yaml` — codifying *actual* current
+behaviour (and keeping the legacy θ calibration applicable).
+
+*Constructor-site audit:* `grep -rn "SummarizationRunner(\|BatchSummarizationRunner("`
+shows `scripts/run_paper.py` (the documented entry point) plus four siblings —
+`scripts/summarize_paper.py`, `scripts/run_single_doc.py`,
+`scripts/run_paper_single_model.py`, `eval/silver/pipeline_sweep.py`. Only
+`run_paper.py` is wired to read `sum_cfg.map.*`; the siblings build runners
+without passing `enable_router`, so they take the default `False` = legacy =
+the decided production path. None set the router on, so all sites are
+*consistent* with the decision; threading config into the siblings is deferred
+(scope) and tracked as a follow-up only if the router experiment is adopted.
+
+**Resolved decision (2026-05-23):** production keeps the **legacy L1→L2→L3
+`AgreementChecker` cascade** (`enable_router: false`) — it matches the actual
+prior behaviour and the legacy θ calibration applies directly. The
+`MapOutputRouter` L1→L3-skip path stays opt-in/experimental; if it is adopted
+later, the THESIS.md ABC-P1 "router-path experiment" TODO covers re-validating
+the chosen `(theta, reject_theta, scorer)` on it. Stale "production is router-on"
+claims corrected: THESIS.md (ABC-P1 sweep clause + the "default mismatch" TODO,
+both now ticked) and `eval/silver/map_theta_sweep.py` (module docstring +
+`CASCADE_PATH` comment + the collect-time log, downgraded from `warning` to
+`info`). The Decisions-log 2026-05-15 row ("wired in by default") is left as
+historical intent, cross-referenced here.
+
+**Verification:** `python3 -c "from pipeline.config_loader import load_config;
+print(load_config('configs/run.yaml')[1].map.enable_router)"` → `False`; flipping
+the YAML to `true` and reloading returns `True` (round-trip confirmed the YAML
+governs both builders). `grep -ni router scripts/run_paper.py` now shows the
+config pass-through at both builders + the load-log line.
+
+---
+
+## Bug 63 — `estimate_selection_cost.py` missing sys.path bootstrap
+
+**Status / Severity / Surface:** Fixed (2026-05-24) / Low / Tooling, cost
+estimation script.
+
+**Symptom.** Running the cost estimator the way HOW_TO_RUN §5 documents it —
+
+```bash
+python scripts/estimate_selection_cost.py \
+    --from-selection configs/paper_selection/related15_full.yaml --profile cheap
+```
+
+dies immediately with:
+
+```
+File ".../scripts/estimate_selection_cost.py", line 380, in main
+    from pipeline.stages.summarization.costing import PriceBook
+ModuleNotFoundError: No module named 'pipeline'
+```
+
+**Evidence.** Hit 2026-05-24 while estimating MAP cost for the `related15_full`
+selection (15 most-related papers). The script's own module docstring already
+worked around it by documenting `PYTHONPATH=. python …` — so the bare form
+copied into HOW_TO_RUN §5 had never actually run.
+
+**Diagnosis.** The repo import (`from pipeline...`) is deferred into `main()`,
+but the module never prepends the repo root to `sys.path`. Run as
+`python scripts/foo.py`, Python puts the *script's own directory* (`scripts/`)
+on `sys.path[0]`, not the CWD — so top-level packages (`pipeline`, `database`)
+at the repo root are invisible. Every other script under `scripts/`
+(`run_paper.py:34-36`, `check_apis.py:34-36`) bootstraps with
+`_REPO_ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, …)`; this
+one was the lone violator of the CLAUDE.md "scripts must bootstrap their own
+path" rule. Distinct defect from [Bug 52](#bug-52--cost-estimation-script-underestimates-per-chunk-input-tokens)
+(same file, per-chunk token-count formula).
+
+**Fix.** Added a bare `sys.path.insert(0, <repo_root>)` bootstrap immediately
+before the first repo import (after `from pathlib import Path`), matching
+`run_paper.py`. The *bare* form is deliberate: ruff's E402 exempts `sys.path`
+modifications before imports, but a guarded `_REPO_ROOT = …; if … not in
+sys.path:` block does **not** (it trips E402 — which is why the sibling
+`check_apis.py`, using that guarded form, still flags one). Dropped the
+now-redundant `PYTHONPATH=.` prefix from both docstring usage examples so the
+documented command matches the self-bootstrapping convention. HOW_TO_RUN §5's
+bare invocation is correct as-is post-fix — no change needed there.
+
+**Verification.** `python scripts/estimate_selection_cost.py --from-selection
+configs/paper_selection/related15_full.yaml --profile cheap` (no `PYTHONPATH`)
+now prints the per-paper token table + MAP cost projection (cheap-profile
+middle = $0.71, real-profile middle = $1.60).
 
 ---

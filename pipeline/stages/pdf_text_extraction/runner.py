@@ -1105,6 +1105,13 @@ def _parse_args(argv=None):
                           default=None, help="Enable two-pass ghost-text detection.")
     two_pass.add_argument("--no-two-pass", dest="two_pass", action="store_false",
                           help="Disable two-pass ghost-text detection.")
+    p.add_argument("--visualization", dest="visualization",
+                   action=argparse.BooleanOptionalAction, default=None,
+                   help="Write annotated audit PDFs to out/visualization/ "
+                        "(`VisualizationConfig.enabled`). Default on; "
+                        "`--no-visualization` skips them — saves disk + per-page "
+                        "render time and is not needed for the ILP / silver / "
+                        "cascade downstream.")
     p.add_argument("--db", dest="db_enabled", action=argparse.BooleanOptionalAction,
                    default=None, help="Enable / disable database ingestion.")
     p.add_argument("--write-raw-text", dest="write_raw_text",
@@ -1183,6 +1190,8 @@ def main(argv=None) -> None:
         cfg.two_pass.render_dpi = args.render_dpi
     if args.workers is not None:
         cfg.runtime.num_workers = args.workers
+    if args.visualization is not None:
+        cfg.visualization.enabled = args.visualization
     if args.reconstruct_tables_from_lists is not None:
         cfg.docling.reconstruct_tables_from_lists = args.reconstruct_tables_from_lists
     if args.merge_tables_by_caption is not None:

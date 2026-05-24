@@ -1,9 +1,29 @@
 """
-MAP theta sweep harness.
+MAP cascade calibration sweep harness.
 
 Submits all L1/L2/L3 batch requests for every dev source case simultaneously,
-caches the raw voter outputs, then replays different theta values offline using
-only the local EmbeddingScorer — no additional API calls needed.
+caches the raw voter outputs, then replays the agreement cascade offline across
+a grid of (scorer × theta × reject_theta) — no additional API calls needed.
+
+Calibration axes
+----------------
+- scorer:        SemanticAgreementScorer over EmbeddingSimilarityStrategy vs.
+                 HybridStructuredSimilarity (both honour AgreementConfig / H-EMB-01
+                 alignment weights, so weight variants are added as extra specs).
+- theta:         escalation threshold (deferral score >= theta → KEEP).
+- reject_theta:  hard-reject threshold (deferral score <= reject_theta → REJECT);
+                 only pairs with reject_theta < theta are run.
+
+Beyond P/R/F1 vs silver, each row reports deferral safety: early_accept_rate
+(fraction of chunks KEPT at L1/L2 without escalating) and early_accept_precision
+(silver precision restricted to those early-accepted chunks) — the pair that
+tells you whether a low theta is prematurely accepting bad chunks.
+
+CAVEAT: the replay drives the LEGACY AgreementChecker path, NOT MapOutputRouter
+(production runs this same legacy L1->L2->L3 cascade — enable_router=false; the
+MapOutputRouter L1->L3-skip path is an opt-in experiment, see B-062).
+Every row is stamped cascade_path="legacy_agreement_checker"; re-validate any
+chosen config against the router before promoting.
 
 Modes
 -----
@@ -24,11 +44,11 @@ Usage
 Notes
 -----
 - All three levels (L1, L2, L3) are submitted simultaneously for every case and
-  every chunk so that we can replay any theta value without additional API calls.
-- reject_theta is fixed at -1.0 during replay (never reject) so the sweep
-  isolates the effect of the escalation threshold theta alone.
-- EmbeddingScorer uses OpenAI text-embedding-3-small by default; pass
-  --embed-fn gemini to use the Gemini embedding model instead.
+  every chunk so that we can replay any (theta, reject_theta, scorer) combination
+  without additional API calls. The cache MUST have L3 populated — a sweep run
+  warns loudly if it doesn't, because escalated chunks would contribute no findings.
+- The agreement embedder uses OpenAI text-embedding-3-small by default; pass
+  --embedder gemini to use the Gemini embedding model instead.
 """
 from __future__ import annotations
 
@@ -86,6 +106,56 @@ def _make_voters():
     return make_l1_voters(), make_l2_voters(), make_l3_voter()
 
 THETA_GRID = [0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
+REJECT_THETA_GRID = [-1.0, 0.0, 0.1, 0.2]   # pairs with theta where reject_theta < theta
+
+# Constant stamped into every sweep row. The replay drives AgreementChecker.compute
+# directly — the LEGACY L1->L2->L3 cascade — which IS the production path
+# (enable_router=false; decided in B-062, 2026-05-23). The MapOutputRouter
+# L1->L3-skip path is an opt-in experiment; if it is ever adopted, re-validate the
+# chosen (theta, reject_theta, scorer) on it before promotion. See THESIS.md ABC-P1
+# TODO + B-062.
+CASCADE_PATH = "legacy_agreement_checker"
+
+
+@dataclass
+class ScorerSpec:
+    """One agreement scorer configuration to sweep.
+
+    ``kind`` selects the similarity strategy; ``weights`` is an ``AgreementConfig``
+    (H-EMB-01 soft-alignment knobs). Both the embedding and hybrid strategies read
+    the weights via ``_align``, so a single spec list can compare scorers *and*
+    weight variants. Append entries to vary weights, e.g.
+    ``ScorerSpec("embedding_tau030", "embedding", AgreementConfig(tau=0.30))``.
+    """
+    name: str
+    kind: str           # "embedding" | "hybrid"
+    weights: Any        # AgreementConfig
+
+
+def _default_scorer_specs() -> list[ScorerSpec]:
+    from pipeline.stages.summarization.config import AgreementConfig
+    return [
+        ScorerSpec("embedding_default", "embedding", AgreementConfig()),
+        ScorerSpec("hybrid_default",    "hybrid",    AgreementConfig()),
+    ]
+
+
+def _build_scorer(spec: ScorerSpec, embed_fn):
+    """Build a SemanticAgreementScorer for ``spec`` (theta deferred to AgreementChecker)."""
+    from pipeline.stages.summarization.agreement import (
+        EmbeddingSimilarityStrategy,
+        SemanticAgreementScorer,
+    )
+    from pipeline.stages.summarization.agreement.hybrid_structured import (
+        HybridStructuredSimilarity,
+    )
+    if spec.kind == "embedding":
+        strategy = EmbeddingSimilarityStrategy.from_config(spec.weights, embed_fn=embed_fn)
+    elif spec.kind == "hybrid":
+        strategy = HybridStructuredSimilarity.from_config(spec.weights, embed_fn=embed_fn)
+    else:
+        raise ValueError(f"Unknown scorer kind: {spec.kind!r} (expected 'embedding' or 'hybrid')")
+    return SemanticAgreementScorer(strategy=strategy)
 
 # ── PrimerHandle ──────────────────────────────────────────────────────────────
 
@@ -577,24 +647,35 @@ def _make_cached_embed_fn(disk_cache: "EmbeddingCache", embed_fn):
     return _fn
 
 
-def _replay_theta(
+def _replay(
     voter_cache: dict[str, dict],
+    scorer,
     theta: float,
-    embed_fn=None,
-) -> list[PipelineCaseOutput]:
-    """Apply theta to cached voter outputs; return PipelineCaseOutput per case."""
-    from pipeline.stages.summarization.agreement import AgreementChecker, EmbeddingScorer
+    reject_theta: float,
+) -> tuple[list[PipelineCaseOutput], dict[str, int], dict[str, set[str]]]:
+    """Replay the legacy L1→L2→L3 cascade for one (scorer, theta, reject_theta).
+
+    Returns ``(case_outputs, accept_counts, early_chunks)`` where:
+      * ``accept_counts`` buckets every chunk by where it resolved —
+        ``l1`` / ``l2`` (early KEEP), ``l3`` (escalated), ``reject``, ``no_data``.
+      * ``early_chunks`` maps ``case_id → {chunk_id}`` for chunks accepted early
+        (L1 or L2 KEEP), used to compute deferral-safety precision.
+    """
+    from pipeline.stages.summarization.agreement import AgreementChecker
     from pipeline.stages.summarization.interfaces.scoring import ChunkDecision
     from pipeline.stages.summarization.models import AuditableSummary
 
-    checker = AgreementChecker(EmbeddingScorer(embed_fn), theta=theta, reject_theta=-1.0)
+    checker = AgreementChecker(scorer, theta=theta, reject_theta=reject_theta)
     outputs: list[PipelineCaseOutput] = []
+    accept_counts = {"l1": 0, "l2": 0, "l3": 0, "reject": 0, "no_data": 0}
+    early_chunks: dict[str, set[str]] = {}
 
-    for safe_id, entry in voter_cache.items():
+    for _safe_id, entry in voter_cache.items():
         case_id  = entry["case_id"]
         pmcid    = entry["pmcid"]
         te_id    = entry["te_id"]
         findings: list[PipelineFinding] = []
+        early_chunks.setdefault(case_id, set())
 
         for chunk_id in entry.get("chunk_map", {}):
             source_text = entry.get("source_texts", {}).get(chunk_id, "")
@@ -603,38 +684,42 @@ def _replay_theta(
             l1_out = [AuditableSummary.model_validate(d) for d in l1_raw if d]
 
             selected: dict | None = None
-            escalate_to_l2 = False
+            accept_level = "no_data"
 
-            if not l1_out:
-                escalate_to_l2 = True  # no L1 data → skip to L2/L3
-            else:
-                bundle = checker.compute(l1_out, source_text=source_text)
-                if bundle.decision == ChunkDecision.KEEP:
-                    selected = checker.best(l1_out, bundle).model_dump()
-                elif bundle.decision == ChunkDecision.REJECT:
-                    pass  # discard chunk; selected stays None
-                else:
-                    escalate_to_l2 = True
+            if l1_out:
+                b1 = checker.compute(l1_out, source_text=source_text)
+                if b1.decision == ChunkDecision.KEEP:
+                    selected = checker.best(l1_out, b1).model_dump()
+                    accept_level = "l1"
+                elif b1.decision == ChunkDecision.REJECT:
+                    accept_level = "reject"
+                # else ESCALATE → fall through to L2
 
-            if escalate_to_l2:
+            if selected is None and accept_level == "no_data":
+                # Escalation path: L1 escalated, or no L1 data.
                 l2_raw = entry.get("l2", {}).get(chunk_id) or []
                 l2_out = [AuditableSummary.model_validate(d) for d in l2_raw if d]
                 if l2_out:
-                    bundle2 = checker.compute(l2_out, source_text=source_text)
-                    if bundle2.decision == ChunkDecision.KEEP:
-                        selected = checker.best(l2_out, bundle2).model_dump()
-                    elif bundle2.decision == ChunkDecision.REJECT:
-                        pass  # discard chunk
-                    else:
-                        # ESCALATE to L3
+                    b2 = checker.compute(l2_out, source_text=source_text)
+                    if b2.decision == ChunkDecision.KEEP:
+                        selected = checker.best(l2_out, b2).model_dump()
+                        accept_level = "l2"
+                    elif b2.decision == ChunkDecision.REJECT:
+                        accept_level = "reject"
+                    else:  # ESCALATE → L3
                         l3_raw = entry.get("l3", {}).get(chunk_id)
                         if l3_raw:
                             selected = l3_raw
-                else:
-                    # No L2 data — fall to L3
+                        accept_level = "l3"
+                else:  # no L2 data → L3
                     l3_raw = entry.get("l3", {}).get(chunk_id)
                     if l3_raw:
                         selected = l3_raw
+                    accept_level = "l3"
+
+            accept_counts[accept_level] += 1
+            if accept_level in ("l1", "l2"):
+                early_chunks[case_id].add(chunk_id)
 
             if selected is not None:
                 for f in selected.get("findings", []):
@@ -644,12 +729,12 @@ def _replay_theta(
             case_id=case_id,
             pmcid=pmcid,
             te_id=te_id,
-            run_id=f"map_theta_{theta:.2f}",
+            run_id=f"map_t{theta:.2f}_r{reject_theta:.2f}",
             pipeline_run_id=0,
             findings=findings,
         ))
 
-    return outputs
+    return outputs, accept_counts, early_chunks
 
 
 def run_sweep(
@@ -658,35 +743,80 @@ def run_sweep(
     embedder: object,
     embed_cache: EmbeddingCache,
     sim_threshold: float,
+    scorer_specs: list[ScorerSpec],
     thetas: list[float],
+    reject_thetas: list[float],
     split: str,
     seed: int,
     dev_fraction: float,
     agreement_embed_fn=None,
 ) -> list[dict]:
+    """Joint sweep over scorer × theta × reject_theta (reject_theta < theta only)."""
     rows: list[dict] = []
-    for theta in thetas:
-        case_outputs = _replay_theta(voter_cache, theta, embed_fn=agreement_embed_fn)
-        # Filter to only cases present in silver (dev split already filtered at load time)
-        case_outputs = [co for co in case_outputs if co.case_id in silver_by_case]
-        metrics = _evaluate_outputs(case_outputs, silver_by_case, embedder, embed_cache, sim_threshold)
-        row = {
-            "theta":         round(theta, 2),
-            "split":         split,
-            "seed":          seed,
-            "dev_fraction":  dev_fraction,
-            "sim_threshold": sim_threshold,
-            **metrics,
-        }
-        rows.append(row)
-        logger.info(
-            "  theta=%.2f  P=%.3f  R=%.3f  F1=%.3f  strict_F1=%.3f  "
-            "matched=%d / silver=%d / pipeline=%d",
-            theta,
-            metrics["precision"], metrics["recall"],
-            metrics["f1"], metrics["strict_f1"],
-            metrics["n_matched"], metrics["n_silver"], metrics["n_pipeline"],
-        )
+    n_skipped = 0
+    for spec in scorer_specs:
+        scorer = _build_scorer(spec, agreement_embed_fn)  # built once, reused across grid
+        for theta in thetas:
+            for reject_theta in reject_thetas:
+                if reject_theta >= theta:
+                    n_skipped += 1
+                    continue
+                case_outputs, accept, early_chunks = _replay(
+                    voter_cache, scorer, theta, reject_theta,
+                )
+                # Keep only cases present in silver (dev split filtered at load time).
+                case_outputs = [co for co in case_outputs if co.case_id in silver_by_case]
+                metrics = _evaluate_outputs(
+                    case_outputs, silver_by_case, embedder, embed_cache, sim_threshold,
+                )
+
+                # Deferral safety: precision restricted to findings from chunks the
+                # cascade accepted EARLY (L1/L2 KEEP, not escalated to L3).
+                early_outputs = [
+                    PipelineCaseOutput(
+                        case_id=co.case_id, pmcid=co.pmcid, te_id=co.te_id,
+                        run_id=co.run_id, pipeline_run_id=0,
+                        findings=[
+                            f for f in co.findings
+                            if f.chunk_id in early_chunks.get(co.case_id, set())
+                        ],
+                    )
+                    for co in case_outputs
+                ]
+                early_metrics = _evaluate_outputs(
+                    early_outputs, silver_by_case, embedder, embed_cache, sim_threshold,
+                )
+                total_chunks = sum(accept.values()) or 1
+
+                row = {
+                    "scorer":                spec.name,
+                    "tau":                   spec.weights.tau,
+                    "count_alpha":           spec.weights.count_alpha,
+                    "reuse_weight":          spec.weights.reuse_weight,
+                    "contradiction_weight":  spec.weights.contradiction_weight,
+                    "theta":                 round(theta, 2),
+                    "reject_theta":          round(reject_theta, 2),
+                    "cascade_path":          CASCADE_PATH,
+                    "early_accept_rate":     round((accept["l1"] + accept["l2"]) / total_chunks, 4),
+                    "escalate_rate":         round(accept["l3"] / total_chunks, 4),
+                    "early_accept_precision": early_metrics["precision"],
+                    "split":                 split,
+                    "seed":                  seed,
+                    "dev_fraction":          dev_fraction,
+                    "sim_threshold":         sim_threshold,
+                    **metrics,
+                }
+                rows.append(row)
+                logger.info(
+                    "  %-18s theta=%.2f rej=%.2f  F1=%.3f strictF1=%.3f  "
+                    "earlyP=%.3f earlyRate=%.2f esc=%.2f  (pipeline=%d)",
+                    spec.name, theta, reject_theta,
+                    metrics["f1"], metrics["strict_f1"],
+                    early_metrics["precision"], row["early_accept_rate"],
+                    row["escalate_rate"], metrics["n_pipeline"],
+                )
+    if n_skipped:
+        logger.info("Skipped %d (theta, reject_theta) pairs where reject_theta >= theta", n_skipped)
     return rows
 
 
@@ -705,20 +835,27 @@ def _print_table(rows: list[dict]) -> None:
     if not rows:
         return
     best = max(rows, key=lambda r: float(r["f1"]))
-    print(f"\n{'─'*72}")
-    print("MAP Theta Sweep")
-    print(f"{'─'*72}")
-    print(f"{'Theta':>6}  {'Precision':>9}  {'Recall':>7}  {'F1':>7}  "
-          f"{'Strict F1':>9}  {'Pipeline':>8}")
-    print(f"{'─'*72}")
+    width = 104
+    print(f"\n{'─'*width}")
+    print("MAP cascade calibration sweep  (path: legacy AgreementChecker — re-validate vs router)")
+    print(f"{'─'*width}")
+    print(f"{'Scorer':>18}  {'Theta':>5}  {'RejT':>5}  {'F1':>6}  {'StrictF1':>8}  "
+          f"{'EarlyP':>6}  {'EarlyR':>6}  {'Esc':>5}  {'Pipe':>5}")
+    print(f"{'─'*width}")
     for r in rows:
-        marker = " ← best F1" if r["theta"] == best["theta"] else ""
-        print(f"{float(r['theta']):>6.2f}  "
-              f"{float(r['precision']):>9.3f}  {float(r['recall']):>7.3f}  "
-              f"{float(r['f1']):>7.3f}  {float(r['strict_f1']):>9.3f}  "
-              f"{int(r['n_pipeline']):>8}{marker}")
-    print(f"{'─'*72}")
-    print(f"\nBest F1: theta={best['theta']:.2f}  F1={float(best['f1']):.3f}")
+        is_best = (r["scorer"] == best["scorer"] and r["theta"] == best["theta"]
+                   and r["reject_theta"] == best["reject_theta"])
+        marker = " ← best F1" if is_best else ""
+        print(f"{str(r['scorer']):>18}  {float(r['theta']):>5.2f}  {float(r['reject_theta']):>5.2f}  "
+              f"{float(r['f1']):>6.3f}  {float(r['strict_f1']):>8.3f}  "
+              f"{float(r['early_accept_precision']):>6.3f}  {float(r['early_accept_rate']):>6.2f}  "
+              f"{float(r['escalate_rate']):>5.2f}  {int(r['n_pipeline']):>5}{marker}")
+    print(f"{'─'*width}")
+    print(f"\nBest F1: scorer={best['scorer']} theta={best['theta']:.2f} "
+          f"reject_theta={best['reject_theta']:.2f}  F1={float(best['f1']):.3f}  "
+          f"early_accept_precision={float(best['early_accept_precision']):.3f}")
+    print("EarlyP/EarlyR = precision/rate of chunks accepted at L1-L2 (deferral safety); "
+          "Esc = fraction escalated to L3.")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -752,25 +889,28 @@ def main() -> None:
     primer_path      = primer_dir / "primer.json"
     voter_cache_path = primer_dir / "voter_cache.json"
 
-    # ── Load source cases ──
-    if not source_path.exists():
-        print(f"source_cases.jsonl not found: {source_path}", file=sys.stderr)
-        sys.exit(1)
-    all_cases = list(read_jsonl(source_path, SourceCase))
-    filtered_cases = filter_by_split(
-        all_cases, args.split, dev_fraction=args.dev_fraction, seed=args.seed,
-    )
-    if args.n_cases is not None:
-        filtered_cases = filtered_cases[: args.n_cases]
-    logger.info("Split=%s  cases=%d  (seed=%d, dev_fraction=%.2f)",
-                args.split, len(filtered_cases), args.seed, args.dev_fraction)
-
     # ── PRIME ──
+    # Only prime/all consume the source-case split. Loading it for
+    # collect/sweep/list is wasteful AND the old "cases=N" log line misled a
+    # user into thinking `collect` had submitted N cases. collect/sweep operate
+    # off primer.json / voter_cache.json, never the case list — so the source
+    # split is loaded only when we actually prime.
     if args.mode in ("prime", "all"):
         if primer_path.exists():
             logger.info("Primer already exists at %s — loading", primer_path)
             handle = PrimerHandle.load(primer_path)
         else:
+            if not source_path.exists():
+                print(f"source_cases.jsonl not found: {source_path}", file=sys.stderr)
+                sys.exit(1)
+            all_cases = list(read_jsonl(source_path, SourceCase))
+            filtered_cases = filter_by_split(
+                all_cases, args.split, dev_fraction=args.dev_fraction, seed=args.seed,
+            )
+            if args.n_cases is not None:
+                filtered_cases = filtered_cases[: args.n_cases]
+            logger.info("Priming Split=%s  cases=%d  (seed=%d, dev_fraction=%.2f)",
+                        args.split, len(filtered_cases), args.seed, args.dev_fraction)
             handle = run_prime(filtered_cases, primer_path)
 
     # ── REBUILD CACHE (no API calls) ──
@@ -834,6 +974,26 @@ def main() -> None:
 
         voter_cache = json.loads(voter_cache_path.read_text(encoding="utf-8"))
 
+        # Methodology note: the replay drives the LEGACY AgreementChecker L1->L2->L3
+        # path, which IS production (enable_router=false, B-062). The MapOutputRouter
+        # L1->L3-skip path is an opt-in experiment, not the production default.
+        logger.info(
+            "CASCADE PATH = %s (production path; enable_router=false). The MapOutputRouter "
+            "L1->L3-skip path is opt-in — re-validate the chosen (theta, reject_theta, "
+            "scorer) on it only if that experiment is adopted (B-062).", CASCADE_PATH,
+        )
+        # L3-population guard: escalated chunks contribute no findings without L3.
+        l3_pop = sum(
+            1 for e in voter_cache.values() for cid in e.get("chunk_map", {})
+            if e.get("l3", {}).get(cid)
+        )
+        if l3_pop == 0:
+            logger.warning(
+                "voter_cache has ZERO L3 outputs — every escalated chunk contributes no "
+                "findings, so escalation-sensitive metrics (escalate_rate, recall at low "
+                "theta) are unreliable. Re-run `prime` + `collect` with L3 before trusting them.",
+            )
+
         silver_by_case: dict[str, SilverCaseResult] = {}
         for rec in read_jsonl(silver_path, SilverCaseResult):
             silver_by_case[rec.case_id] = rec
@@ -875,16 +1035,21 @@ def main() -> None:
             embedder=embedder,
             embed_cache=embed_cache,
             sim_threshold=args.sim_threshold,
+            scorer_specs=_default_scorer_specs(),
             thetas=THETA_GRID,
+            reject_thetas=REJECT_THETA_GRID,
             split=args.split,
             seed=args.seed,
             dev_fraction=args.dev_fraction,
             agreement_embed_fn=agreement_embed_fn,
         )
         if sweep_rows:
-            csv_path = reports_dir / f"map_theta_sweep_{timestamp}.csv"
+            csv_path = reports_dir / f"map_cascade_sweep_{timestamp}.csv"
             _write_csv(csv_path, sweep_rows, fieldnames=[
-                "theta", "precision", "recall", "f1", "strict_f1",
+                "scorer", "tau", "count_alpha", "reuse_weight", "contradiction_weight",
+                "theta", "reject_theta", "cascade_path",
+                "precision", "recall", "f1", "strict_f1",
+                "early_accept_rate", "escalate_rate", "early_accept_precision",
                 "n_matched", "n_silver", "n_pipeline",
                 "split", "seed", "dev_fraction", "sim_threshold",
             ])
