@@ -368,8 +368,14 @@ re-prime before publishing the sweep result):
    embedding-API spend on first run.
 5. If any of (1)–(3) fail, **re-prime** before publishing the sweep —
    stale cascade composition or stale schemas invalidate the result.
-   Re-priming is a `prime` + `collect` cycle and does incur paid LLM
-   calls; budget accordingly.
+   Re-priming is a `prime` + `collect` cycle — L1+L2+L3 **voter** batches
+   (~\$3.66 batch on the 273-case dev set). If the **source cases** changed
+   it *also* needs a fresh **Opus silver** pass (`eval.silver.generate`,
+   `claude-opus-4-7` — ~\$6.35 batch, the larger half); the prime does **not**
+   run Opus. Budget both with
+   `python scripts/estimate_selection_cost.py --source-cases … --profile real`
+   (prints prime + Opus + total, sync and batch — see
+   [HOW_TO_RUN §5](HOW_TO_RUN.md#5-cost-estimation)).
 
 **Command (once the checklist passes):**
 

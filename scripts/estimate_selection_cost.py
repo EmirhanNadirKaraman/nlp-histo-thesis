@@ -12,13 +12,19 @@ production MapConfig defaults, tokenises every sentence with the
 
 Usage
 -----
-    PYTHONPATH=. python scripts/estimate_selection_cost.py \\
+    python scripts/estimate_selection_cost.py \\
         --from-selection configs/paper_selection/runA.yaml \\
         --profile real
 
 Or pass PMCIDs explicitly:
 
-    PYTHONPATH=. python scripts/estimate_selection_cost.py PMC10047158 PMC222
+    python scripts/estimate_selection_cost.py PMC10047158 PMC222
+
+Or estimate CALIBRATION cost (silver prime + Opus judge) over a source-cases
+JSONL — prints the prime (all voters, no escalation) and Opus silver tables:
+
+    python scripts/estimate_selection_cost.py \
+        --source-cases eval/data/source_cases.jsonl --profile real
 
 Notes
 -----
@@ -38,6 +44,13 @@ import sys
 from math import ceil
 from dataclasses import dataclass
 from pathlib import Path
+
+# Bootstrap repo root onto sys.path so `from pipeline...` / `from database...`
+# resolve when invoked as `python scripts/estimate_selection_cost.py` (Python
+# puts the script's own dir on sys.path, not the CWD). Bare `sys.path.insert`
+# (not a guarded _REPO_ROOT assignment) keeps ruff's E402 sys.path exemption —
+# matches scripts/run_paper.py. (B-063)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from dotenv import load_dotenv
 
@@ -60,6 +73,18 @@ DEFAULT_CHUNK_OVERLAP = 2
 PROMPT_OVERHEAD_TOKENS = 1500
 # Output JSON per chunk (AuditableSummary). Realistic 500–1200; use 800.
 OUTPUT_TOKENS_PER_CHUNK = 800
+
+# ── Calibration (silver) defaults ───────────────────────────────────────────
+# The map_theta_sweep PRIME runs EVERY voter on EVERY chunk (no escalation) so
+# the sweep can replay any theta — priced as project_map_cost at l2_rate=
+# l3_rate=1.0. The Opus SILVER step (eval.silver.generate) is one judge call
+# per source case.
+DEFAULT_SILVER_MODEL = "claude-opus-4-7"   # = eval/silver/generator.py DEFAULT_MODEL
+# Opus findings-JSON tokens per case. Hard cap is max_tokens=8192
+# (generator.py); a single paragraph realistically emits far fewer. Conservative
+# middle estimate (> the 800 voter output — judging is more verbose); override
+# with --silver-output-tokens.
+SILVER_OUTPUT_TOKENS = 1500
 
 
 # ── Cost matrix (per million tokens) ────────────────────────────────────────
@@ -319,55 +344,69 @@ def project_map_cost(total_chunks: int, avg_in_tokens: int,
     return cost
 
 
-# ── CLI ─────────────────────────────────────────────────────────────────────
+# ── Calibration (source-case) math ──────────────────────────────────────────
 
-def main() -> int:
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+def summarize_cases(cases, *, tokenizer, chunk_size: int, chunk_overlap: int,
+                    nlp) -> tuple[int, int, int]:
+    """Aggregate chunk + token stats over a list of SourceCase.
+
+    Each case's ``text`` is sentencized independently — mirrors
+    ``map_theta_sweep.run_prime``, which builds one chunk map per case. Returns
+    ``(total_chunks, weighted_avg_input_tokens, total_text_tokens)``.
+    """
+    texts = [(c.text or "") for c in cases]
+    total_chunks = 0
+    weighted_in = 0.0
+    total_text_tokens = 0
+    for doc in nlp.pipe(texts, batch_size=64):
+        sents = [s.text.strip() for s in doc.sents if s.text.strip()]
+        n_chunks = count_chunks(len(sents), chunk_size, chunk_overlap)
+        ttok = count_tokens(tokenizer, sents)
+        avg_in = per_chunk_input_tokens(ttok, n_chunks, chunk_size,
+                                        chunk_overlap, len(sents))
+        total_chunks += n_chunks
+        weighted_in += avg_in * n_chunks
+        total_text_tokens += ttok
+    avg_in_tokens = int(round(weighted_in / max(total_chunks, 1)))
+    return total_chunks, avg_in_tokens, total_text_tokens
+
+
+def silver_token_totals(cases, tokenizer,
+                        out_tokens_per_case: int) -> tuple[int, int]:
+    """Opus-silver input/output token totals over ALL cases.
+
+    Mirrors ``eval.silver.generator``: one Opus call per case =
+    ``SYSTEM_PROMPT`` + tool schema + ``make_user_prompt(text, path)``. The
+    prompt is measured live so the estimate tracks ``PROMPT_VERSION``.
+    """
+    import json as _json
+    from eval.silver.prompts import (
+        SYSTEM_PROMPT, EXTRACT_FINDINGS_TOOL, make_user_prompt,
     )
-    parser.add_argument("pmcid", nargs="*",
-                        help="Explicit PMCIDs (alternative to --from-selection)")
-    parser.add_argument("--from-selection", metavar="PATH",
-                        help="Path to a paper-selection YAML")
-    parser.add_argument("--chunk-size",    type=int, default=DEFAULT_CHUNK_SIZE)
-    parser.add_argument("--chunk-overlap", type=int, default=DEFAULT_CHUNK_OVERLAP)
-    parser.add_argument("--l2-rate", type=float, action="append", default=None,
-                        metavar="FRAC",
-                        help="L2 escalation fraction for one scenario row "
-                             "(repeatable; pair with --l3-rate). "
-                             "If unset, three baked-in scenarios are shown.")
-    parser.add_argument("--l3-rate", type=float, action="append", default=None,
-                        metavar="FRAC", help="L3 escalation fraction "
-                                              "(repeatable; matched to --l2-rate).")
-    parser.add_argument("--profile", required=True,
-                        choices=("cheap", "real"),
-                        help="Cascade profile name. Required — no implicit "
-                             "default. `default` profile retired 2026-05-16.")
-    parser.add_argument("--prices", default=None,
-                        help="Path to model_prices.json. "
-                             "Defaults to configs/model_prices.json.")
-    parser.add_argument("--batch", action="store_true",
-                        help="Apply the price-book batch discount to the "
-                             "projected totals.")
-    args = parser.parse_args()
+    fixed = (len(tokenizer.encode(SYSTEM_PROMPT))
+             + len(tokenizer.encode(_json.dumps(EXTRACT_FINDINGS_TOOL))))
+    in_tok = 0
+    for c in cases:
+        in_tok += fixed + len(tokenizer.encode(
+            make_user_prompt(c.text or "", c.path_string or "")))
+    return in_tok, len(cases) * out_tokens_per_case
 
-    if args.from_selection and args.pmcid:
-        parser.error("pass either positional PMCIDs OR --from-selection, not both")
 
+# ── Estimators (one per mode) ────────────────────────────────────────────────
+
+def run_cascade_estimate(args, *, book, pricing, resolved_profile, discount,
+                         nlp, tokenizer) -> int:
+    """Production MAP cascade projection over a paper selection / PMCID list."""
     if args.from_selection:
         sel_map = load_selection_yaml(Path(args.from_selection))
-    elif args.pmcid:
-        sel_map = {p: "explicit" for p in args.pmcid}
     else:
-        parser.print_help()
-        return 1
+        sel_map = {p: "explicit" for p in args.pmcid}
 
     if args.l2_rate or args.l3_rate:
         l2 = args.l2_rate or []
         l3 = args.l3_rate or []
         if len(l2) != len(l3):
-            parser.error("--l2-rate and --l3-rate must be paired (same count)")
+            raise SystemExit("--l2-rate and --l3-rate must be paired (same count)")
         scenarios = [Scenario(f"custom_{i+1}", l2[i], l3[i]) for i in range(len(l2))]
     else:
         scenarios = [
@@ -376,24 +415,6 @@ def main() -> int:
             Scenario("pessimistic", l2_rate=0.50, l3_rate=0.20),
         ]
 
-    logger.info("Loading price book + cascade profile…")
-    from pipeline.stages.summarization.costing import PriceBook
-    book = PriceBook.load(args.prices)
-    pricing, resolved_profile = build_pricing(args.profile, book)
-    discount = book.batch_discount_multiplier if args.batch else 1.0
-
-    logger.info("Loading spaCy en_core_sci_sm (sentencizer only)…")
-    import spacy
-    nlp = spacy.load(
-        "en_core_sci_sm",
-        disable=["tagger", "parser", "attribute_ruler", "lemmatizer", "ner"],
-    )
-    if "sentencizer" not in nlp.pipe_names:
-        nlp.add_pipe("sentencizer")
-
-    logger.info("Loading tiktoken cl100k_base…")
-    tokenizer = make_tokenizer()
-
     logger.info("Loading %d papers from DB…", len(sel_map))
     import time as _time
     t_all = _time.perf_counter()
@@ -401,21 +422,17 @@ def main() -> int:
     for i, (pmcid, bucket) in enumerate(sel_map.items(), start=1):
         logger.info("(%d/%d) loading %s [%s]…", i, len(sel_map), pmcid, bucket)
         s = load_paper_stats(
-            pmcid, bucket,
-            tokenizer=tokenizer,
-            chunk_size=args.chunk_size, chunk_overlap=args.chunk_overlap,
-            nlp=nlp,
+            pmcid, bucket, tokenizer=tokenizer,
+            chunk_size=args.chunk_size, chunk_overlap=args.chunk_overlap, nlp=nlp,
         )
         if s is not None:
             stats.append(s)
     logger.info("Loaded %d/%d papers in %.1fs", len(stats), len(sel_map),
                 _time.perf_counter() - t_all)
-
     if not stats:
         logger.error("No papers loaded — aborting")
         return 2
 
-    # ── Per-paper table ────────────────────────────────────────────────────
     print()
     print(f"{'pmcid':<48} {'bucket':<10} {'tx_el':>6} {'sents':>6} "
           f"{'chunks':>7} {'tokens':>9} {'in/chunk':>9}")
@@ -425,7 +442,6 @@ def main() -> int:
               f"{s.n_sentences:>6d} {s.n_chunks:>7d} {s.text_tokens:>9d} "
               f"{s.avg_chunk_in_tokens:>9d}")
     print("-" * 100)
-
     total_chunks = sum(s.n_chunks for s in stats)
     total_tokens = sum(s.text_tokens for s in stats)
     total_sents  = sum(s.n_sentences for s in stats)
@@ -436,7 +452,6 @@ def main() -> int:
           f"{total_chunks:>7d} {total_tokens:>9d} "
           f"{int(round(weighted_avg_in)):>9d}")
 
-    # ── MAP cost projection ────────────────────────────────────────────────
     print()
     discount_note = (
         f"  (batch discount ×{book.batch_discount_multiplier} applied)"
@@ -468,6 +483,173 @@ def main() -> int:
                   f"${v.output_per_mtok:>5.2f} out  per MTok")
     print()
     return 0
+
+
+def run_calibration_estimate(args, *, book, nlp, tokenizer) -> int:
+    """Calibration cost: map_theta_sweep PRIME (all voters) + Opus SILVER."""
+    from eval.silver.jsonl_utils import read_jsonl
+    from eval.silver.schemas import SourceCase
+    from eval.silver.split import filter_by_split
+
+    src_path = Path(args.source_cases)
+    if not src_path.exists():
+        logger.error("source cases not found: %s", src_path)
+        return 2
+    all_cases = list(read_jsonl(src_path, SourceCase))
+    logger.info("Loaded %d source cases from %s", len(all_cases), src_path)
+    if not all_cases:
+        logger.error("no source cases — aborting calibration estimate")
+        return 2
+
+    # PRIME runs the dev split and always uses the REAL-profile voters
+    # (map_theta_sweep._make_voters → make_l{1,2,3}_voters), independent of
+    # --profile — so price it against the real cascade.
+    prime_cases = filter_by_split(all_cases, args.split,
+                                  dev_fraction=args.dev_fraction, seed=args.seed)
+    real_pricing, _ = build_pricing("real", book)
+    p_chunks, p_avg_in, _ = summarize_cases(
+        prime_cases, tokenizer=tokenizer,
+        chunk_size=args.chunk_size, chunk_overlap=args.chunk_overlap, nlp=nlp)
+    prime = project_map_cost(p_chunks, p_avg_in, 1.0, 1.0, real_pricing)
+
+    # OPUS SILVER runs over ALL cases (generate.py applies no split).
+    opus_p = book.get(args.silver_model)
+    if opus_p is None:
+        raise SystemExit(
+            f"Missing price for silver model {args.silver_model!r} in "
+            f"configs/model_prices.json. Add it and re-run.")
+    in_tok, out_tok = silver_token_totals(all_cases, tokenizer,
+                                          args.silver_output_tokens)
+    silver = (in_tok / 1_000_000 * opus_p.input_per_1m
+              + out_tok / 1_000_000 * opus_p.output_per_1m)
+    bd = book.batch_discount_multiplier
+    n1, n2, n3 = (real_pricing["L1"].n_voters, real_pricing["L2"].n_voters,
+                  real_pricing["L3"].n_voters)
+
+    print()
+    print("=" * 72)
+    print(f"CALIBRATION cost — source_cases = {src_path}")
+    print("=" * 72)
+    print(f"  cases total : {len(all_cases)}")
+    print(f"  PRIME       : split={args.split} (dev_fraction={args.dev_fraction}, "
+          f"seed={args.seed}) → {len(prime_cases)} cases, {p_chunks} chunks, "
+          f"avg {p_avg_in} in-tok/chunk")
+    print(f"  SILVER      : all {len(all_cases)} cases, {args.silver_model}, "
+          f"~{args.silver_output_tokens} out-tok/case (cap 8192)")
+    print()
+    print(f"{'step':<30} {'unit cost':<20} {'sync $':>9} {'batch $':>9}")
+    print("-" * 72)
+    print(f"{'PRIME (map_theta_sweep)':<30} "
+          f"{f'{n1}+{n2}+{n3} voters/chunk':<20} "
+          f"{prime['total']:>9.2f} {prime['total'] * bd:>9.2f}")
+    print(f"{'OPUS SILVER (generate.py)':<30} {'1 judge/case':<20} "
+          f"{silver:>9.2f} {silver * bd:>9.2f}")
+    print("-" * 72)
+    total = prime["total"] + silver
+    print(f"{'CALIBRATION TOTAL':<30} {'':<20} {total:>9.2f} {total * bd:>9.2f}")
+    print()
+    print(f"PRIME = all real-profile voters (L1×{n1}+L2×{n2}+L3×{n3}) on every "
+          f"chunk, no escalation (project_map_cost @ 100%). The primer always "
+          f"runs the real cascade regardless of --profile.")
+    print(f"SILVER = one {args.silver_model} call per source case over ALL "
+          f"{len(all_cases)} cases (generate.py has no dev/test split); silver "
+          f"prompt measured live (PROMPT_VERSION-tracked).")
+    print()
+    return 0
+
+
+# ── CLI ─────────────────────────────────────────────────────────────────────
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("pmcid", nargs="*",
+                        help="Explicit PMCIDs (alternative to --from-selection)")
+    parser.add_argument("--from-selection", metavar="PATH",
+                        help="Path to a paper-selection YAML (production cascade estimate)")
+    parser.add_argument("--source-cases", nargs="?",
+                        const="eval/data/source_cases.jsonl", default=None,
+                        metavar="PATH",
+                        help="Estimate CALIBRATION cost (silver prime + Opus judge) "
+                             "over a source-cases JSONL. Bare flag uses "
+                             "eval/data/source_cases.jsonl. Combinable with "
+                             "--from-selection (both sections print).")
+    parser.add_argument("--chunk-size",    type=int, default=DEFAULT_CHUNK_SIZE)
+    parser.add_argument("--chunk-overlap", type=int, default=DEFAULT_CHUNK_OVERLAP)
+    parser.add_argument("--l2-rate", type=float, action="append", default=None,
+                        metavar="FRAC",
+                        help="L2 escalation fraction for one scenario row "
+                             "(repeatable; pair with --l3-rate). "
+                             "If unset, three baked-in scenarios are shown.")
+    parser.add_argument("--l3-rate", type=float, action="append", default=None,
+                        metavar="FRAC", help="L3 escalation fraction "
+                                              "(repeatable; matched to --l2-rate).")
+    parser.add_argument("--profile", required=True,
+                        choices=("cheap", "real"),
+                        help="Cascade profile name. Required — no implicit "
+                             "default. `default` profile retired 2026-05-16. "
+                             "(The calibration PRIME is always priced at `real`.)")
+    parser.add_argument("--silver-model", default=DEFAULT_SILVER_MODEL,
+                        help=f"Silver judge model for the Opus estimate "
+                             f"(default {DEFAULT_SILVER_MODEL}).")
+    parser.add_argument("--silver-output-tokens", type=int,
+                        default=SILVER_OUTPUT_TOKENS,
+                        help=f"Estimated Opus findings-JSON tokens per case "
+                             f"(default {SILVER_OUTPUT_TOKENS}; hard cap 8192).")
+    parser.add_argument("--split", default="dev", choices=("dev", "test", "all"),
+                        help="Split the PRIME processes (default dev — matches "
+                             "map_theta_sweep). Opus silver always covers all cases.")
+    parser.add_argument("--dev-fraction", type=float, default=0.8,
+                        help="Dev fraction for the prime split (default 0.8).")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Split seed (default 42 — matches map_theta_sweep).")
+    parser.add_argument("--prices", default=None,
+                        help="Path to model_prices.json. "
+                             "Defaults to configs/model_prices.json.")
+    parser.add_argument("--batch", action="store_true",
+                        help="Apply the price-book batch discount to the cascade "
+                             "totals (the calibration table always shows sync AND batch).")
+    args = parser.parse_args()
+
+    if args.from_selection and args.pmcid:
+        parser.error("pass either positional PMCIDs OR --from-selection, not both")
+
+    cascade_mode = bool(args.from_selection or args.pmcid)
+    calib_mode = args.source_cases is not None
+    if not (cascade_mode or calib_mode):
+        parser.print_help()
+        return 1
+
+    # ── Shared setup (price book + sentencizer + tokenizer) ─────────────────
+    logger.info("Loading price book + cascade profile…")
+    from pipeline.stages.summarization.costing import PriceBook
+    book = PriceBook.load(args.prices)
+    pricing, resolved_profile = build_pricing(args.profile, book)
+    discount = book.batch_discount_multiplier if args.batch else 1.0
+
+    logger.info("Loading spaCy en_core_sci_sm (sentencizer only)…")
+    import spacy
+    nlp = spacy.load(
+        "en_core_sci_sm",
+        disable=["tagger", "parser", "attribute_ruler", "lemmatizer", "ner"],
+    )
+    if "sentencizer" not in nlp.pipe_names:
+        nlp.add_pipe("sentencizer")
+
+    logger.info("Loading tiktoken cl100k_base…")
+    tokenizer = make_tokenizer()
+
+    rc = 0
+    if cascade_mode:
+        rc = run_cascade_estimate(
+            args, book=book, pricing=pricing, resolved_profile=resolved_profile,
+            discount=discount, nlp=nlp, tokenizer=tokenizer) or rc
+    if calib_mode:
+        rc = run_calibration_estimate(
+            args, book=book, nlp=nlp, tokenizer=tokenizer) or rc
+    return rc
 
 
 if __name__ == "__main__":
