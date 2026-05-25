@@ -86,8 +86,58 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-061 | Observed (2026-05-21) | Low | PDF extraction, table cropping geometry | `crop too small minor` family of labels — 16 aggregated table cases across all variants (8 with caption issue + 6 stand-alone + 2 unmasked-letters variant).  Tables whose emitted crop bbox is smaller than the true table extent, missing some content.  Currently no config knob or filter tests this.  Symmetric to `crop too big` (which the Stage 5 `footnote_multiplier` sweep partially addresses).  Possible fix: dilate detection bboxes by a small margin before cropping, gated by a new `CroppingConfig.table_crop_dilation_pts` field, sweep values in {0, 2, 4, 8}.  Risk: dilation increases overlap with adjacent layout elements (captions, footnotes — though expand_tables_with_footnotes handles the latter). Decision/scope: outside the 2026-05-21 thesis-day budget; document as known limitation. | [Bug 61](#bug-61--crop-too-small-table-geometry-no-config-knob) |
 | B-062 | Fixed (2026-05-23) | High | Summarisation, MAP cascade / config | `scripts/run_paper.py` never set `enable_router`, so both production entry points (`build_runner`, `build_batch_runner`) used the runner default `False` → **production ran the legacy `AgreementChecker` cascade, not `MapOutputRouter`**. Yet THESIS.md asserted router-on production in four places + `eval/silver/map_theta_sweep.py` in three comments. Documented production cascade ≠ actual behaviour. Found while wiring the config pin (calibration review item 3). Fix: path made config-governed (`summarization.map.enable_router`, default `false`) + logged at load; user decided production keeps the legacy L1→L2→L3 cascade (the router L1→L3-skip path is opt-in/experimental); stale docs corrected. | [Bug 62](#bug-62--documented-router-on-production-cascade-never-actually-enabled) |
 | B-063 | Fixed (2026-05-24) | Low | Tooling, cost estimation script | `scripts/estimate_selection_cost.py` imports `from pipeline.stages.summarization.costing import PriceBook` inside `main()` but never bootstraps the repo root onto `sys.path`. Run as the documented bare `python scripts/estimate_selection_cost.py …` (HOW_TO_RUN §5) it dies with `ModuleNotFoundError: No module named 'pipeline'` — Python puts the script's own dir (`scripts/`) on `sys.path`, not the CWD. Only `PYTHONPATH=. python …` worked, which the script's own docstring documented. Every sibling script (`run_paper.py`, `check_apis.py`) self-bootstraps with `_REPO_ROOT = Path(__file__).resolve().parents[1]`; this one was the lone violator of the CLAUDE.md "scripts must bootstrap their own path" convention. Hit while running the cost estimate for `related15_full`. Distinct from [B-052](#bug-52--cost-estimation-script-underestimates-per-chunk-input-tokens) (same file, token-formula fix). Fixed by adding the standard 3-line bootstrap before the first repo import + dropping `PYTHONPATH=.` from the docstring. | [Bug 63](#bug-63--estimate_selection_costpy-missing-syspath-bootstrap) |
+| B-064 | Fixed (2026-05-24) | Medium | Eval, silver embedding cache | The JSON embedding cache (`eval/silver/matcher.py`) rewrote the **entire** file on every `save()`, and the MAP θ sweep calls `save()` after each ~100-text batch (`_prewarm_agreement_cache`, `get_embeddings`, `_make_cached_embed_fn`) → **O(N²)**: the 720 MB / 17,827-entry gemini cache was re-serialised hundreds of times, dominating sweep wall-time (~20 s gaps even for 4-vector fetches). The silver↔pipeline matcher also used a pure-Python 3072-dim cosine triple-loop (`compute_sim_matrix`), the per-cell compute bottleneck at high θ. Fix: interface-preserving `SQLiteEmbeddingCache` (`set`=INSERT-in-txn, `save`=commit, WAL, float32 BLOB → 720→219 MB) behind `make_embedding_cache` + `NLP_HISTO_EMBEDDING_CACHE_BACKEND` (default `sqlite`); idempotent JSON→SQLite import (`scripts/import_embedding_cache_sqlite.py`); `compute_sim_matrix` vectorised with numpy. No embedder / dimensionality / θ / scorer-semantics change. | [Bug 64](#bug-64--json-embedding-cache-rewrite--vectorised-cosine) |
 
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
+
+---
+
+## Bug 64 — JSON embedding cache rewrite + vectorised cosine
+
+### Status / Severity / Surface
+Fixed (2026-05-24) · Medium · Eval, silver embedding cache
+(`eval/silver/matcher.py`, `eval/silver/map_theta_sweep.py`).
+
+### Symptom
+The MAP θ sweep (`map_theta_sweep sweep`) spent most of its wall-time **not** on
+API calls: ~20 s gaps between embedding fetches even when only 4–14 new vectors
+were fetched, and ~14 s/cell of pure compute at high θ. A 56-cell sweep dragged
+for hours.
+
+### Evidence
+- `embedding_cache_gemini.json` reached **720 MB** (17,827 × 3072-dim gemini
+  vectors as JSON text). `EmbeddingCache.save()` does
+  `path.write_text(json.dumps(...))` — a full rewrite — and the sweep calls
+  `save()` after every ~100-text batch (`_prewarm_agreement_cache:622`), after
+  each `get_embeddings` miss-fill (`matcher.py:175`), and in
+  `_make_cached_embed_fn:645`. Hundreds of full 720 MB rewrites ⇒ O(N²).
+- `compute_sim_matrix` built the silver↔pipeline similarity with a Python triple
+  loop over `_cosine` (3072-dim) × 273 cases × 2 evals × 56 cells. The agreement
+  scorer was already numpy; only the matcher was pure-Python.
+
+### Fix
+- New `SQLiteEmbeddingCache` with the **same** `get`/`set`/`save`/`__len__`
+  interface: `set()` = `INSERT OR REPLACE` in an open transaction, `save()` =
+  `commit()` (so the existing per-batch `save()` calls become cheap commits, not
+  rewrites); `PRAGMA journal_mode=WAL` + `synchronous=NORMAL`; vectors stored as
+  float32 BLOBs (720 MB → **219 MB**). Same
+  `sha256(model\0 text.lower().strip())` key, so JSON and SQLite are
+  key-compatible — no caller-loop changes.
+- `make_embedding_cache()` factory + `NLP_HISTO_EMBEDDING_CACHE_BACKEND`
+  (`sqlite` default, `json` fallback); all eight eval cache-construction sites
+  routed through it.
+- `import_json_cache_to_sqlite()` + `scripts/import_embedding_cache_sqlite.py`:
+  idempotent, non-destructive JSON→SQLite import (copies hash keys verbatim,
+  prints rows imported / skipped / dim distribution).
+- `compute_sim_matrix` vectorised with numpy (one BLAS matmul; float64 to mirror
+  `agreement/embedding.py`).
+
+### Verification
+`eval/silver/tests/test_embedding_cache_sqlite.py` (11 cases) + existing
+`test_matcher.py` (12 cases incl. cosine/match) pass. Real import: 17,827 rows,
+all 3072-dim, 720 MB JSON → 219 MB SQLite, idempotent on re-run.
+**Caveat:** float32 storage changes cosine by ~1e-6 vs the float64 JSON values —
+immaterial for matching, but SQLite results are not bit-identical to JSON.
 
 ---
 

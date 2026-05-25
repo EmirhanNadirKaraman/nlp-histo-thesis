@@ -19,9 +19,13 @@ import hashlib
 import json
 import logging
 import math
+import os
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Union
+
+import numpy as np
 
 from .schemas import (
     EvalMetrics,
@@ -145,6 +149,140 @@ class EmbeddingCache:
         return len(self._entries)
 
 
+class SQLiteEmbeddingCache:
+    """SQLite-backed embedding cache — same interface as :class:`EmbeddingCache`.
+
+    Fixes the JSON backend's O(N²) behaviour (B-064): the JSON cache rewrote the
+    whole file on every ``save()``. Here ``set()`` is an ``INSERT OR REPLACE``
+    inside an open transaction and ``save()`` is just ``commit()``, so the
+    existing per-batch ``save()`` calls become cheap commits instead of full-file
+    rewrites. Vectors are stored as float32 BLOBs (~5× smaller than JSON text).
+
+    The cache key is identical to :class:`EmbeddingCache`
+    (``sha256(model\\0 text.lower().strip())``), so the two backends are
+    key-compatible and an existing JSON cache can be imported verbatim.
+    """
+
+    def __init__(self, path: Path, embedding_model: str = EMBEDDING_MODEL) -> None:
+        self.path = Path(path)
+        self.embedding_model = embedding_model
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._conn = sqlite3.connect(str(self.path))
+        self._conn.execute("PRAGMA journal_mode=WAL")
+        self._conn.execute("PRAGMA synchronous=NORMAL")
+        self._conn.execute(
+            "CREATE TABLE IF NOT EXISTS embeddings ("
+            "key TEXT PRIMARY KEY, model TEXT NOT NULL, dim INTEGER NOT NULL, "
+            "vec BLOB NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)"
+        )
+        self._conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_embeddings_model ON embeddings(model)"
+        )
+        self._conn.commit()
+        logger.info("SQLite embedding cache: %d entries at %s", len(self), self.path)
+
+    def _make_key(self, text: str) -> str:
+        normalised = text.lower().strip()
+        raw = f"{self.embedding_model}\x00{normalised}"
+        return hashlib.sha256(raw.encode()).hexdigest()
+
+    def get(self, text: str) -> list[float] | None:
+        row = self._conn.execute(
+            "SELECT vec FROM embeddings WHERE key = ?", (self._make_key(text),)
+        ).fetchone()
+        if row is None:
+            return None
+        return np.frombuffer(row[0], dtype=np.float32).tolist()
+
+    def set(self, text: str, embedding: list[float]) -> None:
+        vec = np.asarray(embedding, dtype=np.float32).tobytes()
+        self._conn.execute(
+            "INSERT OR REPLACE INTO embeddings (key, model, dim, vec) VALUES (?, ?, ?, ?)",
+            (self._make_key(text), self.embedding_model, len(embedding), vec),
+        )
+
+    def save(self) -> None:
+        self._conn.commit()
+
+    def __len__(self) -> int:
+        return self._conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0]
+
+
+def make_embedding_cache(path, embedding_model: str = EMBEDDING_MODEL):
+    """Return the embedding-cache backend chosen by
+    ``$NLP_HISTO_EMBEDDING_CACHE_BACKEND`` (``sqlite`` default, or ``json``).
+
+    For ``sqlite`` the on-disk path is ``path`` with its suffix swapped to
+    ``.sqlite`` — a caller passing ``…/embedding_cache_gemini.json`` gets
+    ``…/embedding_cache_gemini.sqlite``. There is **no** auto-import on first use:
+    seed the SQLite file from an existing JSON cache with
+    ``scripts/import_embedding_cache_sqlite.py`` before a run, or it re-embeds.
+    """
+    backend = os.environ.get("NLP_HISTO_EMBEDDING_CACHE_BACKEND", "sqlite").strip().lower()
+    if backend == "json":
+        return EmbeddingCache(path, embedding_model)
+    if backend != "sqlite":
+        logger.warning(
+            "Unknown NLP_HISTO_EMBEDDING_CACHE_BACKEND=%r — falling back to sqlite", backend
+        )
+    return SQLiteEmbeddingCache(Path(path).with_suffix(".sqlite"), embedding_model)
+
+
+def import_json_cache_to_sqlite(json_path, sqlite_path=None, batch: int = 2000) -> dict:
+    """Import a JSON embedding cache into SQLite (B-064) — non-destructive, idempotent.
+
+    The JSON file is read-only here (never modified or deleted). Its entries are
+    already keyed by ``sha256(model\\0 text…)``, so keys are copied **verbatim**
+    and stay compatible with :class:`SQLiteEmbeddingCache`. Re-running is a no-op
+    for already-present keys (``INSERT OR IGNORE``). Returns a stats dict.
+    """
+    json_path = Path(json_path)
+    sqlite_path = Path(sqlite_path) if sqlite_path else json_path.with_suffix(".sqlite")
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    model = data.get("embedding_model", "")
+    entries = data.get("entries", {})
+    sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(sqlite_path))
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS embeddings ("
+            "key TEXT PRIMARY KEY, model TEXT NOT NULL, dim INTEGER NOT NULL, "
+            "vec BLOB NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)"
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_embeddings_model ON embeddings(model)")
+        conn.commit()
+        before = conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0]
+        dims: dict[int, int] = {}
+        buf: list = []
+
+        def _flush() -> None:
+            if buf:
+                conn.executemany(
+                    "INSERT OR IGNORE INTO embeddings (key, model, dim, vec) VALUES (?, ?, ?, ?)",
+                    buf,
+                )
+                conn.commit()
+                buf.clear()
+
+        for key, vec in entries.items():
+            d = len(vec)
+            dims[d] = dims.get(d, 0) + 1
+            buf.append((key, model, d, np.asarray(vec, dtype=np.float32).tobytes()))
+            if len(buf) >= batch:
+                _flush()
+        _flush()
+        after = conn.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0]
+    finally:
+        conn.close()
+    imported = after - before
+    return {
+        "source": str(json_path), "dest": str(sqlite_path), "json_entries": len(entries),
+        "imported": imported, "skipped": len(entries) - imported, "dims": dims, "total": after,
+    }
+
+
 # ── Embedding fetch ────────────────────────────────────────────────────────────
 
 def get_embeddings(
@@ -233,13 +371,16 @@ def compute_sim_matrix(
 
     all_texts = silver_texts + pipeline_texts
     all_embs = get_embeddings(all_texts, embedder, cache)
-    s_embs = all_embs[:len(silver_texts)]
-    p_embs = all_embs[len(silver_texts):]
 
-    sim = [
-        [_cosine(s_embs[i], p_embs[j]) for j in range(len(pipeline_texts))]
-        for i in range(len(silver_texts))
-    ]
+    # Vectorised cosine (B-064): one BLAS matmul instead of an O(n·m·dim) Python
+    # triple loop — the per-cell bottleneck that balloons at high theta. float64
+    # mirrors the agreement scorer (agreement/embedding.py uses dtype=float).
+    arr = np.asarray(all_embs, dtype=np.float64)
+    norms = np.linalg.norm(arr, axis=1, keepdims=True)
+    norms[norms == 0.0] = 1.0  # zero vectors → zero similarity (matches _cosine)
+    unit = arr / norms
+    n_s = len(silver_texts)
+    sim = (unit[:n_s] @ unit[n_s:].T).tolist()
     return sim, silver_texts, pipeline_texts
 
 
@@ -320,7 +461,7 @@ def match_case(
 ) -> MatchResult:
     """Match one case. Uses/updates cache if provided."""
     if cache is None:
-        cache = EmbeddingCache(DEFAULT_CACHE_PATH)
+        cache = make_embedding_cache(DEFAULT_CACHE_PATH)
     sim, _, _ = compute_sim_matrix(silver, pipeline, embedder, cache)
     return match_from_matrix(silver, pipeline, sim, threshold)
 

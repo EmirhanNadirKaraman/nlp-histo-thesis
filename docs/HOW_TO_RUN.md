@@ -682,6 +682,35 @@ id list from the original submit) — re-run `batch` to validate Gemini content.
 
 ---
 
+### Embedding cache — SQLite backend (B-064)
+
+The silver eval / MAP θ sweep cache embeddings to disk. The default backend is
+**SQLite** (`NLP_HISTO_EMBEDDING_CACHE_BACKEND=sqlite|json`, default `sqlite`),
+replacing the JSON cache that rewrote the whole file on every batch — an O(N²)
+slowdown on the 720 MB gemini cache (B-064). Seed the SQLite file **once** from
+an existing JSON cache (non-destructive, idempotent, no API):
+
+```bash
+python scripts/import_embedding_cache_sqlite.py
+# eval/data/embedding_cache_gemini.json → eval/data/embedding_cache_gemini.sqlite
+# prints rows imported / skipped / dimensionality distribution
+```
+
+Then run the sweep as usual — it reads the warm SQLite cache (no full-file
+rewrites, lazy load, incremental inserts):
+
+```bash
+python -m eval.silver.map_theta_sweep sweep --split all --embedder gemini
+```
+
+There is **no auto-import**: if you skip the import step the SQLite cache starts
+empty and re-embeds (cheap but slower). Force the legacy JSON backend with
+`NLP_HISTO_EMBEDDING_CACHE_BACKEND=json`. SQLite stores float32 BLOBs
+(~3× smaller than the JSON text); cosine differs from JSON by ~1e-6 (immaterial,
+not bit-identical).
+
+---
+
 ## 10. Per-stage output cache (B-027)
 
 `runtime.skip_existing_outputs` reuses cached outputs for the three

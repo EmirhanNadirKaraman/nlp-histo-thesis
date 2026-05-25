@@ -34,6 +34,7 @@ from eval.silver.matcher import (
     SIMILARITY_THRESHOLD,
     EmbeddingCache,
     compute_metrics,
+    make_embedding_cache,
     compute_sim_matrix,
     match_from_matrix,
 )
@@ -139,7 +140,7 @@ def main():
     logger.info("Split=%s  Evaluating %d common case(s)…", args.split, len(common))
 
     # Embedding cache
-    cache = EmbeddingCache(embed_cache_path, embed_model)
+    cache = make_embedding_cache(embed_cache_path, embed_model)
 
     # Match
     match_results: list[MatchResult] = []

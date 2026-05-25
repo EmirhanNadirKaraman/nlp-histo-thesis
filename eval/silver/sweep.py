@@ -38,6 +38,7 @@ from eval.silver.matcher import (
     STRICT_FIELDS,
     EmbeddingCache,
     compute_sim_matrix,
+    make_embedding_cache,
     match_from_matrix,
 )
 from eval.silver.schemas import PipelineCaseOutput, SilverCaseResult
@@ -250,7 +251,7 @@ def main() -> None:
 
     if use_openai:
         from eval.silver.embedders import OPENAI_MODEL
-        cache = EmbeddingCache(Path(args.embed_cache), OPENAI_MODEL)
+        cache = make_embedding_cache(Path(args.embed_cache), OPENAI_MODEL)
         embedder = OpenAIEmbedder(openai_key)  # type: ignore[arg-type]
         rows, best = _run_sweep(
             "openai", embedder, cache, common,
@@ -261,7 +262,7 @@ def main() -> None:
 
     if use_gemini:
         from eval.silver.embedders import GEMINI_MODEL
-        cache = EmbeddingCache(Path(args.embed_cache_gemini), GEMINI_MODEL)
+        cache = make_embedding_cache(Path(args.embed_cache_gemini), GEMINI_MODEL)
         embedder = GeminiEmbedder(gemini_key)  # type: ignore[arg-type]
         rows, best = _run_sweep(
             "gemini", embedder, cache, common,

@@ -53,6 +53,7 @@ from eval.silver.matcher import (
     SIMILARITY_THRESHOLD,
     EmbeddingCache,
     compute_sim_matrix,
+    make_embedding_cache,
     match_from_matrix,
 )
 from eval.silver.schemas import (
@@ -603,14 +604,14 @@ def main() -> None:
                 print("GOOGLE_API_KEY not set", file=sys.stderr); sys.exit(1)
             embedder = GeminiEmbedder(api_key)
             cache_path = Path(args.embed_cache) if args.embed_cache else DEFAULT_GEMINI_CACHE_PATH
-            embed_cache = EmbeddingCache(cache_path, GEMINI_EMBEDDING_MODEL)
+            embed_cache = make_embedding_cache(cache_path, GEMINI_EMBEDDING_MODEL)
         else:
             api_key = os.environ.get("OPENAI_API_KEY")
             if not api_key:
                 print("OPENAI_API_KEY not set", file=sys.stderr); sys.exit(1)
             embedder = OpenAIEmbedder(api_key)
             cache_path = Path(args.embed_cache) if args.embed_cache else DEFAULT_CACHE_PATH
-            embed_cache = EmbeddingCache(cache_path, EMBEDDING_MODEL)
+            embed_cache = make_embedding_cache(cache_path, EMBEDDING_MODEL)
 
         grounding_rows = run_grounding_sweep(
             filtered_cases, silver_by_case, embedder, embed_cache,

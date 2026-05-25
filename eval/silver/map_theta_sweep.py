@@ -78,6 +78,7 @@ from eval.silver.matcher import (
     GEMINI_EMBEDDING_MODEL,
     SIMILARITY_THRESHOLD,
     EmbeddingCache,
+    make_embedding_cache,
 )
 from eval.silver.pipeline_sweep import case_to_file_data, _evaluate_outputs
 from eval.silver.schemas import (
@@ -1006,7 +1007,7 @@ def main() -> None:
                 sys.exit(1)
             embedder = GeminiEmbedder(api_key)
             embed_cache_path = Path(args.embed_cache) if args.embed_cache else DEFAULT_GEMINI_CACHE_PATH
-            embed_cache = EmbeddingCache(embed_cache_path, GEMINI_EMBEDDING_MODEL)
+            embed_cache = make_embedding_cache(embed_cache_path, GEMINI_EMBEDDING_MODEL)
             from pipeline.stages.summarization.agreement.providers import GeminiEmbedder as AgreementGeminiEmbedder
             _raw_agreement_fn = AgreementGeminiEmbedder()
         else:
@@ -1019,7 +1020,7 @@ def main() -> None:
                 sys.exit(1)
             embedder = OpenAIEmbedder(api_key)
             embed_cache_path = Path(args.embed_cache) if args.embed_cache else DEFAULT_CACHE_PATH
-            embed_cache = EmbeddingCache(embed_cache_path, EMBEDDING_MODEL)
+            embed_cache = make_embedding_cache(embed_cache_path, EMBEDDING_MODEL)
             _raw_agreement_fn = AgreementOpenAIEmbedder()
 
         # Pre-compute all agreement embeddings upfront so the theta replay loop
