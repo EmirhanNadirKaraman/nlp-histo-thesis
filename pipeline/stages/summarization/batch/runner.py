@@ -139,6 +139,7 @@ class BatchSummarizationRunner:
         run_ner: bool = False,
         enable_router: bool = False,
         router_single_voter_policy: str = "escalate",
+        legacy_single_voter_policy: str = "keep",
     ) -> None:
         from ..agreement.providers import OpenAIEmbedder
         cfg = config or SummarizationConfig()
@@ -158,6 +159,7 @@ class BatchSummarizationRunner:
             ),
             theta=cfg.map.theta,
             reject_theta=cfg.map.reject_theta,
+            single_voter_policy=legacy_single_voter_policy,  # type: ignore[arg-type]
         )
         # Grounding-first router config. When enabled, _process_level runs
         # schema + provenance validation before the agreement gate, drops
@@ -165,6 +167,13 @@ class BatchSummarizationRunner:
         # the sync MapStage router path.
         self._enable_router = enable_router
         self._router_single_voter_policy = router_single_voter_policy
+        # Legacy-path N=1 policy — see SummarizationRunner for full rationale.
+        # Captured here so per-call AgreementCheckers built in _process_level
+        # inherit the same policy as the runner-level one (otherwise a
+        # `--legacy-single-voter-policy=escalate` flag would silently revert
+        # to "keep" inside the per-level processing). Hash-gated on
+        # `not enable_router` to mirror the router policy's gating.
+        self._legacy_single_voter_policy = legacy_single_voter_policy
         # ReduceStage/RuleStage call `llm.with_structured_output(...)` in their
         # ctors, so we only construct them when the legacy REDUCE/RULES block
         # is enabled. Otherwise the runner can be built with any (or no) LLM —
@@ -235,9 +244,14 @@ class BatchSummarizationRunner:
         self._run_ner = run_ner
 
         # Snapshot of config + cascade for the manifest, mirrors sync runner shape.
+        # ``config_layout_version`` is stamped so historical-vs-current artifact
+        # consumers can branch on the dataclass shape — see
+        # SummarizationConfig.CONFIG_LAYOUT_VERSION for the version log.
         import dataclasses
+        from ..config import CONFIG_LAYOUT_VERSION
         self._config_snapshot = {
             **dataclasses.asdict(cfg),
+            "config_layout_version": CONFIG_LAYOUT_VERSION,
             "cascade_profile":   cascade_profile,
             "cascade_signature": self._cascade_signature,
             "voter_models":         [v.model for v in self._l1],
@@ -870,6 +884,9 @@ class BatchSummarizationRunner:
             "router_single_voter_policy": (
                 self._router_single_voter_policy if self._enable_router else None
             ),
+            "legacy_single_voter_policy": (
+                self._legacy_single_voter_policy if not self._enable_router else None
+            ),
             # B-049 behavioural stamp — bumps invalidate cached summaries when
             # canonicalization semantics change.
             "canonicalize_direction_policy_version": CANONICALIZE_DIRECTION_POLICY_VERSION,
@@ -1133,6 +1150,7 @@ class BatchSummarizationRunner:
             ),
             theta=self._agreement.theta,
             reject_theta=self._agreement.reject_theta,
+            single_voter_policy=self._legacy_single_voter_policy,  # type: ignore[arg-type]
         )
         # Grounding-first router: built fresh per call so it shares the same
         # cached AgreementChecker as the agreement gate. Disabled when

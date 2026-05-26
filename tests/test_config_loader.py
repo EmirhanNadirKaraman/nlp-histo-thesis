@@ -92,25 +92,56 @@ def test_summarization_section_independent(tmp_path: Path):
     assert sumcfg.map.reject_theta == 0.2
 
 
-def test_map_router_pins_loaded(tmp_path: Path):
-    """B-062: the cascade-path pins must load from YAML so both runner builders
-    (`build_runner` / `build_batch_runner` read `sum_cfg.map.*`) are governed by
-    config. Strict loader would reject the keys if the dataclass fields went
-    missing, so this also guards against the field being renamed/dropped."""
+def test_routing_pins_loaded(tmp_path: Path):
+    """B-062 + config-layout-v2 (2026-05-26): cascade-path + single-voter
+    policy pins live on ``RoutingConfig`` (moved from ``MapConfig`` in
+    layout v2). Both runner builders read ``sum_cfg.routing.*``. Strict
+    loader rejects unknown keys, so this also guards against the field
+    being renamed/dropped or accidentally re-introduced under ``map``."""
     # Defaults when unspecified → legacy cascade.
     _, default_cfg = load_config(_write(tmp_path, ""))
-    assert default_cfg.map.enable_router is False
-    assert default_cfg.map.router_single_voter_policy == "escalate"
+    assert default_cfg.routing.enable_router is False
+    assert default_cfg.routing.router_single_voter_policy == "escalate"
+    assert default_cfg.routing.legacy_single_voter_policy == "keep"
     # Explicit override round-trips (bool coercion + str pass-through).
     p = _write(tmp_path, """
         summarization:
-          map:
+          routing:
             enable_router: true
             router_single_voter_policy: keep
+            legacy_single_voter_policy: escalate
     """)
     _, sumcfg = load_config(p)
-    assert sumcfg.map.enable_router is True
-    assert sumcfg.map.router_single_voter_policy == "keep"
+    assert sumcfg.routing.enable_router is True
+    assert sumcfg.routing.router_single_voter_policy == "keep"
+    assert sumcfg.routing.legacy_single_voter_policy == "escalate"
+
+
+def test_legacy_map_routing_paths_rejected(tmp_path: Path):
+    """Config-layout-v2 (2026-05-26): the three routing-policy fields moved
+    from ``MapConfig`` to ``RoutingConfig``. Stale YAML using the v1 path
+    (``summarization.map.enable_router`` etc.) must fail loudly through the
+    strict loader rather than silently route to a non-existent field.
+
+    This is a deliberate hard break — no compatibility alias was added —
+    because (a) this repo has a single canonical YAML, (b) ``configs/run.yaml``
+    was migrated in the same diff, and (c) a clear ``Unknown config field``
+    error is a stronger forcing function than a deprecation warning that can
+    be ignored."""
+    import pytest
+
+    for stale_key in (
+        "enable_router: true",
+        "router_single_voter_policy: keep",
+        "legacy_single_voter_policy: escalate",
+    ):
+        p = _write(tmp_path, f"""
+            summarization:
+              map:
+                {stale_key}
+        """)
+        with pytest.raises(ValueError, match="Unknown config field: MapConfig"):
+            load_config(p)
 
 
 def test_normalize_extra_synonyms_loaded_as_mapping(tmp_path: Path):

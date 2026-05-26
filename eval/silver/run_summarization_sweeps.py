@@ -138,6 +138,13 @@ COUNT_ALPHA_GRID = [0.0, 0.25, 0.50]
 REUSE_WEIGHT_GRID = [0.0, 0.15, 0.30]
 CONTRADICTION_WEIGHT_GRID = [0.0, 0.20, 0.40]
 
+# Stage 3a — legacy_single_voter_policy. Two-cell categorical sweep at the
+# pinned BEST_SCORER / BEST_THETA / BEST_REJECT_THETA. Production default is
+# "keep" (the pre-existing implicit AgreementChecker behaviour); the
+# experiment asks whether escalating single-survivor chunks improves
+# precision at acceptable cost.
+LEGACY_SINGLE_VOTER_POLICY_GRID = ("keep", "escalate")
+
 # Scaffold grids (catalogued; not executed).
 GROUNDING_THRESHOLD_GRID = [0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95]
 RELATE_ENTAILMENT_GRID = [0.40, 0.50, 0.60, 0.70]
@@ -147,7 +154,7 @@ CONTRADICTION_SIM_GRID = [0.50, 0.60, 0.70, 0.80]
 
 CSV_FIELDNAMES = [
     "scorer", "tau", "count_alpha", "reuse_weight", "contradiction_weight",
-    "theta", "reject_theta", "cascade_path",
+    "theta", "reject_theta", "legacy_single_voter_policy", "cascade_path",
     "precision", "recall", "f1", "strict_f1",
     "early_accept_rate", "escalate_rate", "early_accept_precision",
     "n_matched", "n_silver", "n_pipeline",
@@ -169,13 +176,14 @@ class SweepSpec:
 
 
 STAGE_ORDER = (
-    "map_scorer",      # Stage 1
-    "map_theta",       # Stage 2
-    "map_weights",     # Stage 3
-    "grounding",       # Stage 4  (scaffold)
-    "relate",          # Stage 5  (scaffold)
-    "resolve",         # Stage 6  (scaffold)
-    "contradiction",   # Stage 7  (scaffold)
+    "map_scorer",          # Stage 1
+    "map_theta",           # Stage 2
+    "map_weights",         # Stage 3
+    "map_routing_policy",  # Stage 3a — legacy_single_voter_policy {keep, escalate}
+    "grounding",           # Stage 4  (scaffold)
+    "relate",              # Stage 5  (scaffold)
+    "resolve",             # Stage 6  (scaffold)
+    "contradiction",       # Stage 7  (scaffold)
 )
 STAGE_CHOICES = STAGE_ORDER  # no "all": stages have heterogeneous, non-comparable metrics
 
@@ -188,6 +196,10 @@ STAGES: dict[str, SweepSpec] = {
         executable=True, metric="silver_f1"),
     "map_weights": SweepSpec(
         "map_weights", "Stage 3 — H-EMB-01 weights (hybrid only) on BEST_SCORER/theta",
+        executable=True, metric="silver_f1"),
+    "map_routing_policy": SweepSpec(
+        "map_routing_policy",
+        "Stage 3a — legacy_single_voter_policy ∈ {keep, escalate} at BEST_SCORER/theta/reject",
         executable=True, metric="silver_f1"),
     "grounding": SweepSpec(
         "grounding", "Stage 4 — grounding.threshold  [SCAFFOLD]",
@@ -263,20 +275,56 @@ def _map_grid(stage: str) -> tuple[list[ScorerSpec], list[float], list[float]]:
                 "the hybrid scorer's structural-blend knobs; if Stage 1 picked "
                 "'embedding', skip Stage 3. (Edit BEST_SCORER to override.)")
         return _weight_variant_specs(), [BEST_THETA], [BEST_REJECT_THETA]
+    if stage == "map_routing_policy":
+        # Scorer / theta / reject_theta all pinned to BEST_*; the only axis is
+        # the legacy_single_voter_policy enum (handled separately in
+        # _policy_grid_for / _run_map_stage).
+        return [_spec_for(BEST_SCORER)], [BEST_THETA], [BEST_REJECT_THETA]
     raise ValueError(f"{stage!r} is not a MAP stage")
+
+
+def _policy_grid_for(stage: str) -> tuple[str, ...]:
+    """legacy_single_voter_policy axis per MAP stage.
+
+    Only ``map_routing_policy`` sweeps the policy; every other MAP stage holds
+    it at the production default ("keep") so its results are comparable to
+    historical sweep CSVs.
+    """
+    if stage == "map_routing_policy":
+        return LEGACY_SINGLE_VOTER_POLICY_GRID
+    return ("keep",)
 
 
 def _enumerate_cells(stage: str) -> list[str]:
     """Human-readable per-cell names for --list-variants."""
-    if stage in ("map_scorer", "map_theta", "map_weights"):
+    if stage in ("map_scorer", "map_theta", "map_weights", "map_routing_policy"):
         specs, thetas, rejects = _map_grid(stage)
+        policies = _policy_grid_for(stage)
         cells = []
         for s in specs:
             for t in thetas:
                 for r in rejects:
                     if r >= t:
                         continue
-                    cells.append(f"{s.name}  theta={t:.2f} rej={r:.2f}")
+                    for pol in policies:
+                        if stage == "map_routing_policy":
+                            # Per the user spec, the visible cell name uses the
+                            # `legacy_single_voter_<policy>` form so the policy
+                            # is the salient label, not buried in trailing
+                            # metadata.
+                            cells.append(
+                                f"legacy_single_voter_{pol}  "
+                                f"({s.name}, theta={t:.2f}, rej={r:.2f})"
+                            )
+                        elif len(policies) == 1 and policies[0] == "keep":
+                            # Historical stages — omit the policy suffix to
+                            # keep diffs against prior --list-variants output
+                            # readable.
+                            cells.append(f"{s.name}  theta={t:.2f} rej={r:.2f}")
+                        else:
+                            cells.append(
+                                f"{s.name}  theta={t:.2f} rej={r:.2f}  pol={pol}"
+                            )
         return cells
     if stage == "grounding":
         return [f"grounding_threshold={t:.2f}" for t in GROUNDING_THRESHOLD_GRID]
@@ -376,6 +424,7 @@ def _run_map_stage(stage: str, *, metric: str, max_escalate: Optional[float],
             return 2
 
     ctx = _load_map_context(embedder_kind, embed_cache_path=embed_cache_path)
+    policies = _policy_grid_for(stage)
     rows = run_sweep(
         voter_cache=ctx.voter_cache,
         silver_by_case=ctx.silver_by_case,
@@ -389,6 +438,7 @@ def _run_map_stage(stage: str, *, metric: str, max_escalate: Optional[float],
         seed=seed,
         dev_fraction=dev_fraction,
         agreement_embed_fn=ctx.agreement_embed_fn,
+        single_voter_policies=policies,
     )
     if not rows:
         print("no rows produced — check the voter cache / silver overlap.", file=sys.stderr)
@@ -421,6 +471,12 @@ def _pin_hint(stage: str, w: dict) -> str:
         return ("→ pin: BEST_TAU / BEST_COUNT_ALPHA / BEST_REUSE_WEIGHT / "
                 f"BEST_CONTRADICTION_WEIGHT = ({w['tau']}, {w['count_alpha']}, "
                 f"{w['reuse_weight']}, {w['contradiction_weight']})")
+    if stage == "map_routing_policy":
+        pol = w.get("legacy_single_voter_policy", "keep")
+        return (
+            f"→ pin: RoutingConfig.legacy_single_voter_policy = {pol!r}  "
+            f"(update configs/run.yaml summarization.routing.legacy_single_voter_policy)"
+        )
     return ""
 
 
@@ -460,9 +516,12 @@ def _list_variants(stage: str, only: Optional[set]) -> None:
     for c in cells:
         print(f"  {c}")
     print(f"\n{len(cells)} variant(s).")
-    if stage in ("map_theta", "map_weights"):
+    if stage in ("map_theta", "map_weights", "map_routing_policy"):
         print(f"(holding earlier stages at BEST_SCORER={BEST_SCORER!r}, "
               f"BEST_THETA={BEST_THETA}, BEST_REJECT_THETA={BEST_REJECT_THETA})")
+    if stage == "map_routing_policy":
+        print("(sweep axis: RoutingConfig.legacy_single_voter_policy ∈ "
+              f"{list(LEGACY_SINGLE_VOTER_POLICY_GRID)} — production default is 'keep')")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -23,10 +23,32 @@ from dataclasses import dataclass, field
 DEFAULT_MAX_TOKENS: int = 16384
 """Default max_tokens for all voter / escalation LLM calls in the MAP stage."""
 
+CONFIG_LAYOUT_VERSION: int = 2
+"""Schema version for the SummarizationConfig dataclass *layout*.
+
+Bumped when fields move between sub-dataclasses (vs. value changes, which are
+captured by the per-field defaults + the pipeline_config_hash payload). Stamped
+into every ``self._config_snapshot`` so analytical tooling that diffs
+``manifest.json`` / ``PipelineRun.config_snapshot`` / TraceCollector JSONL
+across runs can branch on the layout:
+
+* **v1** — ``enable_router`` / ``router_single_voter_policy`` /
+  ``legacy_single_voter_policy`` lived under ``map``.
+* **v2** — those three fields moved to a dedicated ``RoutingConfig`` sub-config
+  (2026-05-26).
+
+Historical artifacts predate this stamp; readers should treat the absence of
+``config_layout_version`` as v1."""
+
 
 @dataclass
 class MapConfig:
-    """ABC cascade + chunking knobs for the MAP stage."""
+    """ABC cascade + chunking knobs for the MAP stage.
+
+    Note: routing-policy fields (``enable_router``, ``router_single_voter_policy``,
+    ``legacy_single_voter_policy``) moved to :class:`RoutingConfig` in
+    layout v2 — they are routing/agreement-decision knobs, not MAP extraction
+    parameters."""
 
     theta: float = 0.8
     """Deferral score >= theta → KEEP without escalation."""
@@ -43,6 +65,18 @@ class MapConfig:
     chunk_workers: int = 5
     """Max parallel threads for chunk processing."""
 
+
+@dataclass
+class RoutingConfig:
+    """Cascade-path + single-voter-policy knobs for the MAP stage.
+
+    Separated from :class:`MapConfig` in layout v2 (2026-05-26) — these are
+    routing / agreement-decision parameters, semantically distinct from MAP
+    chunking / extraction. Production defaults preserve the v1 behaviour
+    exactly: ``enable_router=False`` (legacy AgreementChecker path),
+    ``router_single_voter_policy="escalate"``,
+    ``legacy_single_voter_policy="keep"``."""
+
     enable_router: bool = False
     """Cascade-path selector. False → legacy ``AgreementChecker`` (theta /
     reject_theta deferral). True → grounding-first ``MapOutputRouter`` (L1→L3
@@ -57,6 +91,21 @@ class MapConfig:
     """Only consulted when ``enable_router=True``: how ``MapOutputRouter`` treats
     a chunk with a single eligible voter. ``"escalate"`` (default) → send to L3;
     ``"keep"`` → accept the lone voter. Ignored on the legacy path."""
+
+    legacy_single_voter_policy: str = "keep"
+    """Only consulted when ``enable_router=False``: how ``AgreementChecker``
+    treats a chunk where only one voter survived (e.g. the other voters' API
+    calls failed). ``"keep"`` (default) preserves the prior implicit behaviour
+    — the lone survivor is accepted with synthetic ``confidence=1.0`` and no
+    peer comparison. ``"escalate"`` skips agreement and treats N=1 as
+    low-evidence, escalating to the next cascade level (L1→L2, L2→L3). Mirror
+    of ``router_single_voter_policy`` for the legacy path; the two are
+    independent. Note the cause differs: the router's N=1 case follows
+    schema/provenance gating (the survivor is *vetted*); the legacy N=1 case
+    follows API survival (the survivor was not compared to anything). Default
+    ``"keep"`` is the silent pre-existing behaviour in ``AgreementChecker``.
+    Sweepable for the experiment: does the legacy path's silent ``"keep"``
+    reward lucky surviving voters that should have escalated?"""
 
 
 @dataclass
@@ -189,6 +238,7 @@ class SummarizationConfig:
     """
 
     map: MapConfig = field(default_factory=MapConfig)
+    routing: RoutingConfig = field(default_factory=RoutingConfig)
     normalize: NormalizeConfig = field(default_factory=NormalizeConfig)
     grounding: GroundingConfig = field(default_factory=GroundingConfig)
     relate: RelateConfig = field(default_factory=RelateConfig)

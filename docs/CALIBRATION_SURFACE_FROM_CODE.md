@@ -34,8 +34,9 @@ code** (no `.md` consulted). Branch `pdf-extraction-eval`, 2026-05-24.
 | `contradiction_weight` | `config.py:178` / run.yaml:126 | **0.20** | ✅ `agreement.contradiction_weight` | ✅ ScorerSpec |
 | `chunk_size` | `config.py:37` | 10 | ✅ `map.chunk_size` | ⛔ (held fixed by sweep) |
 | `chunk_overlap` | `config.py:40` | 2 | ✅ `map.chunk_overlap` | ⛔ |
-| `enable_router` (cascade path) | `config.py:46` / run.yaml:87 | **false** (legacy `AgreementChecker`) | ✅ `map.enable_router` | ⚠️ sweep replays legacy path only |
-| `router_single_voter_policy` | `config.py:56` | `escalate` | ✅ | ⛔ (only when router on) |
+| `enable_router` (cascade path) | `config.py` (`RoutingConfig`) / run.yaml `summarization.routing.enable_router` | **false** (legacy `AgreementChecker`) | ✅ `routing.enable_router` (moved from `map.*` in layout v2, 2026-05-26) | ⚠️ sweep replays legacy path only |
+| `router_single_voter_policy` | `config.py` (`RoutingConfig`) / run.yaml `summarization.routing.router_single_voter_policy` | `escalate` | ✅ `routing.router_single_voter_policy` (moved from `map.*` in layout v2) | ✅ `eval/silver/run_summarization_sweeps.py --stage map_routing_policy` (only when router on) |
+| `legacy_single_voter_policy` | `config.py` (`RoutingConfig`) / run.yaml `summarization.routing.legacy_single_voter_policy` | `keep` | ✅ `routing.legacy_single_voter_policy` (added 2026-05-25, moved to `RoutingConfig` in layout v2) | ✅ `eval/silver/run_summarization_sweeps.py --stage map_routing_policy`, `eval/silver/map_theta_sweep.py --legacy-single-voter-policy {keep,escalate,both}` |
 | Voter roster (L1/L2/L3 models) | `batch/voter_configs.py` | `make_l1/l2/l3_voters()` | ⚠️ code | indirectly (cost/quality axis) |
 | Voter `max_tokens` | `config.py:23` | 16384 | partial (`DEFAULT_MAX_TOKENS`) | ⛔ |
 | `chunk_workers` | `config.py:43` | 5 | ✅ | n/a (perf only) |

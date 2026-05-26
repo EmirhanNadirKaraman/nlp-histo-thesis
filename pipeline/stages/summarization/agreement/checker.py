@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Literal
 
 from pipeline.stages.summarization.agreement.polarity_conflict import (
     detect_polarity_conflict,
@@ -40,6 +41,16 @@ class AgreementChecker:
         strategy, either pass a recalibrated ``theta`` here or set ``theta``
         on ``SemanticAgreementScorer`` directly so the scorer controls its
         own decision boundary.
+    single_voter_policy:
+        What to do when only one voter is available for peer comparison
+        (e.g. the others' API calls failed). ``"keep"`` (default) preserves
+        the prior implicit behaviour — the lone survivor is accepted with
+        synthetic ``confidence=1.0`` and no peer comparison. ``"escalate"``
+        treats N=1 as low-evidence and returns
+        ``ChunkDecision.ESCALATE`` so the caller routes the chunk up the
+        cascade. Mirror of ``MapOutputRouter.single_voter_policy`` for the
+        legacy non-router path; configured at runner level via
+        ``RoutingConfig.legacy_single_voter_policy``.
     """
 
     def __init__(
@@ -47,10 +58,12 @@ class AgreementChecker:
         scorer: MapOutputScorer,
         theta: float = 0.7,
         reject_theta: float = 0.2,
+        single_voter_policy: Literal["keep", "escalate"] = "keep",
     ) -> None:
         self._scorer = scorer
         self.theta = theta
         self.reject_theta = reject_theta
+        self._single_voter_policy = single_voter_policy
 
     def compute(
         self,
@@ -62,6 +75,14 @@ class AgreementChecker:
         if len(outputs) == 0:
             return ScoreBundle(confidence=0.0, decision=ChunkDecision.ESCALATE)
         if len(outputs) < 2:
+            # Only one voter — no peer comparison is possible. Policy decides
+            # whether to accept the lone survivor (legacy default) or escalate.
+            # Note: when the router is active, N=1 is already short-circuited
+            # by MapOutputRouter._chunk_decision_from_classifications before the
+            # agreement gate is reached, so this branch only fires on the
+            # legacy path (where N=1 means API survival, not validator pass).
+            if self._single_voter_policy == "escalate":
+                return ScoreBundle(confidence=0.0, decision=ChunkDecision.ESCALATE)
             return ScoreBundle(confidence=1.0, decision=ChunkDecision.KEEP)
 
         bundle = self._scorer.compute(outputs, source_text, context)

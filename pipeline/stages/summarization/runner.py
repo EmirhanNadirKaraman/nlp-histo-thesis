@@ -187,6 +187,7 @@ class SummarizationRunner:
         artifact_run_id:    str | None = None,
         enable_router:      bool = False,
         router_single_voter_policy: str = "escalate",
+        legacy_single_voter_policy: str = "keep",
     ) -> None:
         cfg = config or SummarizationConfig()
         self._output_dir = output_dir
@@ -238,6 +239,12 @@ class SummarizationRunner:
         # must invalidate cached results.
         self._enable_router = enable_router
         self._router_single_voter_policy = router_single_voter_policy
+        # Legacy-path counterpart: how AgreementChecker treats N=1 surviving
+        # voters when the router is off. Default "keep" preserves prior
+        # implicit behaviour; "escalate" sends single-survivor chunks up the
+        # cascade. Hash-gated on `not enable_router` so flipping it doesn't
+        # invalidate router-on runs.
+        self._legacy_single_voter_policy = legacy_single_voter_policy
 
         self._map = MapStage(
             voter_llms, level2_voter_llms, escalation_llm,
@@ -252,6 +259,7 @@ class SummarizationRunner:
             level2_voter_specs=level2_voter_specs,
             escalation_spec=escalation_spec,
             cascade_profile=cascade_profile,
+            legacy_single_voter_policy=legacy_single_voter_policy,
         )
         self._normalize = NormalizeStage(extra_synonyms=cfg.normalize.extra_synonyms)
         self._group = GroupStage()
@@ -311,9 +319,15 @@ class SummarizationRunner:
         self._final_rules: dict[str, list[FinalRule]] = {}
 
         import dataclasses
-        # Snapshot of config for traces (model introspection is best-effort)
+        from .config import CONFIG_LAYOUT_VERSION
+        # Snapshot of config for traces (model introspection is best-effort).
+        # ``config_layout_version`` is stamped so manifest.json / PipelineRun.
+        # config_snapshot / TraceCollector JSONL consumers can branch on the
+        # dataclass shape (v1 had routing-policy fields under ``map``; v2 has
+        # them under ``routing``). Absence ⇒ v1 by convention.
         self._config_snapshot = {
             **dataclasses.asdict(cfg),
+            "config_layout_version": CONFIG_LAYOUT_VERSION,
             "scorer": type(scorer).__name__ if scorer else "SemanticAgreementScorer",
             "voter_model_count": len(voter_llms),
             "voter_models": [_model_name(m) for m in voter_llms],
@@ -1324,6 +1338,9 @@ class SummarizationRunner:
             "enable_router":           self._enable_router,
             "router_single_voter_policy": (
                 self._router_single_voter_policy if self._enable_router else None
+            ),
+            "legacy_single_voter_policy": (
+                self._legacy_single_voter_policy if not self._enable_router else None
             ),
             # B-049 behavioural stamp — bumps invalidate cached summaries when
             # canonicalization semantics change.

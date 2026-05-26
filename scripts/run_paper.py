@@ -139,10 +139,10 @@ def _load_summarization_config(config_path: str | Path | None):
     _pdf_cfg, sum_cfg = load_config(path)
     logger.info(
         "Summarisation config loaded from %s "
-        "(grounding.threshold=%s, map.theta=%s, map.enable_router=%s, "
+        "(grounding.threshold=%s, map.theta=%s, routing.enable_router=%s, "
         "relate.entailment_threshold=%s)",
         path, sum_cfg.grounding.threshold, sum_cfg.map.theta,
-        sum_cfg.map.enable_router, sum_cfg.relate.entailment_threshold,
+        sum_cfg.routing.enable_router, sum_cfg.relate.entailment_threshold,
     )
     return sum_cfg
 
@@ -225,8 +225,9 @@ def build_runner(
         escalation_llm=escalation_llm,
         embed_fn=GeminiEmbedder(),
         config=sum_cfg,
-        enable_router=sum_cfg.map.enable_router,
-        router_single_voter_policy=sum_cfg.map.router_single_voter_policy,
+        enable_router=sum_cfg.routing.enable_router,
+        router_single_voter_policy=sum_cfg.routing.router_single_voter_policy,
+        legacy_single_voter_policy=sum_cfg.routing.legacy_single_voter_policy,
         output_dir=Path("out/summaries"),
         trace_enabled=trace,
         voter_specs=voter_specs,
@@ -279,8 +280,9 @@ def build_batch_runner(
         l3_model=profile.l3_voter,
         escalation_llm=escalation_llm,
         config=sum_cfg,
-        enable_router=sum_cfg.map.enable_router,
-        router_single_voter_policy=sum_cfg.map.router_single_voter_policy,
+        enable_router=sum_cfg.routing.enable_router,
+        router_single_voter_policy=sum_cfg.routing.router_single_voter_policy,
+        legacy_single_voter_policy=sum_cfg.routing.legacy_single_voter_policy,
         output_dir=Path("out/summaries"),
         embed_fn=GeminiEmbedder(),
         cascade_profile=profile.name,

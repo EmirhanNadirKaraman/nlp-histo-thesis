@@ -109,6 +109,13 @@ def _make_voters():
 THETA_GRID = [0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
 REJECT_THETA_GRID = [-1.0, 0.0, 0.1, 0.2]   # pairs with theta where reject_theta < theta
 
+# legacy_single_voter_policy — AgreementChecker N=1 handling on the legacy path.
+# Default is single-element ("keep") to preserve historical sweep behaviour: every
+# row reproduces the silent N=1 → KEEP that AgreementChecker did before the policy
+# was added. Pass --legacy-single-voter-policy escalate (or both) on the CLI to
+# enable the comparison. Production default mirrors this list's head.
+LEGACY_SINGLE_VOTER_POLICY_GRID = ("keep",)
+
 # Constant stamped into every sweep row. The replay drives AgreementChecker.compute
 # directly — the LEGACY L1->L2->L3 cascade — which IS the production path
 # (enable_router=false; decided in B-062, 2026-05-23). The MapOutputRouter
@@ -653,8 +660,14 @@ def _replay(
     scorer,
     theta: float,
     reject_theta: float,
+    single_voter_policy: str = "keep",
 ) -> tuple[list[PipelineCaseOutput], dict[str, int], dict[str, set[str]]]:
     """Replay the legacy L1→L2→L3 cascade for one (scorer, theta, reject_theta).
+
+    ``single_voter_policy`` mirrors ``RoutingConfig.legacy_single_voter_policy``:
+    ``"keep"`` (legacy default) accepts a single surviving voter at N=1 with
+    confidence=1.0; ``"escalate"`` treats N=1 as low-evidence and routes the
+    chunk up the cascade (L1→L2, L2→L3). Replay-only — no API calls.
 
     Returns ``(case_outputs, accept_counts, early_chunks)`` where:
       * ``accept_counts`` buckets every chunk by where it resolved —
@@ -666,7 +679,12 @@ def _replay(
     from pipeline.stages.summarization.interfaces.scoring import ChunkDecision
     from pipeline.stages.summarization.models import AuditableSummary
 
-    checker = AgreementChecker(scorer, theta=theta, reject_theta=reject_theta)
+    checker = AgreementChecker(
+        scorer,
+        theta=theta,
+        reject_theta=reject_theta,
+        single_voter_policy=single_voter_policy,  # type: ignore[arg-type]
+    )
     outputs: list[PipelineCaseOutput] = []
     accept_counts = {"l1": 0, "l2": 0, "l3": 0, "reject": 0, "no_data": 0}
     early_chunks: dict[str, set[str]] = {}
@@ -751,8 +769,15 @@ def run_sweep(
     seed: int,
     dev_fraction: float,
     agreement_embed_fn=None,
+    single_voter_policies: list[str] | tuple[str, ...] = LEGACY_SINGLE_VOTER_POLICY_GRID,
 ) -> list[dict]:
-    """Joint sweep over scorer × theta × reject_theta (reject_theta < theta only)."""
+    """Joint sweep over scorer × theta × reject_theta × legacy_single_voter_policy.
+
+    ``single_voter_policies`` defaults to ``("keep",)`` so existing callers
+    reproduce historical behaviour. Pass ``("keep", "escalate")`` to compare
+    both policies side-by-side; every cell in the inner product runs
+    independently.
+    """
     rows: list[dict] = []
     n_skipped = 0
     for spec in scorer_specs:
@@ -762,60 +787,63 @@ def run_sweep(
                 if reject_theta >= theta:
                     n_skipped += 1
                     continue
-                case_outputs, accept, early_chunks = _replay(
-                    voter_cache, scorer, theta, reject_theta,
-                )
-                # Keep only cases present in silver (dev split filtered at load time).
-                case_outputs = [co for co in case_outputs if co.case_id in silver_by_case]
-                metrics = _evaluate_outputs(
-                    case_outputs, silver_by_case, embedder, embed_cache, sim_threshold,
-                )
-
-                # Deferral safety: precision restricted to findings from chunks the
-                # cascade accepted EARLY (L1/L2 KEEP, not escalated to L3).
-                early_outputs = [
-                    PipelineCaseOutput(
-                        case_id=co.case_id, pmcid=co.pmcid, te_id=co.te_id,
-                        run_id=co.run_id, pipeline_run_id=0,
-                        findings=[
-                            f for f in co.findings
-                            if f.chunk_id in early_chunks.get(co.case_id, set())
-                        ],
+                for policy in single_voter_policies:
+                    case_outputs, accept, early_chunks = _replay(
+                        voter_cache, scorer, theta, reject_theta,
+                        single_voter_policy=policy,
                     )
-                    for co in case_outputs
-                ]
-                early_metrics = _evaluate_outputs(
-                    early_outputs, silver_by_case, embedder, embed_cache, sim_threshold,
-                )
-                total_chunks = sum(accept.values()) or 1
+                    # Keep only cases present in silver (dev split filtered at load time).
+                    case_outputs = [co for co in case_outputs if co.case_id in silver_by_case]
+                    metrics = _evaluate_outputs(
+                        case_outputs, silver_by_case, embedder, embed_cache, sim_threshold,
+                    )
 
-                row = {
-                    "scorer":                spec.name,
-                    "tau":                   spec.weights.tau,
-                    "count_alpha":           spec.weights.count_alpha,
-                    "reuse_weight":          spec.weights.reuse_weight,
-                    "contradiction_weight":  spec.weights.contradiction_weight,
-                    "theta":                 round(theta, 2),
-                    "reject_theta":          round(reject_theta, 2),
-                    "cascade_path":          CASCADE_PATH,
-                    "early_accept_rate":     round((accept["l1"] + accept["l2"]) / total_chunks, 4),
-                    "escalate_rate":         round(accept["l3"] / total_chunks, 4),
-                    "early_accept_precision": early_metrics["precision"],
-                    "split":                 split,
-                    "seed":                  seed,
-                    "dev_fraction":          dev_fraction,
-                    "sim_threshold":         sim_threshold,
-                    **metrics,
-                }
-                rows.append(row)
-                logger.info(
-                    "  %-18s theta=%.2f rej=%.2f  F1=%.3f strictF1=%.3f  "
-                    "earlyP=%.3f earlyRate=%.2f esc=%.2f  (pipeline=%d)",
-                    spec.name, theta, reject_theta,
-                    metrics["f1"], metrics["strict_f1"],
-                    early_metrics["precision"], row["early_accept_rate"],
-                    row["escalate_rate"], metrics["n_pipeline"],
-                )
+                    # Deferral safety: precision restricted to findings from chunks the
+                    # cascade accepted EARLY (L1/L2 KEEP, not escalated to L3).
+                    early_outputs = [
+                        PipelineCaseOutput(
+                            case_id=co.case_id, pmcid=co.pmcid, te_id=co.te_id,
+                            run_id=co.run_id, pipeline_run_id=0,
+                            findings=[
+                                f for f in co.findings
+                                if f.chunk_id in early_chunks.get(co.case_id, set())
+                            ],
+                        )
+                        for co in case_outputs
+                    ]
+                    early_metrics = _evaluate_outputs(
+                        early_outputs, silver_by_case, embedder, embed_cache, sim_threshold,
+                    )
+                    total_chunks = sum(accept.values()) or 1
+
+                    row = {
+                        "scorer":                spec.name,
+                        "tau":                   spec.weights.tau,
+                        "count_alpha":           spec.weights.count_alpha,
+                        "reuse_weight":          spec.weights.reuse_weight,
+                        "contradiction_weight":  spec.weights.contradiction_weight,
+                        "theta":                 round(theta, 2),
+                        "reject_theta":          round(reject_theta, 2),
+                        "legacy_single_voter_policy": policy,
+                        "cascade_path":          CASCADE_PATH,
+                        "early_accept_rate":     round((accept["l1"] + accept["l2"]) / total_chunks, 4),
+                        "escalate_rate":         round(accept["l3"] / total_chunks, 4),
+                        "early_accept_precision": early_metrics["precision"],
+                        "split":                 split,
+                        "seed":                  seed,
+                        "dev_fraction":          dev_fraction,
+                        "sim_threshold":         sim_threshold,
+                        **metrics,
+                    }
+                    rows.append(row)
+                    logger.info(
+                        "  %-18s theta=%.2f rej=%.2f  pol=%-8s F1=%.3f strictF1=%.3f  "
+                        "earlyP=%.3f earlyRate=%.2f esc=%.2f  (pipeline=%d)",
+                        spec.name, theta, reject_theta, policy,
+                        metrics["f1"], metrics["strict_f1"],
+                        early_metrics["precision"], row["early_accept_rate"],
+                        row["escalate_rate"], metrics["n_pipeline"],
+                    )
     if n_skipped:
         logger.info("Skipped %d (theta, reject_theta) pairs where reject_theta >= theta", n_skipped)
     return rows
@@ -836,27 +864,32 @@ def _print_table(rows: list[dict]) -> None:
     if not rows:
         return
     best = max(rows, key=lambda r: float(r["f1"]))
-    width = 104
+    width = 114
     print(f"\n{'─'*width}")
     print("MAP cascade calibration sweep  (path: legacy AgreementChecker — re-validate vs router)")
     print(f"{'─'*width}")
-    print(f"{'Scorer':>18}  {'Theta':>5}  {'RejT':>5}  {'F1':>6}  {'StrictF1':>8}  "
+    print(f"{'Scorer':>18}  {'Theta':>5}  {'RejT':>5}  {'Pol':>8}  {'F1':>6}  {'StrictF1':>8}  "
           f"{'EarlyP':>6}  {'EarlyR':>6}  {'Esc':>5}  {'Pipe':>5}")
     print(f"{'─'*width}")
     for r in rows:
         is_best = (r["scorer"] == best["scorer"] and r["theta"] == best["theta"]
-                   and r["reject_theta"] == best["reject_theta"])
+                   and r["reject_theta"] == best["reject_theta"]
+                   and r.get("legacy_single_voter_policy") == best.get("legacy_single_voter_policy"))
         marker = " ← best F1" if is_best else ""
+        pol = str(r.get("legacy_single_voter_policy", "keep"))
         print(f"{str(r['scorer']):>18}  {float(r['theta']):>5.2f}  {float(r['reject_theta']):>5.2f}  "
+              f"{pol:>8}  "
               f"{float(r['f1']):>6.3f}  {float(r['strict_f1']):>8.3f}  "
               f"{float(r['early_accept_precision']):>6.3f}  {float(r['early_accept_rate']):>6.2f}  "
               f"{float(r['escalate_rate']):>5.2f}  {int(r['n_pipeline']):>5}{marker}")
     print(f"{'─'*width}")
     print(f"\nBest F1: scorer={best['scorer']} theta={best['theta']:.2f} "
-          f"reject_theta={best['reject_theta']:.2f}  F1={float(best['f1']):.3f}  "
+          f"reject_theta={best['reject_theta']:.2f} "
+          f"legacy_single_voter_policy={best.get('legacy_single_voter_policy', 'keep')} "
+          f" F1={float(best['f1']):.3f}  "
           f"early_accept_precision={float(best['early_accept_precision']):.3f}")
     print("EarlyP/EarlyR = precision/rate of chunks accepted at L1-L2 (deferral safety); "
-          "Esc = fraction escalated to L3.")
+          "Esc = fraction escalated to L3. Pol = legacy_single_voter_policy.")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -879,6 +912,18 @@ def main() -> None:
                         help="Limit to first N cases (for smoke testing)")
     parser.add_argument("--primer-dir", default=None,
                         help="Override primer/cache directory (default: eval/data/map_primer)")
+    parser.add_argument(
+        "--legacy-single-voter-policy",
+        default="keep",
+        choices=["keep", "escalate", "both"],
+        help=(
+            "Sweep axis for RoutingConfig.legacy_single_voter_policy. "
+            "'keep' (default) reproduces historical behaviour — every cell uses "
+            "the silent N=1 → KEEP. 'escalate' sweeps only the new branch "
+            "(N=1 → ESCALATE). 'both' produces a side-by-side comparison "
+            "(double the row count). No API calls; pure offline replay."
+        ),
+    )
     args = parser.parse_args()
 
     source_path = Path(args.source)
@@ -1030,6 +1075,19 @@ def main() -> None:
         _prewarm_agreement_cache(voter_cache, _raw_agreement_fn, embed_cache)
         agreement_embed_fn = _make_cached_embed_fn(embed_cache, _raw_agreement_fn)
 
+        # Resolve --legacy-single-voter-policy {keep|escalate|both} into the
+        # axis the sweep iterates over. 'both' = compare keep vs escalate side
+        # by side; useful for answering "does silently keeping N=1 survivors
+        # hurt precision?". Other values restrict to a single policy.
+        if args.legacy_single_voter_policy == "both":
+            policy_grid: tuple[str, ...] = ("keep", "escalate")
+        else:
+            policy_grid = (args.legacy_single_voter_policy,)
+        logger.info(
+            "legacy_single_voter_policy axis = %s (%d cell%s per scorer/theta/reject)",
+            policy_grid, len(policy_grid), "" if len(policy_grid) == 1 else "s",
+        )
+
         sweep_rows = run_sweep(
             voter_cache=voter_cache,
             silver_by_case=silver_by_case,
@@ -1043,12 +1101,13 @@ def main() -> None:
             seed=args.seed,
             dev_fraction=args.dev_fraction,
             agreement_embed_fn=agreement_embed_fn,
+            single_voter_policies=policy_grid,
         )
         if sweep_rows:
             csv_path = reports_dir / f"map_cascade_sweep_{timestamp}.csv"
             _write_csv(csv_path, sweep_rows, fieldnames=[
                 "scorer", "tau", "count_alpha", "reuse_weight", "contradiction_weight",
-                "theta", "reject_theta", "cascade_path",
+                "theta", "reject_theta", "legacy_single_voter_policy", "cascade_path",
                 "precision", "recall", "f1", "strict_f1",
                 "early_accept_rate", "escalate_rate", "early_accept_precision",
                 "n_matched", "n_silver", "n_pipeline",

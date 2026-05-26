@@ -169,6 +169,7 @@ class MapStage:
         level2_voter_specs: list[tuple[str, str]] | None = None,
         escalation_spec:    tuple[str, str] | None = None,
         cascade_profile:    str = "custom",
+        legacy_single_voter_policy: str = "keep",
     ) -> None:
         if not voter_llms:
             raise ValueError("voter_llms must contain at least one LLM.")
@@ -202,7 +203,12 @@ class MapStage:
         self._l1_top_ps = [_capture_top_p(llm) for llm in voter_llms]
         self._l2_top_ps = [_capture_top_p(llm) for llm in level2_voter_llms]
         self._l3_top_p  = _capture_top_p(escalation_llm)
-        self._agreement = AgreementChecker(scorer=scorer or EmbeddingScorer(), theta=theta, reject_theta=reject_theta)
+        self._agreement = AgreementChecker(
+            scorer=scorer or EmbeddingScorer(),
+            theta=theta,
+            reject_theta=reject_theta,
+            single_voter_policy=legacy_single_voter_policy,  # type: ignore[arg-type]
+        )
         self._router = router
         self._escalation_lock = threading.Lock()
         self._last_escalation_counts: dict[str, int] = {}

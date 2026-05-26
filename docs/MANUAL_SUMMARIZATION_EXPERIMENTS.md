@@ -2,17 +2,25 @@
 
 For the MAP stage of the summarization pipeline, we have a lot of thresholds that we should fine-tune our model. There is a randomly selected dataset consisting of 15 papers, and the fine-tuning is done on that dataset. 
 
-In the SummarizationConfig, we already have: 
+In the SummarizationConfig, we already have:
 
 map.theta: Accept threshold
 map.reject_theta: Reject threshold
 map.chunk_size: Chunk window (sentences per LLM call)
-map.chunk_overlap: Sliding-window overlap 
-map.enable_router: False = legacy L1→L2→L3; True = router L1→L3
+map.chunk_overlap: Sliding-window overlap
 
-map.router_single_voter_policy: Only meaningful when router is on.
-#### TODO: maybe think about wiring this in when the router is off too. check how it exactly works
+routing.enable_router: False = legacy L1→L2→L3; True = router L1→L3
+routing.router_single_voter_policy: Router N=1 handling. 'escalate' (default) → L3; 'keep' → accept lone vetted voter.
+routing.legacy_single_voter_policy: Legacy AgreementChecker N=1 handling. 'keep' (default; preserves prior implicit
+                                    behaviour — synthetic confidence=1.0) vs 'escalate' (treat N=1 as low-evidence
+                                    and route up the cascade). Done 2026-05-26.
 
+> **Config layout v2 (2026-05-26).** The three routing-policy fields above moved from `MapConfig` into a dedicated
+> `RoutingConfig` because they are agreement-decision parameters, not MAP extraction parameters (answers the inline
+> question: "is it possible to have a router config with the single_voter_policy separately so it looks cleaner?"
+> — yes, done as a pure refactor with no behaviour change). Defaults preserved verbatim; strict YAML loader rejects
+> the v1 paths (`summarization.map.enable_router` etc.) with a clear error. See `STRUCTURE.md` pipeline changelog
+> 2026-05-26 + `THESIS.md` Decisions log.
 --------------------------------------------------------------------------------
 
 #### Agreement
