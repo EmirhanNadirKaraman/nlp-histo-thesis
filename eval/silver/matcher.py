@@ -43,8 +43,8 @@ logger = logging.getLogger(__name__)
 SIMILARITY_THRESHOLD = 0.55
 EMBEDDING_MODEL = "text-embedding-3-small"
 GEMINI_EMBEDDING_MODEL = "gemini-embedding-001"
-DEFAULT_CACHE_PATH = Path("eval/data/embedding_cache_openai.json")
-DEFAULT_GEMINI_CACHE_PATH = Path("eval/data/embedding_cache_gemini.json")
+DEFAULT_CACHE_PATH = Path("eval/data/embedding_cache_openai.sqlite")
+DEFAULT_GEMINI_CACHE_PATH = Path("eval/data/embedding_cache_gemini.sqlite")
 
 # Fields compared for field-mismatch detection (both silver and pipeline have these)
 _SCOPE_FIELD_PAIRS = [
@@ -213,10 +213,17 @@ def make_embedding_cache(path, embedding_model: str = EMBEDDING_MODEL):
     ``$NLP_HISTO_EMBEDDING_CACHE_BACKEND`` (``sqlite`` default, or ``json``).
 
     For ``sqlite`` the on-disk path is ``path`` with its suffix swapped to
-    ``.sqlite`` — a caller passing ``…/embedding_cache_gemini.json`` gets
-    ``…/embedding_cache_gemini.sqlite``. There is **no** auto-import on first use:
-    seed the SQLite file from an existing JSON cache with
-    ``scripts/import_embedding_cache_sqlite.py`` before a run, or it re-embeds.
+    ``.sqlite``, so any historical caller passing ``…/embedding_cache_gemini.json``
+    still resolves to ``…/embedding_cache_gemini.sqlite``. Production paths now
+    use the ``.sqlite`` extension directly (``DEFAULT_CACHE_PATH`` /
+    ``DEFAULT_GEMINI_CACHE_PATH``, renamed 2026-05-26 when the in-repo JSON
+    cache was retired).
+
+    The JSON backend code path is still present (selected via the env var) for
+    tests and ad-hoc external imports — ``scripts/import_embedding_cache_sqlite.py``
+    can seed a fresh SQLite from any external JSON cache that follows the
+    ``EmbeddingCache.save()`` schema. No in-repo JSON file exists to import
+    from by default.
     """
     backend = os.environ.get("NLP_HISTO_EMBEDDING_CACHE_BACKEND", "sqlite").strip().lower()
     if backend == "json":

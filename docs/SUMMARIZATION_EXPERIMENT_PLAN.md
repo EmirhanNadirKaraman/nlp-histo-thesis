@@ -416,7 +416,7 @@ Before re-priming, verify every axis that affects cache validity:
    M3 / G1 will score against.
 4. **Embedder** — confirm `--embedder` choice (`openai` or `gemini`)
    and that the matching cache exists at the default path
-   (e.g. `eval/data/embedding_cache_gemini.json`).
+   (e.g. `eval/data/embedding_cache_gemini.sqlite`).
 5. **Source case set** — `eval/data/source_cases.jsonl` and
    `silver_findings.jsonl` line counts agree (currently 401 each;
    `wc -l` both).

@@ -363,7 +363,7 @@ re-prime before publishing the sweep result):
    - Embedder choice — the one passed to `--embedder` matches the
      cache file the sweep will read.
 4. Confirm the embedding cache for the chosen embedder exists at the
-   default path (e.g. `eval/data/embedding_cache_gemini.json` for
+   default path (e.g. `eval/data/embedding_cache_gemini.sqlite` for
    `--embedder gemini`). Cold cache is acceptable but means small
    embedding-API spend on first run.
 5. If any of (1)–(3) fail, **re-prime** before publishing the sweep —
