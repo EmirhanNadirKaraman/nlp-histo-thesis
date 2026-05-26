@@ -107,7 +107,10 @@ def _make_voters():
     return make_l1_voters(), make_l2_voters(), make_l3_voter()
 
 THETA_GRID = [0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
-REJECT_THETA_GRID = [-1.0, 0.0, 0.1, 0.2]   # pairs with theta where reject_theta < theta
+REJECT_THETA_GRID = [0.0, 0.1, 0.2]   # 0.0 = "no rejection" baseline (scorer floors scores at 0,
+                                      # so rej=-1.0 was a no-op duplicate of 0.0 — dropped 2026-05-26
+                                      # after EXP_1 confirmed identical metrics across the two cells).
+                                      # Pairs with theta where reject_theta < theta.
 
 # legacy_single_voter_policy — AgreementChecker N=1 handling on the legacy path.
 # Default is single-element ("keep") to preserve historical sweep behaviour: every
