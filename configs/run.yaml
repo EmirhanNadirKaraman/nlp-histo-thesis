@@ -141,6 +141,15 @@ summarization:
                                                 # the conflict in score_details but lets the scorer's
                                                 # natural decision stand — ablation only, not a tuning
                                                 # candidate (polarity overrides exist for semantic safety).
+    hybrid:                       # HybridStructuredSimilarity blend weights — only consulted when
+                                  # scorer_kind=hybrid. Should sum to 1.0 for a calibrated [0,1] score
+                                  # (convention; not enforced in code). Stage 1b map_hybrid_blend in
+                                  # run_summarization_sweeps explores alternatives; all official
+                                  # variants in HYBRID_BLEND_GRID sum to 1.0.
+      w_category: 0.25            # weight on category-set Jaccard
+      w_embedding: 0.40           # weight on H-EMB-01 soft-aligned embedding similarity
+      w_entity: 0.25              # weight on extracted-entity Jaccard
+      w_evidence: 0.10            # weight on evidence text-element-id Jaccard
                                # NOTE: in the per-paper result-cache hash but not the
                                # chunk-level MAP cache (like theta) — sweep via replay.
 

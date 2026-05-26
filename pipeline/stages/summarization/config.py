@@ -204,6 +204,38 @@ class CostConfig:
 
 
 @dataclass
+class HybridConfig:
+    """Blend weights for ``HybridStructuredSimilarity``.
+
+    Promoted to config 2026-05-26 (was constructor defaults in
+    ``hybrid_structured.py:87``). Only active when
+    ``AgreementConfig.scorer_kind == "hybrid"``; the embedding scorer ignores
+    these. The four weights blend additively in ``compute_pair``:
+    ``score = w_category·cat + w_embedding·embed + w_entity·ent + w_evidence·evid``.
+
+    **Convention: weights should sum to 1.0** for a calibrated score in
+    ``[0, 1]`` (matches the score range expected by the theta / reject_theta
+    fallbacks). Not enforced in code today — strict enforcement would change
+    behaviour for callers that historically built ``HybridStructuredSimilarity``
+    with non-unit weights. All official sweep variants in
+    ``run_summarization_sweeps.py::HYBRID_BLEND_GRID`` sum to 1.0 by
+    construction; ``weights_sum`` is stamped into each sweep row so any
+    deviation is auditable in the CSV."""
+
+    w_category: float = 0.25
+    """Weight on ``_cat_jaccard`` (category-set overlap signal)."""
+
+    w_embedding: float = 0.40
+    """Weight on the H-EMB-01 ``_align`` (soft-aligned embedding-similarity signal)."""
+
+    w_entity: float = 0.25
+    """Weight on ``_jaccard`` over extracted entities (entity-set overlap signal)."""
+
+    w_evidence: float = 0.10
+    """Weight on ``_evidence_jaccard`` (text-element-id overlap signal)."""
+
+
+@dataclass
 class AgreementConfig:
     """Soft-alignment weights for embedding-based MAP agreement scoring (H-EMB-01).
 
@@ -243,6 +275,17 @@ class AgreementConfig:
     makes the Stage 1 winner pinnable in production YAML rather than only in
     the harness's ``BEST_SCORER`` constant. Any value outside
     ``{"embedding", "hybrid"}`` raises at runner construction time."""
+
+    hybrid: "HybridConfig" = field(default_factory=lambda: HybridConfig())
+    """Hybrid scorer blend weights — only consulted when
+    ``scorer_kind == "hybrid"``. Nested config so the YAML reads cleanly
+    (``summarization.agreement.hybrid.w_*``) and so swapping
+    ``scorer_kind="embedding"`` doesn't pollute the field namespace with
+    irrelevant knobs. Defaults match the historical
+    ``HybridStructuredSimilarity`` constructor: ``0.25 / 0.40 / 0.25 / 0.10``
+    (Σ=1.0). When ``scorer_kind="embedding"`` the field is ignored — the
+    embedding scorer doesn't consume these weights — but the field still
+    flows into ``_config_snapshot`` for trace completeness."""
 
     force_escalate_on_polarity_conflict: bool = True
     """B-051 hard-fail policy. When ``True`` (default), ``AgreementChecker``

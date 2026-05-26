@@ -151,7 +151,7 @@ them today you must edit source. Promotion candidates:
 | `_NUMERIC_RATIO_THRESHOLD` | `embedding.py:31` | 2.0 | Module constant; live via `_numeric_contradiction_ratio` inside the prod scorer. |
 | `_NEG_WINDOW` | `embedding.py:26` | 3 | Negation lookback window for `_polarity`; live in prod. |
 | Polarity vocab (`_POSITIVE`/`_NEGATIVE`/`_NEGATIONS`) | `embedding.py:16–25` | fixed sets | Drives contradiction penalty; live in prod. |
-| Hybrid signal weights (`w_category/embedding/entity/evidence`) | `hybrid_structured.py:87` | 0.25/0.40/0.25/0.10 | Only matter if hybrid scorer is selected; `from_config` leaves them at defaults. |
+| Hybrid blend weights (`w_category/embedding/entity/evidence`) | `config.py` (`HybridConfig`) / run.yaml `summarization.agreement.hybrid.*` | 0.25/0.40/0.25/0.10 (Σ=1.0) | ✅ `agreement.hybrid.w_*` (promoted 2026-05-26 — was orphaned at `hybrid_structured.py:87`). Only consulted when `scorer_kind="hybrid"`; embedding scorer ignores. | ✅ `run_summarization_sweeps.py --stage map_hybrid_blend` — 6 labelled sum-to-1 variants |
 | `UMLS_THRESHOLD` | `umls_utils.py:11` | 0.85 | see §3 NORMALIZE. |
 | Direction trigger lists | `normalize_stage.py:219,243` | fixed | see §3 NORMALIZE. |
 

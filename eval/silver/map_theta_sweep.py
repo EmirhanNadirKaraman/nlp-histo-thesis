@@ -860,12 +860,32 @@ def run_sweep(
                         )
                         total_chunks = sum(accept.values()) or 1
 
+                        # Hybrid blend weights live on AgreementConfig.hybrid
+                        # (added 2026-05-26). Always emit the 4 + sum so any
+                        # variant in Stage 1b (or future hybrid-blend sweeps)
+                        # is auditable in the CSV. For non-hybrid rows, they
+                        # show the AgreementConfig defaults — meaningful only
+                        # to confirm the embedding scorer ignores them.
+                        _h = getattr(spec.weights, "hybrid", None)
+                        wc = _h.w_category if _h is not None else None
+                        we = _h.w_embedding if _h is not None else None
+                        wn = _h.w_entity if _h is not None else None
+                        wv = _h.w_evidence if _h is not None else None
+                        wsum = (
+                            round(wc + we + wn + wv, 4)
+                            if None not in (wc, we, wn, wv) else None
+                        )
                         row = {
                             "scorer":                spec.name,
                             "tau":                   spec.weights.tau,
                             "count_alpha":           spec.weights.count_alpha,
                             "reuse_weight":          spec.weights.reuse_weight,
                             "contradiction_weight":  spec.weights.contradiction_weight,
+                            "w_category":            wc,
+                            "w_embedding":           we,
+                            "w_entity":              wn,
+                            "w_evidence":            wv,
+                            "weights_sum":           wsum,
                             "theta":                 round(theta, 2),
                             "reject_theta":          round(reject_theta, 2),
                             "legacy_single_voter_policy": policy,
@@ -1181,6 +1201,7 @@ def main() -> None:
             csv_path = reports_dir / f"map_cascade_sweep_{timestamp}.csv"
             _write_csv(csv_path, sweep_rows, fieldnames=[
                 "scorer", "tau", "count_alpha", "reuse_weight", "contradiction_weight",
+                "w_category", "w_embedding", "w_entity", "w_evidence", "weights_sum",
                 "theta", "reject_theta",
                 "legacy_single_voter_policy", "force_escalate_on_polarity_conflict",
                 "cascade_path",

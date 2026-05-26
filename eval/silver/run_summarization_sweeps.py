@@ -145,6 +145,22 @@ CONTRADICTION_WEIGHT_GRID = [0.0, 0.20, 0.40]
 # precision at acceptable cost.
 LEGACY_SINGLE_VOTER_POLICY_GRID = ("keep", "escalate")
 
+# Stage 1b — hybrid blend weights. Six labelled, sum-to-1.0 variants, each a
+# distinct hypothesis about which signal dominates. Gated on
+# BEST_SCORER == "hybrid" (Stage 1's winner); the existing map_weights stage
+# does the same conditional. Convention: weights sum to 1.0 for a calibrated
+# score in [0, 1] — not enforced in code (HybridStructuredSimilarity accepts
+# any tuple), but every variant here is sum-to-1 by construction.
+HYBRID_BLEND_GRID: dict[str, tuple[float, float, float, float]] = {
+    # (w_category, w_embedding, w_entity, w_evidence)
+    "hybrid_default":         (0.25, 0.40, 0.25, 0.10),
+    "hybrid_balanced":        (0.25, 0.25, 0.25, 0.25),
+    "hybrid_embedding_heavy": (0.15, 0.65, 0.15, 0.05),
+    "hybrid_category_heavy":  (0.50, 0.30, 0.15, 0.05),
+    "hybrid_entity_heavy":    (0.15, 0.30, 0.50, 0.05),
+    "hybrid_evidence_heavy":  (0.15, 0.30, 0.15, 0.40),
+}
+
 # Stage 3b — force_escalate_on_polarity_conflict. Two-cell categorical
 # ablation of the B-051 hard-fail safety guard. Production default is True
 # (override scorer decision to ESCALATE on comparable positive/negative
@@ -162,6 +178,7 @@ CONTRADICTION_SIM_GRID = [0.50, 0.60, 0.70, 0.80]
 
 CSV_FIELDNAMES = [
     "scorer", "tau", "count_alpha", "reuse_weight", "contradiction_weight",
+    "w_category", "w_embedding", "w_entity", "w_evidence", "weights_sum",
     "theta", "reject_theta",
     "legacy_single_voter_policy", "force_escalate_on_polarity_conflict",
     "cascade_path",
@@ -188,6 +205,7 @@ class SweepSpec:
 
 STAGE_ORDER = (
     "map_scorer",          # Stage 1
+    "map_hybrid_blend",    # Stage 1b — hybrid blend weights (gated on BEST_SCORER='hybrid')
     "map_theta",           # Stage 2
     "map_weights",         # Stage 3
     "map_routing_policy",  # Stage 3a — legacy_single_voter_policy {keep, escalate}
@@ -208,6 +226,12 @@ STAGES: dict[str, SweepSpec] = {
         executable=True, metric="silver_f1"),
     "map_weights": SweepSpec(
         "map_weights", "Stage 3 — H-EMB-01 weights (hybrid only) on BEST_SCORER/theta",
+        executable=True, metric="silver_f1"),
+    "map_hybrid_blend": SweepSpec(
+        "map_hybrid_blend",
+        "Stage 1b — HybridStructuredSimilarity blend weights "
+        "{default, balanced, embedding_heavy, category_heavy, entity_heavy, evidence_heavy} "
+        "at BEST_THETA/reject (gated on BEST_SCORER='hybrid')",
         executable=True, metric="silver_f1"),
     "map_routing_policy": SweepSpec(
         "map_routing_policy",
@@ -258,6 +282,27 @@ def _spec_for(scorer: str) -> ScorerSpec:
     return ScorerSpec(f"{scorer}_default", scorer, AgreementConfig())
 
 
+def _hybrid_blend_specs() -> list[ScorerSpec]:
+    """One ScorerSpec per labelled variant in ``HYBRID_BLEND_GRID``.
+
+    Each spec carries an ``AgreementConfig`` with the chosen ``HybridConfig``
+    block (default soft-alignment weights everywhere — the soft-alignment
+    quartet is held constant in Stage 1b so only the blend axis varies).
+    Stage 1b is gated on ``BEST_SCORER == "hybrid"`` in ``_map_grid``.
+    """
+    from pipeline.stages.summarization.config import HybridConfig
+    specs: list[ScorerSpec] = []
+    for name, (w_cat, w_emb, w_ent, w_evid) in HYBRID_BLEND_GRID.items():
+        cfg = AgreementConfig(
+            hybrid=HybridConfig(
+                w_category=w_cat, w_embedding=w_emb,
+                w_entity=w_ent, w_evidence=w_evid,
+            ),
+        )
+        specs.append(ScorerSpec(name, "hybrid", cfg))
+    return specs
+
+
 def _weight_variant_specs() -> list[ScorerSpec]:
     """One-axis-at-a-time H-EMB-01 variants around the pinned BEST_* weights."""
     base = dict(tau=BEST_TAU, count_alpha=BEST_COUNT_ALPHA,
@@ -291,6 +336,15 @@ def _map_grid(stage: str) -> tuple[list[ScorerSpec], list[float], list[float]]:
                 "the hybrid scorer's structural-blend knobs; if Stage 1 picked "
                 "'embedding', skip Stage 3. (Edit BEST_SCORER to override.)")
         return _weight_variant_specs(), [BEST_THETA], [BEST_REJECT_THETA]
+    if stage == "map_hybrid_blend":
+        if BEST_SCORER != "hybrid":
+            raise SystemExit(
+                "Stage 1b (map_hybrid_blend) is only swept when BEST_SCORER='hybrid' "
+                f"(current BEST_SCORER={BEST_SCORER!r}). The blend weights "
+                "(w_category/w_embedding/w_entity/w_evidence) are HybridStructuredSimilarity's "
+                "signal-mix knobs; if Stage 1 picked 'embedding', they're irrelevant — "
+                "skip Stage 1b. (Edit BEST_SCORER='hybrid' to override.)")
+        return _hybrid_blend_specs(), [BEST_THETA], [BEST_REJECT_THETA]
     if stage == "map_routing_policy":
         # Scorer / theta / reject_theta all pinned to BEST_*; the only axis is
         # the legacy_single_voter_policy enum (handled separately in
@@ -329,7 +383,7 @@ def _polarity_grid_for(stage: str) -> tuple[bool, ...]:
 
 def _enumerate_cells(stage: str) -> list[str]:
     """Human-readable per-cell names for --list-variants."""
-    if stage in ("map_scorer", "map_theta", "map_weights",
+    if stage in ("map_scorer", "map_theta", "map_weights", "map_hybrid_blend",
                  "map_routing_policy", "map_polarity_flag"):
         specs, thetas, rejects = _map_grid(stage)
         policies = _policy_grid_for(stage)
@@ -358,6 +412,18 @@ def _enumerate_cells(stage: str) -> list[str]:
                                 cells.append(
                                     f"polarity_force_escalate_{flag_label}  "
                                     f"({s.name}, theta={t:.2f}, rej={r:.2f})"
+                                )
+                            elif stage == "map_hybrid_blend":
+                                # Cell name = the variant name from
+                                # HYBRID_BLEND_GRID + the (w_*, sum) tuple.
+                                h = s.weights.hybrid
+                                wt = (h.w_category, h.w_embedding,
+                                      h.w_entity, h.w_evidence)
+                                wsum = sum(wt)
+                                cells.append(
+                                    f"{s.name}  (theta={t:.2f}, rej={r:.2f}, "
+                                    f"w=({wt[0]:.2f}, {wt[1]:.2f}, "
+                                    f"{wt[2]:.2f}, {wt[3]:.2f}), Σ={wsum:.2f})"
                                 )
                             elif (len(policies) == 1 and policies[0] == "keep"
                                   and len(polarities) == 1 and polarities[0] is True):
@@ -523,6 +589,13 @@ def _pin_hint(stage: str, w: dict) -> str:
         return ("→ pin: BEST_TAU / BEST_COUNT_ALPHA / BEST_REUSE_WEIGHT / "
                 f"BEST_CONTRADICTION_WEIGHT = ({w['tau']}, {w['count_alpha']}, "
                 f"{w['reuse_weight']}, {w['contradiction_weight']})")
+    if stage == "map_hybrid_blend":
+        return (
+            f"→ pin: AgreementConfig.hybrid = "
+            f"(w_category={w['w_category']}, w_embedding={w['w_embedding']}, "
+            f"w_entity={w['w_entity']}, w_evidence={w['w_evidence']})  "
+            f"(update configs/run.yaml summarization.agreement.hybrid)"
+        )
     if stage == "map_routing_policy":
         pol = w.get("legacy_single_voter_policy", "keep")
         return (
@@ -577,9 +650,14 @@ def _list_variants(stage: str, only: Optional[set]) -> None:
     for c in cells:
         print(f"  {c}")
     print(f"\n{len(cells)} variant(s).")
-    if stage in ("map_theta", "map_weights", "map_routing_policy", "map_polarity_flag"):
+    if stage in ("map_theta", "map_weights", "map_hybrid_blend",
+                 "map_routing_policy", "map_polarity_flag"):
         print(f"(holding earlier stages at BEST_SCORER={BEST_SCORER!r}, "
               f"BEST_THETA={BEST_THETA}, BEST_REJECT_THETA={BEST_REJECT_THETA})")
+    if stage == "map_hybrid_blend":
+        print("(sweep axis: AgreementConfig.hybrid blend weights — "
+              f"{len(HYBRID_BLEND_GRID)} labelled sum-to-1 variants; "
+              "gated on BEST_SCORER='hybrid')")
     if stage == "map_routing_policy":
         print("(sweep axis: RoutingConfig.legacy_single_voter_policy ∈ "
               f"{list(LEGACY_SINGLE_VOTER_POLICY_GRID)} — production default is 'keep')")

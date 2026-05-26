@@ -109,15 +109,33 @@ class HybridStructuredSimilarity:
     @classmethod
     def from_config(cls, agreement_cfg, embed_fn: EmbedFn | None = None,
                     **signal_weights) -> "HybridStructuredSimilarity":
-        """Build with H-EMB-01 alignment weights from an ``AgreementConfig``.
-        Signal weights (``w_category`` etc.) stay at defaults unless overridden."""
+        """Build with H-EMB-01 alignment weights AND blend weights from an
+        ``AgreementConfig``.
+
+        Blend weights (``w_category`` / ``w_embedding`` / ``w_entity`` /
+        ``w_evidence``) flow from ``agreement_cfg.hybrid`` (promoted 2026-05-26).
+        Caller-supplied ``**signal_weights`` kwargs win per-field for
+        back-compat with callers that construct programmatically with
+        explicit weights (e.g. ``from_config(cfg, w_category=0.5)``).
+        """
+        config_weights: dict[str, float] = {}
+        hybrid = getattr(agreement_cfg, "hybrid", None)
+        if hybrid is not None:
+            config_weights = {
+                "w_category":  hybrid.w_category,
+                "w_embedding": hybrid.w_embedding,
+                "w_entity":    hybrid.w_entity,
+                "w_evidence":  hybrid.w_evidence,
+            }
+        # Explicit kwargs win per-field (back-compat).
+        merged = {**config_weights, **signal_weights}
         return cls(
             embed_fn=embed_fn,
             tau=agreement_cfg.tau,
             count_alpha=agreement_cfg.count_alpha,
             reuse_weight=agreement_cfg.reuse_weight,
             contradiction_weight=agreement_cfg.contradiction_weight,
-            **signal_weights,
+            **merged,
         )
 
     def similarity(self, a: AuditableSummary, b: AuditableSummary) -> float:

@@ -309,6 +309,121 @@ def test_agreement_scorer_kind_dispatches_to_correct_strategy():
     assert hyb._strategy._w_embedding == 0.40
 
 
+# ── AgreementConfig.hybrid — HybridStructuredSimilarity blend weights ────────
+# Promoted 2026-05-26 as a nested ``HybridConfig`` sub-config. Only active
+# when scorer_kind="hybrid"; the embedding scorer ignores the block entirely.
+# Convention: weights should sum to 1.0 (not enforced in code).
+
+
+def test_hybrid_config_defaults():
+    """``HybridConfig()`` defaults match the historical
+    ``HybridStructuredSimilarity`` ctor: 0.25/0.40/0.25/0.10 — and they sum to 1.0."""
+    from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
+    h = AgreementConfig().hybrid
+    assert isinstance(h, HybridConfig)
+    assert h.w_category == 0.25
+    assert h.w_embedding == 0.40
+    assert h.w_entity == 0.25
+    assert h.w_evidence == 0.10
+    assert (h.w_category + h.w_embedding + h.w_entity + h.w_evidence) == pytest.approx(1.0)
+
+
+def test_hybrid_config_loaded_from_run_yaml():
+    """Shipped ``configs/run.yaml`` pins the production-default hybrid weights.
+    Drift detector for accidental YAML edits that would silently shift the
+    Stage 1b baseline."""
+    _, sumcfg = load_config(Path("configs/run.yaml"))
+    h = sumcfg.agreement.hybrid
+    assert h.w_category == 0.25
+    assert h.w_embedding == 0.40
+    assert h.w_entity == 0.25
+    assert h.w_evidence == 0.10
+
+
+def test_hybrid_config_yaml_override(tmp_path: Path):
+    """Explicit YAML override flips the loaded values; untouched weights
+    keep their defaults. Round-trips an ``embedding_heavy``-style override."""
+    p = _write(tmp_path, """
+        summarization:
+          agreement:
+            hybrid:
+              w_embedding: 0.65
+              w_evidence: 0.05
+    """)
+    _, sumcfg = load_config(p)
+    h = sumcfg.agreement.hybrid
+    assert h.w_embedding == 0.65
+    assert h.w_evidence == 0.05
+    # untouched defaults survive
+    assert h.w_category == 0.25
+    assert h.w_entity == 0.25
+
+
+def test_hybrid_strategy_consumes_hybrid_config():
+    """``HybridStructuredSimilarity.from_config`` reads ``agreement_cfg.hybrid``
+    and propagates each weight into the constructed strategy. Plus a back-compat
+    spot-check: an explicit ``w_category=…`` kwarg overrides only that field
+    and leaves the other three at the config values (callers that built the
+    strategy programmatically before this promotion shouldn't break)."""
+    from pipeline.stages.summarization.agreement.hybrid_structured import (
+        HybridStructuredSimilarity,
+    )
+    from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
+
+    cfg = AgreementConfig(
+        hybrid=HybridConfig(
+            w_category=0.50, w_embedding=0.30, w_entity=0.15, w_evidence=0.05,
+        ),
+    )
+    strat = HybridStructuredSimilarity.from_config(cfg, embed_fn=None)
+    assert strat._w_category == 0.50
+    assert strat._w_embedding == 0.30
+    assert strat._w_entity == 0.15
+    assert strat._w_evidence == 0.05
+    # Soft-alignment weights still flow through unchanged.
+    assert strat._tau == 0.15
+
+    # Per-field override via explicit kwarg (back-compat).
+    strat_override = HybridStructuredSimilarity.from_config(
+        cfg, embed_fn=None, w_category=0.99,
+    )
+    assert strat_override._w_category == 0.99
+    # The other three keep their config values (not the ctor defaults).
+    assert strat_override._w_embedding == 0.30
+    assert strat_override._w_entity == 0.15
+    assert strat_override._w_evidence == 0.05
+
+
+def test_embedding_strategy_ignores_hybrid_config():
+    """``EmbeddingSimilarityStrategy.from_config`` does not consume the hybrid
+    block — switching ``hybrid.w_*`` to extreme values must not perturb the
+    embedding strategy's state. Asserts the strategy's soft-alignment weights
+    are identical whether or not the hybrid block is at default."""
+    from pipeline.stages.summarization.agreement.embedding_similarity import (
+        EmbeddingSimilarityStrategy,
+    )
+    from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
+
+    cfg_default = AgreementConfig()
+    cfg_extreme_hybrid = AgreementConfig(
+        hybrid=HybridConfig(
+            w_category=0.99, w_embedding=0.0, w_entity=0.0, w_evidence=0.01,
+        ),
+    )
+
+    s_default = EmbeddingSimilarityStrategy.from_config(cfg_default, embed_fn=None)
+    s_extreme = EmbeddingSimilarityStrategy.from_config(cfg_extreme_hybrid, embed_fn=None)
+
+    # The embedding strategy's state depends only on the soft-alignment quartet,
+    # which is identical between the two configs.
+    assert s_default._tau == s_extreme._tau
+    assert s_default._count_alpha == s_extreme._count_alpha
+    assert s_default._reuse_weight == s_extreme._reuse_weight
+    assert s_default._contradiction_weight == s_extreme._contradiction_weight
+    # And there's no hybrid-related private state on the embedding strategy.
+    assert not hasattr(s_default, "_w_category")
+
+
 # ── AgreementConfig.force_escalate_on_polarity_conflict ─────────────────────
 # Promoted 2026-05-26. B-051 hard-fail policy. Default True preserves the
 # safety guard verbatim; False is the ablation setting (still records the
