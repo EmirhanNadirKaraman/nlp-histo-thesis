@@ -144,6 +144,88 @@ def test_legacy_map_routing_paths_rejected(tmp_path: Path):
             load_config(p)
 
 
+# ── AgreementConfig — soft-alignment weights (H-EMB-01) ──────────────────────
+# Centralisation check (2026-05-26): the four weights flow from
+# config.py → run.yaml → SummarizationRunner → EmbeddingSimilarityStrategy
+# without hardcoded overrides anywhere on the path. These tests pin every link.
+
+
+def test_agreement_config_defaults():
+    """`AgreementConfig()` carries the production defaults verbatim.
+
+    Hardcoded against the values used by ``_align`` historically — any drift
+    here would silently change MAP agreement-gate behaviour without a YAML
+    edit. Cite this test if anyone proposes changing a default outside a
+    documented calibration sweep."""
+    from pipeline.stages.summarization.config import AgreementConfig
+    cfg = AgreementConfig()
+    assert cfg.tau == 0.15
+    assert cfg.count_alpha == 0.25
+    assert cfg.reuse_weight == 0.15
+    assert cfg.contradiction_weight == 0.20
+
+
+def test_agreement_config_loaded_from_run_yaml():
+    """The shipped ``configs/run.yaml`` block matches the dataclass defaults.
+
+    Catches the case where someone edits ``run.yaml`` in isolation: if the
+    YAML drifts from the dataclass default, this test surfaces it — production
+    runs follow the YAML, calibration sweeps (``map_theta_sweep``) build
+    ``AgreementConfig()`` with dataclass defaults, so a silent split between
+    the two would make calibration numbers non-faithful to production."""
+    _, sumcfg = load_config(Path("configs/run.yaml"))
+    assert sumcfg.agreement.tau == 0.15
+    assert sumcfg.agreement.count_alpha == 0.25
+    assert sumcfg.agreement.reuse_weight == 0.15
+    assert sumcfg.agreement.contradiction_weight == 0.20
+
+
+def test_agreement_config_yaml_override_propagates(tmp_path: Path):
+    """An explicit YAML override changes every loaded value and only those.
+
+    Round-trips a 2× override on `tau` and `contradiction_weight`; asserts
+    the two named fields move and the other two stay at default. Guards
+    against accidental coupling between fields in the loader (e.g. a typo
+    that propagates one value to multiple slots)."""
+    p = _write(tmp_path, """
+        summarization:
+          agreement:
+            tau: 0.30
+            contradiction_weight: 0.40
+    """)
+    _, sumcfg = load_config(p)
+    assert sumcfg.agreement.tau == 0.30
+    assert sumcfg.agreement.contradiction_weight == 0.40
+    # untouched defaults survive
+    assert sumcfg.agreement.count_alpha == 0.25
+    assert sumcfg.agreement.reuse_weight == 0.15
+
+
+def test_agreement_strategy_consumes_all_four_fields():
+    """`EmbeddingSimilarityStrategy.from_config(cfg.agreement)` propagates all
+    four fields into the constructed strategy instance.
+
+    This is the final link in the wiring chain:
+        run.yaml → AgreementConfig → from_config → strategy._tau etc.
+
+    Production paths (``SummarizationRunner`` at ``runner.py:214`` and
+    ``BatchSummarizationRunner`` at ``batch/runner.py:158``, ``:1148``) all
+    funnel through this exact call. If this test passes, the runners forward
+    the values by construction; no separate runner-build smoke test needed."""
+    from pipeline.stages.summarization.agreement.embedding_similarity import (
+        EmbeddingSimilarityStrategy,
+    )
+    from pipeline.stages.summarization.config import AgreementConfig
+    custom = AgreementConfig(
+        tau=0.42, count_alpha=0.13, reuse_weight=0.07, contradiction_weight=0.99,
+    )
+    strategy = EmbeddingSimilarityStrategy.from_config(custom, embed_fn=None)
+    assert strategy._tau == 0.42
+    assert strategy._count_alpha == 0.13
+    assert strategy._reuse_weight == 0.07
+    assert strategy._contradiction_weight == 0.99
+
+
 def test_normalize_extra_synonyms_loaded_as_mapping(tmp_path: Path):
     """B-037: NormalizeConfig.extra_synonyms is a `dict[str, str]` and must
     pass through the loader without being mistaken for a nested dataclass."""

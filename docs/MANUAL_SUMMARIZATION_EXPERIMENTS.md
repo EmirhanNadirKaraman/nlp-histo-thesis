@@ -23,19 +23,23 @@ routing.legacy_single_voter_policy: Legacy AgreementChecker N=1 handling. 'keep'
 > 2026-05-26 + `THESIS.md` Decisions log.
 --------------------------------------------------------------------------------
 
-#### Agreement
+#### AgreementConfig
 
-agreement.tau: Pairwise similarity below tau zeroed before coverage
-##### TODO: check what this is doing
+These parameters control how agreement between MAP voters is scored.
 
-agreement.count_alpha: Count-mismatch exponent, 0.25 → 4:1 finding-count ratio ≈ 0.71×
-##### TODO: check 
+agreement.tau:
+Pairwise similarity values below this threshold are treated as zero before computing coverage. Higher tau makes agreement stricter.
 
-agreement.reuse_weight: Reuse-concentration weight, up to 15% reduction when default = 0.15 is used. 
+agreement.count_alpha:
+Penalty strength for voter outputs with very different finding counts. This helps prevent one voter emitting many findings while another emits one broad finding from looking artificially aligned.
 
-##### TODO: check 
+agreement.reuse_weight:
+Penalty for concentrated reuse, where one finding is reused to match many findings from another voter. Higher values punish many-to-one matching more strongly.
 
-agreement.contradiction_weight: Polarity/numeric contradiction weight
+agreement.contradiction_weight:
+Penalty applied when comparable findings appear to disagree in polarity/numeric direction.
+
+> **Wiring (verified 2026-05-26):** all four fields flow `config.py` → `configs/run.yaml` (lines 128–132) → `SummarizationRunner.__init__` / `BatchSummarizationRunner.__init__` → `EmbeddingSimilarityStrategy.from_config(cfg.agreement)`. No hardcoded overrides on the path. Tests pin defaults + YAML round-trip + override + `from_config` propagation (`tests/test_config_loader.py::test_agreement_*`). The calibration sweep (`map_theta_sweep.py`, `run_summarization_sweeps.py`) builds `AgreementConfig()` with dataclass defaults explicitly so the sweep grids are independent of the production YAML — this is by design (sweeps iterate over weight variants).
 
 
 --------------------------------------------------------------------------------
