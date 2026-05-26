@@ -202,16 +202,18 @@ class SummarizationRunner:
         # behaviour for offline analysis without depending on trace_enabled.
         self._cascade_log_dir: Path = output_dir / "cascade_decisions"
 
-        # Default scorer: SemanticAgreementScorer over EmbeddingSimilarityStrategy.
-        # Centrality-based best-output selection (Soiffer 2025) — the previous
-        # default was EmbeddingScorer, which left best_index unset and forced
-        # AgreementChecker.best() to fall back to a (mean_evidence_len, n_findings)
-        # heuristic. Pass embed_fn through so we don't silently fall back to
-        # OpenAIEmbedder when the caller supplied a different embedder.
+        # Default scorer: SemanticAgreementScorer over the strategy selected by
+        # cfg.agreement.scorer_kind (default "embedding" — preserves the historical
+        # hardcoded choice). Centrality-based best-output selection (Soiffer 2025) —
+        # the previous default was EmbeddingScorer, which left best_index unset and
+        # forced AgreementChecker.best() to fall back to a
+        # (mean_evidence_len, n_findings) heuristic. Pass embed_fn through so we
+        # don't silently fall back to OpenAIEmbedder when the caller supplied a
+        # different embedder. Invalid scorer_kind raises here.
         if scorer is None:
-            from .agreement import EmbeddingSimilarityStrategy, SemanticAgreementScorer
-            scorer = SemanticAgreementScorer(
-                strategy=EmbeddingSimilarityStrategy.from_config(cfg.agreement, embed_fn=embed_fn),
+            from .agreement import SemanticAgreementScorer
+            scorer = SemanticAgreementScorer.from_agreement_config(
+                cfg.agreement, embed_fn=embed_fn,
             )
 
         # Optional routing layer: grounding-first MapOutputRouter. Drops voters

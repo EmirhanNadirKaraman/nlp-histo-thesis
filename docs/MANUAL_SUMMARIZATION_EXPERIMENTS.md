@@ -46,8 +46,13 @@ Penalty applied when comparable findings appear to disagree in polarity/numeric 
 
 ### TODO: these are not in the config, promote to a config field
 
-Scorer kind: EmbeddingSimilarityStrategy vs HybridStructuredSimilarity
-Voter profile: real / cheap. we can continue with real. 
+~~Scorer kind: EmbeddingSimilarityStrategy vs HybridStructuredSimilarity~~ **Done 2026-05-26.**
+  → Now at `summarization.agreement.scorer_kind` (`embedding` | `hybrid`, default `embedding`).
+  Dispatched by `SemanticAgreementScorer.from_agreement_config` across both runners.
+  Stage 1 of the MAP sweep (`run_summarization_sweeps --stage map_scorer`) now pins
+  the winner via this YAML field; the harness's `BEST_SCORER` constant is the
+  pre-pin staging area.
+Voter profile: real / cheap. we can continue with real.
 
 Embedder: OpenAI text-embedding-3-small / Gemini. The embeddings are currently being generated using Gemini. 
 

@@ -130,6 +130,11 @@ summarization:
     count_alpha: 0.25          # soft claim-count-mismatch penalty exponent
     reuse_weight: 0.15         # reuse-concentration penalty weight
     contradiction_weight: 0.20  # polarity-flip + numeric contradiction penalty
+    scorer_kind: embedding      # similarity strategy: 'embedding' (EmbeddingSimilarityStrategy,
+                                # production) or 'hybrid' (HybridStructuredSimilarity, blend of
+                                # category + embedding + entity + evidence). Stage 1 of the MAP
+                                # sweep (run_summarization_sweeps --stage map_scorer) picks the
+                                # winner; pin here to make it production-effective.
                                # NOTE: in the per-paper result-cache hash but not the
                                # chunk-level MAP cache (like theta) — sweep via replay.
 

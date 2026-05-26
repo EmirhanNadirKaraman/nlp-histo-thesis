@@ -27,7 +27,7 @@ code** (no `.md` consulted). Branch `pdf-extraction-eval`, 2026-05-24.
 |---|---|---|---|---|
 | `theta` (KEEP if deferral ≥ θ) | `config.py:31` / run.yaml:82 | **0.8** | ✅ `map.theta` | ✅ `map_theta_sweep.py` |
 | `reject_theta` (REJECT if ≤) | `config.py:35` / run.yaml:83 | **0.2** | ✅ `map.reject_theta` | ✅ `map_theta_sweep.py` |
-| Scorer choice | `runner.py:211` | `SemanticAgreementScorer(EmbeddingSimilarityStrategy)` | ⚠️ chosen in code, not a config field | ✅ sweep compares `embedding` vs `hybrid` |
+| Scorer choice (`scorer_kind`) | `config.py` (`AgreementConfig.scorer_kind`) / run.yaml `summarization.agreement.scorer_kind` | `"embedding"` (`SemanticAgreementScorer(EmbeddingSimilarityStrategy)`) | ✅ `agreement.scorer_kind` (promoted 2026-05-26 — was hardcoded at `runner.py:213`) | ✅ `run_summarization_sweeps.py --stage map_scorer` compares `embedding` vs `hybrid` |
 | `tau` (weak-match floor) | `config.py:169` / run.yaml:123 | **0.15** | ✅ `agreement.tau` | ✅ `map_theta_sweep` ScorerSpec |
 | `count_alpha` (count-mismatch penalty) | `config.py:173` / run.yaml:124 | **0.25** | ✅ `agreement.count_alpha` | ✅ ScorerSpec |
 | `reuse_weight` | `config.py:175` / run.yaml:125 | **0.15** | ✅ `agreement.reuse_weight` | ✅ ScorerSpec |

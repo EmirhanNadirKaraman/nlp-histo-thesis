@@ -226,6 +226,89 @@ def test_agreement_strategy_consumes_all_four_fields():
     assert strategy._contradiction_weight == 0.99
 
 
+# ── AgreementConfig.scorer_kind — similarity-strategy selector ───────────────
+# Promoted 2026-05-26. The previous default (hardcoded
+# `EmbeddingSimilarityStrategy` in `runner.py:213`) is preserved as the
+# config default; this knob just lets Stage 1's winner be pinned in YAML.
+
+
+def test_agreement_scorer_kind_default_is_embedding():
+    """Default ``scorer_kind="embedding"`` preserves the historical hardcoded choice."""
+    from pipeline.stages.summarization.config import AgreementConfig
+    assert AgreementConfig().scorer_kind == "embedding"
+
+
+def test_agreement_scorer_kind_loaded_from_run_yaml():
+    """Shipped ``configs/run.yaml`` pins ``scorer_kind: embedding`` (current
+    production default). Drift detector for accidental YAML edits."""
+    _, sumcfg = load_config(Path("configs/run.yaml"))
+    assert sumcfg.agreement.scorer_kind == "embedding"
+
+
+def test_agreement_scorer_kind_yaml_override_to_hybrid(tmp_path: Path):
+    """Explicit YAML override flips the loaded value; untouched fields keep
+    their defaults."""
+    p = _write(tmp_path, """
+        summarization:
+          agreement:
+            scorer_kind: hybrid
+    """)
+    _, sumcfg = load_config(p)
+    assert sumcfg.agreement.scorer_kind == "hybrid"
+    # Other agreement fields untouched.
+    assert sumcfg.agreement.tau == 0.15
+    assert sumcfg.agreement.contradiction_weight == 0.20
+
+
+def test_agreement_scorer_kind_invalid_value_raises_at_scorer_build():
+    """An invalid ``scorer_kind`` raises ``ValueError`` at scorer construction.
+
+    The dataclass loader is permissive (it accepts any string and stores it
+    verbatim) — validation lives in
+    ``SemanticAgreementScorer.from_agreement_config``. That's the entry point
+    both runners use, so the bad value is caught before any cascade work
+    starts. The error message names the bad value and the expected set."""
+    import pytest
+    from pipeline.stages.summarization.agreement import SemanticAgreementScorer
+    from pipeline.stages.summarization.config import AgreementConfig
+    bad = AgreementConfig(scorer_kind="bogus")  # loader-allowed; runtime-invalid
+    with pytest.raises(ValueError, match=r"scorer_kind=.*bogus.*expected.*embedding.*hybrid"):
+        SemanticAgreementScorer.from_agreement_config(bad, embed_fn=None)
+
+
+def test_agreement_scorer_kind_dispatches_to_correct_strategy():
+    """``from_agreement_config`` picks the right strategy class per ``scorer_kind``.
+
+    Verifies the dispatch with both production branches:
+      * ``embedding`` → ``EmbeddingSimilarityStrategy``
+      * ``hybrid``    → ``HybridStructuredSimilarity``
+
+    Soft-alignment weights flow through ``AgreementConfig`` to either branch
+    identically; the hybrid blend weights (``w_category`` etc.) stay at the
+    ``HybridStructuredSimilarity`` ctor defaults until a follow-up promotion."""
+    from pipeline.stages.summarization.agreement import (
+        EmbeddingSimilarityStrategy,
+        HybridStructuredSimilarity,
+        SemanticAgreementScorer,
+    )
+    from pipeline.stages.summarization.config import AgreementConfig
+
+    emb = SemanticAgreementScorer.from_agreement_config(
+        AgreementConfig(scorer_kind="embedding"), embed_fn=None,
+    )
+    assert isinstance(emb._strategy, EmbeddingSimilarityStrategy)
+    # Soft-alignment weights propagate identically into either branch.
+    assert emb._strategy._tau == 0.15
+
+    hyb = SemanticAgreementScorer.from_agreement_config(
+        AgreementConfig(scorer_kind="hybrid"), embed_fn=None,
+    )
+    assert isinstance(hyb._strategy, HybridStructuredSimilarity)
+    assert hyb._strategy._tau == 0.15
+    # Hybrid blend weights stay at constructor defaults (not yet promoted).
+    assert hyb._strategy._w_embedding == 0.40
+
+
 def test_normalize_extra_synonyms_loaded_as_mapping(tmp_path: Path):
     """B-037: NormalizeConfig.extra_synonyms is a `dict[str, str]` and must
     pass through the loader without being mistaken for a nested dataclass."""

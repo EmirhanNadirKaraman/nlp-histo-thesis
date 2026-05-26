@@ -70,6 +70,49 @@ class SemanticAgreementScorer:
         self._strategy = strategy
         self._theta = theta  # scorer-level override; None = defer to AgreementChecker
 
+    @classmethod
+    def from_agreement_config(
+        cls,
+        agreement_cfg,
+        embed_fn=None,
+        theta: float | None = None,
+    ) -> "SemanticAgreementScorer":
+        """Build the scorer with the strategy selected by ``agreement_cfg.scorer_kind``.
+
+        Replaces the hardcoded ``EmbeddingSimilarityStrategy.from_config(...)``
+        callsites in ``SummarizationRunner`` and ``BatchSummarizationRunner``
+        so the production strategy can be pinned from YAML. Both strategies
+        consume the soft-alignment weights (``tau`` / ``count_alpha`` /
+        ``reuse_weight`` / ``contradiction_weight``) from the same
+        ``AgreementConfig``; the hybrid blend weights (``w_category`` etc.)
+        are not yet config-driven — they stay at the ``HybridStructuredSimilarity``
+        constructor defaults until a follow-up promotion lands.
+
+        Raises ``ValueError`` for any ``scorer_kind`` outside
+        ``{"embedding", "hybrid"}`` — defensive even though the dataclass
+        default is ``"embedding"``: a YAML override or a programmatic
+        ``AgreementConfig(scorer_kind="…")`` typo gets caught here, before
+        the runner builds the cascade.
+        """
+        from .embedding_similarity import EmbeddingSimilarityStrategy
+        from .hybrid_structured import HybridStructuredSimilarity
+
+        kind = agreement_cfg.scorer_kind
+        if kind == "embedding":
+            strategy = EmbeddingSimilarityStrategy.from_config(
+                agreement_cfg, embed_fn=embed_fn,
+            )
+        elif kind == "hybrid":
+            strategy = HybridStructuredSimilarity.from_config(
+                agreement_cfg, embed_fn=embed_fn,
+            )
+        else:
+            raise ValueError(
+                f"Invalid AgreementConfig.scorer_kind={kind!r}; "
+                "expected one of {'embedding', 'hybrid'}"
+            )
+        return cls(strategy=strategy, theta=theta)
+
     def compute(
         self,
         outputs: list[AuditableSummary],

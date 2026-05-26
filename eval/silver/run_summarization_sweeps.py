@@ -464,7 +464,10 @@ def _run_map_stage(stage: str, *, metric: str, max_escalate: Optional[float],
 def _pin_hint(stage: str, w: dict) -> str:
     if stage == "map_scorer":
         scorer = w["scorer"].replace("_default", "")
-        return f"→ pin: BEST_SCORER = {scorer!r}"
+        return (
+            f"→ pin: BEST_SCORER = {scorer!r}  "
+            f"(update configs/run.yaml summarization.agreement.scorer_kind: {scorer})"
+        )
     if stage == "map_theta":
         return f"→ pin: BEST_THETA = {w['theta']} ; BEST_REJECT_THETA = {w['reject_theta']}"
     if stage == "map_weights":

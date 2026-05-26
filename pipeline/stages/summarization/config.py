@@ -227,6 +227,23 @@ class AgreementConfig:
     contradiction_weight: float = 0.20
     """Polarity-flip + numeric contradiction penalty weight; up to 20% reduction."""
 
+    scorer_kind: str = "embedding"
+    """Similarity strategy selector for ``SemanticAgreementScorer``.
+
+    * ``"embedding"`` (default) — ``EmbeddingSimilarityStrategy`` (production
+      path; matches the historical hardcoded choice and the values pinned in
+      ``configs/run.yaml`` 2026-05-26).
+    * ``"hybrid"`` — ``HybridStructuredSimilarity`` (category + embedding +
+      entity + evidence blend; defaults `0.25 / 0.40 / 0.25 / 0.10` baked into
+      the constructor — *not* sweepable from YAML until ``AgreementConfig.hybrid``
+      is promoted in a follow-up diff).
+
+    The MAP-stage Stage 1 sweep (``run_summarization_sweeps --stage map_scorer``)
+    already compares both strategies against silver F1; this field is what
+    makes the Stage 1 winner pinnable in production YAML rather than only in
+    the harness's ``BEST_SCORER`` constant. Any value outside
+    ``{"embedding", "hybrid"}`` raises at runner construction time."""
+
 
 @dataclass
 class SummarizationConfig:

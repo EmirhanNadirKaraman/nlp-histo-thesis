@@ -150,12 +150,13 @@ class BatchSummarizationRunner:
         self._embed_fn = embed_fn or OpenAIEmbedder()
         # Default scorer mirrors SummarizationRunner: SemanticAgreementScorer
         # (max-consensus + centrality-based best-output selection) over the
-        # batched EmbeddingSimilarityStrategy. theta / reject_theta stay on
-        # AgreementChecker so the scorer keeps theta=None and defers the
-        # decision boundary to the checker.
+        # strategy selected by cfg.agreement.scorer_kind (default "embedding").
+        # theta / reject_theta stay on AgreementChecker so the scorer keeps
+        # theta=None and defers the decision boundary to the checker. Invalid
+        # scorer_kind raises here, before any batch job is submitted.
         self._agreement = AgreementChecker(
-            scorer=SemanticAgreementScorer(
-                strategy=EmbeddingSimilarityStrategy.from_config(cfg.agreement, embed_fn=self._embed_fn),
+            scorer=SemanticAgreementScorer.from_agreement_config(
+                cfg.agreement, embed_fn=self._embed_fn,
             ),
             theta=cfg.map.theta,
             reject_theta=cfg.map.reject_theta,
@@ -1140,13 +1141,13 @@ class BatchSummarizationRunner:
 
         # Mirror the runner-level scorer so the per-level decision uses the
         # same Soiffer-style max-consensus + centrality path. The cached embed
-        # function is plugged into EmbeddingSimilarityStrategy so the
-        # pre-embedded claim cache is reused for every pair.
+        # function is plugged into the chosen strategy so the pre-embedded
+        # claim cache is reused for every pair. Strategy choice is read from
+        # cfg.agreement.scorer_kind (default "embedding") — identical to the
+        # runner-level construction above.
         agreement = AgreementChecker(
-            scorer=SemanticAgreementScorer(
-                strategy=EmbeddingSimilarityStrategy.from_config(
-                    self._cfg_full.agreement, embed_fn=_cached_embed,
-                ),
+            scorer=SemanticAgreementScorer.from_agreement_config(
+                self._cfg_full.agreement, embed_fn=_cached_embed,
             ),
             theta=self._agreement.theta,
             reject_theta=self._agreement.reject_theta,
