@@ -135,7 +135,8 @@ a synthetic/fake dataset ([§6](#6-gaps--candidates-for-new-experiments)).
 |---|---|---|---|---|
 | `contradiction_similarity_threshold` (ContradictionDetector) | `config.py:199` / run.yaml:130 | **0.7** (None disables) | ✅ | ⛔ |
 | Agreement embedder | `agreement/providers.py` | OpenAI `text-embedding-3-small` (Gemini available) | ⚠️ code | sweep `--embedder` flag |
-| Polarity-conflict hard-fail policy | `agreement/polarity_conflict.py:84` | escalate iff comparable `{positive, negative}` pair | ❌ policy in code | ⛔ (breadth tracked B-025) |
+| Polarity-conflict hard-fail toggle (`force_escalate_on_polarity_conflict`) | `config.py` (`AgreementConfig`) / run.yaml `summarization.agreement.force_escalate_on_polarity_conflict` | `True` (escalate iff comparable `{positive, negative}` pair) | ✅ `agreement.force_escalate_on_polarity_conflict` (promoted 2026-05-26) | ✅ `run_summarization_sweeps.py --stage map_polarity_flag`, `map_theta_sweep.py --force-escalate-on-polarity-conflict {true,false,both}` |
+| Polarity-conflict policy *breadth* (which directions count) | `agreement/polarity_conflict.py:84` | `_NEGATIVE_DIRECTIONS = {"negative","absent"}`, `_POSITIVE_DIRECTIONS = {"positive","partial"}` | ❌ policy in code | ⛔ (separate question from the toggle above — breadth tracked B-025) |
 
 ---
 

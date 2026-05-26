@@ -244,6 +244,27 @@ class AgreementConfig:
     the harness's ``BEST_SCORER`` constant. Any value outside
     ``{"embedding", "hybrid"}`` raises at runner construction time."""
 
+    force_escalate_on_polarity_conflict: bool = True
+    """B-051 hard-fail policy. When ``True`` (default), ``AgreementChecker``
+    overrides ``bundle.decision`` to ``ChunkDecision.ESCALATE`` whenever
+    ``detect_polarity_conflict`` finds comparable opposite-polarity findings
+    (e.g. ``positive`` vs ``negative`` on the same subject/outcome) — even if
+    embedding similarity is high. Preserves the B-051 safety guard that
+    prevents paraphrased contradictions from being accepted as agreement.
+
+    When ``False``, the conflict marker is **still** recorded in
+    ``bundle.score_details["hard_fail_reason"]`` (so sweep harnesses can count
+    it via ``n_polarity_conflict_chunks``), but the scorer's natural decision
+    (KEEP / REJECT / ESCALATE from theta) is **not** overridden. This is an
+    *ablation* setting, not a production-tuning candidate — polarity-conflict
+    overrides exist for semantic safety, not for cost control. Default flip
+    should be backed by explicit evidence that B-051 is no longer a concern.
+
+    Applies to both cascade paths (legacy + router) — the polarity-conflict
+    check sits inside ``AgreementChecker.compute``, which both paths funnel
+    through. Hash-included; flipping invalidates the per-paper summary cache
+    (one-time, no \\$ recovery since downstream stages are local)."""
+
 
 @dataclass
 class SummarizationConfig:

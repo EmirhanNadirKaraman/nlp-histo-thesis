@@ -170,6 +170,7 @@ class MapStage:
         escalation_spec:    tuple[str, str] | None = None,
         cascade_profile:    str = "custom",
         legacy_single_voter_policy: str = "keep",
+        force_escalate_on_polarity_conflict: bool = True,
     ) -> None:
         if not voter_llms:
             raise ValueError("voter_llms must contain at least one LLM.")
@@ -208,6 +209,7 @@ class MapStage:
             theta=theta,
             reject_theta=reject_theta,
             single_voter_policy=legacy_single_voter_policy,  # type: ignore[arg-type]
+            force_escalate_on_polarity_conflict=force_escalate_on_polarity_conflict,
         )
         self._router = router
         self._escalation_lock = threading.Lock()

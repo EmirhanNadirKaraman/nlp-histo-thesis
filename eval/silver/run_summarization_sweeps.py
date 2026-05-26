@@ -145,6 +145,14 @@ CONTRADICTION_WEIGHT_GRID = [0.0, 0.20, 0.40]
 # precision at acceptable cost.
 LEGACY_SINGLE_VOTER_POLICY_GRID = ("keep", "escalate")
 
+# Stage 3b — force_escalate_on_polarity_conflict. Two-cell categorical
+# ablation of the B-051 hard-fail safety guard. Production default is True
+# (override scorer decision to ESCALATE on comparable positive/negative
+# pairs); the experiment asks how often that override fires and whether
+# disabling it changes the silver F1 / escalation cost picture. Default-flip
+# requires explicit evidence: polarity overrides exist for safety, not cost.
+FORCE_ESCALATE_ON_POLARITY_CONFLICT_GRID: tuple[bool, ...] = (True, False)
+
 # Scaffold grids (catalogued; not executed).
 GROUNDING_THRESHOLD_GRID = [0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95]
 RELATE_ENTAILMENT_GRID = [0.40, 0.50, 0.60, 0.70]
@@ -154,9 +162,12 @@ CONTRADICTION_SIM_GRID = [0.50, 0.60, 0.70, 0.80]
 
 CSV_FIELDNAMES = [
     "scorer", "tau", "count_alpha", "reuse_weight", "contradiction_weight",
-    "theta", "reject_theta", "legacy_single_voter_policy", "cascade_path",
+    "theta", "reject_theta",
+    "legacy_single_voter_policy", "force_escalate_on_polarity_conflict",
+    "cascade_path",
     "precision", "recall", "f1", "strict_f1",
     "early_accept_rate", "escalate_rate", "early_accept_precision",
+    "n_polarity_conflict_chunks", "polarity_conflict_rate",
     "n_matched", "n_silver", "n_pipeline",
     "split", "seed", "dev_fraction", "sim_threshold",
 ]
@@ -180,6 +191,7 @@ STAGE_ORDER = (
     "map_theta",           # Stage 2
     "map_weights",         # Stage 3
     "map_routing_policy",  # Stage 3a — legacy_single_voter_policy {keep, escalate}
+    "map_polarity_flag",   # Stage 3b — force_escalate_on_polarity_conflict {True, False}
     "grounding",           # Stage 4  (scaffold)
     "relate",              # Stage 5  (scaffold)
     "resolve",             # Stage 6  (scaffold)
@@ -200,6 +212,10 @@ STAGES: dict[str, SweepSpec] = {
     "map_routing_policy": SweepSpec(
         "map_routing_policy",
         "Stage 3a — legacy_single_voter_policy ∈ {keep, escalate} at BEST_SCORER/theta/reject",
+        executable=True, metric="silver_f1"),
+    "map_polarity_flag": SweepSpec(
+        "map_polarity_flag",
+        "Stage 3b — force_escalate_on_polarity_conflict ∈ {true, false} at BEST_SCORER/theta/reject (B-051 ablation)",
         executable=True, metric="silver_f1"),
     "grounding": SweepSpec(
         "grounding", "Stage 4 — grounding.threshold  [SCAFFOLD]",
@@ -280,6 +296,10 @@ def _map_grid(stage: str) -> tuple[list[ScorerSpec], list[float], list[float]]:
         # the legacy_single_voter_policy enum (handled separately in
         # _policy_grid_for / _run_map_stage).
         return [_spec_for(BEST_SCORER)], [BEST_THETA], [BEST_REJECT_THETA]
+    if stage == "map_polarity_flag":
+        # Same shape as map_routing_policy — pinned at BEST_*; only axis is
+        # force_escalate_on_polarity_conflict (handled in _polarity_grid_for).
+        return [_spec_for(BEST_SCORER)], [BEST_THETA], [BEST_REJECT_THETA]
     raise ValueError(f"{stage!r} is not a MAP stage")
 
 
@@ -295,11 +315,25 @@ def _policy_grid_for(stage: str) -> tuple[str, ...]:
     return ("keep",)
 
 
+def _polarity_grid_for(stage: str) -> tuple[bool, ...]:
+    """force_escalate_on_polarity_conflict axis per MAP stage.
+
+    Only ``map_polarity_flag`` sweeps the flag; every other MAP stage holds it
+    at the production default (True) so the B-051 safety guard is preserved
+    and per-stage results stay comparable to historical sweep CSVs.
+    """
+    if stage == "map_polarity_flag":
+        return FORCE_ESCALATE_ON_POLARITY_CONFLICT_GRID
+    return (True,)
+
+
 def _enumerate_cells(stage: str) -> list[str]:
     """Human-readable per-cell names for --list-variants."""
-    if stage in ("map_scorer", "map_theta", "map_weights", "map_routing_policy"):
+    if stage in ("map_scorer", "map_theta", "map_weights",
+                 "map_routing_policy", "map_polarity_flag"):
         specs, thetas, rejects = _map_grid(stage)
         policies = _policy_grid_for(stage)
+        polarities = _polarity_grid_for(stage)
         cells = []
         for s in specs:
             for t in thetas:
@@ -307,24 +341,37 @@ def _enumerate_cells(stage: str) -> list[str]:
                     if r >= t:
                         continue
                     for pol in policies:
-                        if stage == "map_routing_policy":
-                            # Per the user spec, the visible cell name uses the
-                            # `legacy_single_voter_<policy>` form so the policy
-                            # is the salient label, not buried in trailing
-                            # metadata.
-                            cells.append(
-                                f"legacy_single_voter_{pol}  "
-                                f"({s.name}, theta={t:.2f}, rej={r:.2f})"
-                            )
-                        elif len(policies) == 1 and policies[0] == "keep":
-                            # Historical stages — omit the policy suffix to
-                            # keep diffs against prior --list-variants output
-                            # readable.
-                            cells.append(f"{s.name}  theta={t:.2f} rej={r:.2f}")
-                        else:
-                            cells.append(
-                                f"{s.name}  theta={t:.2f} rej={r:.2f}  pol={pol}"
-                            )
+                        for pol_flag in polarities:
+                            if stage == "map_routing_policy":
+                                # Per the user spec, the visible cell name uses
+                                # `legacy_single_voter_<policy>` so the policy
+                                # is the salient label.
+                                cells.append(
+                                    f"legacy_single_voter_{pol}  "
+                                    f"({s.name}, theta={t:.2f}, rej={r:.2f})"
+                                )
+                            elif stage == "map_polarity_flag":
+                                # Cell name leads with the flag value so the
+                                # B-051 ablation pair (true vs false) is the
+                                # salient axis.
+                                flag_label = "true" if pol_flag else "false"
+                                cells.append(
+                                    f"polarity_force_escalate_{flag_label}  "
+                                    f"({s.name}, theta={t:.2f}, rej={r:.2f})"
+                                )
+                            elif (len(policies) == 1 and policies[0] == "keep"
+                                  and len(polarities) == 1 and polarities[0] is True):
+                                # Historical stages — omit the policy suffix
+                                # to keep diffs against prior --list-variants
+                                # output readable.
+                                cells.append(
+                                    f"{s.name}  theta={t:.2f} rej={r:.2f}"
+                                )
+                            else:
+                                cells.append(
+                                    f"{s.name}  theta={t:.2f} rej={r:.2f}  "
+                                    f"pol={pol}  pol_fail={pol_flag}"
+                                )
         return cells
     if stage == "grounding":
         return [f"grounding_threshold={t:.2f}" for t in GROUNDING_THRESHOLD_GRID]
@@ -425,6 +472,7 @@ def _run_map_stage(stage: str, *, metric: str, max_escalate: Optional[float],
 
     ctx = _load_map_context(embedder_kind, embed_cache_path=embed_cache_path)
     policies = _policy_grid_for(stage)
+    polarities = _polarity_grid_for(stage)
     rows = run_sweep(
         voter_cache=ctx.voter_cache,
         silver_by_case=ctx.silver_by_case,
@@ -439,6 +487,7 @@ def _run_map_stage(stage: str, *, metric: str, max_escalate: Optional[float],
         dev_fraction=dev_fraction,
         agreement_embed_fn=ctx.agreement_embed_fn,
         single_voter_policies=policies,
+        force_escalate_on_polarity_conflict_grid=polarities,
     )
     if not rows:
         print("no rows produced — check the voter cache / silver overlap.", file=sys.stderr)
@@ -480,6 +529,15 @@ def _pin_hint(stage: str, w: dict) -> str:
             f"→ pin: RoutingConfig.legacy_single_voter_policy = {pol!r}  "
             f"(update configs/run.yaml summarization.routing.legacy_single_voter_policy)"
         )
+    if stage == "map_polarity_flag":
+        # CSV stores the value as lowercase string ("true"/"false") to be
+        # CSV-clean; convert back to a bool for the pin hint.
+        flag_str = w.get("force_escalate_on_polarity_conflict", "true")
+        flag_bool = (flag_str == "true") if isinstance(flag_str, str) else bool(flag_str)
+        return (
+            f"→ pin: AgreementConfig.force_escalate_on_polarity_conflict = {flag_bool}  "
+            f"(update configs/run.yaml summarization.agreement.force_escalate_on_polarity_conflict)"
+        )
     return ""
 
 
@@ -519,12 +577,16 @@ def _list_variants(stage: str, only: Optional[set]) -> None:
     for c in cells:
         print(f"  {c}")
     print(f"\n{len(cells)} variant(s).")
-    if stage in ("map_theta", "map_weights", "map_routing_policy"):
+    if stage in ("map_theta", "map_weights", "map_routing_policy", "map_polarity_flag"):
         print(f"(holding earlier stages at BEST_SCORER={BEST_SCORER!r}, "
               f"BEST_THETA={BEST_THETA}, BEST_REJECT_THETA={BEST_REJECT_THETA})")
     if stage == "map_routing_policy":
         print("(sweep axis: RoutingConfig.legacy_single_voter_policy ∈ "
               f"{list(LEGACY_SINGLE_VOTER_POLICY_GRID)} — production default is 'keep')")
+    if stage == "map_polarity_flag":
+        print("(sweep axis: AgreementConfig.force_escalate_on_polarity_conflict ∈ "
+              f"{list(FORCE_ESCALATE_ON_POLARITY_CONFLICT_GRID)} — "
+              "production default is True; this is the B-051 hard-fail ablation)")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

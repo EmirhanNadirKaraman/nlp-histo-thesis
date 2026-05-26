@@ -283,3 +283,73 @@ def test_b051_router_path_polarity_conflict_reason_code():
     assert ReasonCode.ESCALATED_DUE_TO_LOW_AGREEMENT not in decision.reason_codes
     assert "overridden" in decision.explanation.lower()
     assert "low agreement" not in decision.explanation.lower()
+
+
+# ── Tests 12–14: `force_escalate_on_polarity_conflict` flag (promoted 2026-05-26) ─
+#
+# The flag preserves B-051 behaviour at its default (True). Setting False keeps
+# the conflict marker in score_details (so sweep harnesses can count it) but
+# does NOT override the scorer's natural decision. The tests below use the
+# same `_HighAgreementScorerStub` as the canonical B-051 tests so the scorer's
+# baseline decision is KEEP at the default theta — that's the only way to
+# observe the override having (or not having) an effect: if the scorer itself
+# said ESCALATE, the difference between True and False would be invisible.
+
+
+def test_polarity_flag_true_preserves_b051_escalation():
+    """``force_escalate_on_polarity_conflict=True`` (default) reproduces the
+    canonical B-051 escalation: comparable positive/negative pair → ESCALATE,
+    overriding the scorer's high-confidence KEEP."""
+    pos = _voter(_finding(direction=DirectionEnum.positive))
+    neg = _voter(_finding(direction=DirectionEnum.negative))
+    checker = AgreementChecker(
+        _HighAgreementScorerStub(), theta=0.7, reject_theta=0.2,
+        force_escalate_on_polarity_conflict=True,
+    )
+    bundle = checker.compute([pos, neg])
+    assert bundle.decision == ChunkDecision.ESCALATE
+    assert bundle.score_details["hard_fail_reason"] == "polarity_conflict"
+    assert bundle.score_details["polarity_conflict_details"]["count"] >= 1
+
+
+def test_polarity_flag_false_records_marker_but_does_not_override():
+    """``force_escalate_on_polarity_conflict=False`` still records the conflict
+    in score_details (sweep harnesses count via this marker) but does NOT
+    override the scorer's KEEP decision.
+
+    The assertion is **"decision is what the scorer / theta would produce"**,
+    not "decision is not ESCALATE" — a scorer that independently returned
+    ESCALATE would still produce ESCALATE; the test would then be testing the
+    wrong thing. Here the stub returns confidence=0.95 with no decision set,
+    so AgreementChecker's theta fallback (theta=0.7) lands on KEEP. With
+    flag=False we expect that KEEP to survive."""
+    pos = _voter(_finding(direction=DirectionEnum.positive))
+    neg = _voter(_finding(direction=DirectionEnum.negative))
+    checker = AgreementChecker(
+        _HighAgreementScorerStub(confidence=0.95),
+        theta=0.7, reject_theta=0.2,
+        force_escalate_on_polarity_conflict=False,
+    )
+    bundle = checker.compute([pos, neg])
+    # Marker recorded for observability — sweep counter relies on this.
+    assert bundle.score_details["hard_fail_reason"] == "polarity_conflict"
+    assert bundle.score_details["polarity_conflict_details"]["count"] >= 1
+    # Decision NOT overridden — the scorer's high-confidence KEEP survives.
+    assert bundle.decision == ChunkDecision.KEEP
+    # Embedding agreement preserved verbatim (no scorer state was mutated).
+    assert bundle.embedding_agreement == pytest.approx(0.95)
+
+
+def test_polarity_flag_false_no_conflict_no_marker():
+    """``force_escalate_on_polarity_conflict=False`` with non-conflicting
+    findings behaves identically to the default — no marker, scorer's KEEP
+    stands. Parity test against the canonical positive/positive case."""
+    a = _voter(_finding(direction=DirectionEnum.positive))
+    b = _voter(_finding(direction=DirectionEnum.positive))
+    checker = AgreementChecker(
+        _HighAgreementScorerStub(), theta=0.7, reject_theta=0.2,
+        force_escalate_on_polarity_conflict=False,
+    )
+    bundle = checker.compute([a, b])
+    assert (bundle.score_details or {}).get("hard_fail_reason") is None
+    assert bundle.decision == ChunkDecision.KEEP

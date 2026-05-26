@@ -161,6 +161,9 @@ class BatchSummarizationRunner:
             theta=cfg.map.theta,
             reject_theta=cfg.map.reject_theta,
             single_voter_policy=legacy_single_voter_policy,  # type: ignore[arg-type]
+            force_escalate_on_polarity_conflict=(
+                cfg.agreement.force_escalate_on_polarity_conflict
+            ),
         )
         # Grounding-first router config. When enabled, _process_level runs
         # schema + provenance validation before the agreement gate, drops
@@ -1152,6 +1155,9 @@ class BatchSummarizationRunner:
             theta=self._agreement.theta,
             reject_theta=self._agreement.reject_theta,
             single_voter_policy=self._legacy_single_voter_policy,  # type: ignore[arg-type]
+            force_escalate_on_polarity_conflict=(
+                self._cfg_full.agreement.force_escalate_on_polarity_conflict
+            ),
         )
         # Grounding-first router: built fresh per call so it shares the same
         # cached AgreementChecker as the agreement gate. Disabled when

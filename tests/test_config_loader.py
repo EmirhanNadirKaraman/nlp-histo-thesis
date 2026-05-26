@@ -309,6 +309,42 @@ def test_agreement_scorer_kind_dispatches_to_correct_strategy():
     assert hyb._strategy._w_embedding == 0.40
 
 
+# ── AgreementConfig.force_escalate_on_polarity_conflict ─────────────────────
+# Promoted 2026-05-26. B-051 hard-fail policy. Default True preserves the
+# safety guard verbatim; False is the ablation setting (still records the
+# marker, just doesn't override the scorer decision). Behavioural tests for
+# both branches live in test_b051_hard_fail_polarity.py.
+
+
+def test_polarity_flag_default_is_true():
+    """Default ``force_escalate_on_polarity_conflict=True`` preserves the B-051 safety guard."""
+    from pipeline.stages.summarization.config import AgreementConfig
+    assert AgreementConfig().force_escalate_on_polarity_conflict is True
+
+
+def test_polarity_flag_loaded_from_run_yaml():
+    """Shipped ``configs/run.yaml`` pins the flag to ``true`` (current production
+    safety default). Drift detector for accidental YAML edits."""
+    _, sumcfg = load_config(Path("configs/run.yaml"))
+    assert sumcfg.agreement.force_escalate_on_polarity_conflict is True
+
+
+def test_polarity_flag_yaml_override_to_false(tmp_path: Path):
+    """Explicit YAML override flips the loaded value; untouched fields keep
+    their defaults. Round-trip uses YAML ``false`` (lowercase) — yaml.safe_load
+    coerces this to Python ``False`` cleanly."""
+    p = _write(tmp_path, """
+        summarization:
+          agreement:
+            force_escalate_on_polarity_conflict: false
+    """)
+    _, sumcfg = load_config(p)
+    assert sumcfg.agreement.force_escalate_on_polarity_conflict is False
+    # Other agreement fields untouched.
+    assert sumcfg.agreement.tau == 0.15
+    assert sumcfg.agreement.scorer_kind == "embedding"
+
+
 def test_normalize_extra_synonyms_loaded_as_mapping(tmp_path: Path):
     """B-037: NormalizeConfig.extra_synonyms is a `dict[str, str]` and must
     pass through the loader without being mistaken for a nested dataclass."""

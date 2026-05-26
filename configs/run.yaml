@@ -135,6 +135,12 @@ summarization:
                                 # category + embedding + entity + evidence). Stage 1 of the MAP
                                 # sweep (run_summarization_sweeps --stage map_scorer) picks the
                                 # winner; pin here to make it production-effective.
+    force_escalate_on_polarity_conflict: true   # B-051 hard-fail policy. true (default) preserves the
+                                                # safety guard: comparable positive/negative findings
+                                                # override the scorer decision to ESCALATE. false records
+                                                # the conflict in score_details but lets the scorer's
+                                                # natural decision stand — ablation only, not a tuning
+                                                # candidate (polarity overrides exist for semantic safety).
                                # NOTE: in the per-paper result-cache hash but not the
                                # chunk-level MAP cache (like theta) — sweep via replay.
 

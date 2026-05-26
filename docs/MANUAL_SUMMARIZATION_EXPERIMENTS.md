@@ -73,10 +73,14 @@ Default = 0.25 / 0.40 / 0.25 / 0.10
 
 #### TODO: check and think about how to find the optimal weights 
 
-Polarity Conflict: Escalate iff {positive, negative} comparable pair. 
-These trigger forced escalation. 
-
-#### TODO: maybe change this to a flag, so we can enable and disable after fine-tuning and testing on the 15 related paper dataset
+~~Polarity Conflict: Escalate iff {positive, negative} comparable pair. These trigger forced escalation.~~ **Done 2026-05-26.**
+  → Now at `summarization.agreement.force_escalate_on_polarity_conflict` (`true` | `false`, default `true`).
+  Implemented as `AgreementChecker.force_escalate_on_polarity_conflict`. Marker is **always** recorded
+  in `score_details["hard_fail_reason"]` regardless of flag value (so sweep harnesses can count chunks
+  even when the override doesn't fire); the decision override to `ChunkDecision.ESCALATE` is the gated
+  part. Stage 3b `--stage map_polarity_flag` in `run_summarization_sweeps` runs the 2-cell ablation;
+  CSV gains `n_polarity_conflict_chunks` + `polarity_conflict_rate`. Default-flip is a *safety* decision,
+  not a tuning one — polarity overrides exist for semantic safety (B-051), not cost control.
 
 --------------------------------------------------------------------------------
 

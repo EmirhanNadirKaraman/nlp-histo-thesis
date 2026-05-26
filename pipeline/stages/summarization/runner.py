@@ -231,6 +231,9 @@ class SummarizationRunner:
                 scorer=scorer,
                 theta=cfg.map.theta,
                 reject_theta=cfg.map.reject_theta,
+                force_escalate_on_polarity_conflict=(
+                    cfg.agreement.force_escalate_on_polarity_conflict
+                ),
             )
             router = MapOutputRouter(
                 agreement_checker=router_checker,
@@ -262,6 +265,9 @@ class SummarizationRunner:
             escalation_spec=escalation_spec,
             cascade_profile=cascade_profile,
             legacy_single_voter_policy=legacy_single_voter_policy,
+            force_escalate_on_polarity_conflict=(
+                cfg.agreement.force_escalate_on_polarity_conflict
+            ),
         )
         self._normalize = NormalizeStage(extra_synonyms=cfg.normalize.extra_synonyms)
         self._group = GroupStage()
