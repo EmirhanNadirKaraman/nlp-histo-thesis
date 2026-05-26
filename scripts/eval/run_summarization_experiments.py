@@ -1,40 +1,43 @@
 #!/usr/bin/env python3
 """
-run_summarization_experiments.py — orchestrator for the MAP-stage
+run_summarization_experiments.py — phase-based orchestrator for the MAP-stage
 experiments described in ``docs/FINAL_SUMMARIZATION_EXPERIMENTS.md``.
 
 Composes the per-stage MAP sweep harness in
-``eval/silver/run_summarization_sweeps.py`` into the branched recipe from
-the FINAL doc:
+``eval/silver/run_summarization_sweeps.py`` into a phased recipe::
 
-  Gemini branch:  EXP 1 → EXP 2 → EXP 3 → FINAL_GEMINI_MAP_CONFIG
-  OpenAI branch:  EXP 4 → EXP 5 → EXP 6 → FINAL_OPENAI_MAP_CONFIG
-  Comparison:     EXP 7 (FINAL_GEMINI vs FINAL_OPENAI) → FINAL_MAP_CONFIG
-  Confirmation:   EXP F (held-out test pass on FINAL_MAP_CONFIG)
-  Validation:     EXP A–E (bootstrap CIs, ABC ablation, agreement→accuracy,
-                            matcher sensitivity, recall-gap audit)
+    Phase 1A  gemini_branch    EXP 1 → 2 → 3   → FINAL_GEMINI_MAP_CONFIG
+    Phase 1B  openai_branch    EXP 4 → 5 → 6   → FINAL_OPENAI_MAP_CONFIG
+    Phase 2   compare          EXP 7           → PROVISIONAL_FINAL_MAP_CONFIG
+    Phase 3   confirm          EXP F           → test-split confirmation CSV
+    Phase 4   validation       EXP A–E         (bootstrap CIs, ABC ablation, ...)
+
+State (BEST_*, FINAL_*, PROVISIONAL_*) is persisted between invocations to
+``eval/reports/summarization_experiment_state.json`` so phases can be run in
+separate terminal sessions without losing prior picks. Every invocation also
+writes a run manifest under ``output_dir/manifests/`` capturing the phase /
+experiments run / output paths / git commit / final state keys.
+
+Test-split protection: EXP F always uses ``split=test``. All other experiments
+default to ``split=dev`` and refuse ``--split test`` unless
+``--allow-test-tuning`` is passed — protects against accidental held-out tuning.
 
 The orchestrator reuses existing per-stage code (``run_sweep`` from
-``eval/silver/map_theta_sweep.py``; helpers from
-``eval/silver/run_summarization_sweeps.py``); it does not duplicate sweep
-mechanics. Each EXP is an ``ExperimentSpec`` with a ``run(ctx)`` callable
-and an explicit ``depends_on`` list so the dependency graph between EXPs
-is inspectable from ``--list-variants``.
-
-Run mode is opt-in; the default is dry-run / list. Calibration EXPs are
-$0 (offline replay over the existing primer + embedding caches); EXP F is
-also $0 (different split, same caches). Validation EXPs A–E require either
-new code or external setup (manual audit, separate Sonnet-only primer)
-and are shipped as documented stubs that point at the FINAL doc.
+``eval/silver/map_theta_sweep.py``; ``_load_map_context`` from
+``run_summarization_sweeps.py``); it does not duplicate sweep mechanics.
 
 Usage::
 
-    python scripts/eval/run_summarization_experiments.py                       # stage menu
-    python scripts/eval/run_summarization_experiments.py --list-variants
-    python scripts/eval/run_summarization_experiments.py --stage calibration --list-variants
-    python scripts/eval/run_summarization_experiments.py --exp exp_1_gemini_scorer
-    python scripts/eval/run_summarization_experiments.py --branch gemini
-    python scripts/eval/run_summarization_experiments.py --stage all
+    python scripts/eval/run_summarization_experiments.py                              # menu
+    python scripts/eval/run_summarization_experiments.py --list-variants              # full table
+    python scripts/eval/run_summarization_experiments.py --phase gemini_branch        # dry-run
+    python scripts/eval/run_summarization_experiments.py --phase gemini_branch --run
+    python scripts/eval/run_summarization_experiments.py --phase openai_branch --run
+    python scripts/eval/run_summarization_experiments.py --phase compare --run
+    python scripts/eval/run_summarization_experiments.py --phase confirm --run
+    python scripts/eval/run_summarization_experiments.py --phase validation --run
+    python scripts/eval/run_summarization_experiments.py --phase all --run
+    python scripts/eval/run_summarization_experiments.py --exp exp_1_gemini_scorer --run
 """
 from __future__ import annotations
 
@@ -42,6 +45,8 @@ import argparse
 import csv
 import json
 import logging
+import os
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
@@ -57,47 +62,61 @@ if str(_REPO_ROOT) not in sys.path:
 
 
 _DEFAULT_REPORTS_DIR = _REPO_ROOT / "eval" / "reports"
+_DEFAULT_STATE_PATH = _DEFAULT_REPORTS_DIR / "summarization_experiment_state.json"
 _DEFAULT_SIM_THRESHOLD = 0.55
-_DEFAULT_BOOTSTRAP_N = 50
+_STATE_SCHEMA_VERSION = 1
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Stage / experiment registry
+# Phase / experiment registry
 # ─────────────────────────────────────────────────────────────────────────────
 
-STAGE_ORDER = (
-    "calibration",   # EXP 1-7 + F
-    "validation",    # EXP A-E
-    "all",
+PHASE_ORDER = (
+    "gemini_branch",   # Phase 1A — EXP 1 → 2 → 3
+    "openai_branch",   # Phase 1B — EXP 4 → 5 → 6
+    "branches",        # Phase 1  — both branches
+    "compare",         # Phase 2  — EXP 7
+    "confirm",         # Phase 3  — EXP F
+    "validation",      # Phase 4  — EXP A–E
+    "all",             # branches + compare + confirm + validation
 )
 
-STAGE_BLURBS: dict[str, str] = {
-    "calibration": (
-        "Picks the production MAP config. Each calibration EXP wraps existing "
-        "per-stage sweeps from eval/silver/run_summarization_sweeps.py and "
-        "writes its own CSV. Greedy stage-wise: EXP n+1 reads BEST_* state "
-        "produced by EXP n."
+PHASE_BLURBS: dict[str, str] = {
+    "gemini_branch": "Phase 1A — Gemini calibration: EXP 1 → 2 → 3, pins FINAL_GEMINI_MAP_CONFIG.",
+    "openai_branch": "Phase 1B — OpenAI calibration: EXP 4 → 5 → 6, pins FINAL_OPENAI_MAP_CONFIG.",
+    "branches":      "Phase 1  — runs both gemini_branch and openai_branch in sequence.",
+    "compare":       "Phase 2  — EXP 7 embedder comparison, pins PROVISIONAL_FINAL_MAP_CONFIG.",
+    "confirm":       "Phase 3  — EXP F held-out test confirmation on PROVISIONAL_FINAL_MAP_CONFIG.",
+    "validation":    "Phase 4  — EXP A–E validation / explanation experiments (mostly stubs today).",
+    "all":           "Every phase in dependency order: branches → compare → confirm → validation.",
+}
+
+# Phase → ordered list of exp_ids. Each entry is the exp_id (matches
+# ExperimentSpec.exp_id). 'all' is composed at filter time.
+PHASE_TO_EXPS: dict[str, tuple[str, ...]] = {
+    "gemini_branch": ("EXP_1", "EXP_2", "EXP_3"),
+    "openai_branch": ("EXP_4", "EXP_5", "EXP_6"),
+    "branches":      ("EXP_1", "EXP_2", "EXP_3", "EXP_4", "EXP_5", "EXP_6"),
+    "compare":       ("EXP_7",),
+    "confirm":       ("EXP_F",),
+    "validation":    ("EXP_A", "EXP_B.1", "EXP_B.2", "EXP_C", "EXP_D", "EXP_E"),
+    "all":           (
+        # branches
+        "EXP_1", "EXP_2", "EXP_3", "EXP_4", "EXP_5", "EXP_6",
+        # compare
+        "EXP_7",
+        # confirm
+        "EXP_F",
+        # validation
+        "EXP_A", "EXP_B.1", "EXP_B.2", "EXP_C", "EXP_D", "EXP_E",
     ),
-    "validation": (
-        "Validates / stress-tests / explains FINAL_MAP_CONFIG. Bootstrap CIs "
-        "(EXP A), ABC mechanism ablation (EXP B), agreement→accuracy "
-        "calibration (EXP C), matcher-threshold sensitivity (EXP D), and a "
-        "manual recall-gap audit (EXP E). Most are documented stubs today."
-    ),
-    "all": "Every experiment from calibration + validation, in dependency order.",
 }
 
 
 @dataclass
 class ExperimentContext:
-    """Per-run state passed to each experiment's ``run`` callable.
-
-    ``state`` carries BEST_* picks across EXPs (greedy stage-wise selection).
-    EXP n writes into ``state`` via the returned ``ExperimentResult``; EXP n+1
-    reads what it needs.
-    """
+    """Per-run state passed to each experiment's ``run`` callable."""
     output_dir: Path
-    embedder_hint: Optional[str]    # restrict to "gemini" / "openai" / None=both branches
     split: str = "dev"
     seed: int = 42
     dev_fraction: float = 0.8
@@ -109,13 +128,15 @@ class ExperimentContext:
 class ExperimentResult:
     """Result returned by an experiment's ``run`` callable.
 
-    ``state_updates`` are merged into ``ExperimentContext.state`` so downstream
-    EXPs see the freshly-picked BEST_* values.
+    ``state_updates`` are merged into ``ExperimentContext.state`` AND persisted
+    to the state file so downstream EXPs (possibly in a later invocation) see
+    the freshly-picked BEST_* / FINAL_* / PROVISIONAL_* values.
     """
     csv_path: Optional[Path]
     winner: Optional[dict]
     notes: str
     state_updates: dict = field(default_factory=dict)
+    status: str = "ok"            # "ok" | "no_rows" | "skipped" | "failed"
 
 
 @dataclass
@@ -130,7 +151,6 @@ class ExperimentSpec:
     name: str
     exp_id: str                       # "EXP_1", "EXP_A", etc. (for cross-ref to doc)
     blurb: str
-    stage: str                        # "calibration" | "validation"
     branch: str                       # "gemini" | "openai" | "shared"
     depends_on: list[str] = field(default_factory=list)
     status: str = "executable"
@@ -138,14 +158,83 @@ class ExperimentSpec:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Shared helpers: per-scorer-best aggregation, CSV writer, BEST_* parsers
+# State persistence (durable across invocations)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _write_csv_rows(path: Path, rows: list[dict]) -> None:
+def _git_commit() -> Optional[str]:
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=str(_REPO_ROOT),
+            capture_output=True, text=True, timeout=2, check=False,
+        )
+        if out.returncode == 0:
+            return out.stdout.strip() or None
+    except Exception:
+        pass
+    return None
+
+
+def _load_state(path: Path) -> tuple[dict, dict, list[dict]]:
+    """Return ``(state, last_metadata, history)``. Empty if file missing."""
+    if not path.exists():
+        return {}, {}, []
+    try:
+        blob = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(
+            f"state file {path} is corrupt ({exc}); fix or pass --reset-state"
+        )
+    if blob.get("schema_version") != _STATE_SCHEMA_VERSION:
+        logging.warning(
+            "state file schema_version=%r (expected %d); loading best-effort",
+            blob.get("schema_version"), _STATE_SCHEMA_VERSION,
+        )
+    return (
+        blob.get("state", {}),
+        blob.get("last_invocation", {}),
+        blob.get("history", []),
+    )
+
+
+def _save_state(
+    path: Path, state: dict, metadata: dict, history: list[dict],
+) -> None:
+    """Atomic write of state + metadata + history."""
+    payload = {
+        "schema_version": _STATE_SCHEMA_VERSION,
+        "last_updated":   datetime.now(tz=timezone.utc).isoformat(),
+        "last_invocation": metadata,
+        "state":          state,
+        "history":        history,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    tmp.replace(path)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CSV writer (header-only when empty + sibling status.json)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _write_csv_rows(path: Path, rows: list[dict]) -> str:
+    """Write rows to CSV. If ``rows`` is empty, write only a status.json marker.
+
+    Returns ``"ok"`` if rows were written, ``"no_rows"`` if a status.json was
+    written instead. Keeps downstream consumers honest — they fail loudly when
+    a CSV is missing rather than parsing a "(no rows)" sentinel.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
-        path.write_text("(no rows)\n", encoding="utf-8")
-        return
-    # Stable column order: union of keys, sorted, with known leaders first.
+        status_path = path.with_suffix(".status.json")
+        status_path.write_text(json.dumps({
+            "status": "no_rows",
+            "csv_path": str(path),
+            "written_at": datetime.now(tz=timezone.utc).isoformat(),
+            "note": "Experiment produced zero rows; see orchestrator logs for cause.",
+        }, indent=2), encoding="utf-8")
+        return "no_rows"
+
     leaders = [
         "scorer", "theta", "reject_theta",
         "w_category", "w_embedding", "w_entity", "w_evidence", "weights_sum",
@@ -160,12 +249,16 @@ def _write_csv_rows(path: Path, rows: list[dict]) -> None:
     seen = set(leaders)
     extras = sorted({k for r in rows for k in r.keys()} - seen)
     fieldnames = [c for c in leaders if any(c in r for r in rows)] + extras
-    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore")
         w.writeheader()
         w.writerows(rows)
+    return "ok"
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sweep helpers (shared across EXPs 1-6, F)
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _per_scorer_best(rows: list[dict], metric: str = "strict_f1") -> list[dict]:
     """Group rows by ``scorer`` and keep the max-``metric`` row per group.
@@ -189,13 +282,7 @@ def _per_scorer_best(rows: list[dict], metric: str = "strict_f1") -> list[dict]:
 
 
 def _build_exp1_scorer_specs():
-    """Construct the 7 scorer ScorerSpecs for EXP 1 / EXP 4.
-
-    1 embedding (default `AgreementConfig`) + 6 hybrid variants from
-    ``run_summarization_sweeps.HYBRID_BLEND_GRID``. The hybrid variants vary
-    only the blend weights; soft-alignment weights stay at defaults so the
-    comparison isolates the scorer-family axis.
-    """
+    """The 7 scorer ScorerSpecs for EXP 1 / EXP 4 (1 embedding + 6 hybrid blends)."""
     from eval.silver.map_theta_sweep import ScorerSpec
     from eval.silver.run_summarization_sweeps import HYBRID_BLEND_GRID
     from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
@@ -223,48 +310,43 @@ def _agreement_weight_grid_around(base_cfg) -> list:
     )
     from pipeline.stages.summarization.config import AgreementConfig
 
-    base_tau = base_cfg.tau
-    base_count = base_cfg.count_alpha
-    base_reuse = base_cfg.reuse_weight
-    base_contra = base_cfg.contradiction_weight
-
+    base_map = {
+        "tau":                  base_cfg.tau,
+        "count_alpha":          base_cfg.count_alpha,
+        "reuse_weight":         base_cfg.reuse_weight,
+        "contradiction_weight": base_cfg.contradiction_weight,
+    }
     specs = [ScorerSpec("baseline", base_cfg.scorer_kind, base_cfg)]
     grids = {
-        "tau": TAU_GRID, "count_alpha": COUNT_ALPHA_GRID,
-        "reuse_weight": REUSE_WEIGHT_GRID, "contradiction_weight": CONTRADICTION_WEIGHT_GRID,
+        "tau":                  TAU_GRID,
+        "count_alpha":          COUNT_ALPHA_GRID,
+        "reuse_weight":         REUSE_WEIGHT_GRID,
+        "contradiction_weight": CONTRADICTION_WEIGHT_GRID,
     }
-    base_map = {"tau": base_tau, "count_alpha": base_count,
-                "reuse_weight": base_reuse, "contradiction_weight": base_contra}
     for knob, grid in grids.items():
         for v in grid:
             if v == base_map[knob]:
                 continue
-            kwargs = {
-                "tau": base_tau, "count_alpha": base_count,
-                "reuse_weight": base_reuse, "contradiction_weight": base_contra,
-                "scorer_kind": base_cfg.scorer_kind,
-                "hybrid": base_cfg.hybrid,
-            }
+            kwargs = dict(base_map)
+            kwargs["scorer_kind"] = base_cfg.scorer_kind
+            kwargs["hybrid"] = base_cfg.hybrid
             kwargs[knob] = v
             specs.append(ScorerSpec(
-                f"{base_cfg.scorer_kind}_{knob}_{v}",
-                base_cfg.scorer_kind,
+                f"{base_cfg.scorer_kind}_{knob}_{v}", base_cfg.scorer_kind,
                 AgreementConfig(**kwargs),
             ))
     return specs
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Calibration experiments (executable)
+# Calibration EXPs (executable)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _run_branch_scorer_comparison(ctx: ExperimentContext, embedder: str) -> ExperimentResult:
-    """Shared body for EXP 1 (Gemini) and EXP 4 (OpenAI) — tuned scorer
-    comparison: full θ × reject_θ × 7-scorer sweep, then per-scorer best-of.
-    """
-    from eval.silver.map_theta_sweep import (
-        run_sweep, THETA_GRID, REJECT_THETA_GRID,
-    )
+def _run_branch_scorer_comparison(
+    ctx: ExperimentContext, embedder: str, exp_label: str,
+) -> ExperimentResult:
+    """Shared body for EXP 1 (Gemini) and EXP 4 (OpenAI)."""
+    from eval.silver.map_theta_sweep import run_sweep, THETA_GRID, REJECT_THETA_GRID
     from eval.silver.run_summarization_sweeps import _load_map_context
 
     map_ctx = _load_map_context(embedder, embed_cache_path=None)
@@ -282,8 +364,6 @@ def _run_branch_scorer_comparison(ctx: ExperimentContext, embedder: str) -> Expe
         seed=ctx.seed,
         dev_fraction=ctx.dev_fraction,
         agreement_embed_fn=map_ctx.agreement_embed_fn,
-        # Stage 1/4 holds policy + polarity at production defaults — only
-        # the scorer + θ/reject axes vary.
         single_voter_policies=("keep",),
         force_escalate_on_polarity_conflict_grid=(True,),
     )
@@ -291,28 +371,29 @@ def _run_branch_scorer_comparison(ctx: ExperimentContext, embedder: str) -> Expe
     winner = max(per_scorer, key=lambda r: r["strict_f1"]) if per_scorer else None
 
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%S")
-    full_csv = ctx.output_dir / f"exp_{embedder}_scorer_full_{ts}.csv"
-    best_csv = ctx.output_dir / f"exp_{embedder}_scorer_best_per_{ts}.csv"
+    full_csv = ctx.output_dir / f"{exp_label}_{embedder}_scorer_full_{ts}.csv"
+    best_csv = ctx.output_dir / f"{exp_label}_{embedder}_scorer_best_per_{ts}.csv"
     _write_csv_rows(full_csv, rows)
-    _write_csv_rows(best_csv, per_scorer)
+    status = _write_csv_rows(best_csv, per_scorer)
 
     notes = (
         f"{len(rows)} cells across 7 scorers × {len(THETA_GRID)*len(REJECT_THETA_GRID)} "
         f"(θ, rej) (reject<θ filter); per-scorer best-of in {best_csv.name}."
     )
     if winner is None:
-        return ExperimentResult(csv_path=full_csv, winner=None, notes=notes)
+        return ExperimentResult(csv_path=full_csv, winner=None, notes=notes,
+                                 status="no_rows")
     prefix = embedder.upper()
     state_updates = {
-        f"BEST_{prefix}_SCORER": winner["scorer"],
-        f"BEST_{prefix}_THETA": winner["theta"],
-        f"BEST_{prefix}_REJECT_THETA": winner["reject_theta"],
+        f"BEST_{prefix}_SCORER":         winner["scorer"],
+        f"BEST_{prefix}_THETA":          winner["theta"],
+        f"BEST_{prefix}_REJECT_THETA":   winner["reject_theta"],
         f"BEST_{prefix}_HYBRID_WEIGHTS": (
             (winner.get("w_category"), winner.get("w_embedding"),
              winner.get("w_entity"), winner.get("w_evidence"))
             if str(winner["scorer"]).startswith("hybrid") else None
         ),
-        f"BEST_{prefix}_STRICT_F1": winner["strict_f1"],
+        f"BEST_{prefix}_STRICT_F1":      winner["strict_f1"],
     }
     notes += (
         f"\n  Winner: {winner['scorer']} at θ={winner['theta']} rej={winner['reject_theta']}  "
@@ -320,24 +401,24 @@ def _run_branch_scorer_comparison(ctx: ExperimentContext, embedder: str) -> Expe
         f"esc={winner['escalate_rate']:.2f}"
     )
     return ExperimentResult(
-        csv_path=best_csv, winner=winner, notes=notes, state_updates=state_updates,
+        csv_path=best_csv, winner=winner, notes=notes,
+        state_updates=state_updates, status=status,
     )
 
 
-def _run_branch_agreement_weights(ctx: ExperimentContext, embedder: str) -> ExperimentResult:
-    """Shared body for EXP 2 (Gemini) / EXP 5 (OpenAI) — soft-alignment
-    weight sweep around the EXP 1/4 winner, holding scorer + θ + reject_θ
-    pinned. One-axis-at-a-time grid; baseline-included.
-    """
+def _run_branch_agreement_weights(
+    ctx: ExperimentContext, embedder: str, exp_label: str,
+) -> ExperimentResult:
+    """Shared body for EXP 2 (Gemini) / EXP 5 (OpenAI)."""
     prefix = embedder.upper()
     s = ctx.state
     required = (f"BEST_{prefix}_SCORER", f"BEST_{prefix}_THETA",
                 f"BEST_{prefix}_REJECT_THETA")
     missing = [k for k in required if k not in s]
     if missing:
-        return ExperimentResult(
-            csv_path=None, winner=None,
-            notes=f"Skipped — missing state from EXP 1/{prefix.lower()}: {missing}",
+        raise SystemExit(
+            f"{exp_label} requires state keys {missing} from EXP 1/{prefix.lower()}. "
+            f"Run the {embedder}_branch phase first, or pass --include-deps."
         )
 
     from eval.silver.map_theta_sweep import run_sweep
@@ -375,12 +456,11 @@ def _run_branch_agreement_weights(ctx: ExperimentContext, embedder: str) -> Expe
     winner = max(rows, key=lambda r: r["strict_f1"]) if rows else None
 
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%S")
-    csv_path = ctx.output_dir / f"exp_{embedder}_agreement_weights_{ts}.csv"
-    _write_csv_rows(csv_path, rows)
-
+    csv_path = ctx.output_dir / f"{exp_label}_{embedder}_agreement_weights_{ts}.csv"
+    status = _write_csv_rows(csv_path, rows)
     if winner is None:
         return ExperimentResult(csv_path=csv_path, winner=None,
-                                 notes="No rows produced.")
+                                 notes="No rows produced.", status="no_rows")
     state_updates = {
         f"BEST_{prefix}_AGREEMENT_WEIGHTS": (
             winner.get("tau"), winner.get("count_alpha"),
@@ -396,24 +476,24 @@ def _run_branch_agreement_weights(ctx: ExperimentContext, embedder: str) -> Expe
         f"strict_f1={winner['strict_f1']:.3f}"
     )
     return ExperimentResult(
-        csv_path=csv_path, winner=winner, notes=notes, state_updates=state_updates,
+        csv_path=csv_path, winner=winner, notes=notes,
+        state_updates=state_updates, status=status,
     )
 
 
-def _run_branch_polarity_flag(ctx: ExperimentContext, embedder: str) -> ExperimentResult:
-    """Shared body for EXP 3 (Gemini) / EXP 6 (OpenAI) — polarity-flag
-    ablation at the EXP 2/5-pinned config (scorer + θ + reject_θ +
-    agreement weights). 2 cells: True vs False.
-    """
+def _run_branch_polarity_flag(
+    ctx: ExperimentContext, embedder: str, exp_label: str,
+) -> ExperimentResult:
+    """Shared body for EXP 3 (Gemini) / EXP 6 (OpenAI)."""
     prefix = embedder.upper()
     s = ctx.state
     required = (f"BEST_{prefix}_SCORER", f"BEST_{prefix}_THETA",
                 f"BEST_{prefix}_REJECT_THETA")
     missing = [k for k in required if k not in s]
     if missing:
-        return ExperimentResult(
-            csv_path=None, winner=None,
-            notes=f"Skipped — missing state from EXP 1-2/{prefix.lower()}: {missing}",
+        raise SystemExit(
+            f"{exp_label} requires state keys {missing} from EXP 1-2/{prefix.lower()}. "
+            f"Run the {embedder}_branch phase first, or pass --include-deps."
         )
 
     from eval.silver.map_theta_sweep import run_sweep, ScorerSpec
@@ -457,12 +537,11 @@ def _run_branch_polarity_flag(ctx: ExperimentContext, embedder: str) -> Experime
     winner = max(rows, key=lambda r: r["strict_f1"]) if rows else None
 
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%S")
-    csv_path = ctx.output_dir / f"exp_{embedder}_polarity_flag_{ts}.csv"
-    _write_csv_rows(csv_path, rows)
-
+    csv_path = ctx.output_dir / f"{exp_label}_{embedder}_polarity_flag_{ts}.csv"
+    status = _write_csv_rows(csv_path, rows)
     if winner is None:
         return ExperimentResult(csv_path=csv_path, winner=None,
-                                 notes="No rows produced.")
+                                 notes="No rows produced.", status="no_rows")
     state_updates = {
         f"BEST_{prefix}_POLARITY_FLAG": winner.get("force_escalate_on_polarity_conflict"),
         f"FINAL_{prefix}_MAP_CONFIG": {
@@ -483,77 +562,84 @@ def _run_branch_polarity_flag(ctx: ExperimentContext, embedder: str) -> Experime
         f"polarity_rate={winner.get('polarity_conflict_rate')}"
     )
     return ExperimentResult(
-        csv_path=csv_path, winner=winner, notes=notes, state_updates=state_updates,
+        csv_path=csv_path, winner=winner, notes=notes,
+        state_updates=state_updates, status=status,
     )
 
 
-def _run_exp_1(ctx): return _run_branch_scorer_comparison(ctx, "gemini")
-def _run_exp_4(ctx): return _run_branch_scorer_comparison(ctx, "openai")
-def _run_exp_2(ctx): return _run_branch_agreement_weights(ctx, "gemini")
-def _run_exp_5(ctx): return _run_branch_agreement_weights(ctx, "openai")
-def _run_exp_3(ctx): return _run_branch_polarity_flag(ctx, "gemini")
-def _run_exp_6(ctx): return _run_branch_polarity_flag(ctx, "openai")
+def _run_exp_1(ctx): return _run_branch_scorer_comparison(ctx, "gemini", "exp_1")
+def _run_exp_4(ctx): return _run_branch_scorer_comparison(ctx, "openai", "exp_4")
+def _run_exp_2(ctx): return _run_branch_agreement_weights(ctx, "gemini", "exp_2")
+def _run_exp_5(ctx): return _run_branch_agreement_weights(ctx, "openai", "exp_5")
+def _run_exp_3(ctx): return _run_branch_polarity_flag(ctx, "gemini", "exp_3")
+def _run_exp_6(ctx): return _run_branch_polarity_flag(ctx, "openai", "exp_6")
 
 
 def _run_exp_7(ctx: ExperimentContext) -> ExperimentResult:
-    """EXP 7 — embedder branch comparison: FINAL_GEMINI_MAP_CONFIG vs
-    FINAL_OPENAI_MAP_CONFIG. Reads the two FINAL_* picks from state and
-    emits a side-by-side comparison row.
+    """EXP 7 — embedder branch comparison.
+
+    Selects ``PROVISIONAL_FINAL_MAP_CONFIG`` (not ``FINAL_MAP_CONFIG``) because
+    final-final selection requires bootstrap CIs / tie logic (EXP A), which
+    isn't implemented yet. Hard-fails if either FINAL_*_MAP_CONFIG is missing.
     """
     s = ctx.state
     g = s.get("FINAL_GEMINI_MAP_CONFIG")
     o = s.get("FINAL_OPENAI_MAP_CONFIG")
-    if g is None or o is None:
-        return ExperimentResult(
-            csv_path=None, winner=None,
-            notes=f"Skipped — missing FINAL config: gemini={g is not None}, openai={o is not None}",
+    missing = []
+    if g is None: missing.append("FINAL_GEMINI_MAP_CONFIG")
+    if o is None: missing.append("FINAL_OPENAI_MAP_CONFIG")
+    if missing:
+        raise SystemExit(
+            f"EXP 7 (compare) requires state keys {missing}. Run gemini_branch + "
+            f"openai_branch phases first (or pass --include-deps)."
         )
 
     def _row(embedder: str, cfg: dict) -> dict:
         return {
-            "embedder": embedder,
-            "scorer": cfg["scorer"],
-            "theta": cfg["theta"],
-            "reject_theta": cfg["reject_theta"],
-            "polarity_flag": cfg["polarity_flag"],
-            "strict_f1": cfg["strict_f1"],
-            "hybrid_weights": json.dumps(cfg["hybrid_weights"]),
+            "embedder":          embedder,
+            "scorer":            cfg["scorer"],
+            "theta":             cfg["theta"],
+            "reject_theta":      cfg["reject_theta"],
+            "polarity_flag":     cfg["polarity_flag"],
+            "strict_f1":         cfg["strict_f1"],
+            "hybrid_weights":    json.dumps(cfg["hybrid_weights"]),
             "agreement_weights": json.dumps(cfg["agreement_weights"]),
         }
     rows = [_row("gemini", g), _row("openai", o)]
 
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%S")
     csv_path = ctx.output_dir / f"exp_7_embedder_comparison_{ts}.csv"
-    _write_csv_rows(csv_path, rows)
+    status = _write_csv_rows(csv_path, rows)
 
     winner = max(rows, key=lambda r: r["strict_f1"])
     notes = (
         f"Gemini strict_f1={g['strict_f1']:.3f} vs OpenAI strict_f1={o['strict_f1']:.3f}.\n"
-        f"  Winner: {winner['embedder']} (Δstrict_f1={abs(g['strict_f1']-o['strict_f1']):.3f}).\n"
-        f"  NOTE: bootstrap CI (EXP A) is required to tell whether the gap is "
-        f"statistically meaningful. If overlap → pick cheaper/faster embedder."
+        f"  Provisional winner: {winner['embedder']} "
+        f"(Δstrict_f1={abs(g['strict_f1']-o['strict_f1']):.3f}).\n"
+        f"  NOTE: bootstrap CI (EXP A) is required to promote to FINAL_MAP_CONFIG. "
+        f"If CIs overlap → pick cheaper/faster embedder."
     )
     return ExperimentResult(
-        csv_path=csv_path, winner=winner, notes=notes,
+        csv_path=csv_path, winner=winner, notes=notes, status=status,
         state_updates={
-            "BEST_EMBEDDER": winner["embedder"],
-            "FINAL_MAP_CONFIG": winner,
+            "PROVISIONAL_FINAL_EMBEDDER":   winner["embedder"],
+            "PROVISIONAL_FINAL_MAP_CONFIG": winner,
         },
     )
 
 
 def _run_exp_f(ctx: ExperimentContext) -> ExperimentResult:
-    """EXP F — held-out test confirmation of FINAL_MAP_CONFIG.
+    """EXP F — held-out test confirmation of PROVISIONAL_FINAL_MAP_CONFIG.
 
-    Re-runs the chosen embedder + scorer + θ/reject + agreement weights +
-    polarity flag on ``--split test`` (48 cases) to confirm dev-tuned picks
-    generalise. Single row out. $0 (different split, same caches).
+    Always uses ``split=test`` regardless of the orchestrator's --split arg.
+    Does not promote provisional → final; just records the test-split metric
+    for thesis citation. Hard-fails if PROVISIONAL_FINAL_MAP_CONFIG is missing.
     """
-    final = ctx.state.get("FINAL_MAP_CONFIG")
+    final = ctx.state.get("PROVISIONAL_FINAL_MAP_CONFIG")
     if final is None:
-        return ExperimentResult(
-            csv_path=None, winner=None,
-            notes="Skipped — FINAL_MAP_CONFIG not set (run EXP 7 first).",
+        raise SystemExit(
+            "EXP F (confirm) requires PROVISIONAL_FINAL_MAP_CONFIG. "
+            "Run the 'compare' phase first (or pass --include-deps)."
         )
 
     embedder = final["embedder"]
@@ -598,11 +684,10 @@ def _run_exp_f(ctx: ExperimentContext) -> ExperimentResult:
     )
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%S")
     csv_path = ctx.output_dir / f"exp_f_test_confirmation_{ts}.csv"
-    _write_csv_rows(csv_path, rows)
-
+    status = _write_csv_rows(csv_path, rows)
     if not rows:
         return ExperimentResult(csv_path=csv_path, winner=None,
-                                 notes="No test rows — verify --split test has cases.")
+                                 notes="No test rows produced.", status="no_rows")
     r = rows[0]
     dev_strict = cfg.get("strict_f1")
     delta = (r["strict_f1"] - dev_strict) if dev_strict is not None else None
@@ -612,17 +697,23 @@ def _run_exp_f(ctx: ExperimentContext) -> ExperimentResult:
         f"Test-split strict_f1={r['strict_f1']:.3f}."
     )
     notes += "\n  If Δ << 0 the dev-tuned picks may be overfit to the silver dev split."
-    return ExperimentResult(csv_path=csv_path, winner=r, notes=notes)
+    return ExperimentResult(
+        csv_path=csv_path, winner=r, notes=notes, status=status,
+        state_updates={
+            "TEST_CONFIRMATION_STRICT_F1":   r["strict_f1"],
+            "TEST_CONFIRMATION_DEV_DELTA":   delta,
+            "TEST_CONFIRMATION_EMBEDDER":    embedder,
+        },
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Validation experiments (stubs — recipes printed; code lives in next PRs)
+# Validation EXPs (stubs)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _stub_result(exp_id: str, recipe: str) -> ExperimentResult:
-    """Render a stub experiment's recipe + the "would do" message."""
     return ExperimentResult(
-        csv_path=None, winner=None,
+        csv_path=None, winner=None, status="skipped",
         notes=(
             f"{exp_id} not implemented in this orchestrator yet. Recipe:\n"
             f"{recipe}\n"
@@ -632,89 +723,67 @@ def _stub_result(exp_id: str, recipe: str) -> ExperimentResult:
 
 
 def _run_exp_a(ctx):
-    """EXP A — bootstrap confidence intervals on the winner + nearest competitors."""
     return _stub_result("EXP A — bootstrap CI", recipe=(
         "  For each sweep CSV produced by EXP 1–7 + F:\n"
         "    1. Identify the winner row + 3 nearest competitors (top-4 by strict_f1).\n"
-        "    2. For n=50 random resamples of case_ids (seeded), recompute strict_f1 from\n"
-        "       the per-case match outputs for each of the 4 candidates.\n"
-        "    3. Emit (lo, hi) 95% bootstrap CI per candidate + tied-candidate list\n"
-        "       (overlap-of-CIs == tie).\n"
-        "  Implementation needs the per-case match outputs (case_id → matched flag)\n"
-        "  to be retained from run_sweep — today they're discarded after _evaluate_outputs.\n"
-        "  Add `--keep-per-case` to run_sweep, then implement here."
+        "    2. For n=50 random resamples of case_ids (seeded), recompute strict_f1\n"
+        "       from the per-case match outputs for each of the 4 candidates.\n"
+        "    3. Emit (lo, hi) 95% bootstrap CI per candidate + tied-candidate list.\n"
+        "  Implementation needs the per-case match outputs to be retained from\n"
+        "  run_sweep — today they're discarded. Add `--keep-per-case` first.\n"
+        "  Once EXP A runs, PROVISIONAL_FINAL_MAP_CONFIG can be promoted to\n"
+        "  FINAL_MAP_CONFIG (tie-broken on cost/speed if CIs overlap)."
     ))
 
 
 def _run_exp_b1(ctx):
-    """EXP B.1 — routing usefulness: ABC vs matched-random escalation."""
     return _stub_result("EXP B.1 — matched random escalation", recipe=(
-        "  Replay the FINAL_MAP_CONFIG cascade twice:\n"
+        "  Replay PROVISIONAL_FINAL_MAP_CONFIG cascade twice:\n"
         "    A. Real ABC (current _replay path) → escalate_rate=E\n"
-        "    B. Matched random: route ⌊E·N_chunks⌋ chunks to L3 uniformly at random\n"
-        "       (n=20 seeds). For each chunk in the random-escalation set, take L3\n"
-        "       output; for the rest, take L1 voter's best (no agreement gate).\n"
-        "    Compare strict_f1 mean ± 95% CI across seeds.\n"
-        "  Implementation: subclass _replay with a `routing_mode={abc,random}` arg + seed.\n"
-        "  No API; uses the same voter_cache + L3 cache."
+        "    B. Matched random: route ⌊E·N_chunks⌋ chunks to L3 uniformly\n"
+        "       (n=20 seeds). Compare strict_f1 mean ± 95% CI across seeds.\n"
+        "  Implementation: subclass _replay with `routing_mode={abc,random}` + seed."
     ))
 
 
 def _run_exp_b2(ctx):
-    """EXP B.2 — cost-quality: cascade vs cheap-only vs strong-model-only."""
     return _stub_result("EXP B.2 — cost-quality comparison", recipe=(
-        "  Compare three baselines on FINAL_MAP_CONFIG papers:\n"
+        "  Compare three baselines on PROVISIONAL_FINAL_MAP_CONFIG papers:\n"
         "    1. cheap-only: L1 voter best, never escalate.\n"
-        "    2. ABC cascade (FINAL_MAP_CONFIG).\n"
+        "    2. ABC cascade (current).\n"
         "    3. strong-only: L3 (Sonnet) on every chunk.\n"
-        "  CAVEAT: voter_cache.json has L3 output only for chunks ABC escalated.\n"
-        "  To compute (3) honestly we need a separate all-Sonnet primer batch —\n"
-        "  ~$30 estimated per the SUMMARIZATION_EXPERIMENT_PLAN cost notes.\n"
-        "  Implementation needs a new prime mode + cost-table (configs/model_prices.json)."
+        "  CAVEAT: voter_cache.json has L3 output only for chunks ABC escalated;\n"
+        "  baseline (3) needs a separate all-Sonnet primer batch (~$30)."
     ))
 
 
 def _run_exp_c(ctx):
-    """EXP C — agreement-score vs accuracy calibration."""
     return _stub_result("EXP C — agreement→accuracy calibration", recipe=(
-        "  For every chunk in the FINAL_MAP_CONFIG replay:\n"
-        "    1. Record the agreement score (bundle.confidence from AgreementChecker).\n"
-        "    2. Record the per-chunk silver-match flag (matched / unmatched).\n"
+        "  For every chunk in the PROVISIONAL_FINAL_MAP_CONFIG replay:\n"
+        "    1. Record agreement score (bundle.confidence).\n"
+        "    2. Record per-chunk silver-match flag.\n"
         "    3. Bin chunks by agreement: [0–0.5], (0.5–0.7], (0.7–0.85], (0.85–1.0].\n"
         "    4. Report per-bin: count, strict_f1, precision, recall.\n"
-        "  Output: agreement_calibration_curve.csv + a sparkline-style summary.\n"
-        "  Implementation: extend _replay to retain per-chunk agreement scores;\n"
-        "  the AgreementChecker already returns them via bundle.confidence."
+        "  Implementation: extend _replay to retain per-chunk agreement scores."
     ))
 
 
 def _run_exp_d(ctx):
-    """EXP D — matcher-threshold sensitivity."""
     return _stub_result("EXP D — matcher-threshold sensitivity", recipe=(
-        "  Re-run the EXP 1 sweep at sim_threshold ∈ {0.50, 0.55, 0.60}.\n"
-        "  For each threshold, recompute per-scorer best and re-rank the candidates.\n"
-        "  Report:\n"
-        "    - Kendall τ of candidate rankings between threshold pairs (stability)\n"
-        "    - Identity of the winner under each threshold\n"
-        "  Implementation: this orchestrator can drive it directly — iterate\n"
-        "  sim_thresholds, call _run_branch_scorer_comparison with sim_threshold= override.\n"
-        "  Could be promoted to executable in a follow-up if desired."
+        "  Re-run EXP 1 at sim_threshold ∈ {0.50, 0.55, 0.60}.\n"
+        "  For each threshold, recompute per-scorer best and re-rank candidates.\n"
+        "  Report Kendall τ of candidate rankings between threshold pairs."
     ))
 
 
 def _run_exp_e(ctx):
-    """EXP E — recall-gap audit (manual classification)."""
     return _stub_result("EXP E — recall-gap audit", recipe=(
-        "  Manual labelling task. For ~50 sampled false negatives from FINAL_MAP_CONFIG:\n"
+        "  Manual labelling. For ~50 sampled false negatives:\n"
         "    1. Auto-extract case_id, silver_finding, closest_pipeline_finding,\n"
-        "       closest_similarity, all_pipeline_findings → eval/results/exp_e_audit.csv\n"
-        "    2. Human reviewer fills `miss_category` ∈ {true_miss, atomicity_mismatch,\n"
-        "       unsupported_silver, matcher_failure, category/entity/polarity_mismatch,\n"
-        "       too_broad_pipeline, too_specific_silver, unclear}.\n"
-        "    3. Auto-aggregate the category histogram and write final report.\n"
-        "  Implementation needed: (a) sampler script that extracts the 50 rows from\n"
-        "  per-case match outputs (waits on EXP A's --keep-per-case), (b) post-fill\n"
-        "  aggregator. The human labelling itself is ~1-2 hours of reviewer time."
+        "       closest_similarity, all_pipeline_findings.\n"
+        "    2. Human reviewer fills `miss_category` per 10-category schema.\n"
+        "    3. Aggregate histogram + final report.\n"
+        "  ~1-2 hours reviewer time per audit pass."
     ))
 
 
@@ -723,97 +792,76 @@ def _run_exp_e(ctx):
 # ─────────────────────────────────────────────────────────────────────────────
 
 ALL_EXPERIMENTS: list[ExperimentSpec] = [
-    # ── Gemini branch (calibration) ────────────────────────────────────────
     ExperimentSpec(
-        name="exp_1_gemini_scorer", exp_id="EXP_1", stage="calibration",
-        branch="gemini", depends_on=[],
+        name="exp_1_gemini_scorer", exp_id="EXP_1", branch="gemini",
+        depends_on=[], run=_run_exp_1,
         blurb="Tuned scorer comparison (Gemini): 7 scorers × full θ/reject grid; per-scorer best-of.",
-        run=_run_exp_1,
     ),
     ExperimentSpec(
-        name="exp_2_gemini_weights", exp_id="EXP_2", stage="calibration",
-        branch="gemini", depends_on=["EXP_1"],
+        name="exp_2_gemini_weights", exp_id="EXP_2", branch="gemini",
+        depends_on=["EXP_1"], run=_run_exp_2,
         blurb="Soft-alignment weight sweep (Gemini) around EXP 1 winner.",
-        run=_run_exp_2,
     ),
     ExperimentSpec(
-        name="exp_3_gemini_polarity", exp_id="EXP_3", stage="calibration",
-        branch="gemini", depends_on=["EXP_2"],
+        name="exp_3_gemini_polarity", exp_id="EXP_3", branch="gemini",
+        depends_on=["EXP_2"], run=_run_exp_3,
         blurb="Polarity-flag ablation (Gemini) at EXP 1+2 config.",
-        run=_run_exp_3,
     ),
-    # ── OpenAI branch (calibration) ────────────────────────────────────────
     ExperimentSpec(
-        name="exp_4_openai_scorer", exp_id="EXP_4", stage="calibration",
-        branch="openai", depends_on=[],
+        name="exp_4_openai_scorer", exp_id="EXP_4", branch="openai",
+        depends_on=[], run=_run_exp_4,
         blurb="Tuned scorer comparison (OpenAI): 7 scorers × full θ/reject grid; per-scorer best-of.",
-        run=_run_exp_4,
     ),
     ExperimentSpec(
-        name="exp_5_openai_weights", exp_id="EXP_5", stage="calibration",
-        branch="openai", depends_on=["EXP_4"],
+        name="exp_5_openai_weights", exp_id="EXP_5", branch="openai",
+        depends_on=["EXP_4"], run=_run_exp_5,
         blurb="Soft-alignment weight sweep (OpenAI) around EXP 4 winner.",
-        run=_run_exp_5,
     ),
     ExperimentSpec(
-        name="exp_6_openai_polarity", exp_id="EXP_6", stage="calibration",
-        branch="openai", depends_on=["EXP_5"],
+        name="exp_6_openai_polarity", exp_id="EXP_6", branch="openai",
+        depends_on=["EXP_5"], run=_run_exp_6,
         blurb="Polarity-flag ablation (OpenAI) at EXP 4+5 config.",
-        run=_run_exp_6,
     ),
-    # ── Final embedder comparison ──────────────────────────────────────────
     ExperimentSpec(
-        name="exp_7_embedder_comparison", exp_id="EXP_7", stage="calibration",
-        branch="shared", depends_on=["EXP_3", "EXP_6"],
-        blurb="Final embedder comparison: FINAL_GEMINI_MAP_CONFIG vs FINAL_OPENAI_MAP_CONFIG.",
-        run=_run_exp_7,
+        name="exp_7_embedder_comparison", exp_id="EXP_7", branch="shared",
+        depends_on=["EXP_3", "EXP_6"], run=_run_exp_7,
+        blurb="Final embedder comparison → PROVISIONAL_FINAL_MAP_CONFIG (provisional until EXP A bootstrap CI).",
     ),
-    # ── Held-out test confirmation (new — recommended addition) ───────────
     ExperimentSpec(
-        name="exp_f_test_confirmation", exp_id="EXP_F", stage="calibration",
-        branch="shared", depends_on=["EXP_7"],
-        blurb=("Held-out test pass on FINAL_MAP_CONFIG (--split test). "
-               "Closes the dev-overfit gap; not in original FINAL doc."),
-        run=_run_exp_f,
+        name="exp_f_test_confirmation", exp_id="EXP_F", branch="shared",
+        depends_on=["EXP_7"], run=_run_exp_f,
+        blurb="Held-out test pass on PROVISIONAL_FINAL_MAP_CONFIG (always uses --split test).",
     ),
-    # ── Validation block (stubs) ──────────────────────────────────────────
     ExperimentSpec(
-        name="exp_a_bootstrap_ci", exp_id="EXP_A", stage="validation",
-        branch="shared", depends_on=["EXP_1", "EXP_4", "EXP_7"],
+        name="exp_a_bootstrap_ci", exp_id="EXP_A", branch="shared",
+        depends_on=["EXP_1", "EXP_4", "EXP_7"],
         status="stub", run=_run_exp_a,
         blurb="Bootstrap 95% CIs on the winner + 3 nearest competitors for every sweep CSV.",
     ),
     ExperimentSpec(
-        name="exp_b1_routing_usefulness", exp_id="EXP_B.1", stage="validation",
-        branch="shared", depends_on=["EXP_7"],
-        status="stub", run=_run_exp_b1,
+        name="exp_b1_routing_usefulness", exp_id="EXP_B.1", branch="shared",
+        depends_on=["EXP_7"], status="stub", run=_run_exp_b1,
         blurb="ABC vs matched-random escalation: does agreement beat chance?",
     ),
     ExperimentSpec(
-        name="exp_b2_cost_quality", exp_id="EXP_B.2", stage="validation",
-        branch="shared", depends_on=["EXP_7"],
-        status="stub", run=_run_exp_b2,
-        blurb=("Cost-quality: cascade vs cheap-only vs strong-model-only. "
-               "Needs separate all-Sonnet primer."),
+        name="exp_b2_cost_quality", exp_id="EXP_B.2", branch="shared",
+        depends_on=["EXP_7"], status="stub", run=_run_exp_b2,
+        blurb="Cost-quality: cascade vs cheap-only vs strong-model-only. Needs separate all-Sonnet primer.",
     ),
     ExperimentSpec(
-        name="exp_c_agreement_accuracy", exp_id="EXP_C", stage="validation",
-        branch="shared", depends_on=["EXP_7"],
-        status="stub", run=_run_exp_c,
+        name="exp_c_agreement_accuracy", exp_id="EXP_C", branch="shared",
+        depends_on=["EXP_7"], status="stub", run=_run_exp_c,
         blurb="Agreement-score → accuracy calibration curve (validates ABC's premise).",
     ),
     ExperimentSpec(
-        name="exp_d_matcher_sensitivity", exp_id="EXP_D", stage="validation",
-        branch="shared", depends_on=["EXP_1"],
-        status="stub", run=_run_exp_d,
+        name="exp_d_matcher_sensitivity", exp_id="EXP_D", branch="shared",
+        depends_on=["EXP_1"], status="stub", run=_run_exp_d,
         blurb="Sensitivity of EXP 1 ranking to matcher sim_threshold ∈ {0.50, 0.55, 0.60}.",
     ),
     ExperimentSpec(
-        name="exp_e_recall_gap_audit", exp_id="EXP_E", stage="validation",
-        branch="shared", depends_on=["EXP_7"],
-        status="manual", run=_run_exp_e,
-        blurb=("Manual recall-gap audit on FINAL_MAP_CONFIG: 50 false negatives × "
-               "10-category classification. ~1-2 hrs reviewer time."),
+        name="exp_e_recall_gap_audit", exp_id="EXP_E", branch="shared",
+        depends_on=["EXP_7"], status="manual", run=_run_exp_e,
+        blurb="Manual recall-gap audit: 50 false negatives × 10-category classification.",
     ),
 ]
 
@@ -823,40 +871,44 @@ EXP_BY_ID = {e.exp_id: e for e in ALL_EXPERIMENTS}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Listing / menu / orchestration
+# Listing / menu
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _print_stage_menu() -> None:
-    print("Summarisation experiment orchestrator — calibration + validation.\n")
-    print("Available --stage values:\n")
-    for st in STAGE_ORDER:
-        print(f"  {st}")
-        print(f"      {STAGE_BLURBS.get(st, '')}")
+def _print_phase_menu() -> None:
+    print("Summarisation experiment orchestrator — phase-based execution.\n")
+    print("Available --phase values:\n")
+    for ph in PHASE_ORDER:
+        exps = PHASE_TO_EXPS.get(ph, ())
+        print(f"  {ph:<14} ({len(exps)} exp{'s' if len(exps) != 1 else ''})")
+        print(f"      {PHASE_BLURBS.get(ph, '')}")
     print()
-    print("Experiments in dependency order:\n")
+    print("Available experiments (in dependency order):\n")
     for e in ALL_EXPERIMENTS:
         tag = ("            " if e.status == "executable"
                else "  [stub]   " if e.status == "stub"
                else "  [manual] ")
         deps = f"  ← {', '.join(e.depends_on)}" if e.depends_on else ""
-        print(f"  {tag}{e.exp_id:<8} {e.name:<30} ({e.branch}, {e.stage}){deps}")
+        print(f"  {tag}{e.exp_id:<8} {e.name:<30} ({e.branch}){deps}")
         print(f"            {e.blurb}")
     print()
     print("Examples:")
     print("  python scripts/eval/run_summarization_experiments.py --list-variants")
-    print("  python scripts/eval/run_summarization_experiments.py --exp exp_1_gemini_scorer")
-    print("  python scripts/eval/run_summarization_experiments.py --branch gemini")
-    print("  python scripts/eval/run_summarization_experiments.py --stage all")
+    print("  python scripts/eval/run_summarization_experiments.py --phase gemini_branch --run")
+    print("  python scripts/eval/run_summarization_experiments.py --phase compare --run")
+    print("  python scripts/eval/run_summarization_experiments.py --phase confirm --run")
+    print("  python scripts/eval/run_summarization_experiments.py --phase all --run")
     print()
-    print("NOTE: orchestrator defaults to --dry-run unless --run is passed.")
+    print("NOTE: default is dry-run. Pass --run to actually execute.")
+    print("State persists across invocations at:")
+    print(f"  {_DEFAULT_STATE_PATH}")
 
 
 def _print_variants_table(experiments: list[ExperimentSpec]) -> None:
-    header = ("exp_id", "name", "branch", "stage", "status", "depends_on", "blurb")
+    header = ("exp_id", "name", "branch", "status", "depends_on", "blurb")
     rows = []
     for e in experiments:
         rows.append((
-            e.exp_id, e.name, e.branch, e.stage, e.status,
+            e.exp_id, e.name, e.branch, e.status,
             ",".join(e.depends_on) or "-",
             e.blurb,
         ))
@@ -871,37 +923,83 @@ def _print_variants_table(experiments: list[ExperimentSpec]) -> None:
         print(_fmt(r))
 
 
-def _filter_experiments(
+# ─────────────────────────────────────────────────────────────────────────────
+# Experiment selection (phase / exp / only filters + dependency handling)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _resolve_experiments(
     *,
-    stage: Optional[str],
-    branch: Optional[str],
-    only: Optional[set],
+    phase: Optional[str],
     exp: Optional[str],
+    only: Optional[set],
+    include_deps: bool,
 ) -> list[ExperimentSpec]:
-    out = list(ALL_EXPERIMENTS)
+    """Resolve the user's filters into a final ordered experiment list.
+
+    Precedence:
+      1. --exp wins (single experiment)
+      2. --phase filters by phase membership
+      3. otherwise all experiments
+      4. --only intersects with the selection
+      5. --include-deps recursively pulls in dependencies (else: hard-fail later
+         in the orchestrator if state is missing)
+    """
     if exp is not None:
         if exp not in EXP_BY_NAME:
-            raise SystemExit(f"unknown --exp: {exp!r} (known: {sorted(EXP_BY_NAME)})")
-        return [EXP_BY_NAME[exp]]
-    if stage and stage != "all":
-        out = [e for e in out if e.stage == stage]
-    if branch and branch != "all":
-        out = [e for e in out if e.branch in (branch, "shared")]
+            raise SystemExit(
+                f"unknown --exp: {exp!r}\n"
+                f"  known: {sorted(EXP_BY_NAME)}"
+            )
+        selected = [EXP_BY_NAME[exp]]
+    elif phase is not None:
+        if phase not in PHASE_TO_EXPS:
+            raise SystemExit(
+                f"unknown --phase: {phase!r}\n"
+                f"  known: {list(PHASE_ORDER)}"
+            )
+        wanted_ids = PHASE_TO_EXPS[phase]
+        selected = [EXP_BY_ID[i] for i in wanted_ids if i in EXP_BY_ID]
+    else:
+        selected = list(ALL_EXPERIMENTS)
+
     if only:
         wanted = set(only)
-        unknown = wanted - {e.name for e in out}
+        all_in_selection = {e.name for e in selected}
+        unknown = wanted - {e.name for e in ALL_EXPERIMENTS}
         if unknown:
             raise SystemExit(f"unknown experiment name(s): {sorted(unknown)}")
-        out = [e for e in out if e.name in wanted]
+        missing_in_phase = wanted - all_in_selection
+        if missing_in_phase:
+            raise SystemExit(
+                f"--only names {sorted(missing_in_phase)} not in selected --phase / --exp scope. "
+                f"Drop --phase / --exp, or remove these from --only."
+            )
+        selected = [e for e in selected if e.name in wanted]
+
+    if include_deps:
+        selected = _expand_with_dependencies(selected)
+    return _topological_order(selected)
+
+
+def _expand_with_dependencies(experiments: list[ExperimentSpec]) -> list[ExperimentSpec]:
+    seen = {e.exp_id for e in experiments}
+    out = list(experiments)
+    queue = list(experiments)
+    while queue:
+        e = queue.pop()
+        for dep_id in e.depends_on:
+            if dep_id in seen:
+                continue
+            dep = EXP_BY_ID.get(dep_id)
+            if dep is None:
+                continue
+            seen.add(dep_id)
+            out.append(dep)
+            queue.append(dep)
     return out
 
 
 def _topological_order(experiments: list[ExperimentSpec]) -> list[ExperimentSpec]:
-    """Sort experiments so dependencies come before dependents.
-
-    Respects ``depends_on`` (exp_id references). Stable: input order preserved
-    where the dependency graph allows. Cycles raise SystemExit.
-    """
     by_id = {e.exp_id: e for e in experiments}
     seen: set[str] = set()
     out: list[ExperimentSpec] = []
@@ -913,7 +1011,7 @@ def _topological_order(experiments: list[ExperimentSpec]) -> list[ExperimentSpec
             raise SystemExit(f"cyclic dependency involving {exp_id}")
         e = by_id.get(exp_id)
         if e is None:
-            return  # depends on an experiment outside the filter set
+            return  # dependency outside the filter set — orchestrator will hard-fail at run time
         for dep in e.depends_on:
             visit(dep, stack + (exp_id,))
         seen.add(exp_id)
@@ -924,43 +1022,73 @@ def _topological_order(experiments: list[ExperimentSpec]) -> list[ExperimentSpec
     return out
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Orchestration: run + state persistence + manifest
+# ─────────────────────────────────────────────────────────────────────────────
+
 def _orchestrate(
     experiments: list[ExperimentSpec],
     ctx: ExperimentContext,
     *,
     dry_run: bool,
+    state_path: Path,
+    history: list[dict],
+    invocation_meta: dict,
+    manifest_path: Path,
 ) -> int:
     print(f"=== running {len(experiments)} experiment(s) ===")
     print(f"  output_dir:    {ctx.output_dir}")
+    print(f"  state_path:    {state_path}")
     print(f"  split:         {ctx.split}")
     print(f"  sim_threshold: {ctx.sim_threshold}")
     print(f"  dry_run:       {dry_run}")
     print()
 
+    manifest_runs: list[dict] = []
     failed = 0
     for i, exp in enumerate(experiments, 1):
-        print(f"--- [{i}/{len(experiments)}] {exp.exp_id} {exp.name} ({exp.branch}, {exp.stage}) ---")
+        print(f"--- [{i}/{len(experiments)}] {exp.exp_id} {exp.name} ({exp.branch}) ---")
         print(f"    blurb: {exp.blurb}")
         if exp.depends_on:
             print(f"    depends_on: {exp.depends_on}")
         if dry_run:
             print("    (dry-run: not executing)")
+            manifest_runs.append({
+                "exp_id": exp.exp_id, "name": exp.name, "status": "dry_run",
+                "csv_path": None, "elapsed_s": 0.0,
+            })
             print()
             continue
-        if exp.status == "stub" or exp.status == "manual":
+        if exp.status in ("stub", "manual"):
             print(f"    status={exp.status} — stub will print recipe only.")
         t0 = time.perf_counter()
         try:
-            result = exp.run(ctx) if exp.run else _stub_result(exp.exp_id, "  (no run callable)")
-        except Exception as ex:
+            result = exp.run(ctx) if exp.run else _stub_result(
+                exp.exp_id, "  (no run callable)",
+            )
+        except SystemExit as ex:
+            failed += 1
+            elapsed = time.perf_counter() - t0
+            print(f"    HARD FAIL in {elapsed:.1f}s: {ex}")
+            manifest_runs.append({
+                "exp_id": exp.exp_id, "name": exp.name, "status": "hard_fail",
+                "error": str(ex), "elapsed_s": elapsed, "csv_path": None,
+            })
+            print()
+            continue
+        except Exception as ex:  # noqa: BLE001
             failed += 1
             elapsed = time.perf_counter() - t0
             print(f"    FAILED in {elapsed:.1f}s: {ex}")
             logging.exception("experiment %s failed", exp.exp_id)
+            manifest_runs.append({
+                "exp_id": exp.exp_id, "name": exp.name, "status": "failed",
+                "error": str(ex), "elapsed_s": elapsed, "csv_path": None,
+            })
             print()
             continue
         elapsed = time.perf_counter() - t0
-        print(f"    elapsed: {elapsed:.1f}s")
+        print(f"    elapsed: {elapsed:.1f}s   status: {result.status}")
         if result.csv_path:
             print(f"    csv:     {result.csv_path}")
         if result.winner:
@@ -968,13 +1096,52 @@ def _orchestrate(
             print(f"    winner:  {wstr}")
         for line in result.notes.splitlines():
             print(f"    {line}")
-        ctx.state.update(result.state_updates)
+
+        # Merge state updates and persist immediately after each EXP so a
+        # later phase / a separate invocation sees the BEST_* picks.
+        if result.state_updates:
+            ctx.state.update(result.state_updates)
+            history.append({
+                "exp_id": exp.exp_id, "ran_at": datetime.now(tz=timezone.utc).isoformat(),
+                "csv_path": str(result.csv_path) if result.csv_path else None,
+                "winner_summary": {
+                    k: v for k, v in (result.winner or {}).items()
+                    if k in ("scorer", "theta", "reject_theta", "strict_f1",
+                             "embedder", "polarity_flag",
+                             "force_escalate_on_polarity_conflict")
+                },
+                "state_keys_updated": sorted(result.state_updates.keys()),
+            })
+            _save_state(state_path, ctx.state, invocation_meta, history)
+            print(f"    state: updated keys {sorted(result.state_updates.keys())} → {state_path}")
+
+        manifest_runs.append({
+            "exp_id": exp.exp_id, "name": exp.name, "status": result.status,
+            "elapsed_s": elapsed,
+            "csv_path": str(result.csv_path) if result.csv_path else None,
+            "state_keys_updated": sorted(result.state_updates.keys()),
+        })
         print()
+
+    # Write the per-invocation run manifest
+    manifest = {
+        **invocation_meta,
+        "experiments_run": manifest_runs,
+        "state_path":      str(state_path),
+        "state_keys_after": sorted(ctx.state.keys()),
+        "failed_count":    failed,
+    }
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
 
     print("=== summary ===")
     print(f"  state keys after run: {sorted(ctx.state.keys())}")
-    if "FINAL_MAP_CONFIG" in ctx.state:
-        print(f"  FINAL_MAP_CONFIG: {json.dumps(ctx.state['FINAL_MAP_CONFIG'], indent=2)}")
+    print(f"  state file:           {state_path}")
+    print(f"  run manifest:         {manifest_path}")
+    if "PROVISIONAL_FINAL_MAP_CONFIG" in ctx.state:
+        print("  PROVISIONAL_FINAL_MAP_CONFIG:")
+        for k, v in ctx.state["PROVISIONAL_FINAL_MAP_CONFIG"].items():
+            print(f"    {k}: {v}")
     return 0 if failed == 0 else 1
 
 
@@ -986,27 +1153,37 @@ def main(argv: Optional[list] = None) -> int:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    p.add_argument("--stage", default=None, choices=STAGE_ORDER,
-                   help="Which group to run (calibration, validation, all). "
-                        "Omit to print the experiment menu.")
-    p.add_argument("--branch", default=None, choices=("gemini", "openai", "all"),
-                   help="Filter to one embedder branch (or 'all'). "
-                        "'shared' experiments (EXP 7, F, A–E) are always included.")
+    # Selection axes
+    p.add_argument("--phase", default=None, choices=PHASE_ORDER,
+                   help="Which phase to run (omit to print the menu).")
     p.add_argument("--exp", default=None,
-                   help="Run a single experiment by name (e.g. exp_1_gemini_scorer). "
-                        "Overrides --stage / --branch.")
+                   help="Run a single experiment by name (overrides --phase).")
     p.add_argument("--only", nargs="+", default=None,
-                   help="Intersect with --stage / --branch: restrict to these names.")
+                   help="Restrict the --phase / --exp selection to these names.")
+    p.add_argument("--include-deps", action="store_true",
+                   help="Auto-include transitive dependencies (default: fail loudly if "
+                        "a required state key is missing).")
+    # Listing / dry-run vs run
     p.add_argument("--list-variants", "--dry-run", dest="list_variants",
                    action="store_true",
-                   help="Print the resolved experiment list and exit.")
+                   help="Print the resolved experiment list and exit. With no filter, "
+                        "lists every experiment.")
     p.add_argument("--run", action="store_true",
-                   help="Actually execute experiments. Default is dry-run (recipe only). "
-                        "Required because most calibration EXPs touch caches and write CSVs.")
+                   help="Actually execute experiments. Default is dry-run (recipe only).")
+    # State
+    p.add_argument("--state-path", type=Path, default=_DEFAULT_STATE_PATH,
+                   help=f"State JSON path. Default: {_DEFAULT_STATE_PATH}")
+    p.add_argument("--reset-state", action="store_true",
+                   help="Delete the state file at startup before loading.")
+    # Output
     p.add_argument("--output-dir", type=Path, default=_DEFAULT_REPORTS_DIR,
-                   help="Where to write per-experiment CSVs.")
+                   help="Where to write per-experiment CSVs + run manifests.")
+    # Sweep params
     p.add_argument("--split", default="dev", choices=("dev", "test", "all"),
-                   help="silver_findings split for sweeps (EXP F overrides to 'test').")
+                   help="silver_findings split (EXP F always overrides to 'test').")
+    p.add_argument("--allow-test-tuning", action="store_true",
+                   help="Required to pass --split test for any experiment other than EXP F. "
+                        "Default: refuse, to protect against accidental held-out tuning.")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--dev-fraction", type=float, default=0.8)
     p.add_argument("--sim-threshold", type=float, default=_DEFAULT_SIM_THRESHOLD,
@@ -1019,35 +1196,88 @@ def main(argv: Optional[list] = None) -> int:
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
 
-    if args.stage is None and args.exp is None:
-        _print_stage_menu()
+    # No filter + no --list-variants → menu
+    if args.phase is None and args.exp is None and not args.list_variants:
+        _print_phase_menu()
         return 0
 
-    experiments = _filter_experiments(
-        stage=args.stage, branch=args.branch,
+    # Test-split protection: refuse --split test unless explicitly authorised.
+    # EXP F overrides to 'test' internally regardless of this.
+    if args.split == "test" and not args.allow_test_tuning:
+        # Allow when the user explicitly asks for ONLY EXP F.
+        only_exp_f = args.exp == "exp_f_test_confirmation"
+        if not only_exp_f:
+            print(
+                "error: --split test rejected. EXP 1-7 should not be tuned on the "
+                "held-out test set. Pass --allow-test-tuning to override, or run "
+                "EXP F (which always uses split=test internally).",
+                file=sys.stderr,
+            )
+            return 2
+
+    # State reset
+    if args.reset_state and args.state_path.exists():
+        args.state_path.unlink()
+        print(f"reset-state: removed {args.state_path}")
+
+    # Load state for both listing and running (so the table can hint at deps)
+    state, _last_meta, history = _load_state(args.state_path)
+
+    experiments = _resolve_experiments(
+        phase=args.phase, exp=args.exp,
         only=set(args.only) if args.only else None,
-        exp=args.exp,
+        include_deps=args.include_deps,
     )
     if not experiments:
         print("error: no experiments matched the filters", file=sys.stderr)
         return 2
-    experiments = _topological_order(experiments)
 
     if args.list_variants:
         _print_variants_table(experiments)
+        print()
+        print(f"state file: {args.state_path}  ({'exists' if args.state_path.exists() else 'absent'})")
+        print(f"state keys currently set: {sorted(state.keys()) or '(none)'}")
         return 0
+
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+
+    invocation_ts = datetime.now(tz=timezone.utc)
+    invocation_meta = {
+        "timestamp_utc": invocation_ts.isoformat(),
+        "script_path":   str(Path(__file__).relative_to(_REPO_ROOT)),
+        "git_commit":    _git_commit(),
+        "args": {
+            "phase": args.phase, "exp": args.exp, "only": args.only,
+            "include_deps": args.include_deps,
+            "split": args.split, "seed": args.seed,
+            "dev_fraction": args.dev_fraction,
+            "sim_threshold": args.sim_threshold,
+            "allow_test_tuning": args.allow_test_tuning,
+        },
+        "experiments_selected": [e.exp_id for e in experiments],
+    }
+    manifest_path = (
+        args.output_dir / "manifests" /
+        f"manifest_{invocation_ts.strftime('%Y%m%dT%H%M%S')}.json"
+    )
 
     ctx = ExperimentContext(
         output_dir=args.output_dir,
-        embedder_hint=args.branch if args.branch in ("gemini", "openai") else None,
         split=args.split,
         seed=args.seed,
         dev_fraction=args.dev_fraction,
         sim_threshold=args.sim_threshold,
-        state={},
+        state=state,
     )
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    return _orchestrate(experiments, ctx, dry_run=not args.run)
+
+    return _orchestrate(
+        experiments, ctx,
+        dry_run=not args.run,
+        state_path=args.state_path,
+        history=history,
+        invocation_meta=invocation_meta,
+        manifest_path=manifest_path,
+    )
 
 
 if __name__ == "__main__":
