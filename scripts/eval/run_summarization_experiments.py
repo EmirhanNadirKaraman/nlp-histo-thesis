@@ -1035,13 +1035,24 @@ def _orchestrate(
     history: list[dict],
     invocation_meta: dict,
     manifest_path: Path,
+    fail_fast: bool = False,
 ) -> int:
+    """Run the resolved experiment list.
+
+    ``fail_fast=True`` stops after the first experiment that raises ``SystemExit``
+    (hard-fail on missing state) or any other exception (failed run). Stubs and
+    manual experiments do **not** trigger fail-fast — they return normally with
+    ``status="skipped"`` and never increment the failure counter. State and the
+    per-invocation manifest are still written before the function returns,
+    regardless of whether fail-fast tripped.
+    """
     print(f"=== running {len(experiments)} experiment(s) ===")
     print(f"  output_dir:    {ctx.output_dir}")
     print(f"  state_path:    {state_path}")
     print(f"  split:         {ctx.split}")
     print(f"  sim_threshold: {ctx.sim_threshold}")
     print(f"  dry_run:       {dry_run}")
+    print(f"  fail_fast:     {fail_fast}")
     print()
 
     manifest_runs: list[dict] = []
@@ -1075,6 +1086,9 @@ def _orchestrate(
                 "error": str(ex), "elapsed_s": elapsed, "csv_path": None,
             })
             print()
+            if fail_fast:
+                print(f"--- fail-fast: stopping after {exp.exp_id} hard-fail ---\n")
+                break
             continue
         except Exception as ex:  # noqa: BLE001
             failed += 1
@@ -1086,6 +1100,9 @@ def _orchestrate(
                 "error": str(ex), "elapsed_s": elapsed, "csv_path": None,
             })
             print()
+            if fail_fast:
+                print(f"--- fail-fast: stopping after {exp.exp_id} failure ---\n")
+                break
             continue
         elapsed = time.perf_counter() - t0
         print(f"    elapsed: {elapsed:.1f}s   status: {result.status}")
@@ -1170,6 +1187,10 @@ def main(argv: Optional[list] = None) -> int:
                         "lists every experiment.")
     p.add_argument("--run", action="store_true",
                    help="Actually execute experiments. Default is dry-run (recipe only).")
+    p.add_argument("--fail-fast", action="store_true",
+                   help="Stop after the first experiment failure or hard-fail. State and "
+                        "manifest are still written. Stub/manual experiments don't trigger "
+                        "fail-fast (they return status='skipped' without raising).")
     # State
     p.add_argument("--state-path", type=Path, default=_DEFAULT_STATE_PATH,
                    help=f"State JSON path. Default: {_DEFAULT_STATE_PATH}")
@@ -1277,6 +1298,7 @@ def main(argv: Optional[list] = None) -> int:
         history=history,
         invocation_meta=invocation_meta,
         manifest_path=manifest_path,
+        fail_fast=args.fail_fast,
     )
 
 

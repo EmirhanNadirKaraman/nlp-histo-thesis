@@ -14,6 +14,7 @@ Loaded with ``importlib.util`` because ``scripts/`` is not a package
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -256,3 +257,161 @@ def test_per_scorer_best_tiebreaks_lower_escalate_rate(orch):
 def test_per_scorer_best_empty_input(orch):
     """Defensive: empty rows in → empty best-of out."""
     assert orch._per_scorer_best([], metric="strict_f1") == []
+
+
+# ── --fail-fast behaviour ───────────────────────────────────────────────────
+# Tests build a 3-experiment list with fake run callables (pass, fail, pass)
+# and call ``_orchestrate`` directly. No real sweeps; no caches touched.
+
+
+def _fake_spec(orch, exp_id: str, name: str, run_fn, status: str = "executable"):
+    return orch.ExperimentSpec(
+        name=name, exp_id=exp_id, blurb=f"(fake {exp_id})",
+        branch="shared", depends_on=[], status=status, run=run_fn,
+    )
+
+
+def _success_runner(state_key: str, value):
+    """Build a fake run() that returns an ExperimentResult with one state update."""
+    def _run(ctx):
+        # We import via the orch fixture in callers; do it lazily here.
+        from importlib import import_module
+        ER = sys.modules["run_summarization_experiments"].ExperimentResult
+        return ER(csv_path=None, winner={"strict_f1": 0.9}, notes=f"set {state_key}",
+                  state_updates={state_key: value}, status="ok")
+    return _run
+
+
+def _hard_fail_runner(message: str):
+    def _run(ctx):
+        raise SystemExit(message)
+    return _run
+
+
+def _orchestrate_with_fakes(orch, experiments, tmp_path, *, fail_fast: bool):
+    """Build a minimal valid invocation environment + call _orchestrate."""
+    ctx = orch.ExperimentContext(
+        output_dir=tmp_path,
+        state={},
+    )
+    state_path = tmp_path / "state.json"
+    manifest_path = tmp_path / "manifests" / "manifest_test.json"
+    rc = orch._orchestrate(
+        experiments, ctx,
+        dry_run=False,
+        state_path=state_path,
+        history=[],
+        invocation_meta={"timestamp_utc": "test", "args": {}, "experiments_selected": [e.exp_id for e in experiments]},
+        manifest_path=manifest_path,
+        fail_fast=fail_fast,
+    )
+    return rc, ctx, state_path, manifest_path
+
+
+def test_without_fail_fast_orchestration_continues_after_hard_fail(orch, tmp_path):
+    """Default behaviour: hard-fail in EXP B does NOT stop EXP C from running.
+    Exit code is non-zero because failed > 0; manifest records all 3 EXPs."""
+    exps = [
+        _fake_spec(orch, "FAKE_A", "fake_a", _success_runner("RESULT_A", "alpha")),
+        _fake_spec(orch, "FAKE_B", "fake_b", _hard_fail_runner("missing X")),
+        _fake_spec(orch, "FAKE_C", "fake_c", _success_runner("RESULT_C", "gamma")),
+    ]
+    rc, ctx, state_path, manifest_path = _orchestrate_with_fakes(
+        orch, exps, tmp_path, fail_fast=False,
+    )
+    assert rc != 0, "any failure should produce a non-zero exit code"
+    # All 3 EXPs attempted (manifest has 3 entries)
+    manifest = json.loads(manifest_path.read_text())
+    statuses = [r["status"] for r in manifest["experiments_run"]]
+    assert statuses == ["ok", "hard_fail", "ok"], statuses
+    # State has updates from both successful EXPs
+    assert ctx.state["RESULT_A"] == "alpha"
+    assert ctx.state["RESULT_C"] == "gamma"
+
+
+def test_with_fail_fast_orchestration_stops_after_first_hard_fail(orch, tmp_path):
+    """``fail_fast=True``: orchestration breaks after EXP B's SystemExit.
+    EXP C is NOT attempted. Exit code is non-zero. Manifest has 2 entries."""
+    exps = [
+        _fake_spec(orch, "FAKE_A", "fake_a", _success_runner("RESULT_A", "alpha")),
+        _fake_spec(orch, "FAKE_B", "fake_b", _hard_fail_runner("missing X")),
+        _fake_spec(orch, "FAKE_C", "fake_c", _success_runner("RESULT_C", "gamma")),
+    ]
+    rc, ctx, state_path, manifest_path = _orchestrate_with_fakes(
+        orch, exps, tmp_path, fail_fast=True,
+    )
+    assert rc != 0
+    manifest = json.loads(manifest_path.read_text())
+    statuses = [r["status"] for r in manifest["experiments_run"]]
+    # Only EXP A and EXP B were attempted; EXP C was skipped by fail-fast
+    assert statuses == ["ok", "hard_fail"], statuses
+    assert "RESULT_C" not in ctx.state, (
+        "fail-fast must have stopped before FAKE_C ran"
+    )
+
+
+def test_fail_fast_persists_state_from_prior_successful_experiments(orch, tmp_path):
+    """State from EXPs that succeeded BEFORE the failure is durably persisted
+    to the state file — even when fail-fast aborts the run."""
+    exps = [
+        _fake_spec(orch, "FAKE_A", "fake_a", _success_runner("BEST_FOO", 42)),
+        _fake_spec(orch, "FAKE_B", "fake_b", _hard_fail_runner("nope")),
+        _fake_spec(orch, "FAKE_C", "fake_c", _success_runner("BEST_BAR", 99)),
+    ]
+    rc, ctx, state_path, manifest_path = _orchestrate_with_fakes(
+        orch, exps, tmp_path, fail_fast=True,
+    )
+    assert rc != 0
+    assert state_path.exists(), "state file must be written after a successful EXP"
+    state_blob = json.loads(state_path.read_text())
+    persisted_state = state_blob["state"]
+    assert persisted_state["BEST_FOO"] == 42
+    # FAKE_C never ran → BEST_BAR is not in state
+    assert "BEST_BAR" not in persisted_state
+
+
+def test_manifest_still_written_when_fail_fast_stops_the_run(orch, tmp_path):
+    """The per-invocation manifest is written even when fail-fast triggers
+    early exit. Captures the failed experiment + the state at exit time."""
+    exps = [
+        _fake_spec(orch, "FAKE_A", "fake_a", _success_runner("STATE_A", "ok")),
+        _fake_spec(orch, "FAKE_B", "fake_b", _hard_fail_runner("required input missing")),
+    ]
+    rc, ctx, state_path, manifest_path = _orchestrate_with_fakes(
+        orch, exps, tmp_path, fail_fast=True,
+    )
+    assert rc != 0
+    assert manifest_path.exists(), "manifest must be written even on fail-fast"
+    manifest = json.loads(manifest_path.read_text())
+    assert manifest["failed_count"] == 1
+    assert manifest["state_path"] == str(state_path)
+    statuses = [r["status"] for r in manifest["experiments_run"]]
+    assert statuses == ["ok", "hard_fail"]
+    # The hard-failed EXP entry carries the error
+    hf = next(r for r in manifest["experiments_run"] if r["status"] == "hard_fail")
+    assert "required input missing" in hf["error"]
+
+
+def test_stubs_do_not_trigger_fail_fast(orch, tmp_path):
+    """Stub experiments return status='skipped' without raising — they must
+    not cause fail-fast to abort, and they must not be counted as failures."""
+    def _stub_run(ctx):
+        ER = sys.modules["run_summarization_experiments"].ExperimentResult
+        return ER(
+            csv_path=None, winner=None, status="skipped",
+            notes="(stub recipe)",
+        )
+    exps = [
+        _fake_spec(orch, "FAKE_A", "fake_a", _success_runner("STATE_A", "ok")),
+        _fake_spec(orch, "FAKE_B", "fake_b", _stub_run, status="stub"),
+        _fake_spec(orch, "FAKE_C", "fake_c", _success_runner("STATE_C", "ok")),
+    ]
+    rc, ctx, state_path, manifest_path = _orchestrate_with_fakes(
+        orch, exps, tmp_path, fail_fast=True,
+    )
+    assert rc == 0, "no failures → exit code 0 even with fail-fast"
+    manifest = json.loads(manifest_path.read_text())
+    statuses = [r["status"] for r in manifest["experiments_run"]]
+    # All 3 EXPs ran; the stub is "skipped" not "failed"
+    assert statuses == ["ok", "skipped", "ok"]
+    assert ctx.state["STATE_C"] == "ok", "stub must not block downstream EXPs"
