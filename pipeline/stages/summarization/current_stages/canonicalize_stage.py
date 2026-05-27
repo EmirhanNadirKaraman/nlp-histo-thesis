@@ -172,6 +172,18 @@ class CanonicalizeStage:
                 scores = [nf.mean_grounding_score for nf in bin_nfs if nf.mean_grounding_score is not None]
                 mean_score = sum(scores) / len(scores) if scores else None
 
+                # Representative scope: take from the highest-grounded
+                # NormalFinding in the bin (predicate_text comes from the
+                # same row, so scope stays paired with the text it describes).
+                # ``RelateConfig.scope_aware_nli`` consumes this downstream;
+                # when None or all-empty, RELATE silently falls back to
+                # predicate-only NLI input.
+                best_nf = max(
+                    bin_nfs,
+                    key=lambda n: (n.mean_grounding_score or 0.0),
+                )
+                representative_scope = best_nf.scope
+
                 rule = CanonicalRule(
                     canonical_id=_canonical_rule_id(group.group_id, direction),
                     group_id=group.group_id,
@@ -187,6 +199,7 @@ class CanonicalizeStage:
                     member_normal_ids=all_member_ids,
                     mean_grounding_score=mean_score,
                     finding_count=len(bin_nfs),
+                    scope=representative_scope,
                 )
                 canonical_rules.append(rule)
 

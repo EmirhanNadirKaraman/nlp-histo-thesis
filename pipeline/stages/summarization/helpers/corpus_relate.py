@@ -191,10 +191,12 @@ class CorpusRelateStage:
         entailment_threshold: float = 0.50,
         contradiction_threshold: float = 0.50,
         db=None,
+        scope_aware_nli: bool = True,
     ) -> None:
         self._relate = RelateStage(
             entailment_threshold=entailment_threshold,
             contradiction_threshold=contradiction_threshold,
+            scope_aware_nli=scope_aware_nli,
         )
         self._db = db  # optional DatabaseConnection for DB persistence
 

@@ -893,6 +893,12 @@ class CanonicalRule(BaseModel):
     finding_count:       int                   # number of NormalFindings in this bin
     subject_cui:         str | None = None     # UMLS CUI for subject_entity (set post-canonicalize)
     outcome_cui:         str | None = None     # UMLS CUI for outcome_entity (set post-canonicalize)
+    # Representative scope from the best-grounded NormalFinding in this rule's
+    # direction-bin. Optional + default ``None`` for backward compatibility
+    # with older artifacts that pre-date the field — RELATE falls back to
+    # predicate-only NLI input when this is None.  See
+    # ``RelateConfig.scope_aware_nli``.
+    scope:               FindingScope | None = None
 
 
 # ── Phase 5: RELATE output ────────────────────────────────────────────────────

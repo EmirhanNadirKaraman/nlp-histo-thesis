@@ -459,6 +459,16 @@ def main():
              "('--config \"\"') to skip YAML loading and use dataclass "
              "defaults — useful when scripting reproducible thesis runs.",
     )
+    parser.add_argument(
+        "--no-corpus-relate", action="store_true",
+        help="Skip the post-batch cross-paper RelateStage. By default, after "
+             "every paper finishes finalize(), `CorpusRelateStage.relate_from_dir` "
+             "pools rules from `out/summaries/summaries/*.json` and writes "
+             "`out/summaries/corpus_relations.json` (auto-detected by "
+             "`scripts/inspect_pipeline_output.py`). Replay-only, local NLI, "
+             "zero API calls — usually free; pass this flag to skip on very "
+             "large corpora where pairwise NLI dominates runtime.",
+    )
     args = parser.parse_args()
 
     # Make profile available to downstream builders without threading the arg
@@ -538,6 +548,7 @@ def main():
             artifact_run_id=args.artifact_run_id,
             chunk_workers=args.chunk_workers,
             config_path=args.config,
+            skip_corpus_relate=args.no_corpus_relate,
         )
     else:
         for pmcid in pmcids:
@@ -550,6 +561,7 @@ def main():
                     artifact_run_id=args.artifact_run_id,
                     chunk_workers=args.chunk_workers,
                     config_path=args.config,
+                    skip_corpus_relate=args.no_corpus_relate,
                 )
             else:
                 _run_sync(
@@ -887,6 +899,73 @@ def _save_escalation_report(stats: list[dict], output_dir: Path) -> None:
         print(f"Saved vs L3-only baseline: ${totals['est_saved_usd']:.5f}")
 
 
+def _run_corpus_relate(
+    summaries_dir: Path,
+    output_path: Path,
+    *,
+    skip: bool = False,
+) -> None:
+    """Post-batch cross-paper RelateStage over the per-paper summary JSONs.
+
+    Replay-only — NLI is local (HuggingFace). Zero API calls. Non-fatal:
+    failures log a warning but do not crash the orchestrator.
+
+    Skipped when:
+      - ``skip=True`` (CLI ``--no-corpus-relate``)
+      - the source dir is missing
+      - fewer than two ``*.json`` files exist (no cross-paper pairs to relate)
+
+    Writes ``corpus_relations.json`` at ``output_path``. The inspector
+    (`scripts/inspect_pipeline_output.py`) auto-detects this filename in the
+    parent of the source dir, so the default layout
+    (``out/summaries/summaries/*.json`` + ``out/summaries/corpus_relations.json``)
+    is picked up by ``--batch-dir`` runs without extra flags.
+    """
+    if skip:
+        logger.info("CORPUS RELATE: skipped via --no-corpus-relate")
+        return
+    if not summaries_dir.exists():
+        logger.warning(
+            "CORPUS RELATE: source dir not found: %s — skipping", summaries_dir,
+        )
+        return
+    json_files = sorted(
+        p for p in summaries_dir.glob("*.json")
+        if not p.name.startswith("_")           # skip _archive_*, etc.
+    )
+    if len(json_files) < 2:
+        logger.info(
+            "CORPUS RELATE: %d JSON file(s) in %s — need ≥2 for cross-paper "
+            "comparison; skipping.", len(json_files), summaries_dir,
+        )
+        return
+
+    try:
+        from pipeline.stages.summarization.helpers.corpus_relate import (  # noqa: PLC0415
+            CorpusRelateStage,
+        )
+        logger.info(
+            "CORPUS RELATE: pooling rules from %d papers in %s → %s",
+            len(json_files), summaries_dir, output_path,
+        )
+        relations = CorpusRelateStage().relate_from_dir(
+            source_dir=summaries_dir,
+            output_path=output_path,
+        )
+        logger.info(
+            "CORPUS RELATE: wrote %d relations → %s",
+            len(relations), output_path,
+        )
+    except Exception as exc:  # noqa: BLE001 — non-fatal post-step
+        logger.warning(
+            "CORPUS RELATE failed (non-fatal): %s — per-paper JSONs are still "
+            "valid. Re-run manually with "
+            "`python -c \"from pipeline.stages.summarization.helpers.corpus_relate "
+            "import CorpusRelateStage; CorpusRelateStage().relate_from_dir(...)\"`.",
+            exc, exc_info=True,
+        )
+
+
 def _run_all_batch(
     pmcids: list[str],
     poll_interval: int = DEFAULT_POLL_INTERVAL_SEC,
@@ -896,6 +975,7 @@ def _run_all_batch(
     artifact_run_id: str | None = None,
     chunk_workers: int | None = None,
     config_path: str | Path | None = DEFAULT_CONFIG_PATH,
+    skip_corpus_relate: bool = False,
 ) -> None:
     """Submit all papers simultaneously, poll together, finalize all."""
     from pipeline.stages.summarization.batch import BatchPhase
@@ -988,6 +1068,15 @@ def _run_all_batch(
 
     _save_escalation_report(escalation_stats, Path("out/summaries/reports"))
 
+    # Post-batch cross-paper RelateStage over the freshly-finalised JSONs.
+    # Runs *after* every paper has reached finalize() so the source dir holds
+    # the full set. Replay-only (local NLI), zero API calls.
+    _run_corpus_relate(
+        summaries_dir=Path("out/summaries/summaries"),
+        output_path=Path("out/summaries/corpus_relations.json"),
+        skip=skip_corpus_relate,
+    )
+
 
 def _run_batch(
     pmcid: str,
@@ -998,6 +1087,7 @@ def _run_batch(
     artifact_run_id: str | None = None,
     chunk_workers: int | None = None,
     config_path: str | Path | None = DEFAULT_CONFIG_PATH,
+    skip_corpus_relate: bool = False,
 ) -> None:
     from pipeline.stages.summarization.batch import BatchPhase
     from pipeline.stages.summarization.runner import SummarizationRunner
@@ -1042,6 +1132,15 @@ def _run_batch(
     print(f"  {len(canonical_rules)} canonical rules")
     print(f"  {len(relations)} relations")
     print(f"  {len(final_rules)} final rules")
+
+    # Post-batch cross-paper RelateStage. Works on the full source dir, so a
+    # single-paper run still relates against previously-summarised papers in
+    # the same dir. Replay-only (local NLI), zero API calls.
+    _run_corpus_relate(
+        summaries_dir=Path("out/summaries/summaries"),
+        output_path=Path("out/summaries/corpus_relations.json"),
+        skip=skip_corpus_relate,
+    )
 
 
 if __name__ == "__main__":

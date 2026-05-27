@@ -137,6 +137,15 @@ class RelateConfig:
     contradiction_threshold: float = 0.50
     """Score (both directions) above which a rule pair is CONTRADICT."""
 
+    scope_aware_nli: bool = True
+    """If True (default), the RELATE stage prepends scope/category/direction
+    tags to the predicate_text when building NLI inputs. This lets the
+    NLI model see disease_subtype / tissue_site / assay_method differences
+    that would otherwise be invisible — the predicate_text alone often
+    abstracts those away. False reverts to the legacy predicate-only input
+    (useful for A/B comparison against the pre-scope-aware baseline).
+    No-op when CanonicalRule.scope is None (older artifacts)."""
+
 
 @dataclass
 class ResolveConfig:

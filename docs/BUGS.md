@@ -87,8 +87,98 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-062 | Fixed (2026-05-23) | High | Summarisation, MAP cascade / config | `scripts/run_paper.py` never set `enable_router`, so both production entry points (`build_runner`, `build_batch_runner`) used the runner default `False` → **production ran the legacy `AgreementChecker` cascade, not `MapOutputRouter`**. Yet THESIS.md asserted router-on production in four places + `eval/silver/map_theta_sweep.py` in three comments. Documented production cascade ≠ actual behaviour. Found while wiring the config pin (calibration review item 3). Fix: path made config-governed (`summarization.map.enable_router`, default `false`) + logged at load; user decided production keeps the legacy L1→L2→L3 cascade (the router L1→L3-skip path is opt-in/experimental); stale docs corrected. | [Bug 62](#bug-62--documented-router-on-production-cascade-never-actually-enabled) |
 | B-063 | Fixed (2026-05-24) | Low | Tooling, cost estimation script | `scripts/estimate_selection_cost.py` imports `from pipeline.stages.summarization.costing import PriceBook` inside `main()` but never bootstraps the repo root onto `sys.path`. Run as the documented bare `python scripts/estimate_selection_cost.py …` (HOW_TO_RUN §5) it dies with `ModuleNotFoundError: No module named 'pipeline'` — Python puts the script's own dir (`scripts/`) on `sys.path`, not the CWD. Only `PYTHONPATH=. python …` worked, which the script's own docstring documented. Every sibling script (`run_paper.py`, `check_apis.py`) self-bootstraps with `_REPO_ROOT = Path(__file__).resolve().parents[1]`; this one was the lone violator of the CLAUDE.md "scripts must bootstrap their own path" convention. Hit while running the cost estimate for `related15_full`. Distinct from [B-052](#bug-52--cost-estimation-script-underestimates-per-chunk-input-tokens) (same file, token-formula fix). Fixed by adding the standard 3-line bootstrap before the first repo import + dropping `PYTHONPATH=.` from the docstring. | [Bug 63](#bug-63--estimate_selection_costpy-missing-syspath-bootstrap) |
 | B-064 | Fixed (2026-05-24) | Medium | Eval, silver embedding cache | The JSON embedding cache (`eval/silver/matcher.py`) rewrote the **entire** file on every `save()`, and the MAP θ sweep calls `save()` after each ~100-text batch (`_prewarm_agreement_cache`, `get_embeddings`, `_make_cached_embed_fn`) → **O(N²)**: the 720 MB / 17,827-entry gemini cache was re-serialised hundreds of times, dominating sweep wall-time (~20 s gaps even for 4-vector fetches). The silver↔pipeline matcher also used a pure-Python 3072-dim cosine triple-loop (`compute_sim_matrix`), the per-cell compute bottleneck at high θ. Fix: interface-preserving `SQLiteEmbeddingCache` (`set`=INSERT-in-txn, `save`=commit, WAL, float32 BLOB → 720→219 MB) behind `make_embedding_cache` + `NLP_HISTO_EMBEDDING_CACHE_BACKEND` (default `sqlite`); idempotent JSON→SQLite import (`scripts/import_embedding_cache_sqlite.py`); `compute_sim_matrix` vectorised with numpy. No embedder / dimensionality / θ / scorer-semantics change. | [Bug 64](#bug-64--json-embedding-cache-rewrite--vectorised-cosine) |
+| B-065 | Fixed (2026-05-27) | High | Summarisation, batch runner | `BatchSummarizationRunner._process_level` Pass 2 (pre-embedding) iterates `chunk_voters` without filtering `None` slots; `_claims(None)` raises `AttributeError: 'NoneType' object has no attribute 'findings'` and kills the batch advance. Latent for `real` profile (3 L1 voters; rare for all to fail one chunk) but **certain** for the new `haiku_only` profile (N=1 voter → any parse failure → `voters_full = [None]` → crash). Hit while running batch on 15 ILP papers under `haiku_only` (this conversation). Fix: one-line filter `if v is not None` in the embed-collection comprehension; mirrors the survivor-index filter Pass 3 already does on line 1190 for the agreement-scoring path. | [Bug 65](#bug-65--batch-runner-_process_level-crashes-on-none-voter-output) |
 
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
+
+---
+
+## Bug 65 — Batch runner `_process_level` crashes on None voter output
+
+### Status / Severity / Surface
+Fixed (2026-05-27) · High · Summarisation, batch runner
+(`pipeline/stages/summarization/batch/runner.py::_process_level`).
+
+### Symptom
+Batch advance crashes mid-paper with:
+
+```
+File "pipeline/stages/summarization/batch/runner.py", line 1117, in _process_level
+    for c in _extract_claims(v)
+File "pipeline/stages/summarization/agreement/embedding.py", line 328, in _claims
+    return [f.claim for f in output.findings]
+AttributeError: 'NoneType' object has no attribute 'findings'
+```
+
+Hit while running batch mode on the 15 ILP papers under the new `haiku_only`
+profile (single L1 voter; this conversation, 2026-05-27).
+
+### Evidence
+- `_process_level` builds `chunk_voters[chunk_id]` as a length-N list aligned
+  to the original voter spec (`voters_full: list[AuditableSummary | None] =
+  [None] * len(current_voters)`, runner.py:1080). Voters whose batch result
+  was missing or unparseable stay as `None`.
+- Pass 2 (pre-embedding, runner.py:1113-1118 pre-fix) iterates the full
+  voters list to collect unique claim texts:
+  ```python
+  all_texts = list({
+      c
+      for voters in chunk_voters.values()
+      for v in voters
+      for c in _extract_claims(v)   # ← _extract_claims(None) crashes
+  })
+  ```
+  `agreement/embedding.py::_claims` is `[f.claim for f in output.findings]` —
+  no None-guard.
+- Pass 3 (agreement scoring, runner.py:1190) correctly handles Nones via
+  `survivor_indices = [i for i, v in enumerate(voters_full) if v is not None]`.
+  Pass 2 and Pass 3 are inconsistent — Pass 2 was missing the same guard.
+- **Latent for `real` profile** (3 L1 voters; for the crash to fire all three
+  would need to return None on the same chunk — rare in production). **Certain
+  for `haiku_only` profile** (N=1 voter; any single parse failure → entire
+  `voters_full = [None]` → Pass 2 crashes).
+
+### Fix
+One-line None filter in the Pass 2 comprehension to mirror Pass 3's
+`survivor_indices` semantics:
+
+```python
+all_texts = list({
+    c
+    for voters in chunk_voters.values()
+    for v in voters
+    if v is not None                # ← added
+    for c in _extract_claims(v)
+})
+```
+
+All-None chunks then fall through to Pass 3's existing `if not voters:
+escalated.append(chunk_id)` path (runner.py:1193-1196), which routes the
+chunk up the cascade. For `haiku_only` the "escalation" lands at L2/L3 of the
+same Haiku model — the dead-code path becomes the lifeline when a single L1
+batch result fails to parse.
+
+### Verification
+Two regression tests in
+`tests/summarization/test_b065_none_voter_handling.py`:
+
+1. `test_advance_does_not_crash_when_lone_l1_voter_returns_none` — builds
+   a `haiku_only`-shape runner (N=1 L1 voter), injects an empty-content
+   synthetic batch result, calls `advance()`. Pre-fix this raises
+   `AttributeError`. Post-fix the chunk routes to L2 via Pass 3's all-None
+   branch; `advanced.l2_chunk_ids == ["C0"]`, `advanced.phase ==
+   BatchPhase.L2_SUBMITTED`.
+2. `test_advance_handles_mixed_none_and_valid_voters_in_real_profile_shape`
+   — `real`-shape runner (3 L1 voters), one voter returns empty content,
+   other two return identical valid `AuditableSummary` JSON. Pre-fix Pass 2
+   would crash on the None slot before reaching agreement; post-fix Pass 2
+   collects claims from the 2 survivors, Pass 3 emits the existing
+   voter-count-regression warning (B-019/B-020 guard) and KEEPs the chunk
+   since the surviving voters agree. `advanced.finalized["C0"]` confirmed.
+
+Both tests use `monkeypatch.setattr(runner_module, "submit_level", ...)`
+to stub out the provider call after escalation, isolating the regression
+to `_process_level`'s None handling.
 
 ---
 

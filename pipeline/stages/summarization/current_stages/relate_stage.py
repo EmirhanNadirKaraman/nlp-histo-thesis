@@ -288,6 +288,56 @@ def _should_compare(a: CanonicalRule, b: CanonicalRule) -> tuple[bool, str]:
     return True, ""
 
 
+def _build_nli_text(rule: CanonicalRule, *, scope_aware: bool) -> str:
+    """Build the NLI premise/hypothesis text for one rule.
+
+    When ``scope_aware=False`` or ``rule.scope`` is None/empty, returns the
+    bare ``predicate_text`` (legacy behaviour). Otherwise prepends a
+    structured prefix carrying disease subtype, tissue site, assay method,
+    and other scope qualifiers — fields the bare predicate often loses.
+
+    Format::
+
+        "[scope: disease=X | tissue=Y | assay=Z] predicate text..."
+
+    The bracketed prefix is short and self-bounded so an NLI model trained
+    on natural-language sentence pairs can still tokenise it reasonably.
+    Cross-paper pairs whose predicates only differ on scope (e.g.
+    "TP53 absent in AciCCIS" vs "TP53 present in AciCC") now carry that
+    difference into the NLI input — which is the whole point of B.2's
+    SCOPE_QUALIFY follow-up. See ``docs/EXP_B2_RESULTS.md``.
+    """
+    predicate = rule.predicate_text or ""
+    if not scope_aware:
+        return predicate
+    scope = getattr(rule, "scope", None)
+    if scope is None:
+        return predicate
+    # Collect the most discriminative scope fields. Skip empty/None values
+    # so the prefix stays compact — NLI models penalise long premises.
+    parts: list[str] = []
+    pairs = [
+        ("disease",   getattr(scope, "disease_subtype",  None)),
+        ("tissue",    getattr(scope, "tissue_site",      None)),
+        ("assay",     getattr(scope, "assay_method",     None)),
+        ("treatment", getattr(scope, "treatment_context", None)),
+        ("endpoint",  getattr(scope, "endpoint",         None)),
+        ("design",    getattr(scope, "study_design",     None)),
+        ("cutoff",    getattr(scope, "biomarker_cutoff", None)),
+        ("cohort_n",  getattr(scope, "cohort_n",         None)),
+    ]
+    for label, value in pairs:
+        if value is None:
+            continue
+        text = str(value).strip()
+        if not text:
+            continue
+        parts.append(f"{label}={text}")
+    if not parts:
+        return predicate
+    return f"[scope: {' | '.join(parts)}] {predicate}"
+
+
 # ── Public API ─────────────────────────────────────────────────────────────────
 
 class RelateStage:
@@ -313,12 +363,14 @@ class RelateStage:
         contradiction_threshold: float = 0.65,
         batch_size: int = _DEFAULT_BATCH_SIZE,
         device: int | str | None = None,
+        scope_aware_nli: bool = True,
     ) -> None:
         self._model_name = model_name
         self._entailment_threshold = entailment_threshold
         self._contradiction_threshold = contradiction_threshold
         self._batch_size = batch_size
         self._device = device
+        self._scope_aware_nli = scope_aware_nli
 
     def relate(
         self,
@@ -402,12 +454,19 @@ class RelateStage:
         if not eligible:
             return [], [], skipped_pairs
 
-        # Build bidirectional NLI input
+        # Build bidirectional NLI input.  When ``scope_aware_nli=True``
+        # (default), each rule's predicate is prepended with scope /
+        # category / direction tags so the NLI model sees
+        # disease_subtype / tissue_site / assay_method etc. — fields that
+        # the bare predicate_text often abstracts away.  Falls back to the
+        # predicate alone when scope is unavailable on the rule.
         nli_inputs_ab: list[tuple[str, str]] = []
         nli_inputs_ba: list[tuple[str, str]] = []
         for i, j in eligible:
-            nli_inputs_ab.append((rules[i].predicate_text, rules[j].predicate_text))
-            nli_inputs_ba.append((rules[j].predicate_text, rules[i].predicate_text))
+            text_i = _build_nli_text(rules[i], scope_aware=self._scope_aware_nli)
+            text_j = _build_nli_text(rules[j], scope_aware=self._scope_aware_nli)
+            nli_inputs_ab.append((text_i, text_j))
+            nli_inputs_ba.append((text_j, text_i))
 
         scores_ab = _nli_scores(nli_inputs_ab, pipe)
         scores_ba = _nli_scores(nli_inputs_ba, pipe)

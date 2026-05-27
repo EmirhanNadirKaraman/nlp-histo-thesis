@@ -232,6 +232,7 @@ class BatchSummarizationRunner:
         self._relate = RelateStage(
             entailment_threshold=cfg.relate.entailment_threshold,
             contradiction_threshold=cfg.relate.contradiction_threshold,
+            scope_aware_nli=cfg.relate.scope_aware_nli,
         )
         self._resolve = ResolveStage(cfg.resolve)
 
@@ -1109,11 +1110,18 @@ class BatchSummarizationRunner:
             chunk_voters[chunk_id] = voters_full
 
         # ── Pass 2: batch-embed all unique claims upfront ─────────────────────
+        # Filter Nones — voters_full slots stay None when a voter's batch result
+        # was missing or unparseable (B-065). Pass 3 below handles all-None
+        # chunks via the survivor_indices filter; Pass 2 must do the same or
+        # `_extract_claims(None)` crashes with AttributeError. Latent for the
+        # ``real`` profile (3 L1 voters; rarely all 3 fail on one chunk) but
+        # certain for ``haiku_only`` (N=1 → any parse failure → [None]).
         from ..agreement.embedding import _claims as _extract_claims
         all_texts: list[str] = list({
             c
             for voters in chunk_voters.values()
             for v in voters
+            if v is not None
             for c in _extract_claims(v)
         })
         embed_cache: dict[str, list[float]] = {}

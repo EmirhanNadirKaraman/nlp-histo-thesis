@@ -275,6 +275,7 @@ class SummarizationRunner:
         self._relate = RelateStage(
             entailment_threshold=cfg.relate.entailment_threshold,
             contradiction_threshold=cfg.relate.contradiction_threshold,
+            scope_aware_nli=cfg.relate.scope_aware_nli,
         )
         self._resolve = ResolveStage(cfg.resolve)
         self._reduce = ReduceStage(escalation_llm)
