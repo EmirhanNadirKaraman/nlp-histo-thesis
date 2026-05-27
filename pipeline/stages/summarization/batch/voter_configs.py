@@ -11,15 +11,19 @@ Pick one with ``get_profile(name)`` (or set ``NLP_HISTO_PROFILE``). There is
 no implicit default — callers must select a profile explicitly so accidental
 runs cannot silently burn an unintended cascade.
 
-  cheap   — 2-tier smoke cascade across the OpenAI + Gemini providers.
-            L1: Gemini-Flash-Lite, GPT-4o-mini, GPT-4.1-nano (no Claude voter).
-            L2 and L3 are both GPT-4.1-mini: L3 is set equal to L2 so the
-            structural 3-tier ``CascadeProfile`` dataclass still works, but
-            the cascade is effectively 2 distinct tiers.
-  real    — 3-tier production cascade. L1: Gemini-Flash-Lite, GPT-4o-mini,
-            GPT-4.1-nano (cheapest tier; no Claude voter at L1). L2:
-            Gemini-Flash, GPT-4.1-mini, Claude-Haiku. L3: Claude-Sonnet
-            (temperature=0.0). Use for real evaluation runs.
+  cheap      — 2-tier smoke cascade across the OpenAI + Gemini providers.
+               L1: Gemini-Flash-Lite, GPT-4o-mini, GPT-4.1-nano (no Claude
+               voter). L2 and L3 are both GPT-4.1-mini: L3 is set equal to L2
+               so the structural 3-tier ``CascadeProfile`` dataclass still
+               works, but the cascade is effectively 2 distinct tiers.
+  real       — 3-tier production cascade. L1: Gemini-Flash-Lite, GPT-4o-mini,
+               GPT-4.1-nano (cheapest tier; no Claude voter at L1). L2:
+               Gemini-Flash, GPT-4.1-mini, Claude-Haiku. L3: Claude-Sonnet
+               (temperature=0.0). Use for real evaluation runs.
+  haiku_only — Single-voter Claude-Haiku at L1 (N=1 → KEEP under
+               ``legacy_single_voter_policy="keep"``; L2/L3 never fire). Use
+               for cost-effective production runs; ~\\$0.0036/chunk, accepts
+               a ~4.2pp strict_f1 drop vs Sonnet-only per EXP B.2 dev.
 
 The previous ``default`` profile (Claude-Haiku at L1 for 3-provider
 diversity, mirroring the legacy hardcoded sync config) was removed —
@@ -144,9 +148,46 @@ def _make_real_profile() -> CascadeProfile:
     return CascadeProfile(name="real", l1_voters=l1, l2_voters=l2, l3_voter=l3)
 
 
+def _make_haiku_only_profile() -> CascadeProfile:
+    """Single-voter Haiku at L1 — no escalation fires.
+
+    L1 has a single Claude Haiku voter. With ``legacy_single_voter_policy``
+    set to ``"keep"`` (the production default), ``AgreementChecker.compute``
+    returns ``ChunkDecision.KEEP`` with ``confidence=1.0`` at N=1 — every
+    chunk is accepted at L1 and L2 / L3 are never invoked. L2 and L3 slots
+    are populated structurally (the dataclass requires them) but are dead
+    code at runtime.
+
+    Temperature is ``0.1`` at every tier to match the EXP B.2 measurement:
+    the cited Haiku-only strict_f1 = 0.696 was generated at L2 in the
+    ``real`` profile, where Haiku runs at ``t=0.1``. Shipping at any other
+    temperature would invalidate the empirical basis for the cited
+    accuracy (cf. ``docs/EXP_B2_RESULTS.md``). It also keeps the cached
+    L2-Haiku voter outputs in ``eval/data/map_primer/voter_cache.json``
+    reusable should we want to replay any silver-set chunk under this
+    profile.
+
+    Cost: ~\\$0.0036 / chunk (token assumption: 1500 in + 600 out). Use for
+    cost-effective production runs that accept the EXP B.2 dev-split result
+    of strict_f1 ≈ 0.696 — 73 % cheaper than ``claude-sonnet-4-6`` (Sonnet
+    alone) and 82 % cheaper than the calibrated cascade, at a 4.2pp
+    strict_f1 drop vs Sonnet. The family-bias diagnostic confirmed the
+    accuracy ranking is not a matcher artifact.
+    """
+    from .models import VoterBatchConfig
+    haiku = VoterBatchConfig(CLAUDE_HAIKU, provider="claude", temperature=0.1)
+    return CascadeProfile(
+        name="haiku_only",
+        l1_voters=[haiku],
+        l2_voters=[haiku],
+        l3_voter=haiku,
+    )
+
+
 _PROFILE_BUILDERS = {
-    "cheap":   _make_cheap_profile,
-    "real":    _make_real_profile,
+    "cheap":      _make_cheap_profile,
+    "real":       _make_real_profile,
+    "haiku_only": _make_haiku_only_profile,
 }
 
 

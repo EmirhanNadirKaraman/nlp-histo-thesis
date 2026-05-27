@@ -437,14 +437,17 @@ def main():
     )
     parser.add_argument(
         "--profile", required=True, metavar="NAME",
-        choices=["cheap", "real"],
+        choices=["cheap", "real", "haiku_only"],
         help="Cascade profile (required — no implicit default to prevent "
              "accidental spend). Registered in "
              "pipeline/stages/summarization/batch/voter_configs.py:\n"
-             "  cheap   — Gemini + OpenAI only, no Claude. Smoke/dev runs.\n"
-             "  real    — Gemini-Flash-Lite/GPT-4o-mini/GPT-4.1-nano at L1; "
+             "  cheap      — Gemini + OpenAI only, no Claude. Smoke/dev runs.\n"
+             "  real       — Gemini-Flash-Lite/GPT-4o-mini/GPT-4.1-nano at L1; "
              "Gemini-Flash + GPT-4.1-mini + Claude-Haiku at L2; Claude-Sonnet "
-             "at L3. Production-quality eval runs.",
+             "at L3. Production-quality eval runs.\n"
+             "  haiku_only — Single-voter Claude-Haiku at L1, no escalation. "
+             "Cost-effective production runs; ~$0.0036/chunk, ~4.2pp strict_f1 "
+             "drop vs Sonnet-only per EXP B.2 (docs/EXP_B2_RESULTS.md).",
     )
     parser.add_argument(
         "--config", default=DEFAULT_CONFIG_PATH, metavar="PATH",
