@@ -233,6 +233,7 @@ class BatchSummarizationRunner:
             entailment_threshold=cfg.relate.entailment_threshold,
             contradiction_threshold=cfg.relate.contradiction_threshold,
             scope_aware_nli=cfg.relate.scope_aware_nli,
+            use_verbatim_for_nli=cfg.relate.use_verbatim_for_nli,
         )
         self._resolve = ResolveStage(cfg.resolve)
 

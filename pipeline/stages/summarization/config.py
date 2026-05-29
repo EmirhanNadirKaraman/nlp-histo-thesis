@@ -146,6 +146,17 @@ class RelateConfig:
     (useful for A/B comparison against the pre-scope-aware baseline).
     No-op when CanonicalRule.scope is None (older artifacts)."""
 
+    use_verbatim_for_nli: bool = False
+    """If True, the RELATE stage feeds the NLI model the verbatim source
+    sentence (from the best-grounded NormalFinding's first SourceSpan)
+    instead of the abstracted predicate_text. Captures qualifiers the model
+    may have dropped during predicate extraction (e.g. "in 3 of 12 cases",
+    "in MMR-deficient subset"). Combines with ``scope_aware_nli``: when
+    both True, NLI sees ``[scope: …] {verbatim}``. Default False because
+    verbatim+NLI is unmeasured against the dev silver set — flip after the
+    EXP B.2 follow-up validates the lift. No-op when
+    CanonicalRule.representative_verbatim is None (older artifacts)."""
+
 
 @dataclass
 class ResolveConfig:

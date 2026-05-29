@@ -205,8 +205,68 @@
     </td>
     <td class="score" style="text-align:right">{{ '%.3f'|format(rel.nli_score_a_to_b) }}</td>
     <td class="score" style="text-align:right">{{ '%.3f'|format(rel.nli_score_b_to_a) }}</td>
-    <td style="max-width:260px; font-size:0.78rem; color:var(--text-dim)">{{ rel.predicate_a }}</td>
-    <td style="max-width:260px; font-size:0.78rem; color:var(--text-dim)">{{ rel.predicate_b }}</td>
+    {# Predicate A — abstracted claim + scope chips + collapsible verbatim/paragraph/NLI-input audit #}
+    <td style="max-width:280px; font-size:0.78rem;">
+      <div style="color:var(--text-dim);">{{ rel.predicate_a }}</div>
+      {% if rel.scope_a %}
+      <div style="margin-top:0.25rem;">
+        {% for k, v in rel.scope_a.items() %}
+          {% if v is not none and k != 'scope_parsed' %}
+            <span class="badge" style="background:#e0eaff;color:#1d3a8a; font-size:0.7rem;">{{ k }}={{ v }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if rel.nli_input_a %}
+      <details style="margin-top:0.25rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">NLI input</summary>
+        <code style="display:block; white-space:pre-wrap; word-break:break-word; font-size:0.72rem; color:var(--text-dim); margin-top:0.2rem;">{{ rel.nli_input_a }}</code>
+      </details>
+      {% endif %}
+      {% if rel.verbatim_a %}
+      <details style="margin-top:0.2rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">verbatim</summary>
+        <blockquote style="margin:0.2rem 0; padding:0.25rem 0.4rem; border-left:2px solid var(--border, #d0d7de); color:var(--text-dim); font-size:0.72rem;">{{ rel.verbatim_a }}</blockquote>
+      </details>
+      {% endif %}
+      {% if rel.paragraph_a %}
+      <details style="margin-top:0.2rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">paragraph ({{ rel.paragraph_a|length }} chars)</summary>
+        <blockquote style="margin:0.2rem 0; padding:0.3rem 0.5rem; border-left:3px solid var(--border-light, #d0d7de); background:var(--bg-soft, #f6f8fa); color:var(--text-dim); font-size:0.72rem; white-space:pre-wrap; line-height:1.4;">{{ rel.paragraph_a }}</blockquote>
+      </details>
+      {% endif %}
+    </td>
+    {# Predicate B — mirror of A. #}
+    <td style="max-width:280px; font-size:0.78rem;">
+      <div style="color:var(--text-dim);">{{ rel.predicate_b }}</div>
+      {% if rel.scope_b %}
+      <div style="margin-top:0.25rem;">
+        {% for k, v in rel.scope_b.items() %}
+          {% if v is not none and k != 'scope_parsed' %}
+            <span class="badge" style="background:#e0eaff;color:#1d3a8a; font-size:0.7rem;">{{ k }}={{ v }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if rel.nli_input_b %}
+      <details style="margin-top:0.25rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">NLI input</summary>
+        <code style="display:block; white-space:pre-wrap; word-break:break-word; font-size:0.72rem; color:var(--text-dim); margin-top:0.2rem;">{{ rel.nli_input_b }}</code>
+      </details>
+      {% endif %}
+      {% if rel.verbatim_b %}
+      <details style="margin-top:0.2rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">verbatim</summary>
+        <blockquote style="margin:0.2rem 0; padding:0.25rem 0.4rem; border-left:2px solid var(--border, #d0d7de); color:var(--text-dim); font-size:0.72rem;">{{ rel.verbatim_b }}</blockquote>
+      </details>
+      {% endif %}
+      {% if rel.paragraph_b %}
+      <details style="margin-top:0.2rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">paragraph ({{ rel.paragraph_b|length }} chars)</summary>
+        <blockquote style="margin:0.2rem 0; padding:0.3rem 0.5rem; border-left:3px solid var(--border-light, #d0d7de); background:var(--bg-soft, #f6f8fa); color:var(--text-dim); font-size:0.72rem; white-space:pre-wrap; line-height:1.4;">{{ rel.paragraph_b }}</blockquote>
+      </details>
+      {% endif %}
+    </td>
   </tr>
   {% endfor %}
   </tbody>

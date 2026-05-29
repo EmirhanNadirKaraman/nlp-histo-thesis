@@ -1,5 +1,8 @@
 # Private thesis-chapter draft (do not publish)
 /docs/thesis/
+/docs/thesis_old/
+/docs/sources/
+/docs/readmes/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

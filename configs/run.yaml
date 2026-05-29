@@ -79,7 +79,7 @@ pdf_extraction:
 
 summarization:
   map:
-    theta: 0.8
+    theta: 0.9
     reject_theta: 0.2
     chunk_size: 10
     chunk_overlap: 2
@@ -106,6 +106,9 @@ summarization:
   relate:
     entailment_threshold: 0.50
     contradiction_threshold: 0.50
+    scope_aware_nli: true              # [scope: ...] prefix on NLI input (default true)
+    use_verbatim_for_nli: false       # A/B 2026-05-27: verbatim flips real CONTRADICTs to SUPPORT
+                                      # via multi-claim sentence dilution (PRAME / PHH3 cases). Keep false.
 
   resolve:
     grounding_weight: 0.60

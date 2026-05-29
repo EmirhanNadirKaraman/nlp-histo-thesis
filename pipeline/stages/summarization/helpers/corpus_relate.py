@@ -192,11 +192,13 @@ class CorpusRelateStage:
         contradiction_threshold: float = 0.50,
         db=None,
         scope_aware_nli: bool = True,
+        use_verbatim_for_nli: bool = False,
     ) -> None:
         self._relate = RelateStage(
             entailment_threshold=entailment_threshold,
             contradiction_threshold=contradiction_threshold,
             scope_aware_nli=scope_aware_nli,
+            use_verbatim_for_nli=use_verbatim_for_nli,
         )
         self._db = db  # optional DatabaseConnection for DB persistence
 

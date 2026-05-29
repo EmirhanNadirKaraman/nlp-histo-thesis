@@ -904,6 +904,7 @@ def _run_corpus_relate(
     output_path: Path,
     *,
     skip: bool = False,
+    relate_config=None,
 ) -> None:
     """Post-batch cross-paper RelateStage over the per-paper summary JSONs.
 
@@ -914,6 +915,15 @@ def _run_corpus_relate(
       - ``skip=True`` (CLI ``--no-corpus-relate``)
       - the source dir is missing
       - fewer than two ``*.json`` files exist (no cross-paper pairs to relate)
+
+    ``relate_config`` is a ``RelateConfig`` instance (typically
+    ``runner._sum_cfg.relate`` from the active batch/sync runner). When
+    provided, its ``scope_aware_nli`` and ``use_verbatim_for_nli`` knobs
+    are forwarded to ``CorpusRelateStage``; without it the stage falls
+    back to its own dataclass defaults. The forwarding closes a previously
+    silent gap where ``configs/run.yaml`` flipped these flags for the
+    within-paper RELATE stage but NOT for the post-batch corpus_relate
+    pass — see the A/B-test trace 2026-05-27.
 
     Writes ``corpus_relations.json`` at ``output_path``. The inspector
     (`scripts/inspect_pipeline_output.py`) auto-detects this filename in the
@@ -944,11 +954,25 @@ def _run_corpus_relate(
         from pipeline.stages.summarization.helpers.corpus_relate import (  # noqa: PLC0415
             CorpusRelateStage,
         )
-        logger.info(
-            "CORPUS RELATE: pooling rules from %d papers in %s → %s",
-            len(json_files), summaries_dir, output_path,
-        )
-        relations = CorpusRelateStage().relate_from_dir(
+        stage_kwargs: dict = {}
+        if relate_config is not None:
+            stage_kwargs["entailment_threshold"]    = relate_config.entailment_threshold
+            stage_kwargs["contradiction_threshold"] = relate_config.contradiction_threshold
+            stage_kwargs["scope_aware_nli"]         = relate_config.scope_aware_nli
+            stage_kwargs["use_verbatim_for_nli"]    = relate_config.use_verbatim_for_nli
+            logger.info(
+                "CORPUS RELATE: pooling rules from %d papers in %s → %s "
+                "(scope_aware_nli=%s, use_verbatim_for_nli=%s)",
+                len(json_files), summaries_dir, output_path,
+                relate_config.scope_aware_nli, relate_config.use_verbatim_for_nli,
+            )
+        else:
+            logger.info(
+                "CORPUS RELATE: pooling rules from %d papers in %s → %s "
+                "(using CorpusRelateStage defaults — no run.yaml threading)",
+                len(json_files), summaries_dir, output_path,
+            )
+        relations = CorpusRelateStage(**stage_kwargs).relate_from_dir(
             source_dir=summaries_dir,
             output_path=output_path,
         )
@@ -1070,11 +1094,14 @@ def _run_all_batch(
 
     # Post-batch cross-paper RelateStage over the freshly-finalised JSONs.
     # Runs *after* every paper has reached finalize() so the source dir holds
-    # the full set. Replay-only (local NLI), zero API calls.
+    # the full set. Replay-only (local NLI), zero API calls. Forwards the
+    # active relate config so the corpus_relate NLI input matches the
+    # within-paper one (scope_aware_nli / use_verbatim_for_nli).
     _run_corpus_relate(
         summaries_dir=Path("out/summaries/summaries"),
         output_path=Path("out/summaries/corpus_relations.json"),
         skip=skip_corpus_relate,
+        relate_config=getattr(runner, "_cfg_full", None) and runner._cfg_full.relate,
     )
 
 
@@ -1135,11 +1162,13 @@ def _run_batch(
 
     # Post-batch cross-paper RelateStage. Works on the full source dir, so a
     # single-paper run still relates against previously-summarised papers in
-    # the same dir. Replay-only (local NLI), zero API calls.
+    # the same dir. Replay-only (local NLI), zero API calls. Forwards the
+    # active relate config (see _run_all_batch comment).
     _run_corpus_relate(
         summaries_dir=Path("out/summaries/summaries"),
         output_path=Path("out/summaries/corpus_relations.json"),
         skip=skip_corpus_relate,
+        relate_config=getattr(runner, "_cfg_full", None) and runner._cfg_full.relate,
     )
 
 

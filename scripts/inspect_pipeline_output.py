@@ -30,6 +30,17 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Bootstrap repo root onto sys.path so `from database import get_db_connection`
+# resolves when this script is invoked directly (``scripts/`` has no
+# ``__init__.py`` by project convention). Without this the lazy
+# DB-backed imports in build_corpus_index_from_db and _lookup_paragraphs
+# silently fail with ModuleNotFoundError and the inspector renders without
+# DB-derived enrichments — a latent bug uncovered while wiring paragraph
+# context display.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 try:
     from jinja2 import Environment, FileSystemLoader
 except ImportError:
@@ -552,6 +563,7 @@ def _enrich_final_rule(
     lineage_index: dict,
     low_gs_threshold: float = 0.4,
     normal_findings_lookup: dict | None = None,
+    paragraph_by_canonical_id: dict[str, str | None] | None = None,
 ) -> dict:
     cid = fr.get("canonical_id", "")
     lin = dict(lineage_index.get(cid, {}))
@@ -566,21 +578,184 @@ def _enrich_final_rule(
                 "spans": nf_info.get("spans", []),
             })
         lin["normal_findings"] = normal_with_spans
+    paragraph = (paragraph_by_canonical_id or {}).get(cid)
     return {
         **fr,
         "flags": _compute_flags(fr, low_gs_threshold),
         "low_grounding": _is_low_grounding(fr, low_gs_threshold),
         "lineage": lin,
         "raw_json": json.dumps(fr, indent=2, ensure_ascii=False),
+        # Same NLI-input projections used on canonical rules — final_rules
+        # share the predicate_text + scope + representative_verbatim shape,
+        # so the relate-audit story is consistent across both tables.
+        "nli_input_scope_predicate": _build_nli_input_text(
+            fr, scope_aware=True, with_verbatim=False,
+        ),
+        "nli_input_scope_verbatim":  _build_nli_input_text(
+            fr, scope_aware=True, with_verbatim=True,
+        ),
+        # Full paragraph from text_elements.text_content — DB-resolved via
+        # representative_text_element_id (see _lookup_paragraphs).
+        "representative_paragraph": paragraph,
     }
 
 
-def _enrich_canonical_rule(cr: dict, low_gs_threshold: float = 0.4) -> dict:
+# ── Paragraph context lookup (DB-backed, best-effort) ────────────────────────
+#
+# The rule card wants to surface the *full paragraph* containing the
+# representative verbatim sentence — that's ``text_elements.text_content``
+# joined by ``CanonicalRule.representative_text_element_id``. We do this
+# once per ``build_context`` invocation (batched + dedup'd) so the HTML
+# only pays one DB round-trip per paper instead of N per rule.
+#
+# Best-effort: if the DB connection fails, or if the text_element_id rows
+# are missing, the dict is empty / partial and the rule cards silently
+# render without a "full paragraph" block. Verbatim is already on the
+# rule itself, so the audit story still works without DB access.
+
+
+def _lookup_paragraphs(rules: list[dict]) -> dict[str, str | None]:
+    """Resolve representative_text_element_id → full paragraph text.
+
+    Returns ``{canonical_id → paragraph text}``; missing entries (DB
+    unavailable, pointer is None, row not found) silently absent so
+    callers can ``dict.get(canonical_id) or ""``.
+    """
+    te_ids = {
+        int(r.get("representative_text_element_id"))
+        for r in rules
+        if r.get("representative_text_element_id") is not None
+    }
+    if not te_ids:
+        return {}
+    try:
+        from database import get_db_connection  # noqa: PLC0415
+        from sqlalchemy import text  # noqa: PLC0415
+        db = get_db_connection()
+    except Exception as exc:  # noqa: BLE001 — DB missing is non-fatal
+        print(
+            f"WARNING: paragraph lookup skipped (DB unavailable): {exc}",
+            file=sys.stderr,
+        )
+        return {}
+
+    try:
+        with db.session_scope() as session:
+            rows = session.execute(
+                text(
+                    "SELECT id, text_content FROM text_elements "
+                    "WHERE id = ANY(:ids)"
+                ),
+                {"ids": list(te_ids)},
+            ).fetchall()
+            by_id: dict[int, str] = {row.id: row.text_content for row in rows}
+    except Exception as exc:  # noqa: BLE001
+        print(
+            f"WARNING: paragraph lookup query failed: {exc}",
+            file=sys.stderr,
+        )
+        return {}
+
+    out: dict[str, str | None] = {}
+    for r in rules:
+        cid = r.get("canonical_id")
+        te_id = r.get("representative_text_element_id")
+        if cid and te_id is not None:
+            out[cid] = by_id.get(int(te_id))
+    return out
+
+
+# ── NLI input reconstruction ──────────────────────────────────────────────────
+#
+# Mirrors ``pipeline/stages/summarization/current_stages/relate_stage.py::
+# _build_nli_text`` so the inspector can show the *exact text* that the
+# RELATE / corpus_relate NLI saw for each rule. The full pipeline records
+# ``predicate_text`` on the rule (always) plus the newer ``scope`` and
+# ``representative_verbatim`` fields (when present); this helper combines
+# them into the same shape the stage feeds the NLI model.
+#
+# Default rendering policy mirrors ``RelateConfig`` defaults:
+#   scope_aware_nli=True   → prepend "[scope: ...]" when scope has any
+#                            non-None field
+#   use_verbatim_for_nli=False → keep the abstracted predicate_text
+#
+# A second variant (``with_verbatim=True``) is also exposed so the HTML
+# can show what NLI would have seen if the verbatim path were enabled.
+
+_SCOPE_FIELD_LABELS: list[tuple[str, str]] = [
+    ("disease",   "disease_subtype"),
+    ("tissue",    "tissue_site"),
+    ("assay",     "assay_method"),
+    ("treatment", "treatment_context"),
+    ("endpoint",  "endpoint"),
+    ("design",    "study_design"),
+    ("cutoff",    "biomarker_cutoff"),
+    ("cohort_n",  "cohort_n"),
+]
+
+
+def _build_nli_input_text(
+    rule: dict, *, scope_aware: bool = True, with_verbatim: bool = False,
+) -> str:
+    """Construct the NLI input text for one canonical rule, mirroring
+    ``RelateStage._build_nli_text``.
+
+    Returns an empty string when neither predicate nor verbatim is set.
+    """
+    predicate = (rule.get("predicate_text") or "").strip()
+    verbatim  = (rule.get("representative_verbatim") or "").strip()
+
+    base = verbatim if (with_verbatim and verbatim) else predicate
+    if not base:
+        return ""
+
+    if not scope_aware:
+        return base
+
+    scope = rule.get("scope") or {}
+    if not isinstance(scope, dict):
+        return base
+
+    parts: list[str] = []
+    for label, field in _SCOPE_FIELD_LABELS:
+        value = scope.get(field)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            parts.append(f"{label}={text}")
+    if not parts:
+        return base
+    return f"[scope: {' | '.join(parts)}] {base}"
+
+
+def _enrich_canonical_rule(
+    cr: dict,
+    low_gs_threshold: float = 0.4,
+    paragraph_by_canonical_id: dict[str, str | None] | None = None,
+) -> dict:
+    cid = cr.get("canonical_id", "")
+    paragraph = (paragraph_by_canonical_id or {}).get(cid)
     return {
         **cr,
         "flags": _compute_flags(cr, low_gs_threshold),
         "low_grounding": _is_low_grounding(cr, low_gs_threshold),
         "raw_json": json.dumps(cr, indent=2, ensure_ascii=False),
+        # NLI-input text the RELATE stage would build for this rule under
+        # the current RelateConfig defaults (scope-aware predicate). The
+        # *_verbatim variant exposes what NLI would see if the verbatim
+        # path were enabled — useful for thesis-grade "what changes" audit.
+        "nli_input_scope_predicate": _build_nli_input_text(
+            cr, scope_aware=True, with_verbatim=False,
+        ),
+        "nli_input_scope_verbatim":  _build_nli_input_text(
+            cr, scope_aware=True, with_verbatim=True,
+        ),
+        # Full paragraph from text_elements.text_content — DB-resolved via
+        # representative_text_element_id (see _lookup_paragraphs). None if
+        # the rule pre-dates the field or the DB is unavailable; template
+        # hides the row in that case.
+        "representative_paragraph": paragraph,
     }
 
 
@@ -618,9 +793,32 @@ def build_context(
     audit = data.get("audit_trail") or {}
     raw_chunks = audit.get("map_chunks", []) or []
 
+    # Resolve representative_text_element_id → full paragraph text for the
+    # rule cards. The pointer was baked into CanonicalRule at canonicalize
+    # time (see paragraph_lookup.py); we look up the actual content from
+    # the text_elements table here so the HTML can show "verbatim source"
+    # alongside "full paragraph context". DB-best-effort: a missing DB
+    # connection or a missing text_element_id silently leaves the field
+    # blank (the verbatim sentence already covers most audit needs).
+    paragraph_by_canonical_id: dict[str, str | None] = _lookup_paragraphs(
+        raw_canonical_rules + raw_final_rules,
+    )
+
     # Enrich each layer
-    final_rules     = [_enrich_final_rule(fr, lineage_index, low_gs_threshold, normal_findings_lookup) for fr in raw_final_rules]
-    canonical_rules = [_enrich_canonical_rule(cr, low_gs_threshold) for cr in raw_canonical_rules]
+    final_rules     = [
+        _enrich_final_rule(
+            fr, lineage_index, low_gs_threshold, normal_findings_lookup,
+            paragraph_by_canonical_id=paragraph_by_canonical_id,
+        )
+        for fr in raw_final_rules
+    ]
+    canonical_rules = [
+        _enrich_canonical_rule(
+            cr, low_gs_threshold,
+            paragraph_by_canonical_id=paragraph_by_canonical_id,
+        )
+        for cr in raw_canonical_rules
+    ]
 
     # Inject cross-paper connections from corpus_relations.json (if provided)
     cross_paper_total = 0
@@ -1112,6 +1310,13 @@ def render_batch(
 
     index_rows: list[dict] = []
 
+    # Build a global canonical_id → enrichment map across all 15 papers so the
+    # batch-index corpus-relations table can show scope tags, NLI input
+    # strings, verbatim quotes, and paragraph context for *both sides* of a
+    # cross-paper pair — not just the local one. Populated incrementally
+    # below as each paper's context is built.
+    global_rule_lookup: dict[str, dict] = {}
+
     for json_path in json_files:
         try:
             with open(json_path, encoding="utf-8") as fh:
@@ -1119,6 +1324,24 @@ def render_batch(
 
             pmcid = data.get("pmcid") or json_path.stem
             ctx = build_context(data, low_gs_threshold, corpus_connections=corpus_index)
+
+            # Snapshot the audit-relevant fields per canonical rule for the
+            # cross-paper lookup. We do this BEFORE writing HTML so any
+            # later paper's index render can reference earlier papers'
+            # rules (index render happens once at the end, after all
+            # papers have streamed through).
+            for cr in ctx["canonical_rules"]:
+                cid = cr.get("canonical_id")
+                if not cid:
+                    continue
+                global_rule_lookup[cid] = {
+                    "scope":                          cr.get("scope") or {},
+                    "representative_verbatim":        cr.get("representative_verbatim"),
+                    "representative_paragraph":       cr.get("representative_paragraph"),
+                    "representative_text_element_id": cr.get("representative_text_element_id"),
+                    "nli_input_scope_predicate":      cr.get("nli_input_scope_predicate"),
+                    "nli_input_scope_verbatim":       cr.get("nli_input_scope_verbatim"),
+                }
 
             out_html = output_dir / f"{json_path.stem}.html"
             env = _make_env()
@@ -1154,6 +1377,26 @@ def render_batch(
         except Exception as exc:  # noqa: BLE001
             print(f"  WARNING: skipping {json_path.name}: {exc}", file=sys.stderr)
             continue
+
+    # Enrich corpus_data.relations with per-side scope / verbatim / paragraph
+    # / NLI-input pulled from the global rule lookup (built per-paper above).
+    # Lets the batch-index template render the same audit context the
+    # per-paper inspector shows, on both sides of every cross-paper pair.
+    if corpus_data:
+        enriched_rels = []
+        for rel in corpus_data.get("relations", []) or []:
+            r = dict(rel)
+            a = global_rule_lookup.get(rel.get("rule_id_a") or "", {})
+            b = global_rule_lookup.get(rel.get("rule_id_b") or "", {})
+            for side_letter, side in (("a", a), ("b", b)):
+                r[f"scope_{side_letter}"]                    = side.get("scope") or {}
+                r[f"verbatim_{side_letter}"]                 = side.get("representative_verbatim")
+                r[f"paragraph_{side_letter}"]                = side.get("representative_paragraph")
+                r[f"text_element_id_{side_letter}"]          = side.get("representative_text_element_id")
+                r[f"nli_input_{side_letter}"]                = side.get("nli_input_scope_predicate")
+                r[f"nli_input_verbatim_{side_letter}"]       = side.get("nli_input_scope_verbatim")
+            enriched_rels.append(r)
+        corpus_data = {**corpus_data, "relations": enriched_rels}
 
     # Render index page
     env = _make_env()

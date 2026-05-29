@@ -551,6 +551,57 @@ const SENTENCE_LOOKUP = {{ sentence_lookup_json | safe }};
             <tr><td>group_id</td><td><code>{{ cr.group_id }}</code></td></tr>
             <tr><td>predicate_text</td><td>{{ cr.predicate_text }}</td></tr>
             <tr><td>canonical_scope</td><td>{{ cr.canonical_scope }}</td></tr>
+            {% if cr.scope %}
+            <tr>
+              <td>scope</td>
+              <td>
+                {% for k, v in cr.scope.items() %}
+                  {% if v is not none and k != 'scope_parsed' %}
+                    <span class="tag" style="background:#e0eaff;color:#1d3a8a;">{{ k }}={{ v }}</span>
+                  {% endif %}
+                {% endfor %}
+                {% if not cr.scope %}<span style="color:var(--text-dim)">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endif %}
+            {% if cr.representative_verbatim %}
+            <tr>
+              <td>verbatim source</td>
+              <td>
+                <blockquote style="margin:0; padding:0.25rem 0.5rem; border-left:2px solid var(--border); font-size:0.85rem;">
+                  {{ cr.representative_verbatim }}
+                </blockquote>
+                {% if cr.representative_text_element_id %}
+                <span style="color:var(--text-dim); font-size:0.72rem;">text_element_id = {{ cr.representative_text_element_id }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endif %}
+            {% if cr.representative_paragraph %}
+            <tr>
+              <td title="The full paragraph (text_elements.text_content) containing the verbatim source sentence above. Resolved at inspector-render time via the DB pointer representative_text_element_id.">paragraph context</td>
+              <td>
+                <details>
+                  <summary style="cursor:pointer; color:var(--text-dim); font-size:0.8rem;">show full paragraph ({{ cr.representative_paragraph|length }} chars)</summary>
+                  <blockquote style="margin:0.5rem 0 0; padding:0.5rem 0.75rem; border-left:3px solid var(--border-light, #d0d7de); background:var(--bg-soft, #f6f8fa); font-size:0.85rem; white-space:pre-wrap; line-height:1.5;">{{ cr.representative_paragraph }}</blockquote>
+                </details>
+              </td>
+            </tr>
+            {% endif %}
+            {% if cr.nli_input_scope_predicate %}
+            <tr>
+              <td title="The exact string the RELATE-stage NLI sees for this rule under the current RelateConfig (scope_aware_nli=True, use_verbatim_for_nli=False).">NLI input</td>
+              <td>
+                <code style="white-space:pre-wrap; word-break:break-word; font-size:0.82rem;">{{ cr.nli_input_scope_predicate }}</code>
+                {% if cr.nli_input_scope_verbatim and cr.nli_input_scope_verbatim != cr.nli_input_scope_predicate %}
+                <details style="margin-top:0.25rem;">
+                  <summary style="cursor:pointer; color:var(--text-dim); font-size:0.75rem;">if use_verbatim_for_nli=True →</summary>
+                  <code style="white-space:pre-wrap; word-break:break-word; font-size:0.78rem;">{{ cr.nli_input_scope_verbatim }}</code>
+                </details>
+                {% endif %}
+              </td>
+            </tr>
+            {% endif %}
             <tr><td>supporting_pmcids</td><td>{% for p in (cr.supporting_pmcids or []) %}<span class="tag">{{ p }}</span>{% endfor %}</td></tr>
             <tr><td>member_normal_ids</td><td>{% for nid in (cr.member_normal_ids or []) %}<span class="tag">{{ nid }}</span>{% endfor %}</td></tr>
             <tr><td>mean_grounding_score</td><td>{{ '%.4f'|format(cr.mean_grounding_score) if cr.mean_grounding_score is not none else '—' }}</td></tr>
@@ -684,10 +735,19 @@ const SENTENCE_LOOKUP = {{ sentence_lookup_json | safe }};
     {% if cross_paper_total > 0 %}
     <div id="corpus-connections" class="section section-anchor">
       <h2>Cross-paper Connections ({{ cross_paper_total }})</h2>
+      <p style="color:var(--text-dim); font-size:0.85rem; margin:0.25rem 0 0.75rem;">
+        Each row shows what the RELATE-stage NLI <em>actually saw</em> for the
+        local rule: the predicate is prepended with a <code>[scope: …]</code>
+        prefix carrying disease_subtype, tissue_site, assay_method, etc. (see
+        <code>RelateConfig.scope_aware_nli</code>). The "NLI input" cell makes
+        the embedded scope qualifiers visible so SUPPORT / CONTRADICT scores
+        can be audited against the text the model judged.
+      </p>
       <table class="rel-table">
         <thead>
           <tr>
             <th>This rule</th>
+            <th>NLI input (this side)</th>
             <th>Type</th>
             <th>Other PMCID</th>
             <th>Other predicate</th>
@@ -703,6 +763,27 @@ const SENTENCE_LOOKUP = {{ sentence_lookup_json | safe }};
             <td>
               <code style="font-size:0.75rem">{{ cr.canonical_id }}</code><br>
               <span style="color:var(--text-dim); font-size:0.78rem">{{ cr.predicate_text }}</span>
+            </td>
+            <td style="max-width:320px; font-size:0.78rem">
+              {% if cr.nli_input_scope_predicate %}
+                <code style="white-space:pre-wrap; word-break:break-word;">{{ cr.nli_input_scope_predicate }}</code>
+              {% else %}
+                <span style="color:var(--text-dim)">(no scope/predicate)</span>
+              {% endif %}
+              {% if cr.representative_verbatim %}
+              <details style="margin-top:0.25rem;">
+                <summary style="cursor:pointer; color:var(--text-dim); font-size:0.75rem;">verbatim source</summary>
+                <blockquote style="margin:0.25rem 0; padding:0.25rem 0.5rem; border-left:2px solid var(--border); color:var(--text-dim); font-size:0.75rem;">
+                  {{ cr.representative_verbatim }}
+                </blockquote>
+              </details>
+              {% endif %}
+              {% if cr.representative_paragraph %}
+              <details style="margin-top:0.25rem;">
+                <summary style="cursor:pointer; color:var(--text-dim); font-size:0.75rem;">paragraph context ({{ cr.representative_paragraph|length }} chars)</summary>
+                <blockquote style="margin:0.25rem 0; padding:0.35rem 0.5rem; border-left:3px solid var(--border-light, #d0d7de); background:var(--bg-soft, #f6f8fa); color:var(--text-dim); font-size:0.75rem; white-space:pre-wrap; line-height:1.4;">{{ cr.representative_paragraph }}</blockquote>
+              </details>
+              {% endif %}
             </td>
             <td>
               <span class="badge badge-{% if conn.relation_type == 'CONTRADICT' %}red{% elif conn.relation_type == 'SUPPORT' %}green{% elif conn.relation_type == 'SCOPE_QUALIFY' %}blue{% else %}gray{% endif %}">{{ conn.relation_type }}</span>

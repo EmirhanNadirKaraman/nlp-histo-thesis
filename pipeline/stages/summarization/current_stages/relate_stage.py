@@ -288,44 +288,29 @@ def _should_compare(a: CanonicalRule, b: CanonicalRule) -> tuple[bool, str]:
     return True, ""
 
 
-def _build_nli_text(rule: CanonicalRule, *, scope_aware: bool) -> str:
-    """Build the NLI premise/hypothesis text for one rule.
+def _build_scope_prefix(rule: CanonicalRule) -> str:
+    """Return ``"[scope: ...] "`` (with trailing space) when scope has any
+    non-null fields, otherwise the empty string. Format::
 
-    When ``scope_aware=False`` or ``rule.scope`` is None/empty, returns the
-    bare ``predicate_text`` (legacy behaviour). Otherwise prepends a
-    structured prefix carrying disease subtype, tissue site, assay method,
-    and other scope qualifiers — fields the bare predicate often loses.
+        "[scope: disease=X | tissue=Y | assay=Z] "
 
-    Format::
-
-        "[scope: disease=X | tissue=Y | assay=Z] predicate text..."
-
-    The bracketed prefix is short and self-bounded so an NLI model trained
-    on natural-language sentence pairs can still tokenise it reasonably.
-    Cross-paper pairs whose predicates only differ on scope (e.g.
-    "TP53 absent in AciCCIS" vs "TP53 present in AciCC") now carry that
-    difference into the NLI input — which is the whole point of B.2's
-    SCOPE_QUALIFY follow-up. See ``docs/EXP_B2_RESULTS.md``.
+    Compact + bracketed so NLI models trained on natural-language pairs can
+    still tokenise it reasonably.
     """
-    predicate = rule.predicate_text or ""
-    if not scope_aware:
-        return predicate
     scope = getattr(rule, "scope", None)
     if scope is None:
-        return predicate
-    # Collect the most discriminative scope fields. Skip empty/None values
-    # so the prefix stays compact — NLI models penalise long premises.
-    parts: list[str] = []
+        return ""
     pairs = [
-        ("disease",   getattr(scope, "disease_subtype",  None)),
-        ("tissue",    getattr(scope, "tissue_site",      None)),
-        ("assay",     getattr(scope, "assay_method",     None)),
+        ("disease",   getattr(scope, "disease_subtype",   None)),
+        ("tissue",    getattr(scope, "tissue_site",       None)),
+        ("assay",     getattr(scope, "assay_method",      None)),
         ("treatment", getattr(scope, "treatment_context", None)),
-        ("endpoint",  getattr(scope, "endpoint",         None)),
-        ("design",    getattr(scope, "study_design",     None)),
-        ("cutoff",    getattr(scope, "biomarker_cutoff", None)),
-        ("cohort_n",  getattr(scope, "cohort_n",         None)),
+        ("endpoint",  getattr(scope, "endpoint",          None)),
+        ("design",    getattr(scope, "study_design",      None)),
+        ("cutoff",    getattr(scope, "biomarker_cutoff",  None)),
+        ("cohort_n",  getattr(scope, "cohort_n",          None)),
     ]
+    parts: list[str] = []
     for label, value in pairs:
         if value is None:
             continue
@@ -334,8 +319,53 @@ def _build_nli_text(rule: CanonicalRule, *, scope_aware: bool) -> str:
             continue
         parts.append(f"{label}={text}")
     if not parts:
-        return predicate
-    return f"[scope: {' | '.join(parts)}] {predicate}"
+        return ""
+    return f"[scope: {' | '.join(parts)}] "
+
+
+def _build_nli_text(
+    rule: CanonicalRule,
+    *,
+    scope_aware: bool,
+    use_verbatim: bool = False,
+) -> str:
+    """Build the NLI premise/hypothesis text for one rule.
+
+    Four modes via the two flags (see ``RelateConfig``):
+
+    +-------------+--------------+--------------------------------------------+
+    | scope_aware | use_verbatim | output                                     |
+    +=============+==============+============================================+
+    | False       | False        | predicate_text                             |
+    | True        | False        | "[scope: ...] predicate_text"              |
+    | False       | True         | verbatim                                   |
+    | True        | True         | "[scope: ...] verbatim"                    |
+    +-------------+--------------+--------------------------------------------+
+
+    Fallbacks (silent, by design — keep relate working on heterogeneous
+    artifacts):
+      - ``use_verbatim=True`` with ``rule.representative_verbatim`` None →
+        falls back to ``predicate_text``.
+      - ``scope_aware=True`` with ``rule.scope`` None/empty → no prefix.
+      - All-empty result → returns empty string (NLI will treat as neutral).
+
+    See ``docs/EXP_B2_RESULTS.md`` for the motivation: pairs that only
+    differ on disease subtype or that lose information during predicate
+    abstraction can now surface that difference to NLI.
+    """
+    # Pick the base text: verbatim if requested + available, else predicate.
+    base = ""
+    if use_verbatim:
+        base = (rule.representative_verbatim or "").strip()
+    if not base:
+        base = (rule.predicate_text or "").strip()
+
+    if not scope_aware:
+        return base
+    prefix = _build_scope_prefix(rule)
+    if not prefix:
+        return base
+    return f"{prefix}{base}"
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
@@ -364,6 +394,7 @@ class RelateStage:
         batch_size: int = _DEFAULT_BATCH_SIZE,
         device: int | str | None = None,
         scope_aware_nli: bool = True,
+        use_verbatim_for_nli: bool = False,
     ) -> None:
         self._model_name = model_name
         self._entailment_threshold = entailment_threshold
@@ -371,6 +402,7 @@ class RelateStage:
         self._batch_size = batch_size
         self._device = device
         self._scope_aware_nli = scope_aware_nli
+        self._use_verbatim_for_nli = use_verbatim_for_nli
 
     def relate(
         self,
@@ -454,17 +486,28 @@ class RelateStage:
         if not eligible:
             return [], [], skipped_pairs
 
-        # Build bidirectional NLI input.  When ``scope_aware_nli=True``
-        # (default), each rule's predicate is prepended with scope /
-        # category / direction tags so the NLI model sees
-        # disease_subtype / tissue_site / assay_method etc. — fields that
-        # the bare predicate_text often abstracts away.  Falls back to the
-        # predicate alone when scope is unavailable on the rule.
+        # Build bidirectional NLI input.  Two orthogonal knobs control the
+        # text fed to the NLI model:
+        #   - ``scope_aware_nli`` prepends scope tags (disease_subtype,
+        #     tissue_site, …) so the model sees qualifier differences.
+        #   - ``use_verbatim_for_nli`` swaps the abstracted ``predicate_text``
+        #     for the verbatim source sentence (the best-grounded
+        #     NormalFinding's first SourceSpan.verbatim).
+        # Both fall back gracefully when the underlying CanonicalRule field
+        # is None (older artifacts).
         nli_inputs_ab: list[tuple[str, str]] = []
         nli_inputs_ba: list[tuple[str, str]] = []
         for i, j in eligible:
-            text_i = _build_nli_text(rules[i], scope_aware=self._scope_aware_nli)
-            text_j = _build_nli_text(rules[j], scope_aware=self._scope_aware_nli)
+            text_i = _build_nli_text(
+                rules[i],
+                scope_aware=self._scope_aware_nli,
+                use_verbatim=self._use_verbatim_for_nli,
+            )
+            text_j = _build_nli_text(
+                rules[j],
+                scope_aware=self._scope_aware_nli,
+                use_verbatim=self._use_verbatim_for_nli,
+            )
             nli_inputs_ab.append((text_i, text_j))
             nli_inputs_ba.append((text_j, text_i))
 

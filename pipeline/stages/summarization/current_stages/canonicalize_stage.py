@@ -172,17 +172,24 @@ class CanonicalizeStage:
                 scores = [nf.mean_grounding_score for nf in bin_nfs if nf.mean_grounding_score is not None]
                 mean_score = sum(scores) / len(scores) if scores else None
 
-                # Representative scope: take from the highest-grounded
-                # NormalFinding in the bin (predicate_text comes from the
-                # same row, so scope stays paired with the text it describes).
-                # ``RelateConfig.scope_aware_nli`` consumes this downstream;
-                # when None or all-empty, RELATE silently falls back to
-                # predicate-only NLI input.
+                # Representative scope + verbatim + paragraph pointer: all
+                # taken from the highest-grounded NormalFinding in the bin so
+                # they stay paired with the text the predicate_text actually
+                # came from.  RelateConfig.{scope_aware_nli,
+                # use_verbatim_for_nli} consume these downstream; the
+                # representative_text_element_id is a hint for
+                # helpers.paragraph_lookup.get_paragraph_for_rule (DB-backed,
+                # paragraph itself is too large to bake into JSON).
                 best_nf = max(
                     bin_nfs,
                     key=lambda n: (n.mean_grounding_score or 0.0),
                 )
                 representative_scope = best_nf.scope
+                best_span = best_nf.evidence[0] if best_nf.evidence else None
+                representative_verbatim = best_span.verbatim if best_span else None
+                representative_text_element_id = (
+                    best_span.text_element_id if best_span else None
+                )
 
                 rule = CanonicalRule(
                     canonical_id=_canonical_rule_id(group.group_id, direction),
@@ -200,6 +207,8 @@ class CanonicalizeStage:
                     mean_grounding_score=mean_score,
                     finding_count=len(bin_nfs),
                     scope=representative_scope,
+                    representative_verbatim=representative_verbatim,
+                    representative_text_element_id=representative_text_element_id,
                 )
                 canonical_rules.append(rule)
 
