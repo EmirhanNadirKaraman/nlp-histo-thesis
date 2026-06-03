@@ -1,0 +1,4324 @@
+[
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "01_docling",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 32,
+        "fp": 1,
+        "fn": 5,
+        "precision": 0.9696969696969697,
+        "recall": 0.8648648648648649,
+        "f1": 0.9142857142857143,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "table_in_figure": 1
+        }
+      },
+      "caption": {
+        "tp": 30,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9375,
+        "recall": null,
+        "f1": null,
+        "na": 1,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 14,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4375,
+        "recall": null,
+        "f1": null,
+        "na": 1,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 33,
+        "fp": 0,
+        "fn": 4,
+        "precision": 1.0,
+        "recall": 0.8918918918918919,
+        "f1": 0.9428571428571428,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 14,
+      "fp": 19,
+      "fn": 23,
+      "precision": 0.42424242424242425,
+      "recall": 0.3783783783783784,
+      "f1": 0.4000000000000001,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 33,
+      "labelled": 33,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "01_docling",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "02_tatr_090",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 36,
+        "fp": 12,
+        "fn": 1,
+        "precision": 0.75,
+        "recall": 0.972972972972973,
+        "f1": 0.8470588235294119,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "should be masked, not a table in the scientific sense": 6,
+          "table_in_figure": 1,
+          "incorrect": 5
+        }
+      },
+      "caption": {
+        "tp": 34,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9444444444444444,
+        "recall": null,
+        "f1": null,
+        "na": 12,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 19,
+        "fn": 0,
+        "precision": 0.4722222222222222,
+        "recall": null,
+        "f1": null,
+        "na": 12,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 17,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 43,
+        "fp": 5,
+        "fn": 0,
+        "precision": 0.8958333333333334,
+        "recall": 1.0,
+        "f1": 0.945054945054945,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 5
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 31,
+      "fn": 20,
+      "precision": 0.3541666666666667,
+      "recall": 0.4594594594594595,
+      "f1": 0.4000000000000001,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 48,
+      "labelled": 48,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "02_tatr_090",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "03_tatr_095",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 12,
+        "fn": 2,
+        "precision": 0.7446808510638298,
+        "recall": 0.9459459459459459,
+        "f1": 0.8333333333333334,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "should be masked, not a table in the scientific sense": 6,
+          "table_in_figure": 1,
+          "incorrect": 5
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 12,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 12,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 42,
+        "fp": 5,
+        "fn": 0,
+        "precision": 0.8936170212765957,
+        "recall": 1.0,
+        "f1": 0.9438202247191011,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 5
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 30,
+      "fn": 20,
+      "precision": 0.3617021276595745,
+      "recall": 0.4594594594594595,
+      "f1": 0.40476190476190477,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 47,
+      "labelled": 47,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "03_tatr_095",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "04_tatr_099",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 9,
+        "fn": 2,
+        "precision": 0.7954545454545454,
+        "recall": 0.9459459459459459,
+        "f1": 0.8641975308641975,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "should be masked, not a table in the scientific sense": 6,
+          "table_in_figure": 1,
+          "incorrect": 2
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 9,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 9,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 42,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9545454545454546,
+        "recall": 1.0,
+        "f1": 0.9767441860465117,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 27,
+      "fn": 20,
+      "precision": 0.38636363636363635,
+      "recall": 0.4594594594594595,
+      "f1": 0.41975308641975306,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 44,
+      "labelled": 44,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "04_tatr_099",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "05_hybrid_090",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 36,
+        "fp": 12,
+        "fn": 1,
+        "precision": 0.75,
+        "recall": 0.972972972972973,
+        "f1": 0.8470588235294119,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 5,
+          "should be masked, not a table in the scientific sense": 6,
+          "table_in_figure": 1
+        }
+      },
+      "caption": {
+        "tp": 34,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9444444444444444,
+        "recall": null,
+        "f1": null,
+        "na": 12,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 19,
+        "fn": 0,
+        "precision": 0.4722222222222222,
+        "recall": null,
+        "f1": null,
+        "na": 12,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 17,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 43,
+        "fp": 5,
+        "fn": 0,
+        "precision": 0.8958333333333334,
+        "recall": 1.0,
+        "f1": 0.945054945054945,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 5
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 31,
+      "fn": 20,
+      "precision": 0.3541666666666667,
+      "recall": 0.4594594594594595,
+      "f1": 0.4000000000000001,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 48,
+      "labelled": 48,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "05_hybrid_090",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "06_hybrid_095",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 12,
+        "fn": 2,
+        "precision": 0.7446808510638298,
+        "recall": 0.9459459459459459,
+        "f1": 0.8333333333333334,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 5,
+          "should be masked, not a table in the scientific sense": 6,
+          "table_in_figure": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 12,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 12,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 42,
+        "fp": 5,
+        "fn": 0,
+        "precision": 0.8936170212765957,
+        "recall": 1.0,
+        "f1": 0.9438202247191011,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 5
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 30,
+      "fn": 20,
+      "precision": 0.3617021276595745,
+      "recall": 0.4594594594594595,
+      "f1": 0.40476190476190477,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 47,
+      "labelled": 47,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "06_hybrid_095",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "07_hybrid_099",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 9,
+        "fn": 2,
+        "precision": 0.7954545454545454,
+        "recall": 0.9459459459459459,
+        "f1": 0.8641975308641975,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "should be masked, not a table in the scientific sense": 6,
+          "table_in_figure": 1,
+          "incorrect": 2
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 9,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 9,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 42,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9545454545454546,
+        "recall": 1.0,
+        "f1": 0.9767441860465117,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 27,
+      "fn": 20,
+      "precision": 0.38636363636363635,
+      "recall": 0.4594594594594595,
+      "f1": 0.41975308641975306,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 44,
+      "labelled": 44,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "07_hybrid_099",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "08_tatr_099_drop_tables_in_figures",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 8,
+        "fn": 2,
+        "precision": 0.813953488372093,
+        "recall": 0.9459459459459459,
+        "f1": 0.875,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "should be masked, not a table in the scientific sense": 6,
+          "incorrect": 2
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 8,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 8,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 41,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9534883720930233,
+        "recall": 1.0,
+        "f1": 0.9761904761904763,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 26,
+      "fn": 20,
+      "precision": 0.3953488372093023,
+      "recall": 0.4594594594594595,
+      "f1": 0.425,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 43,
+      "labelled": 43,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "08_tatr_099_drop_tables_in_figures",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "09_tatr_099_premask_figures_for_tables",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 9,
+        "fn": 2,
+        "precision": 0.7954545454545454,
+        "recall": 0.9459459459459459,
+        "f1": 0.8641975308641975,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "should be masked, not a table in the scientific sense": 6,
+          "table_in_figure": 1,
+          "incorrect": 2
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 9,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 9,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 42,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9545454545454546,
+        "recall": 1.0,
+        "f1": 0.9767441860465117,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 16,
+      "fp": 28,
+      "fn": 21,
+      "precision": 0.36363636363636365,
+      "recall": 0.43243243243243246,
+      "f1": 0.39506172839506176,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 44,
+      "labelled": 44,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "09_tatr_099_premask_figures_for_tables",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "10_tatr_099_drop_plus_premask",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 8,
+        "fn": 2,
+        "precision": 0.813953488372093,
+        "recall": 0.9459459459459459,
+        "f1": 0.875,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "should be masked, not a table in the scientific sense": 6,
+          "incorrect": 2
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 8,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 8,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 41,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9534883720930233,
+        "recall": 1.0,
+        "f1": 0.9761904761904763,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 16,
+      "fp": 27,
+      "fn": 21,
+      "precision": 0.37209302325581395,
+      "recall": 0.43243243243243246,
+      "f1": 0.4,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 43,
+      "labelled": 43,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "10_tatr_099_drop_plus_premask",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "11_hybrid_099_drop_tables_in_figures",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 8,
+        "fn": 2,
+        "precision": 0.813953488372093,
+        "recall": 0.9459459459459459,
+        "f1": 0.875,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "should be masked, not a table in the scientific sense": 6,
+          "incorrect": 2
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 8,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 8,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 41,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9534883720930233,
+        "recall": 1.0,
+        "f1": 0.9761904761904763,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 26,
+      "fn": 20,
+      "precision": 0.3953488372093023,
+      "recall": 0.4594594594594595,
+      "f1": 0.425,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 43,
+      "labelled": 43,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "11_hybrid_099_drop_tables_in_figures",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "12_hybrid_099_premask_figures_for_tables",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 9,
+        "fn": 2,
+        "precision": 0.7954545454545454,
+        "recall": 0.9459459459459459,
+        "f1": 0.8641975308641975,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "should be masked, not a table in the scientific sense": 6,
+          "table_in_figure": 1,
+          "incorrect": 2
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 9,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 9,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 42,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9545454545454546,
+        "recall": 1.0,
+        "f1": 0.9767441860465117,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 27,
+      "fn": 20,
+      "precision": 0.38636363636363635,
+      "recall": 0.4594594594594595,
+      "f1": 0.41975308641975306,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 44,
+      "labelled": 44,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "12_hybrid_099_premask_figures_for_tables",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "13_hybrid_099_drop_plus_premask",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 8,
+        "fn": 2,
+        "precision": 0.813953488372093,
+        "recall": 0.9459459459459459,
+        "f1": 0.875,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "should be masked, not a table in the scientific sense": 6,
+          "incorrect": 2
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 8,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 8,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 41,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9534883720930233,
+        "recall": 1.0,
+        "f1": 0.9761904761904763,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 26,
+      "fn": 20,
+      "precision": 0.3953488372093023,
+      "recall": 0.4594594594594595,
+      "f1": 0.425,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 43,
+      "labelled": 43,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "13_hybrid_099_drop_plus_premask",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "14_tatr_099_header_clip_50pts",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 2,
+        "fn": 2,
+        "precision": 0.9459459459459459,
+        "recall": 0.9459459459459459,
+        "f1": 0.9459459459459459,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 35,
+        "fp": 2,
+        "fn": 2,
+        "precision": 0.9459459459459459,
+        "recall": 0.9459459459459459,
+        "f1": 0.9459459459459459,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 20,
+      "fn": 20,
+      "precision": 0.4594594594594595,
+      "recall": 0.4594594594594595,
+      "f1": 0.4594594594594595,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "14_tatr_099_header_clip_50pts",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "15_hybrid_099_header_clip_50pts",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 2,
+        "fn": 2,
+        "precision": 0.9459459459459459,
+        "recall": 0.9459459459459459,
+        "f1": 0.9459459459459459,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 35,
+        "fp": 2,
+        "fn": 2,
+        "precision": 0.9459459459459459,
+        "recall": 0.9459459459459459,
+        "f1": 0.9459459459459459,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 20,
+      "fn": 20,
+      "precision": 0.4594594594594595,
+      "recall": 0.4594594594594595,
+      "f1": 0.4594594594594595,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "15_hybrid_099_header_clip_50pts",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "16_docling_footnote_expand_1_2",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 31,
+        "fp": 2,
+        "fn": 6,
+        "precision": 0.9393939393939394,
+        "recall": 0.8378378378378378,
+        "f1": 0.8857142857142858,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "table_in_figure": 1,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 30,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9375,
+        "recall": null,
+        "f1": null,
+        "na": 1,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 29,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.90625,
+        "recall": null,
+        "f1": null,
+        "na": 1,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 32,
+        "fp": 1,
+        "fn": 5,
+        "precision": 0.9696969696969697,
+        "recall": 0.8648648648648649,
+        "f1": 0.9142857142857143,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 28,
+      "fp": 5,
+      "fn": 9,
+      "precision": 0.8484848484848485,
+      "recall": 0.7567567567567568,
+      "f1": 0.8000000000000002,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 33,
+      "labelled": 33,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "16_docling_footnote_expand_1_2",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "17_tatr_best_family_fixes_footnote_expand_1_2",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 25,
+        "fp": 10,
+        "fn": 0,
+        "precision": 0.7142857142857143,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 8,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 24,
+      "fp": 13,
+      "fn": 13,
+      "precision": 0.6486486486486487,
+      "recall": 0.6486486486486487,
+      "f1": 0.6486486486486487,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "17_tatr_best_family_fixes_footnote_expand_1_2",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "18_hybrid_best_family_fixes_footnote_expand_1_2",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 32,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.9142857142857143,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 31,
+      "fp": 6,
+      "fn": 6,
+      "precision": 0.8378378378378378,
+      "recall": 0.8378378378378378,
+      "f1": 0.8378378378378378,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "18_hybrid_best_family_fixes_footnote_expand_1_2",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "19_docling_footnote_expand_1_0",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 31,
+        "fp": 2,
+        "fn": 6,
+        "precision": 0.9393939393939394,
+        "recall": 0.8378378378378378,
+        "f1": 0.8857142857142858,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "table_in_figure": 1,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 30,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9375,
+        "recall": null,
+        "f1": null,
+        "na": 1,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 29,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.90625,
+        "recall": null,
+        "f1": null,
+        "na": 1,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 32,
+        "fp": 1,
+        "fn": 5,
+        "precision": 0.9696969696969697,
+        "recall": 0.8648648648648649,
+        "f1": 0.9142857142857143,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 28,
+      "fp": 5,
+      "fn": 9,
+      "precision": 0.8484848484848485,
+      "recall": 0.7567567567567568,
+      "f1": 0.8000000000000002,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 33,
+      "labelled": 33,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "19_docling_footnote_expand_1_0",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "20_docling_footnote_expand_1_1",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 31,
+        "fp": 2,
+        "fn": 6,
+        "precision": 0.9393939393939394,
+        "recall": 0.8378378378378378,
+        "f1": 0.8857142857142858,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "table_in_figure": 1,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 30,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9375,
+        "recall": null,
+        "f1": null,
+        "na": 1,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 29,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.90625,
+        "recall": null,
+        "f1": null,
+        "na": 1,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 32,
+        "fp": 1,
+        "fn": 5,
+        "precision": 0.9696969696969697,
+        "recall": 0.8648648648648649,
+        "f1": 0.9142857142857143,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 28,
+      "fp": 5,
+      "fn": 9,
+      "precision": 0.8484848484848485,
+      "recall": 0.7567567567567568,
+      "f1": 0.8000000000000002,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 33,
+      "labelled": 33,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "20_docling_footnote_expand_1_1",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "21_docling_footnote_expand_1_15",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 31,
+        "fp": 2,
+        "fn": 6,
+        "precision": 0.9393939393939394,
+        "recall": 0.8378378378378378,
+        "f1": 0.8857142857142858,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "table_in_figure": 1,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 30,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9375,
+        "recall": null,
+        "f1": null,
+        "na": 1,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 29,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.90625,
+        "recall": null,
+        "f1": null,
+        "na": 1,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 32,
+        "fp": 1,
+        "fn": 5,
+        "precision": 0.9696969696969697,
+        "recall": 0.8648648648648649,
+        "f1": 0.9142857142857143,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 28,
+      "fp": 5,
+      "fn": 9,
+      "precision": 0.8484848484848485,
+      "recall": 0.7567567567567568,
+      "f1": 0.8000000000000002,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 33,
+      "labelled": 33,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "21_docling_footnote_expand_1_15",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "22_tatr_best_family_fixes_footnote_expand_1_0",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 25,
+        "fp": 10,
+        "fn": 0,
+        "precision": 0.7142857142857143,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 8,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 24,
+      "fp": 13,
+      "fn": 13,
+      "precision": 0.6486486486486487,
+      "recall": 0.6486486486486487,
+      "f1": 0.6486486486486487,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "22_tatr_best_family_fixes_footnote_expand_1_0",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "23_tatr_best_family_fixes_footnote_expand_1_1",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 25,
+        "fp": 10,
+        "fn": 0,
+        "precision": 0.7142857142857143,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 8,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 24,
+      "fp": 13,
+      "fn": 13,
+      "precision": 0.6486486486486487,
+      "recall": 0.6486486486486487,
+      "f1": 0.6486486486486487,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "23_tatr_best_family_fixes_footnote_expand_1_1",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "24_tatr_best_family_fixes_footnote_expand_1_15",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 25,
+        "fp": 10,
+        "fn": 0,
+        "precision": 0.7142857142857143,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 8,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 24,
+      "fp": 13,
+      "fn": 13,
+      "precision": 0.6486486486486487,
+      "recall": 0.6486486486486487,
+      "f1": 0.6486486486486487,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "24_tatr_best_family_fixes_footnote_expand_1_15",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "25_hybrid_best_family_fixes_footnote_expand_1_0",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 32,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.9142857142857143,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 31,
+      "fp": 6,
+      "fn": 6,
+      "precision": 0.8378378378378378,
+      "recall": 0.8378378378378378,
+      "f1": 0.8378378378378378,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "25_hybrid_best_family_fixes_footnote_expand_1_0",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "26_hybrid_best_family_fixes_footnote_expand_1_1",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 32,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.9142857142857143,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 31,
+      "fp": 6,
+      "fn": 6,
+      "precision": 0.8378378378378378,
+      "recall": 0.8378378378378378,
+      "f1": 0.8378378378378378,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "26_hybrid_best_family_fixes_footnote_expand_1_1",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "27_hybrid_best_family_fixes_footnote_expand_1_15",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 32,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.9142857142857143,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 31,
+      "fp": 6,
+      "fn": 6,
+      "precision": 0.8378378378378378,
+      "recall": 0.8378378378378378,
+      "f1": 0.8378378378378378,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "27_hybrid_best_family_fixes_footnote_expand_1_15",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "28_best_merge_tables_by_caption",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 32,
+        "fp": 4,
+        "fn": 5,
+        "precision": 0.8888888888888888,
+        "recall": 0.8648648648648649,
+        "f1": 0.8767123287671232,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 2
+        }
+      },
+      "caption": {
+        "tp": 32,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9411764705882353,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 31,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.9117647058823529,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 32,
+        "fp": 4,
+        "fn": 5,
+        "precision": 0.8888888888888888,
+        "recall": 0.8648648648648649,
+        "f1": 0.8767123287671232,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 2
+        }
+      }
+    },
+    "strict": {
+      "tp": 29,
+      "fp": 7,
+      "fn": 8,
+      "precision": 0.8055555555555556,
+      "recall": 0.7837837837837838,
+      "f1": 0.7945205479452055,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 36,
+      "labelled": 36,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "28_best_merge_tables_by_caption",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "29_best_merge_figures_by_caption",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 32,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.9142857142857143,
+        "recall": null,
+        "f1": null,
+        "na": 2,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 34,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.918918918918919,
+        "recall": 0.918918918918919,
+        "f1": 0.918918918918919,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 2,
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 31,
+      "fp": 6,
+      "fn": 6,
+      "precision": 0.8378378378378378,
+      "recall": 0.8378378378378378,
+      "f1": 0.8378378378378378,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 37,
+      "labelled": 37,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "29_best_merge_figures_by_caption",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "31_best_reconstruct_only",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 35,
+        "fp": 5,
+        "fn": 2,
+        "precision": 0.875,
+        "recall": 0.9459459459459459,
+        "f1": 0.9090909090909091,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 5
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 5,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 17,
+        "fp": 18,
+        "fn": 0,
+        "precision": 0.4857142857142857,
+        "recall": null,
+        "f1": null,
+        "na": 5,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 16,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 35,
+        "fp": 5,
+        "fn": 2,
+        "precision": 0.875,
+        "recall": 0.9459459459459459,
+        "f1": 0.9090909090909091,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 5
+        }
+      }
+    },
+    "strict": {
+      "tp": 17,
+      "fp": 23,
+      "fn": 20,
+      "precision": 0.425,
+      "recall": 0.4594594594594595,
+      "f1": 0.44155844155844154,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 40,
+      "labelled": 40,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "31_best_reconstruct_only",
+    "kind": "tables"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 62,
+        "fp": 14,
+        "fn": 0,
+        "precision": 0.8157894736842105,
+        "recall": 1.0,
+        "f1": 0.898550724637681,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "icon": 14
+        }
+      },
+      "caption": {
+        "tp": 56,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.9032258064516129,
+        "recall": null,
+        "f1": null,
+        "na": 14,
+        "skipped": 0,
+        "fp_by_label": {
+          "correct figure, no caption (caption in another page)": 3,
+          "correct figure, wrong caption (real caption in bottom right, confused page footer with caption)": 1,
+          "correct figure, wrong caption (real caption in bottom left, confused page footer with caption)": 1,
+          "no caption, caption is to the right of the figure": 1
+        }
+      },
+      "footnote": null,
+      "mask": {
+        "tp": 76,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {}
+      }
+    },
+    "strict": {
+      "tp": 55,
+      "fp": 21,
+      "fn": 0,
+      "precision": 0.7236842105263158,
+      "recall": 1.0,
+      "f1": 0.8396946564885496,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 76,
+      "labelled": 76,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 14
+    },
+    "variant": "32_best_reconstruct_plus_selected_expand",
+    "kind": "figures"
+  },
+  {
+    "by_dim": {
+      "crop": {
+        "tp": 34,
+        "fp": 6,
+        "fn": 3,
+        "precision": 0.85,
+        "recall": 0.918918918918919,
+        "f1": 0.8831168831168831,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 5,
+          "crop too big major": 1
+        }
+      },
+      "caption": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.9428571428571428,
+        "recall": null,
+        "f1": null,
+        "na": 5,
+        "skipped": 0,
+        "fp_by_label": {
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "footnote": {
+        "tp": 32,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.9142857142857143,
+        "recall": null,
+        "f1": null,
+        "na": 5,
+        "skipped": 0,
+        "fp_by_label": {
+          "missing footnotes": 1,
+          "wrong caption (footnotes matched to captions, rotated image)": 2
+        }
+      },
+      "mask": {
+        "tp": 34,
+        "fp": 6,
+        "fn": 3,
+        "precision": 0.85,
+        "recall": 0.918918918918919,
+        "f1": 0.8831168831168831,
+        "na": 0,
+        "skipped": 0,
+        "fp_by_label": {
+          "incorrect": 5,
+          "crop too big major": 1
+        }
+      }
+    },
+    "strict": {
+      "tp": 31,
+      "fp": 9,
+      "fn": 6,
+      "precision": 0.775,
+      "recall": 0.8378378378378378,
+      "f1": 0.8051948051948051,
+      "skipped": 0
+    },
+    "counts": {
+      "emitted": 40,
+      "labelled": 40,
+      "unlabelled": 0,
+      "unrecognised": 0,
+      "icon": 0
+    },
+    "variant": "32_best_reconstruct_plus_selected_expand",
+    "kind": "tables"
+  }
+]

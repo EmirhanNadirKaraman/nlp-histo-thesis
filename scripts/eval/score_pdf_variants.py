@@ -163,6 +163,13 @@ def detector_modes(variant_dir: Path) -> Tuple[str, str]:
             detector = data.get("config", {}).get("table_detector", "HYBRID")
         except Exception:
             pass
+    elif "docling" in variant_dir.name.lower():
+        # Manifest absent (e.g. scoring from eval/annotations after the
+        # out/sweeps crops were deleted, B-068): infer the detector from the
+        # variant name. Only docling-named variants use the docling table
+        # label set; every other family ran HYBRID/TATR → "full". Validated
+        # to reproduce reports/stage7_PR.md with 0 mismatches.
+        detector = "DOCLING"
     table_mode = "json_tables_docling" if detector.upper() == "DOCLING" else "json_tables_full"
     return table_mode, "json_figures"
 
@@ -872,6 +879,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     rows: List[Dict[str, Any]] = []
     for variant_dir in sorted(p for p in args.sweeps_root.iterdir() if p.is_dir()):
         variant = variant_dir.name
+        if variant.startswith("_"):
+            continue  # archive / internal dir (e.g. _archive_YYYY-MM-DD), not a variant
         figures_emitted, tables_emitted = load_emitted_crops(variant_dir)
         table_mode, figure_mode = detector_modes(variant_dir)
 
@@ -879,6 +888,14 @@ def main(argv: Optional[List[str]] = None) -> int:
                                   fallback_legacy=not args.no_legacy_fallback)
         tab_labels = load_labels(table_mode,  variant,
                                   fallback_legacy=not args.no_legacy_fallback)
+
+        # Fallback when the sweep crops were deleted (B-068): no *_media.json on
+        # disk → derive the emitted set from the annotated crop ids. The scorer
+        # skips any emitted crop without a label, so emitted == set(labels) is
+        # exact (an emitted-but-unlabelled crop contributes to no metric).
+        if not figures_emitted and not tables_emitted:
+            figures_emitted = set(fig_labels)
+            tables_emitted = set(tab_labels)
 
         if args.legacy:
             fig_m = score_kind(figures_emitted, fig_labels, classify_figure,
