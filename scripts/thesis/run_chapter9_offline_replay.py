@@ -1230,8 +1230,11 @@ def analyse_variant18_rubric() -> AnalysisResult:
             "Source: reports/stage6_PR.md."
         ),
         caveats=[
-            "The 28-PDF evaluation set is a uniform random sample of the "
-            "ingested corpus (seeded RNG in eval/run.py), not stratified.",
+            "The 27-PDF evaluation set is a uniform random sample of the "
+            "ingested corpus (seeded RNG in eval/run.py), not stratified. "
+            "(Originally 28 PDFs; PMC11863705 removed 2026-06-03 as a "
+            "multi-PDF package never ingested into the corpus; see BUGS.md "
+            "B-068.)",
         ],
     )
 
