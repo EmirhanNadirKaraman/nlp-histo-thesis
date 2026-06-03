@@ -1,6 +1,0 @@
-pmcid,bucket,title,n_sentences,n_chunks,n_text_elements,n_tables,n_figures,n_disease_entities,n_biomarker_entities,n_gene_entities,n_method_entities,n_outcome_entities,normalized_hardness,absolute_hardness,selection_reason
-PMC10100421_HIS-82-393,related,,170,17,80,4,8,86,1,73,38,64,,,"ILP related: quality=1.200, length_penalty=0.486"
-PMC4329418_his0066-0409,related,,148,15,41,7,5,53,1,56,24,35,,,"ILP related: quality=1.200, length_penalty=0.423"
-PMC6635746_HIS-73-68,related,,126,13,34,4,3,77,1,90,32,54,,,"ILP related: quality=1.200, length_penalty=0.360"
-PMC7539961_HIS-77-579,related,,175,18,45,3,2,65,1,41,27,44,,,"ILP related: quality=1.200, length_penalty=0.500"
-PMC9826086_HIS-81-786,related,,183,19,59,3,6,72,1,58,27,55,,,"ILP related: quality=1.200, length_penalty=0.523"

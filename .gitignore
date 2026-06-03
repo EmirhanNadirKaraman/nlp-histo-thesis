@@ -4,6 +4,10 @@
 /docs/sources/
 /docs/readmes/
 
+# LaTeX build 
+docs/histo_thesis/build/
+docs/histo_thesis_old/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

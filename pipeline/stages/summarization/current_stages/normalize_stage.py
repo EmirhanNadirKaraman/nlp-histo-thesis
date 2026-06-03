@@ -36,7 +36,11 @@ logger = logging.getLogger(__name__)
 # The hardcoded dict below is the fallback used when the YAML file is absent
 # or unreadable (e.g. in tests that don't have the full repo on disk).
 
-_SYNONYMS_YAML = Path(__file__).parent / "synonyms.yaml"
+# synonyms.yaml lives at the summarization package root, one level above
+# current_stages/ (B-066: the prior Path(__file__).parent pointed inside
+# current_stages/ where no file exists, silently falling back to the hardcoded
+# dict and defeating the editable YAML).
+_SYNONYMS_YAML = Path(__file__).resolve().parents[1] / "synonyms.yaml"
 
 _SYNONYMS_FALLBACK: dict[str, str] = {
     # Overall survival

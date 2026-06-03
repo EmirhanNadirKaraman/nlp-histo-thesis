@@ -1,0 +1,19 @@
+% requires \usepackage{booktabs}
+\begin{table}[t]
+  \centering
+  \caption{Page-count cap trade-off over the single-PDF candidate pool ($n=1\,070$ papers, 16\,277 pages total). Page-volume is a proxy for document-extraction cost.}
+  \label{tab:page-cap-tradeoff}
+  \begin{tabular}{@{}r r r r r@{}}
+    \toprule
+    Cap & Papers & \% papers & Page-volume & \% volume \\
+    \midrule
+    $\le 15$ & 876 & 81.9 & 6\,757 & 41.5 \\
+    $\le 20$ & 932 & 87.1 & 7\,731 & 47.5 \\
+    $\le 25$ & 963 & 90.0 & 8\,436 & 51.8 \\
+    \textbf{$\le 30$} & \textbf{981} & \textbf{91.7} & \textbf{8\,929} & \textbf{54.9} \\
+    $\le 40$ & 1\,000 & 93.5 & 9\,602 & 59.0 \\
+    $\le 50$ & 1\,014 & 94.8 & 10\,237 & 62.9 \\
+    none & 1\,070 & 100.0 & 16\,277 & 100.0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

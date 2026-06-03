@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import func
 from database import get_db_connection, Document, TextElement
-from ner import run_ner_on_db, load_ner_model, load_linker_model
+from named_entity_recognition.ner import run_ner_on_db, load_ner_model, load_linker_model
 
 # Cache file path
 CACHE_FILE = Path(__file__).parent / "entity_linking_cache.json"

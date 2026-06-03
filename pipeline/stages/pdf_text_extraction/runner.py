@@ -1159,6 +1159,22 @@ def _parse_args(argv=None):
                         "first_gap * this multiplier.  Higher values absorb "
                         "more cascading elements.  "
                         "(`CroppingConfig.footnote_threshold_multiplier`, default 1.2)")
+    p.add_argument("--max-pages", type=int, default=None,
+                   help="Skip PDFs with more than N pages (tractability cap). "
+                        "Counts pages with PyMuPDF before processing.")
+    p.add_argument("--min-pages", type=int, default=None,
+                   help="Skip PDFs with fewer than N pages.")
+    p.add_argument("--sort-by-pages", action=argparse.BooleanOptionalAction, default=True,
+                   help="Process PDFs shortest-first (ascending page count). Default "
+                        "ON; pass --no-sort-by-pages for filesystem order. Quick wins "
+                        "early and lower peak memory; unreadable PDFs sort last. Being "
+                        "ON triggers a one-pass PyMuPDF page count before extraction.")
+    p.add_argument("--main-pdf-only", action=argparse.BooleanOptionalAction, default=True,
+                   help="Keep only single-PDF PMC packages, dropping ENTIRE papers "
+                        "that shipped supplementary PDFs (any PMC id with >1 PDF — "
+                        "main and supplements both dropped). Default ON; pass "
+                        "--no-main-pdf-only to process every PDF. Prevents B-067 and "
+                        "split-across-files (partial-content) papers.")
     return p.parse_args(argv), TableDetectorType
 
 
@@ -1217,11 +1233,51 @@ def main(argv=None) -> None:
     )
 
     from pipeline.stages.pdf_text_extraction.batch import ParallelBatchRunner
-    ParallelBatchRunner(cfg, max_workers=cfg.runtime.num_workers).run(
-        pdf_dir=args.pdf_dir,
-        glob=args.glob,
-        max_docs=args.max_docs,
-    )
+
+    pdfs = sorted(args.pdf_dir.glob(args.glob))
+
+    # ── Single-PDF papers only: drop entire packages that shipped supplements ───
+    if args.main_pdf_only:
+        from collections import defaultdict as _dd
+        _by = _dd(list)
+        for _p in pdfs:
+            _by[_p.stem.split("_", 1)[0]].append(_p)
+        pdfs = sorted(g[0] for g in _by.values() if len(g) == 1)
+        _dropped = sum(1 for g in _by.values() if len(g) > 1)
+        logger.info(
+            "--main-pdf-only: %d single-PDF papers kept; %d multi-PDF (supplemented) "
+            "packages dropped entirely", len(pdfs), _dropped,
+        )
+
+    # ── Page counting (shared by the page filter and the shortest-first sort) ──
+    if args.max_pages is not None or args.min_pages is not None or args.sort_by_pages:
+        import fitz  # type: ignore  # optional dep — import inside the function
+
+        def _page_count(_path) -> int:
+            try:
+                with fitz.open(str(_path)) as _doc:
+                    return _doc.page_count
+            except Exception:  # noqa: BLE001 — unreadable PDF treated as +inf below
+                return -1
+
+        _pages = {_p: _page_count(_p) for _p in pdfs}   # one PyMuPDF pass
+
+        if args.max_pages is not None or args.min_pages is not None:
+            _lo = args.min_pages if args.min_pages is not None else 0
+            _hi = args.max_pages if args.max_pages is not None else 10 ** 9
+            _kept = [_p for _p in pdfs if _lo <= _pages[_p] <= _hi]
+            logger.info("page filter [%s, %s]: kept %d / %d PDFs",
+                        _lo, _hi, len(_kept), len(pdfs))
+            pdfs = _kept
+
+        if args.sort_by_pages:
+            pdfs = sorted(pdfs, key=lambda _p: _pages[_p] if _pages[_p] >= 0 else 10 ** 9)
+            logger.info("sorted %d PDFs by page count (shortest first)", len(pdfs))
+
+    if args.max_docs is not None:
+        pdfs = pdfs[: args.max_docs]
+
+    ParallelBatchRunner(cfg, max_workers=cfg.runtime.num_workers).run_paths(pdfs)
 
 
 if __name__ == "__main__":

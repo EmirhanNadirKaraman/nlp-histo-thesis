@@ -1,0 +1,12 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{System Overview}\label{chapter:system_overview}
+
+This chapter is a general overview of the components of the end-to-end system. It identifies the inputs our system requires, the intermediate objects produced as data flows in our subsystems, the provenance contracts that connect the final outputs back to the source evidence in the papers, reproducibility and observability design in our subsystems that enable easier evaluation and testing, and the separation of concerns between subsystems, allowing for easier per-stage evaluation.
+
+\input{chapters/system_overview/01_end_to_end_architecture}
+
+\input{chapters/system_overview/02_data_flow_and_intermediate_objects}
+
+\input{chapters/system_overview/03_provenance_as_central_design_constraint}
