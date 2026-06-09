@@ -49,7 +49,7 @@ for d in (MAP_DIR, REDUCE_DIR, RULES_DIR, CONTRADICTION_DIR):
 # ── build runner ───────────────────────────────────────────────────────────────
 voter_llms = [
     ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-    ChatOpenAI(model="gpt-4o-mini", temperature=0.7),
+    ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
 ]
 escalation_llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
 

@@ -89,7 +89,7 @@ def build_llm():
         model="gemini-2.5-flash-lite",
         project=os.environ["VERTEX_PROJECT"],
         location="global",
-        temperature=0.1,
+        temperature=0.0,
     )
 
 

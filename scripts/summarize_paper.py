@@ -26,7 +26,7 @@ print(f"  {len(file_data['sentences_with_provenance'])} sentences\n")
 runner = SummarizationRunner(
     voter_llms=[
         ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        ChatOpenAI(model="gpt-4o-mini", temperature=0.7),
+        ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
     ],
     escalation_llm=ChatOpenAI(model="gpt-4o", temperature=0.0),
     theta=0.6,

@@ -74,7 +74,7 @@ def azure_foundry_chat(
     *,
     endpoint: str | None = None,
     api_key: str | None = None,
-    temperature: float = 0.1,
+    temperature: float = 0.0,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     strip_thinking: bool = False,
 ) -> ChatOpenAI:
@@ -122,7 +122,7 @@ def vertex_gemini_chat(
     *,
     project: str | None = None,
     location: str | None = None,
-    temperature: float = 0.1,
+    temperature: float = 0.0,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     request_timeout: int = 20,
 ) -> ChatOpenAI:
@@ -182,7 +182,7 @@ def claude_vertex_chat(
     *,
     project: str | None = None,
     location: str | None = None,
-    temperature: float = 0.1,
+    temperature: float = 0.0,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     request_timeout: int = 20,
 ) -> ChatOpenAI:
@@ -238,7 +238,7 @@ def gemini_direct_chat(
     model: str,
     *,
     api_key: str | None = None,
-    temperature: float = 0.1,
+    temperature: float = 0.0,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     request_timeout: int = 60,
 ) -> ChatOpenAI:
@@ -258,7 +258,7 @@ def anthropic_direct_chat(
     model: str,
     *,
     api_key: str | None = None,
-    temperature: float = 0.1,
+    temperature: float = 0.0,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     # Sonnet 4.6 on dense MAP chunks can take 60–120s, longer under
     # concurrent load (chunk_workers ≥ 10 funnels multiple L3 escalations
@@ -282,7 +282,7 @@ def openai_direct_chat(
     model: str,
     *,
     api_key: str | None = None,
-    temperature: float = 0.1,
+    temperature: float = 0.0,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     request_timeout: int = 60,
 ) -> ChatOpenAI:

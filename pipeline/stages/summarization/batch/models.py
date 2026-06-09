@@ -25,7 +25,7 @@ class VoterBatchConfig:
     model: str
     provider: str           # "azure" | "claude" | "gemini" | "vertex_gemini"
     max_tokens: int = DEFAULT_MAX_TOKENS
-    temperature: float = 0.1
+    temperature: float = 0.0
     strip_thinking: bool = False  # strip <think>…</think> from response
 
 
@@ -37,7 +37,7 @@ class BatchRequest:
     model: str
     provider: str
     max_tokens: int = DEFAULT_MAX_TOKENS
-    temperature: float = 0.1
+    temperature: float = 0.0
 
 
 @dataclass

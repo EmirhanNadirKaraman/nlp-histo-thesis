@@ -16,14 +16,14 @@ cfg = SummarizationConfig(map=MapConfig(theta=0.65))   # override just what you 
 
 runner = SummarizationRunner(
     voter_llms=[                                                   # Level 1: cheapest
-        AzureChatOpenAI(model="DeepSeek-V3.2-Speciale",          temperature=0.1),
-        VertexAI(model="gemini-2.5-flash-lite-preview-06-17",     temperature=0.1),
-        AzureChatOpenAI(model="mistral-large-3",                  temperature=0.1),
+        AzureChatOpenAI(model="DeepSeek-V3.2-Speciale",          temperature=0.0),
+        VertexAI(model="gemini-2.5-flash-lite-preview-06-17",     temperature=0.0),
+        AzureChatOpenAI(model="mistral-large-3",                  temperature=0.0),
     ],
     level2_voter_llms=[                                            # Level 2: mid-tier
-        VertexAI(model="gemini-2.5-flash",                        temperature=0.1),
-        AzureChatOpenAI(model="kimi-k2.5",                        temperature=0.1),
-        ChatAnthropic(model="claude-haiku-4-5-20251001",          temperature=0.1),
+        VertexAI(model="gemini-2.5-flash",                        temperature=0.0),
+        AzureChatOpenAI(model="kimi-k2.5",                        temperature=0.0),
+        ChatAnthropic(model="claude-haiku-4-5-20251001",          temperature=0.0),
     ],
     escalation_llm=ChatAnthropic(model="claude-sonnet-4-6", temperature=0),  # Level 3
     config=cfg,

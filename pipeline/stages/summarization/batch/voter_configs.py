@@ -69,9 +69,9 @@ def make_l1_voters():
     """
     from .models import VoterBatchConfig
     return [
-        VoterBatchConfig(GEMINI_L1, provider="gemini", temperature=0.1),
-        VoterBatchConfig(OPENAI_L1, provider="openai", temperature=0.1),
-        VoterBatchConfig(OPENAI_L1_B, provider="openai", temperature=0.1),
+        VoterBatchConfig(GEMINI_L1, provider="gemini", temperature=0.0),
+        VoterBatchConfig(OPENAI_L1, provider="openai", temperature=0.0),
+        VoterBatchConfig(OPENAI_L1_B, provider="openai", temperature=0.0),
     ]
 
 
@@ -79,9 +79,9 @@ def make_l2_voters():
     """L2 voter list (for `real` profile): Gemini-Flash, GPT-4.1-mini, Claude-Haiku."""
     from .models import VoterBatchConfig
     return [
-        VoterBatchConfig(GEMINI_L2, provider="gemini", temperature=0.1),
-        VoterBatchConfig(OPENAI_L2, provider="openai", temperature=0.1),
-        VoterBatchConfig(CLAUDE_L2, provider="claude", temperature=0.1),
+        VoterBatchConfig(GEMINI_L2, provider="gemini", temperature=0.0),
+        VoterBatchConfig(OPENAI_L2, provider="openai", temperature=0.0),
+        VoterBatchConfig(CLAUDE_L2, provider="claude", temperature=0.0),
     ]
 
 
@@ -111,16 +111,16 @@ def _make_cheap_profile() -> CascadeProfile:
     CascadeProfile structurally requires an L3 voter, but semantically this is
     a 2-tier cascade — any L2 disagreement re-runs at the same tier rather
     than escalating to a more expensive model.
-    All voters use temperature=0.1.
+    All voters use temperature=0.0.
     """
     from .models import VoterBatchConfig
     l1 = [
-        VoterBatchConfig(GEMINI_L1, provider="gemini", temperature=0.1),
-        VoterBatchConfig(OPENAI_L1, provider="openai", temperature=0.1),
-        VoterBatchConfig(OPENAI_L1_B, provider="openai", temperature=0.1),
+        VoterBatchConfig(GEMINI_L1, provider="gemini", temperature=0.0),
+        VoterBatchConfig(OPENAI_L1, provider="openai", temperature=0.0),
+        VoterBatchConfig(OPENAI_L1_B, provider="openai", temperature=0.0),
     ]
-    l2 = [VoterBatchConfig(OPENAI_L2, provider="openai", temperature=0.1)]
-    l3 = VoterBatchConfig(OPENAI_L2, provider="openai", temperature=0.1)
+    l2 = [VoterBatchConfig(OPENAI_L2, provider="openai", temperature=0.0)]
+    l3 = VoterBatchConfig(OPENAI_L2, provider="openai", temperature=0.0)
     return CascadeProfile(name="cheap", l1_voters=l1, l2_voters=l2, l3_voter=l3)
 
 
@@ -128,21 +128,21 @@ def _make_real_profile() -> CascadeProfile:
     """3-tier production cascade across 3 providers.
 
     L1: Gemini-Flash-Lite, GPT-4o-mini, GPT-4.1-nano — cheapest tier (no
-    Claude voter at L1; Claude enters at L2 as Haiku). temperature=0.1.
-    L2: mid-tier — Gemini-Flash, GPT-4.1-mini, Claude-Haiku. temperature=0.1.
+    Claude voter at L1; Claude enters at L2 as Haiku). temperature=0.0.
+    L2: mid-tier — Gemini-Flash, GPT-4.1-mini, Claude-Haiku. temperature=0.0.
     L3: Claude-Sonnet. temperature=0.0 (deterministic final escalation).
     Use for real evaluation runs.
     """
     from .models import VoterBatchConfig
     l1 = [
-        VoterBatchConfig(GEMINI_L1, provider="gemini", temperature=0.1),
-        VoterBatchConfig(OPENAI_L1, provider="openai", temperature=0.1),
-        VoterBatchConfig(OPENAI_L1_B, provider="openai", temperature=0.1),
+        VoterBatchConfig(GEMINI_L1, provider="gemini", temperature=0.0),
+        VoterBatchConfig(OPENAI_L1, provider="openai", temperature=0.0),
+        VoterBatchConfig(OPENAI_L1_B, provider="openai", temperature=0.0),
     ]
     l2 = [
-        VoterBatchConfig(GEMINI_L2, provider="gemini", temperature=0.1),
-        VoterBatchConfig(OPENAI_L2, provider="openai", temperature=0.1),
-        VoterBatchConfig(CLAUDE_L2, provider="claude", temperature=0.1),
+        VoterBatchConfig(GEMINI_L2, provider="gemini", temperature=0.0),
+        VoterBatchConfig(OPENAI_L2, provider="openai", temperature=0.0),
+        VoterBatchConfig(CLAUDE_L2, provider="claude", temperature=0.0),
     ]
     l3 = VoterBatchConfig(CLAUDE_L3, provider="claude", temperature=0.0)
     return CascadeProfile(name="real", l1_voters=l1, l2_voters=l2, l3_voter=l3)
@@ -158,14 +158,16 @@ def _make_haiku_only_profile() -> CascadeProfile:
     are populated structurally (the dataclass requires them) but are dead
     code at runtime.
 
-    Temperature is ``0.1`` at every tier to match the EXP B.2 measurement:
-    the cited Haiku-only strict_f1 = 0.696 was generated at L2 in the
-    ``real`` profile, where Haiku runs at ``t=0.1``. Shipping at any other
-    temperature would invalidate the empirical basis for the cited
-    accuracy (cf. ``docs/EXP_B2_RESULTS.md``). It also keeps the cached
-    L2-Haiku voter outputs in ``eval/data/map_primer/voter_cache.json``
-    reusable should we want to replay any silver-set chunk under this
-    profile.
+    Temperature is ``0.0`` at every tier for determinism / reproducibility:
+    the pipeline output (and the reported strict_f1) is then a fixed function
+    of the inputs, and the cascade's agreement signal reflects genuine
+    inter-model disagreement rather than intra-model sampling noise. This
+    supersedes the earlier ``t=0.1`` setting that was pinned to the EXP B.2
+    measurement (Haiku-only strict_f1 ≈ 0.696, cf. ``docs/EXP_B2_RESULTS.md``);
+    those numbers must be re-measured at ``t=0``. Because the voter cache key
+    includes temperature (``voter_config_hash``), this flip invalidates the
+    cached outputs in ``eval/data/map_primer/voter_cache.json`` — re-prime to
+    regenerate.
 
     Cost: ~\\$0.0036 / chunk (token assumption: 1500 in + 600 out). Use for
     cost-effective production runs that accept the EXP B.2 dev-split result
@@ -175,7 +177,7 @@ def _make_haiku_only_profile() -> CascadeProfile:
     accuracy ranking is not a matcher artifact.
     """
     from .models import VoterBatchConfig
-    haiku = VoterBatchConfig(CLAUDE_HAIKU, provider="claude", temperature=0.1)
+    haiku = VoterBatchConfig(CLAUDE_HAIKU, provider="claude", temperature=0.0)
     return CascadeProfile(
         name="haiku_only",
         l1_voters=[haiku],

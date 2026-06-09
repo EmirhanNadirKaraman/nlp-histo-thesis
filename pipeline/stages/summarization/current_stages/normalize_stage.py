@@ -27,100 +27,43 @@ from collections import defaultdict
 from pathlib import Path
 
 from ..models import DirectionEnum, Finding, FindingScope, NormalFinding, RelationTypeEnum, SourceSpan
-from ..umls_utils import UMLS_THRESHOLD as _UMLS_THRESHOLD, best_cui as _best_cui
+from ..umls_utils import best_cui as _best_cui
 
 logger = logging.getLogger(__name__)
 
 # ── Synonym dictionary ─────────────────────────────────────────────────────────
-# Canonical source of truth is synonyms.yaml in this directory.
-# The hardcoded dict below is the fallback used when the YAML file is absent
-# or unreadable (e.g. in tests that don't have the full repo on disk).
-
-# synonyms.yaml lives at the summarization package root, one level above
-# current_stages/ (B-066: the prior Path(__file__).parent pointed inside
-# current_stages/ where no file exists, silently falling back to the hardcoded
-# dict and defeating the editable YAML).
+# synonyms.yaml is the SINGLE source of truth — there is no hardcoded fallback.
+# It lives at the summarization package root, one level above current_stages/
+# (B-066: the prior Path(__file__).parent pointed inside current_stages/ where no
+# file exists. With the fallback removed, a missing or unreadable YAML now yields
+# an empty synonym map and a loud error instead of silently masking the problem
+# with a stale hardcoded dict.)
 _SYNONYMS_YAML = Path(__file__).resolve().parents[1] / "synonyms.yaml"
-
-_SYNONYMS_FALLBACK: dict[str, str] = {
-    # Overall survival
-    "overall survival":          "OS",
-    "os":                        "OS",
-    "overall survival rate":     "OS",
-    # Progression-free survival
-    "progression-free survival": "PFS",
-    "pfs":                       "PFS",
-    "progression free survival": "PFS",
-    # Disease-free survival
-    "disease-free survival":     "DFS",
-    "dfs":                       "DFS",
-    # Common biomarkers — surface variants
-    "cd30":                      "CD30",
-    "ber-h2":                    "CD30",
-    "ki-67":                     "Ki-67",
-    "ki67":                      "Ki-67",
-    "mib-1":                     "Ki-67",
-    "mib1":                      "Ki-67",
-    "bcl-2":                     "BCL2",
-    "bcl2":                      "BCL2",
-    "bcl-6":                     "BCL6",
-    "bcl6":                      "BCL6",
-    "myc":                       "MYC",
-    "c-myc":                     "MYC",
-    "pd-l1":                     "PD-L1",
-    "pdl1":                      "PD-L1",
-    "cd20":                      "CD20",
-    "cd3":                       "CD3",
-    "cd8":                       "CD8",
-    "cd4":                       "CD4",
-    "cd10":                      "CD10",
-    "cd31":                      "CD31",
-    "cd34":                      "CD34",
-    "cd138":                     "CD138",
-    "cd56":                      "CD56",
-    "cd30 expression":           "CD30",
-    "cd30 positivity":           "CD30",
-    "bcl2 expression":           "BCL2",
-    "myc expression":            "MYC",
-    # Treatment
-    "r-chop":                    "R-CHOP",
-    "r chop":                    "R-CHOP",
-    "rituximab-chop":            "R-CHOP",
-    "chop":                      "CHOP",
-    # Disease entity variants — extend as new papers are processed
-    # CEAN: Cutaneous Epithelioid Angiomatous Nodule
-    "caen":                                      "CEAN",
-    "cean":                                      "CEAN",
-    "cutaneous epithelioid angiomatous nodule":   "CEAN",
-    "epithelioid angiomatous nodule":             "CEAN",
-    # Cell population capitalisation variants
-    "tumour cells":              "tumour cells",
-    "tumor cells":               "tumour cells",
-    "tumour cell":               "tumour cells",
-    "tumor cell":                "tumour cells",
-    "neoplastic cells":          "tumour cells",
-    # Disease subtypes — keep as-is (subtype normalization is scope's job)
-}
 
 
 def _load_synonyms() -> dict[str, str]:
-    """
-    Load the synonym dictionary from synonyms.yaml if available,
-    otherwise fall back to the hardcoded dict.
+    """Load the synonym dictionary from synonyms.yaml — the single source of truth.
+
+    There is no hardcoded fallback: if the file is missing, unreadable, or not a
+    mapping, return an empty dict and log an error (synonyms come *only* from the
+    YAML). PyYAML is a hard dependency, so an import failure is surfaced too.
     """
     try:
         import yaml  # type: ignore
         with open(_SYNONYMS_YAML, encoding="utf-8") as f:
             data = yaml.safe_load(f)
-        if isinstance(data, dict):
-            loaded = {str(k).lower(): str(v) for k, v in data.items()}
-            logger.debug("NORMALIZE: loaded %d synonyms from %s", len(loaded), _SYNONYMS_YAML)
-            return loaded
     except FileNotFoundError:
-        logger.debug("NORMALIZE: synonyms.yaml not found, using hardcoded fallback")
+        logger.error("NORMALIZE: synonyms.yaml not found at %s — no synonyms loaded", _SYNONYMS_YAML)
+        return {}
     except Exception as exc:
-        logger.warning("NORMALIZE: failed to load synonyms.yaml (%s), using hardcoded fallback", exc)
-    return dict(_SYNONYMS_FALLBACK)
+        logger.error("NORMALIZE: failed to load synonyms.yaml (%s) — no synonyms loaded", exc)
+        return {}
+    if not isinstance(data, dict):
+        logger.error("NORMALIZE: synonyms.yaml is not a mapping — no synonyms loaded")
+        return {}
+    loaded = {str(k).lower(): str(v) for k, v in data.items()}
+    logger.debug("NORMALIZE: loaded %d synonyms from %s", len(loaded), _SYNONYMS_YAML)
+    return loaded
 
 
 _SYNONYMS: dict[str, str] = _load_synonyms()

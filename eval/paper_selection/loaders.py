@@ -21,6 +21,27 @@ logger = logging.getLogger(__name__)
 _PROGRESS_EVERY = 50
 
 
+# ── Selection-YAML helper ────────────────────────────────────────────────────
+
+def load_pmcids_from_selection(path: str | Path) -> list[str]:
+    """Flatten a ``related``/``diverse``/``hard`` selection YAML to its PMCID list.
+
+    Accepts both the wrapped form (a single top-level version key, e.g.
+    ``related15_full_recheck:``) and a bare ``{related: [...], ...}`` mapping.
+    """
+    import yaml
+
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    block = data
+    if not any(k in block for k in ("related", "diverse", "hard")) and data:
+        block = next(iter(data.values())) or {}
+    return [
+        *(block.get("related") or []),
+        *(block.get("diverse") or []),
+        *(block.get("hard") or []),
+    ]
+
+
 @dataclass
 class RawEntity:
     """One entity row, in either backend."""

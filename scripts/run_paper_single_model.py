@@ -83,21 +83,21 @@ def build_llm(model: str = "gemini"):
             model="gemini-2.5-flash-lite",
             project=os.environ["VERTEX_PROJECT"],
             location="global",
-            temperature=0.1,
+            temperature=0.0,
             timeout=20,   # fail fast: normal responses are 5-10s
         )
     if model == "haiku":
         from langchain_anthropic import ChatAnthropic
         return ChatAnthropic(
             model="claude-haiku-4-5-20251001",
-            temperature=0.1,
+            temperature=0.0,
             timeout=30,
         )
     if model == "sonnet":
         from langchain_anthropic import ChatAnthropic
         return ChatAnthropic(
             model="claude-sonnet-4-6",
-            temperature=0.1,
+            temperature=0.0,
             timeout=60,
         )
     raise ValueError(f"unknown --model {model!r}; expected one of {MODEL_CHOICES}")
