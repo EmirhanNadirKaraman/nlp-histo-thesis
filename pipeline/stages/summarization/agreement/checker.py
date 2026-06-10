@@ -64,7 +64,7 @@ class AgreementChecker:
         self,
         scorer: MapOutputScorer,
         theta: float = 0.7,
-        reject_theta: float = 0.2,
+        reject_theta: float = 0.0,
         single_voter_policy: Literal["keep", "escalate"] = "keep",
         force_escalate_on_polarity_conflict: bool = True,
     ) -> None:

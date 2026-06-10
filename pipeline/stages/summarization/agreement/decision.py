@@ -41,6 +41,12 @@ class ChunkOutcome:
     agreement_bundle: ScoreBundle | None
     routing_decision: object | None = None  # RoutingDecision | None — avoid circular import
     valid_voter_indices: list[int] | None = None
+    rejected: bool = False
+    """True when this level's decision was ChunkDecision.REJECT (deferral score
+    <= reject_theta). Distinguishes a *reject* from a plain *escalate* among the
+    ``keep=False`` outcomes so the cascade can drop the chunk instead of
+    escalating it (see ``MapConfig.reject_theta`` / the drop-on-reject policy).
+    Always False on the empty-voter escalate path."""
 
 
 def evaluate_chunk(
@@ -107,6 +113,7 @@ def evaluate_chunk(
             agreement_bundle=decision.agreement_details,
             routing_decision=decision,
             valid_voter_indices=mapped_indices,
+            rejected=(decision.decision == ChunkDecision.REJECT),
         )
 
     bundle = agreement.compute(voters, source_text=source_text)
@@ -125,6 +132,7 @@ def evaluate_chunk(
         agreement_bundle=bundle,
         routing_decision=None,
         valid_voter_indices=list(voter_indices),
+        rejected=(bundle.decision == ChunkDecision.REJECT),
     )
 
 

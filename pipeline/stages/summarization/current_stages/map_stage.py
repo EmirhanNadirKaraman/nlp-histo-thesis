@@ -158,7 +158,7 @@ class MapStage:
         level2_voter_llms: list,
         escalation_llm,
         theta: float = 0.7,
-        reject_theta: float = 0.2,
+        reject_theta: float = 0.0,
         chunk_size: int = 10,
         chunk_overlap: int = 0,
         chunk_workers: int = 5,
@@ -675,6 +675,15 @@ class MapStage:
                 voters_full=[result], voter_specs=[self._l3_spec],
                 voter_timings=None, selected_voter_index=0,
             )
+        elif l1_outcome.rejected:
+            # Legacy drop-on-reject: deferral <= reject_theta at L1, so the chunk
+            # does not escalate and emits nothing (result stays None → counted as
+            # dropped). With reject_theta=0.0 (default) this branch is effectively
+            # unreachable for non-degenerate chunks; raise reject_theta to enable.
+            logger.info(
+                "Chunk %s rejected at L1 (deferral <= reject_theta) — dropping, no escalation",
+                chunk_id,
+            )
         else:
             # Legacy path: L1 → L2 → L3 staircase (no router). Reuses
             # evaluate_chunk for the L2 decision so the sync/batch surface
@@ -716,6 +725,13 @@ class MapStage:
             if l2_outcome.keep:
                 result = l2_outcome.best
                 _producer = producer_from_outcome(l2_outcome, self._l2_specs)
+            elif l2_outcome.rejected:
+                # Drop-on-reject at L2: no L3 escalation, emit nothing
+                # (result stays None → counted as dropped).
+                logger.info(
+                    "Chunk %s rejected at L2 (deferral <= reject_theta) — dropping, no escalation",
+                    chunk_id,
+                )
             else:
                 _escalated = True
                 _escalation_level = 3

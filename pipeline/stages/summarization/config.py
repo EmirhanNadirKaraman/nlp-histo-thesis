@@ -53,8 +53,16 @@ class MapConfig:
     theta: float = 0.8
     """Deferral score >= theta → KEEP without escalation."""
 
-    reject_theta: float = 0.2
-    """Deferral score <= reject_theta → hard REJECT the chunk."""
+    reject_theta: float = 0.0
+    """Deferral score <= reject_theta → hard REJECT (drop) the chunk: no finding
+    is emitted and the chunk does not escalate. This is the single toggle for the
+    drop-on-reject policy. Because deferral scores are in [0, 1], the default
+    ``0.0`` disables dropping for all non-degenerate chunks — every sub-theta
+    chunk escalates instead (L3 is the always-emitting floor), which reproduces
+    the pre-2026-06 behaviour where REJECT was computed but routed identically to
+    ESCALATE. Set ``reject_theta > 0`` to make the drop live (e.g. ``0.2`` drops
+    chunks whose consensus is too weak to trust). Calibratable on the
+    development split alongside ``theta``."""
 
     chunk_size: int = 10
     """Sentences per MAP chunk."""

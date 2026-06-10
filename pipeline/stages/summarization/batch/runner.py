@@ -1193,6 +1193,7 @@ class BatchSummarizationRunner:
 
         # ── Pass 3: agreement scoring from cache — no API calls ───────────────
         escalated: list[str] = []
+        dropped_chunks: list[str] = []  # legacy drop-on-reject (reject_theta > 0)
 
         for chunk_id in targets:
             voters_full = chunk_voters[chunk_id]
@@ -1256,6 +1257,16 @@ class BatchSummarizationRunner:
             if outcome.keep:
                 assert outcome.best is not None  # invariant of ChunkOutcome
                 handle.finalized[chunk_id] = outcome.best.model_dump()
+            elif outcome.rejected and not self._enable_router:
+                # Legacy drop-on-reject: deferral <= reject_theta, so the chunk is
+                # neither finalized nor escalated — it emits nothing. Mirrors the
+                # sync MapStage legacy path. With reject_theta=0.0 (default) this
+                # is unreachable for non-degenerate chunks.
+                logger.info(
+                    "[%s] Chunk %s rejected at %s (deferral <= reject_theta) — dropping",
+                    pmcid, chunk_id, level.upper(),
+                )
+                dropped_chunks.append(chunk_id)
             else:
                 if outcome.routing_decision is not None:
                     logger.debug(
@@ -1267,10 +1278,11 @@ class BatchSummarizationRunner:
                     )
                 escalated.append(chunk_id)
 
-        kept = len(targets) - len(escalated)
+        kept = len(targets) - len(escalated) - len(dropped_chunks)
         logger.info(
-            "[%s] %s complete: %d kept, %d escalated to %s",
+            "[%s] %s complete: %d kept, %d escalated to %s, %d dropped",
             pmcid, level.upper(), kept, len(escalated), next_level.upper(),
+            len(dropped_chunks),
         )
 
         if escalated:
