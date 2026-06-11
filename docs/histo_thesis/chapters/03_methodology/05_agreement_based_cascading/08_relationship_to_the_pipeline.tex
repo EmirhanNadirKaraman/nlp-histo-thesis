@@ -1,0 +1,16 @@
+\subsection{Relationship to the rest of the pipeline}
+
+Agreement-based cascading operates at the MAP stage. It does not filter individual findings, it only chooses which voter's output should be consumed by downstream stages for each chunk. ABC is not the only quality-control mechanism in the knowledge-extraction pipeline of \pinktodo{Section 3.4, Knowledge extraction}: the downstream pipeline after the MAP stage has its own quality-control filters and checks on the MAP output: 
+
+\begin{itemize}
+    \item \textbf{GROUNDING} (\pinktodo{Section 3.4.4, Grounding}) drops findings whose verbatim source text does not entail the claim that is made.
+    \item \textbf{NORMALIZE} and \textbf{GROUP}. (\pinktodo{Section 3.4.5, Normalize and group}) reduce surface-form variation in subject and outcome entity strings before grouping, so that trivial variants of the same entities do not leak into separate \texttt{CanonicalRule} objects. 
+    \item \textbf{CANONICALIZE.} (\pinktodo{Section 3.4.6, Canonicalize}) creates one \texttt{CanonicalRule} per direction bin, and flags groups with polarity conflicts.
+    \item \textbf{RELATE} and \textbf{RESOLVE} (\pinktodo{Sections 3.4.7 -- 3.4.8, Relate and resolve}) operate on canonical rules, comparable canonical rules are compared to each other and their confidence scores are calculated based on the rules that support or contradict, and then ranked based on this scoring. This is a different type of quality-control compared to the previous stages: rather than dropping untrustworthy voter outputs, quality-control at these stages is done by only scoring and ranking rules, not by dropping them.
+\end{itemize}
+
+\pinktodo{Trim the last bullet point a little bit.}
+
+ABC's contribution to the quality of the pipeline output is bounded by what MAP voters can produce: even the output of an optimal cascade is still filtered through GROUNDING and re-scored in the RESOLVE stage. The cascade reduces the reliance on expensive MAP calls where there is a strong agreement between voters, and the later stages provide additional safeguards and filters against unsupported, conflicting, duplicated, or weakly scored claims. 
+
+All in all, ABC should be understood as one quality control stage within a larger system with a layered quality-control design. It is not the only quality control stage, nor does it replace grounding, normalization, grouping, canonicalization, relation classification, or final scoring.

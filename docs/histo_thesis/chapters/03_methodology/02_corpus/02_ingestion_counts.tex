@@ -1,0 +1,49 @@
+\subsection{Ingestion counts}
+
+The main corpus, which the document selection for the document and knowledge extraction stages are made from, is derived from the initial filtering of biomedical papers described in \pinktodo{Section 3.1.1} The paper counts for the evaluation of different sections should not be conflated.
+
+The papers downloaded from PMC OA based on the filtering, and the counts before and after filtering, are listed in Table~\ref{tab:corpus-acquisition-counts}. 
+
+\begin{table}[htpb]
+  \caption[Corpus acquisition and filtering counts]{Corpus acquisition counts. Distinguishes downloaded PDF files, targeted PMC identifiers, file counts after the filters, and successfully ingested papers.}
+  \label{tab:corpus-acquisition-counts}
+  \centering
+  \begin{tabular}{l l r}
+    \toprule
+      Count & Unit & Value \\
+    \midrule
+        Downloaded PDF files & File on disk & \textbf{1\,132} \\
+        Targeted PMC identifiers & Identifier list & \textbf{1\,093} \\
+        Single-PDF papers after supplementary-PDF exclusion & Paper & \textbf{1\,070} \\
+        Candidates after \(\leq 30\)-page filter & Paper & \textbf{981} \\
+        Successfully ingested papers in the database & Document row & \textbf{977} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The acquisition step targets the 1\,093 targeted PMC OA identifiers selected in §4.1. The 1,132 downloaded PDF files are not a paper count. This number is higher than the number of targeted PMC OA identifiers, as some PMC packages contain supplementary PDF files in addition to the main articles. 
+
+Two filters define the main corpus selected for document extraction. First, any package that contains supplementary PDF material are excluded entirely from the corpus; only papers with a single, self-contained PDF text are kept, leaving 1070 papers. Second, a page count cap for faster document extraction is run, and files with more than 30 pages (p92 when page counts are in ascending order) are filtered out: the long tail is a small subset of papers with a large share of extraction time, so capping the page counts roughly halves extraction time, while dropping under a tenth of papers, as seen in Table~\ref{tab:page-cap-tradeoff}. This leaves 981 candidates, of which 977 are parsed successfully, extracted and ingested into the database; the details of the extraction is explained in \pinktodo{Chapter 5.} 4 candidate papers fail Docling conversion on malformed PDF files (missing page-dimension metadata). 
+
+\begin{table}[t]
+  \centering
+  \caption{Page-count cap trade-off over the single-PDF candidate pool ($n=1\,070$ papers, 16\,277 pages total). Page-volume is a proxy for document-extraction cost.}
+  \label{tab:page-cap-tradeoff}
+  \begin{tabular}{@{}r r r r r@{}}
+    \toprule
+    Cap & Papers & \% papers & Page-volume & \% volume \\
+    \midrule
+    $\le 15$ & 876 & 81.9 & 6\,757 & 41.5 \\
+    $\le 20$ & 932 & 87.1 & 7\,731 & 47.5 \\
+    $\le 25$ & 963 & 90.0 & 8\,436 & 51.8 \\
+    \textbf{$\le 30$} & \textbf{981} & \textbf{91.7} & \textbf{8\,929} & \textbf{54.9} \\
+    $\le 40$ & 1\,000 & 93.5 & 9\,602 & 59.0 \\
+    $\le 50$ & 1\,014 & 94.8 & 10\,237 & 62.9 \\
+    none & 1\,070 & 100.0 & 16\,277 & 100.0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The 977 ingested papers therefore are the final corpus for the downstream stages discussed in \pinktodo{Chapters 6 -- 10.}. The other counts are reported for transparency: they describe acquisition inputs before and after the two discussed filters. The single-PDF and \(\leq 30\) page selection is reproducible from the extraction CLI; the mechanics of fetching, unpacking, and organizing the files are steps documented in the repository.
+
+\pinktodo{Fix the comma and space inconsistencies for number separator}

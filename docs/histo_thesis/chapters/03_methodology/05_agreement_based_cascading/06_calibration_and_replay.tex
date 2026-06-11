@@ -1,0 +1,12 @@
+\subsection{Calibration and replay}
+
+There are three groups of calibration parameters in the cascade: the agreement scorer and its weights, described in \pinktodo{Section 3.5.3, Agreement scoring}; the threshold pair $(\theta, \theta_{\mathrm{reject}})$ of \pinktodo{Section 3.5.4, Accept, reject, escalate}; and the safety gates of \pinktodo{Section 3.5.5, Safety gates and hard fail policies}. These parameters are calibrated on the calibration dataset, through an offline-replay protocol. The agreement scorer and thresholds are swept jointly, whereas safety-gate flags are evaluated through ablations. 
+
+The replay protocol is designed based on one observation: once we collect voter outputs once, changes to the agreement scorer, thresholds, or safety policies can be evaluated offline, without having to make further LLM calls. The voter outputs are cached: the cache records the \texttt{AuditableSummary} output of each voter at each cascade tier, for each chunk. Thus, any possible escalation path can be replayed offline. 
+
+\pinktodo{Check if we are going to have any experiments and strict-F1 results for the calibration threshold sweep experiments. }
+After collecting each voter output, the calibration becomes a deterministic replay problem. Using the cached voter outputs, joint sweeps over $(\text{agreement scorer}, \theta, \theta_{\mathrm{reject}})$ and ablations of the safety flags are run. \pinktodo{Section 3.6.x, Calibration grid} defines the calibration grid, and \pinktodo{Chapter 4, Results} reports the strict-F1 scores for the different configurations of the cascade thresholds and options.
+
+The offline replay protocol has important reproducibility consequences. It removes external API calls from the calibration loop; once the primer cache has been generated, the calibration process becomes fully offline, quick, and cheap. This cache design, however, constrains calibrations to the configurations the cache can support: changes in the voter pool, model identifiers, model temperatures, or MAP prompts invalidate the cache, and a fresh pass of LLM calls is required. This protocol, therefore, trades flexibility for reproducibility: calibration is cheap and replayable as long as the voter pool, voter settings and prompts are unchanged.
+
+\pinktodo{Maybe we can add a reference to a section that discusses this trade-off with measurements and numbers.}

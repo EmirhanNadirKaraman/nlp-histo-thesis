@@ -1,0 +1,18 @@
+\subsection{Agreement scoring}
+
+The agreement scorer takes the set of voter outputs per chunk, and returns a score in $[0,1]$. This score measures how consistent the voters are on the underlying claim set, and is used as the routing signal of the cascade: it is compared against the accept and reject thresholds of \pinktodo{Section 3.5.4, Accept, reject, escalate} to produce the decision.
+
+\pinktodo{Check the "average number of sources per finding" claim.}
+The production scoring uses the max-consensus agreement model, adopted from \parencite{soiffer2025semantic}. For a chunk with $N$ eligible non-empty voter outputs, the scorer constructs an $N \times N$ pairwise similarity matrix, takes each voter's mean similarity to the other voters, and reports the maximum of the means as the deferral score. In other words, the score is the mean similarity of the voter that is most aligned with the other voters. If the cascade accepts at that tier, this most-consensus aligned voter is selected as the candidate to keep, and ties are broken by grounding quality: fraction of findings that passed provenance validation, followed by the average number of sources per finding, and the number of findings as the fallback.
+
+\pinktodo{You might wanna rewrite the embedding strategy explanation.}
+
+The production configurations only differ in how pairwise similarity is calculated. The default configuration uses a \textbf{embedding} strategy. Each finding claim is embedded with a text-embedding model, and claim-to-claim cosine similarities are soft-aligned through a best-match coverage and a single voter-pair score is obtained: for each claim, the single-best counterpart in the other set is found, then averaged. This score is adjusted for claim-count imbalance, polarity/numeric contradictions, and match reuse: the cases of one broad claim matching multiple claims in the other set, different number of claims per set, and contradicting numbers and polarity values in claim pairs are penalized.
+
+The alternative configuration is a \textbf{hybrid} strategy. It combines four signals over the same voter outputs using weights that sum to one: claim-embedding alignment, Jaccard overlap of finding categories, Jaccard overlap of biomedical entities in claims, and Jaccard overlap of cited text-element identifiers. The embedding-only strategy is a corner case of the hybrid strategy, with a weight value of one for the claim embeddings. Other weight configurations of the hybrid strategy test whether structured Jaccard overlaps add useful routing information beyond pure embedding similarity.
+
+The scorer strategies and weights within are calibration parameters; their best settings on the calibration set and the obtained results are reported in \pinktodo{Chapter 4, Results}.
+
+\pinktodo{Check the correctness of the last sentence in the following paragraph.}
+
+The agreement score is an agreement signal, not a correctness signal: a high agreement score means the voters returned similar claim sets, it does not mean that the consensus is correct. Agreement-based routing is implemented, based on the assumption that consensus outputs are typically more reliable than disagreement outputs.

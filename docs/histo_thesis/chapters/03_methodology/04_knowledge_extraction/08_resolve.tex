@@ -1,0 +1,9 @@
+\subsection{RESOLVE: final rule scoring and selection}
+
+The RESOLVE stage takes a paper's \texttt{CanonicalRule} records, their associated relation records, and produces the final scored rules. The scoring is rule-based and deterministic. 
+
+Each final score combines four signals. The first is the rule's mean grounding score, which is computed from the NLI entailment scores of the findings that support the rule. The second signal is an evidence-count bonus, which increases as the number of member findings increases, but this bonus saturates at a certain cap. The third signal is relation-derived: there is a capped bonus for supporting relations involving the rule, and a capped penalty for contradicting ones. The fourth signal is a penalty for evidence that comes from a single paper, rather than from multiple papers. These signals are weighted, summed, and then squished to a [0,1] interval.
+
+There is also a separate mode for the scoring of rules that are not involved in any relations. In this mode, the SUPPORT and CONTRADICT terms drop out, and the score falls back to using only grounding, the finding-count bonus, and a single-paper penalty. \pinktodo{Either do the weight tuning, or remove the following sentence.} Additionally, this rule uses a separate set of weights, tuned for that case. 
+
+The final score is bounded between [0,1], but it should not be interpreted as a probability; it is only a pipeline confidence signal for downstream review: a high score reflects high grounding, several supporting findings, and SUPPORT relations; a low score shows weaker grounding, CONTRADICT relations, and possibly single-paper evidence for a rule. The score is not calibrated against any ground truth, and shall not be interpreted as clinical confidence. 

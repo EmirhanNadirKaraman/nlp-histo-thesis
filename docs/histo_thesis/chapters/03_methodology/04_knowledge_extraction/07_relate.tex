@@ -1,0 +1,20 @@
+\subsection{RELATE: pairwise rule relation classification}
+
+The RELATE stage takes pairs of canonical rules, and classifies the relation between them. Within this chapter, RELATE works over canonical rules taken from the same paper. Cross-paper comparison is handled as a separate corpus-level step, but it reuses the same comparability gate and classifier. The three relation labels used in the RELATE stage are as follows: 
+
+\pinktodo{Check the contradiction same polarity suppression logic.}
+\begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
+    \item \textbf{SUPPORT.} Two rules are labeled as supporting, when they entail each other in both directions.
+    \item \textbf{CONTRADICT.} Two rules are labeled as contradicting, when they share the same subject-outcome-relation triple, disagree on polarity, and NLI comparisons in both directions exceed the contradiction threshold. Same polarity claims suppress the contradiction labelling, because the system treats the pairs with the same polarity direction as co-observations, rather than disagreements. 
+    \item \textbf{UNRELATED.} A pair is labeled as unrelated, either when it fails the comparability gate and never reaches the NLI model, or when it reaches the NLI model but does not exceed the entailment or contradiction thresholds.
+\end{itemize}
+
+In order to reduce processing time, a comparability gate filters pairs of canonical rules, checks if both rules in the pair have polarity-bearing directions (a pair involving an \texttt{unclear} or \texttt{no\_direction} rule is skipped), and have the same subject entity, outcome entity, category and relation type. Entity compatibility is based on UMLS CUIs first, and normalized string matching as a fallback. The same comparability gate governs the cross-paper corpus comparison, and it keeps the processing time manageable by restricting the NLI classifier to CanonicalRule pairs that may plausibly be supporting or contradicting each other.
+
+\pinktodo{Write about pairs with similar keys but different scope.}
+
+\pinktodo{Add measurements for RELATE, and write a paragraph about it here.}
+
+After the comparability gate, RELATE should convert each \texttt{CanonicalRule} into text, before the NLI model can score it. There are two independent choices for that text. The first decision is to use either the abstracted, short predicate text, such as "CD30 is expressed", or the full source paragraph behind the representative member of the \texttt{CanonicalRule}. The second decision is whether or not to prepend a compact scope tag, such as \texttt{[scope: disease=ALCL]}, to the rule. The two axes give four input modes; production uses the abstracted predicate with the scope tag. \pinktodo{Change the following sentence when not true anymore:} The choice is not cosmetic: two rules can look identical to the model, even though they are about different diseases; so the mode changes SUPPORT, CONTRADICT, or UNRELATED labels given to pairs. \pinktodo{Section 4, Results} reports how many relations each mode produces, how stable the labels are across different modes, and \pinktodo{Section 5, Discussion} interprets those differences. 
+
+\pinktodo{Talk about the 300-claim pair synthetic dataset and the experiments once you are done with that.}

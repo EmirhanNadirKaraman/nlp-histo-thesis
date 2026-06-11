@@ -1,0 +1,23 @@
+\section{Agreement-Based Cascading}\label{section:Agreement_Based_Cascading}
+
+\makeatletter
+\def\input@path{{chapters/03_methodology/05_agreement_based_cascading/}}
+\makeatother
+
+\pinktodo{Add introduction to agreement-based cascading}
+
+This section describes agreement-based cascading, the framework used to make the MAP stage of \pinktodo{Section 3.4.3, MAP} cost-aware. This framework turns the MAP stage from a single language-model call into a tiered voter ensemble with explicit agreement and escalation policies. Cheap voters are queried first; their outputs are compared with an agreement scorer, which determines if there is consensus among the voters, if the output should downright be rejected, or be escalated to the next layer with more powerful, but also more expensive, language models. 
+
+This section first introduces the three-tier voter structure. It defines the agreement scorer, used to quantify the consensus between the output of different voter models. Then, it describes the escalation policy: the policy that determines whether to accept, escalate, or reject the output of the models in a tier, based on the agreement score. Later, this section introduces two routing gates that can override the default escalation policy: a polarity-conflict gate, which forces escalation when voters disagree on claim polarity; and a schema and provenance-checker that verifies the structural validity of the voter outputs. Finally, this section describes the offline calibration procedure, with which the production scorer and thresholds were tuned. 
+
+The evaluation protocol for agreement-based cascading is defined in \pinktodo{Section 3.6, Evaluation methodology}; the empirical results are reported in \pinktodo{Chapter 4, Results}, and discussed in \pinktodo{Chapter 5, Discussion}.
+
+\input{01_motivation}
+\input{02_cascade_architecture}
+\input{03_agreement_scoring}
+\input{04_accept_reject_escalate}
+\input{05_safety_gates_and_hard_fail_policies}
+\input{06_calibration_and_replay}
+\input{07_cost_versus_quality}
+\input{08_relationship_to_the_pipeline}
+\input{09_section_summary}

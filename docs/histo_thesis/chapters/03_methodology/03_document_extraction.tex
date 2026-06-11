@@ -1,0 +1,24 @@
+\section{Document Extraction Pipeline}\label{section:Document_Extraction}
+
+\makeatletter
+\def\input@path{{chapters/03_methodology/03_document_extraction}}
+\makeatother
+
+This section describes the document-extraction pipeline, used to convert source PMC Open Access histopathology papers to structured document elements for downstream knowledge extraction explained in \pinktodo{Section 3.4}. PDF and JATS-XML files are extracted from the downloaded packages, but only the PDF files are used for the document-extraction pipeline. This pipeline filters the PDFs based on keyword-filtering on a range of histopathology concepts and page counts of the files. Furthermore, the papers selected for database ingestion are self-containing: meaning the papers that contain supplementary PDF files are filtered out. 
+
+After the filtering, the document-extraction pipeline transforms the remaining PDF files into persistent representations of document text, sections, figures, tables, captions, and related evidence units, which are consumed by the downstream knowledge-extraction stages, described in \pinktodo{Section 3.4}. 
+
+The focus of this section is to explain the design of the document-extraction pipeline, the role of PDF and XML inputs, and the structure of the extracted outputs. The performance of the pipeline on the rubric-based evaluation on a subset of papers is reported separately in \pinktodo{Chapter 4, Results}, and discussed in \pinktodo{Chapter 5, Discussion}.
+
+\pinktodo{Add sections for text merging and other stages of the document extraction pipeline.}
+
+\input{01_purpose_and_requirements}
+\input{02_input_sources_and_document_representations}
+\input{03_structural_parsing_with_docling}
+\input{04_table_and_figure_handling}
+\input{05_two_pass_extraction_and_ghost_text_mitigation}
+\input{06_text_assembly_and_merging}
+\input{07_provenance_preserving_storage}
+\input{08_interface_to_the_knowledge_extraction_pipeline}
+\input{09_known_limitations}
+\input{10_section_summary}

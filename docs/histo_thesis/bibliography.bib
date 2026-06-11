@@ -5,3 +5,161 @@
   author = {Leslie Lamport}
 }
 
+@article{gu2021biomedbert,
+    author = {Gu, Yu and Tinn, Robert and Cheng, Hao and Lucas, Michael and Usuyama, Naoto and Liu, Xiaodong and Naumann, Tristan and Gao, Jianfeng and Poon, Hoifung},
+    title = {Domain-Specific Language Model Pretraining for Biomedical Natural Language Processing},
+    year = {2021},
+    issue_date = {January 2022},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    volume = {3},
+    number = {1},
+    url = {https://doi.org/10.1145/3458754},
+    doi = {10.1145/3458754},
+    abstract = {Pretraining large neural language models, such as BERT, has led to impressive gains on many natural language processing (NLP) tasks. However, most pretraining efforts focus on general domain corpora, such as newswire and Web. A prevailing assumption is that even domain-specific pretraining can benefit by starting from general-domain language models. In this article, we challenge this assumption by showing that for domains with abundant unlabeled text, such as biomedicine, pretraining language models from scratch results in substantial gains over continual pretraining of general-domain language models. To facilitate this investigation, we compile a comprehensive biomedical NLP benchmark from publicly available datasets. Our experiments show that domain-specific pretraining serves as a solid foundation for a wide range of biomedical NLP tasks, leading to new state-of-the-art results across the board. Further, in conducting a thorough evaluation of modeling choices, both for pretraining and task-specific fine-tuning, we discover that some common practices are unnecessary with BERT models, such as using complex tagging schemes in named entity recognition. To help accelerate research in biomedical NLP, we have released our state-of-the-art pretrained and task-specific models for the community, and created a leaderboard featuring our BLURB benchmark (short for Biomedical Language Understanding \& Reasoning Benchmark) at .},
+    journal = {ACM Trans. Comput. Healthcare},
+    month = oct,
+    articleno = {2},
+    numpages = {23},
+    keywords = {Biomedical, NLP, domain-specific pretraining},
+    note    = {The biomedical-pretrained transformer encoder commonly referred to as {PubMedBERT}.}
+}
+
+@inproceedings{williams2018mnli,
+    title = "A Broad-Coverage Challenge Corpus for Sentence Understanding through Inference",
+    author = "Williams, Adina and Nangia, Nikita and Bowman, Samuel R.",
+    editor = "Walker, Marilyn and Ji, Heng and Stent, Amanda",
+    booktitle = "Proceedings of the 2018 Conference of the North {A}merican Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long Papers)",
+    month = jun,
+    year = "2018",
+    address = "New Orleans, Louisiana",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/N18-1101/",
+    doi = "10.18653/v1/N18-1101",
+    pages = "1112--1122",
+    abstract = "This paper introduces the Multi-Genre Natural Language Inference (MultiNLI) corpus, a dataset designed for use in the development and evaluation of machine learning models for sentence understanding. At 433k examples, this resource is one of the largest corpora available for natural language inference (a.k.a. recognizing textual entailment), improving upon available resources in both its coverage and difficulty. MultiNLI accomplishes this by offering data from ten distinct genres of written and spoken English, making it possible to evaluate systems on nearly the full complexity of the language, while supplying an explicit setting for evaluating cross-genre domain adaptation. In addition, an evaluation using existing machine learning models designed for the Stanford NLI corpus shows that it represents a substantially more difficult task than does that corpus, despite the two showing similar levels of inter-annotator agreement.", 
+    note = {The {MultiNLI / MNLI} corpus.}
+}
+
+@inproceedings{romanov2018mednli,
+    title = "Lessons from Natural Language Inference in the Clinical Domain",
+    author = "Romanov, Alexey and Shivade, Chaitanya",
+    editor = "Riloff, Ellen and Chiang, David and Hockenmaier, Julia and Tsujii, Jun{'}ichi",
+    booktitle = "Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing",
+    month = oct # "-" # nov,
+    year = "2018",
+    address = "Brussels, Belgium",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/D18-1187/",
+    doi = "10.18653/v1/D18-1187",
+    pages = "1586--1596",
+    abstract = "State of the art models using deep neural networks have become very good in learning an accurate mapping from inputs to outputs. However, they still lack generalization capabilities in conditions that differ from the ones encountered during training. This is even more challenging in specialized, and knowledge intensive domains, where training data is limited. To address this gap, we introduce MedNLI - a dataset annotated by doctors, performing a natural language inference task (NLI), grounded in the medical history of patients. We present strategies to: 1) leverage transfer learning using datasets from the open domain, (e.g. SNLI) and 2) incorporate domain knowledge from external data and lexical sources (e.g. medical terminologies). Our results demonstrate performance gains using both strategies.", 
+    note = {The {MedNLI} corpus.}
+}
+
+@inproceedings{reimers2019sbert,
+    title = "Sentence-{BERT}: Sentence Embeddings using {S}iamese {BERT}-Networks",
+    author = "Reimers, Nils and Gurevych, Iryna",
+    editor = "Inui, Kentaro and Jiang, Jing and Ng, Vincent and Wan, Xiaojun",
+    booktitle = "Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)",
+    month = nov,
+    year = "2019",
+    address = "Hong Kong, China",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/D19-1410/",
+    doi = "10.18653/v1/D19-1410",
+    pages = "3982--3992",
+    abstract = "BERT (Devlin et al., 2018) and RoBERTa (Liu et al., 2019) has set a new state-of-the-art performance on sentence-pair regression tasks like semantic textual similarity (STS). However, it requires that both sentences are fed into the network, which causes a massive computational overhead: Finding the most similar pair in a collection of 10,000 sentences requires about 50 million inference computations ({\textasciitilde}65 hours) with BERT. The construction of BERT makes it unsuitable for semantic similarity search as well as for unsupervised tasks like clustering. In this publication, we present Sentence-BERT (SBERT), a modification of the pretrained BERT network that use siamese and triplet network structures to derive semantically meaningful sentence embeddings that can be compared using cosine-similarity. This reduces the effort for finding the most similar pair from 65 hours with BERT / RoBERTa to about 5 seconds with SBERT, while maintaining the accuracy from BERT. We evaluate SBERT and SRoBERTa on common STS tasks and transfer learning tasks, where it outperforms other state-of-the-art sentence embeddings methods.", 
+    note = {Introduces both bi-encoder sentence embeddings and the
+           cross-encoder reranking design used throughout this thesis for natural-language-inference scoring.}
+}
+
+@inproceedings{neumann2019scispacy,
+    title = "{S}cispa{C}y: Fast and Robust Models for Biomedical Natural Language Processing",
+    author = "Neumann, Mark  and
+      King, Daniel  and
+      Beltagy, Iz  and
+      Ammar, Waleed",
+    editor = "Demner-Fushman, Dina  and
+      Cohen, Kevin Bretonnel  and
+      Ananiadou, Sophia  and
+      Tsujii, Junichi",
+    booktitle = "Proceedings of the 18th BioNLP Workshop and Shared Task",
+    month = aug,
+    year = "2019",
+    address = "Florence, Italy",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/W19-5034/",
+    doi = "10.18653/v1/W19-5034",
+    pages = "319--327",
+    abstract = "Despite recent advances in natural language processing, many statistical models for processing text perform extremely poorly under domain shift. Processing biomedical and clinical text is a critically important application area of natural language processing, for which there are few robust, practical, publicly available models. This paper describes scispaCy, a new Python library and models for practical biomedical/scientific text processing, which heavily leverages the spaCy library. We detail the performance of two packages of models released in scispaCy and demonstrate their robustness on several tasks and datasets. Models and code are available at \url{https://allenai.github.io/scispacy/}.",
+    note = {ScispaCy}
+}
+
+@article{bodenreider2004umls,
+    author = {Bodenreider, Olivier},
+    title = {The Unified Medical Language System (UMLS): integrating biomedical terminology},
+    journal = {Nucleic Acids Research},
+    volume = {32},
+    number = {suppl_1},
+    pages = {D267-D270},
+    year = {2004},
+    month = {01},
+    abstract = { The Unified Medical Language System ( http://umlsks.nlm.nih.gov ) is a repository of biomedical vocabularies developed by the US National Library of Medicine. The UMLS integrates over 2 million names for some 900 000 concepts from more than 60 families of biomedical vocabularies, as well as 12 million relations among these concepts. Vocabularies integrated in the UMLS Metathesaurus include the NCBI taxonomy, Gene Ontology, the Medical Subject Headings (MeSH), OMIM and the Digital Anatomist Symbolic Knowledge Base. UMLS concepts are not only inter‐related, but may also be linked to external resources such as GenBank. In addition to data, the UMLS includes tools for customizing the Metathesaurus (MetamorphoSys), for generating lexical variants of concept names (lvg) and for extracting UMLS concepts from text (MetaMap). The UMLS knowledge sources are updated quarterly. All vocabularies are available at no fee for research purposes within an institution, but UMLS users are required to sign a license agreement. The UMLS knowledge sources are distributed on CD‐ROM and by FTP. },
+    issn = {0305-1048},
+    doi = {10.1093/nar/gkh061},
+    url = {https://doi.org/10.1093/nar/gkh061},
+    eprint = {https://academic.oup.com/nar/article-pdf/32/suppl_1/D267/7621558/gkh061.pdf},
+    note = {UMLS}
+}
+
+@article{
+    chen2024frugalgpt,
+    title={Frugal{GPT}: How to Use Large Language Models While Reducing Cost and Improving Performance},
+    author={Lingjiao Chen and Matei Zaharia and James Zou},
+    journal={Transactions on Machine Learning Research},
+    issn={2835-8856},
+    year={2024},
+    url={https://openreview.net/forum?id=cSimKw5p6R},
+    note={Featured Certification}
+}
+
+@misc{kolawole2025abc,
+      title={Agreement-Based Cascading for Efficient Inference}, 
+      author={Steven Kolawole and Don Dennis and Ameet Talwalkar and Virginia Smith},
+      year={2025},
+      eprint={2407.02348},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2407.02348}, 
+}
+
+@misc{wang2023selfconsistency,
+      title={Self-Consistency Improves Chain of Thought Reasoning in Language Models}, 
+      author={Xuezhi Wang and Jason Wei and Dale Schuurmans and Quoc Le and Ed Chi and Sharan Narang and Aakanksha Chowdhery and Denny Zhou},
+      year={2023},
+      eprint={2203.11171},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2203.11171}, 
+}
+
+@inproceedings{soiffer2025semantic,
+    title = "Semantic Agreement Enables Efficient Open-Ended {LLM} Cascades",
+    author = "Soiffer, Duncan  and
+      Kolawole, Steven  and
+      Smith, Virginia",
+    editor = "Potdar, Saloni  and
+      Rojas-Barahona, Lina  and
+      Montella, Sebastien",
+    booktitle = "Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing: Industry Track",
+    month = nov,
+    year = "2025",
+    address = "Suzhou (China)",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.emnlp-industry.171/",
+    doi = "10.18653/v1/2025.emnlp-industry.171",
+    pages = "2499--2537",
+    ISBN = "979-8-89176-333-3",
+    abstract = "Cascade systems for open-ended text generation face a fundamental challenge: determining output reliability when generation quality lies on a continuous spectrum, often with multiple valid responses. To address this, we propose {\_}semantic agreement{\_}{---}meaning-level consensus between ensemble outputs{---}as a training-free signal for reliable deferral. We show that when diverse model outputs agree semantically, their consensus is a stronger reliability signal than token-level confidence. Evaluated from 500M to 70B-parameter models, semantic cascades improve deferral accuracy, match or surpass target-model quality at 40{\%} of the cost, and reduce latency by up to 60{\%}. Our method requires no model internals, works across black-box APIs, and remains robust to model updates, making it a practical baseline for real-world LLM deployment."
+}

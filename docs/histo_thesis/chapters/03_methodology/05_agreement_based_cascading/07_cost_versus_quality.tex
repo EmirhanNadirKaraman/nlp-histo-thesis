@@ -1,0 +1,11 @@
+\subsection{Cost-quality analysis}
+
+The cascade is evaluated on two axes: extraction quality, and per-chunk cost. Extraction quality is measured by comparing the final output of the cascade to the silver findings, which are defined in \pinktodo{Section 3.6.x, Knowledge extraction evaluation}. Cost is measured by analyzing the voter call and escalation statistics, weighted by a manually created model price book, manually compiled from model providers' pricing pages. A chunk accepted at L1 incurs only the cheap tier cost; a chunk escalated to L2 incurs L2-tier costs on top, and another escalation to L3 causes an extra cost for the API call of the strongest model. Therefore, the cost saving the cascade can deliver, compared to sending every chunk to the strongest model, depends directly on the L1 and L2 escalation rates.
+
+\pinktodo{Maybe add citations for the model provider websites}
+
+This section states a design property, rather than a result: agreement-based cascading saves costs only when a sufficient percentage of cases are accepted in the lower tiers. If the L1 and L2 voters often disagree, because the voter pools are weak, the task is difficult, or the accept threshold is too conservative, the cascade tends to call voters in higher-tiers. API calls to the strongest model, plus the overhead of the cheaper voters, is strictly more expensive than if there were no cascade mechanism, and every chunk was sent to the strongest model. This is a property of the cascade architecture, not a failure of a particular implementation. The empirical cost-quality outcome of our calibrated configuration is reported in \pinktodo{Chapter 4, Results}, and discussed in \pinktodo{Chapter 5, Discussion}. Agreement-based cascading, with its best weight and configuration settings, is compared to Sonnet-only (the best model) in \pinktodo{Chapter 4, Results}, to answer the question of whether cascade is worth using in our system. 
+
+
+
+

@@ -1,0 +1,20 @@
+\subsection{Purpose and requirements}
+
+The document extraction pipeline sits between the raw paper corpus filtered and downloaded from the PMC Open Access dataset, maintained by U.S. National Library of Medicine (or NIH)\pinktodo{Check the name with the previous sections/chapters to verify the name, and then add citations.}, and the LLM-based knowledge-extraction pipeline, explained in \pinktodo{Section 3.4}. 
+
+Its purpose is to transform the source files into structured document elements that can be stored and reused in the downstream stages. This pipeline is necessary, because PDFs are unstructured \pinktodo{add citation here}, and downstream reuse of these elements require each element to have a structure and a stable identity, and to be re-derivable from its source.
+
+For each paper, the pipeline produces: 
+
+\begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
+    \item \textbf{Text elements.} A sequence of body paragraphs and headings, each carrying the surrounding section context. 
+    \item \textbf{Section structure.} A recoverable nested hierarchy of section titles, under which each text element appears.
+    \item \textbf{Figures and tables.} A stable identifier per figure and table, the page and bounding boxes in which they appear, and their captions for later reference. Tables, in addition to captions, have footnotes: each detected table footnote is within the bounding boxes of its table, so a separate record of table footnotes is not created.
+    \item \textbf{Cross-references.} References from text elements to the figures and tables they cite, are recorded, to make it possible to navigate from a claim's verbatim sentence to the table or figure it discusses. 
+    \item \textbf{Document identity.} Every element is tied to the source document it was extracted from, with a PMC source document identifier. 
+    
+\end{itemize}
+
+The document extraction pipeline produces structured, provenance-preserving document elements for downstream reuse; it is not intended to perfectly reconstruct the source papers. Some failure modes remain: publisher logos and icons are sometimes mislabelled as figures, captions might be attached to the wrong artifact, \pinktodo{some tables are not detected at all}, and some tables have layouts, for which the extraction process could not find a correct crop. These failure modes are documented as known limitations \pinktodo{Section 3.8, Known Limitations}, and quantified in \pinktodo{Chapter 4, Results.}
+
+

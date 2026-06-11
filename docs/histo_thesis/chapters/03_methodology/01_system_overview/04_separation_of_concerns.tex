@@ -1,0 +1,19 @@
+\subsection{Separation of concerns}
+
+The system was designed with modularity and extendability in mind. Each subsystem has a specific responsibility, exposes a clean interface to the next stage, and avoids doing work that can be separated into a different stage of the pipeline. The modular nature of the pipeline stages and classes within, makes it easier to evaluate, replace, or debug the code.
+
+The main separation of concerns is as follows:
+
+\begin{itemize}
+    \item \textbf{Document extraction} converts PDF files into text elements, and saves them into the database; it does not interpret these elements.
+
+    \item \textbf{Knowledge extraction} consumes text elements, and emits atomic biomedical claims; it does not parse PDFs.
+
+    \item \textbf{Cascade and routing} decide which model outputs will be accepted. The cascade determines whether the output of cheap voters is sufficient, or whether the system should escalate to stronger models. It does not redefine the schema of the MAP outputs; it only selects which model outputs will be accepted by the downstream pipeline.
+
+    \item \textbf{Grounding and relation classification} filter and relate the claims that are already extracted by the MAP stage. Grounding checks whether a claim is supported by its source text, while relation classification identifies whether two claims support or contradict each other. These stages do not re-extract and generate biomedical claims themselves.
+
+    \item \textbf{Evaluation and replay} read from the generated and persisted artifacts, and compute metrics, comparisons and ablations with different configurations of the pipeline stages. This stage does not modify the pipeline outputs, but is designed to inspect and evaluate pipeline behavior.
+\end{itemize}
+
+This separation of concerns is important for both engineering and evaluation. It enables document extraction and knowledge extraction to be evaluated independently, components to be swappable, and allows cascade experiments with different configurations and subsystem implementations to be compared to each other without having to re-run the entire pipeline every single time. The same separation also supports the provenance design, with a fully inspectable provenance chain where each link is the responsibility of one subsystem. 
