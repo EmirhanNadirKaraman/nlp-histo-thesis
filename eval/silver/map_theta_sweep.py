@@ -976,7 +976,10 @@ def main() -> None:
                         help="Silver findings JSONL (REQUIRED for sweep/all; no default — "
                              "pick the set explicitly).")
     parser.add_argument("--reports",       default=str(REPORTS_DIR))
-    parser.add_argument("--embedder",      default="openai", choices=["openai", "gemini"])
+    parser.add_argument("--embedder",      default="openai", choices=["openai", "gemini", "both"],
+                        help="Embedding model for BOTH agreement scoring and silver matching. "
+                             "'both' runs the sweep under each model and writes one CSV with an "
+                             "`embedder` column (--embed-cache is ignored in that mode).")
     parser.add_argument("--embed-cache",   default=None)
     parser.add_argument("--sim-threshold", type=float, default=SIMILARITY_THRESHOLD)
     parser.add_argument("--split",         default="dev", choices=["dev", "test", "all"])
@@ -1141,41 +1144,11 @@ def main() -> None:
         for rec in read_jsonl(silver_path, SilverCaseResult):
             silver_by_case[rec.case_id] = rec
 
-        # Build embedder (for eval matching) and agreement embed_fn (for EmbeddingScorer)
-        if args.embedder == "gemini":
-            api_key = os.environ.get("GOOGLE_API_KEY")
-            if not api_key:
-                print("GOOGLE_API_KEY not set", file=sys.stderr)
-                sys.exit(1)
-            embedder = GeminiEmbedder(api_key)
-            embed_cache_path = Path(args.embed_cache) if args.embed_cache else DEFAULT_GEMINI_CACHE_PATH
-            embed_cache = make_embedding_cache(embed_cache_path, GEMINI_EMBEDDING_MODEL)
-            from pipeline.stages.summarization.agreement.providers import GeminiEmbedder as AgreementGeminiEmbedder
-            _raw_agreement_fn = AgreementGeminiEmbedder()
-        else:
-            from eval.silver.embedders import OpenAIEmbedder
-            from eval.silver.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
-            from pipeline.stages.summarization.agreement.providers import OpenAIEmbedder as AgreementOpenAIEmbedder
-            api_key = os.environ.get("OPENAI_API_KEY")
-            if not api_key:
-                print("OPENAI_API_KEY not set", file=sys.stderr)
-                sys.exit(1)
-            embedder = OpenAIEmbedder(api_key)
-            embed_cache_path = Path(args.embed_cache) if args.embed_cache else DEFAULT_CACHE_PATH
-            embed_cache = make_embedding_cache(embed_cache_path, EMBEDDING_MODEL)
-            _raw_agreement_fn = AgreementOpenAIEmbedder()
-
-        # Pre-compute all agreement embeddings upfront so the theta replay loop
-        # makes zero API calls (same texts are used for all 7 theta values).
-        # Reuses the same disk cache as eval matching — keys are sha256(model+text)
-        # so agreement claims and eval finding strings coexist without collision.
-        _prewarm_agreement_cache(voter_cache, _raw_agreement_fn, embed_cache)
-        agreement_embed_fn = _make_cached_embed_fn(embed_cache, _raw_agreement_fn)
-
         # Resolve --legacy-single-voter-policy {keep|escalate|both} into the
         # axis the sweep iterates over. 'both' = compare keep vs escalate side
         # by side; useful for answering "does silently keeping N=1 survivors
-        # hurt precision?". Other values restrict to a single policy.
+        # hurt precision?". Other values restrict to a single policy. These axes
+        # are embedder-independent, so resolve them once before the embedder loop.
         if args.legacy_single_voter_policy == "both":
             policy_grid: tuple[str, ...] = ("keep", "escalate")
         else:
@@ -1195,25 +1168,84 @@ def main() -> None:
             polarity_grid, len(polarity_grid), "" if len(polarity_grid) == 1 else "s",
         )
 
-        sweep_rows = run_sweep(
-            voter_cache=voter_cache,
-            silver_by_case=silver_by_case,
-            embedder=embedder,
-            embed_cache=embed_cache,
-            sim_threshold=args.sim_threshold,
-            scorer_specs=_default_scorer_specs(),
-            thetas=THETA_GRID,
-            reject_thetas=REJECT_THETA_GRID,
-            split=args.split,
-            seed=args.seed,
-            dev_fraction=args.dev_fraction,
-            agreement_embed_fn=agreement_embed_fn,
-            single_voter_policies=policy_grid,
-            force_escalate_on_polarity_conflict_grid=polarity_grid,
-        )
-        if sweep_rows:
+        # --embedder both runs the sweep under each embedding model and writes one
+        # combined CSV (tagged with an `embedder` column). The embedder is BOTH the
+        # agreement-scorer model AND the silver-matching model, so each pass is a
+        # full end-to-end run. --embed-cache override is ignored for 'both' (each
+        # model needs its own cache).
+        embedders_to_run = ["gemini", "openai"] if args.embedder == "both" else [args.embedder]
+        if args.embedder == "both" and args.embed_cache:
+            logger.warning("--embed-cache ignored with --embedder both; using each embedder's default cache")
+
+        def _build_sweep_embedder(name: str):
+            """Return (embedder, embed_cache, raw_agreement_fn) for 'gemini' or 'openai'.
+
+            Mirrors the per-provider construction used for eval matching + the
+            EmbeddingScorer agreement fn; honours --embed-cache only for a single
+            embedder (None ⇒ provider default cache).
+            """
+            override = args.embed_cache if (args.embedder != "both" and args.embed_cache) else None
+            if name == "gemini":
+                key = os.environ.get("GOOGLE_API_KEY")
+                if not key:
+                    print("GOOGLE_API_KEY not set", file=sys.stderr)
+                    sys.exit(1)
+                from pipeline.stages.summarization.agreement.providers import GeminiEmbedder as _AgGem
+                cache = make_embedding_cache(
+                    Path(override) if override else DEFAULT_GEMINI_CACHE_PATH, GEMINI_EMBEDDING_MODEL)
+                return GeminiEmbedder(key), cache, _AgGem()
+            from eval.silver.embedders import OpenAIEmbedder
+            from eval.silver.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
+            from pipeline.stages.summarization.agreement.providers import OpenAIEmbedder as _AgOAI
+            key = os.environ.get("OPENAI_API_KEY")
+            if not key:
+                print("OPENAI_API_KEY not set", file=sys.stderr)
+                sys.exit(1)
+            cache = make_embedding_cache(
+                Path(override) if override else DEFAULT_CACHE_PATH, EMBEDDING_MODEL)
+            return OpenAIEmbedder(key), cache, _AgOAI()
+
+        all_rows: list[dict] = []
+        for emb_name in embedders_to_run:
+            if len(embedders_to_run) > 1:
+                logger.info("===== SWEEP embedder=%s =====", emb_name)
+            embedder, embed_cache, _raw_agreement_fn = _build_sweep_embedder(emb_name)
+
+            # Pre-compute all agreement embeddings upfront so the theta replay loop
+            # makes zero API calls (same texts are used for all theta values).
+            # Reuses the same disk cache as eval matching — keys are sha256(model+text)
+            # so agreement claims and eval finding strings coexist without collision.
+            _prewarm_agreement_cache(voter_cache, _raw_agreement_fn, embed_cache)
+            agreement_embed_fn = _make_cached_embed_fn(embed_cache, _raw_agreement_fn)
+
+            sweep_rows = run_sweep(
+                voter_cache=voter_cache,
+                silver_by_case=silver_by_case,
+                embedder=embedder,
+                embed_cache=embed_cache,
+                sim_threshold=args.sim_threshold,
+                scorer_specs=_default_scorer_specs(),
+                thetas=THETA_GRID,
+                reject_thetas=REJECT_THETA_GRID,
+                split=args.split,
+                seed=args.seed,
+                dev_fraction=args.dev_fraction,
+                agreement_embed_fn=agreement_embed_fn,
+                single_voter_policies=policy_grid,
+                force_escalate_on_polarity_conflict_grid=polarity_grid,
+            )
+            for r in sweep_rows:
+                r["embedder"] = emb_name
+            if sweep_rows:
+                if len(embedders_to_run) > 1:
+                    print(f"\n───── embedder = {emb_name} ─────")
+                _print_table(sweep_rows)
+            all_rows.extend(sweep_rows)
+
+        if all_rows:
             csv_path = reports_dir / f"map_cascade_sweep_{timestamp}.csv"
-            _write_csv(csv_path, sweep_rows, fieldnames=[
+            _write_csv(csv_path, all_rows, fieldnames=[
+                "embedder",
                 "scorer", "tau", "count_alpha", "reuse_weight", "contradiction_weight",
                 "w_category", "w_embedding", "w_entity", "w_evidence", "weights_sum",
                 "theta", "reject_theta",
@@ -1225,7 +1257,6 @@ def main() -> None:
                 "n_matched", "n_silver", "n_pipeline",
                 "split", "seed", "dev_fraction", "sim_threshold",
             ])
-            _print_table(sweep_rows)
 
 
 if __name__ == "__main__":

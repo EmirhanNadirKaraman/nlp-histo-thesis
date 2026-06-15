@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "claude-opus-4-7"
 DEFAULT_MAX_TOKENS = 8192
-DEFAULT_TEMPERATURE = 0  # silver labels: deterministic / reproducible
+# No `temperature` is sent: claude-opus-4-7 rejects it ("temperature is deprecated
+# for this model", B-072). The forced extract_findings tool keeps extraction
+# variance low; the model uses its default sampling. See docs/readmes/BUGS.md B-072.
 
 # Known category aliases the LLM produces that map to canonical values.
 # Only documented aliases are listed — unknown invalid values are left for Pydantic to reject.
@@ -76,7 +78,6 @@ def _call_opus(
     response = client.messages.create(
         model=model,
         max_tokens=DEFAULT_MAX_TOKENS,
-        temperature=DEFAULT_TEMPERATURE,
         system=[{
             "type": "text",
             "text": SYSTEM_PROMPT,
@@ -245,7 +246,6 @@ class SilverGenerator:
                 "params": {
                     "model": self.model,
                     "max_tokens": DEFAULT_MAX_TOKENS,
-                    "temperature": DEFAULT_TEMPERATURE,
                     "system": [{
                         "type": "text",
                         "text": SYSTEM_PROMPT,
