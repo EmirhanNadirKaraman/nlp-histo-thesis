@@ -212,7 +212,6 @@ def test_demographics_alias_repair():
 
 def test_bad_finding_logged_when_dropped():
     """Malformed item passed inside an AuditableSummary should be dropped *and* logged."""
-    from pipeline.stages.summarization import enum_logging
     from pipeline.stages.summarization.models import AuditableSummary, AuditMetadata
 
     # Reset log dir to a temp location to make this test self-contained
@@ -249,16 +248,16 @@ def test_bad_finding_logged_when_dropped():
 def test_profiles():
     from pipeline.stages.summarization.batch.voter_configs import (
         get_profile, list_profiles,
-        GEMINI_L1, OPENAI_L1, CLAUDE_L1,
+        GEMINI_L1, OPENAI_L1, OPENAI_L1_B,
         GEMINI_L2, OPENAI_L2, CLAUDE_L2, CLAUDE_L3,
     )
     for name in ("cheap", "real"):
         assert name in list_profiles(), f"profile {name!r} missing"
 
     cheap = get_profile("cheap")
-    # L1: 3 cheapest voters across Gemini/OpenAI/Claude in that order.
-    assert [v.model for v in cheap.l1_voters] == [GEMINI_L1, OPENAI_L1, CLAUDE_L1]
-    assert [v.provider for v in cheap.l1_voters] == ["gemini", "openai", "claude"]
+    # L1: 3 cheapest voters — Gemini + two OpenAI (gpt-4o-mini, gpt-4.1-nano).
+    assert [v.model for v in cheap.l1_voters] == [GEMINI_L1, OPENAI_L1, OPENAI_L1_B]
+    assert [v.provider for v in cheap.l1_voters] == ["gemini", "openai", "openai"]
     # L2 is a single OpenAI voter (gpt-4.1-mini); L3 mirrors L2 for the 2-tier cascade.
     assert len(cheap.l2_voters) == 1
     assert cheap.l2_voters[0].model == OPENAI_L2
@@ -266,20 +265,10 @@ def test_profiles():
 
     real = get_profile("real")
     # L1 same as cheap.
-    assert [v.model for v in real.l1_voters] == [GEMINI_L1, OPENAI_L1, CLAUDE_L1]
-    # L2: 3 mid-tier voters across the same 3 providers.
+    assert [v.model for v in real.l1_voters] == [GEMINI_L1, OPENAI_L1, OPENAI_L1_B]
+    # L2: 3 mid-tier voters across Gemini/OpenAI/Claude.
     assert [v.model for v in real.l2_voters] == [GEMINI_L2, OPENAI_L2, CLAUDE_L2]
     assert [v.provider for v in real.l2_voters] == ["gemini", "openai", "claude"]
-    # L1 and L2 Haiku must share temperature so the in-run voter cache can
-    # reuse the L1 Haiku result at L2. CLAUDE_L1 == CLAUDE_L2 model id, and
-    # both must be invoked at the same temp.
-    l1_haiku = next(v for v in real.l1_voters if v.provider == "claude")
-    l2_haiku = next(v for v in real.l2_voters if v.provider == "claude")
-    assert l1_haiku.model == l2_haiku.model == CLAUDE_L1
-    assert l1_haiku.temperature == l2_haiku.temperature, (
-        f"L1 Haiku temp ({l1_haiku.temperature}) must match L2 Haiku temp "
-        f"({l2_haiku.temperature}) to enable voter-cache reuse"
-    )
     # L3: Claude Sonnet.
     assert real.l3_voter.model == CLAUDE_L3
     assert real.l3_voter.provider == "claude"
@@ -318,8 +307,8 @@ def test_unknown_profile_raises():
 
 def test_version_constants():
     from pipeline.stages.summarization import models
-    assert models.MAP_SCHEMA_VERSION == "map_v1_explicit_direction"
-    assert models.MAP_PROMPT_VERSION == "map_prompt_v2_singular_demographic"
+    assert models.MAP_SCHEMA_VERSION == "map_v10_nli_and_voter_config_in_key"
+    assert models.MAP_PROMPT_VERSION == "map_prompt_v5_expression_absent_vs_negative"
     assert models.MAP_STAGE_NAME == "map"
 
 
@@ -452,7 +441,7 @@ ALL_TESTS = [
     ("category 'demographics' → 'demographic'",   test_demographics_alias_repair),
     ("Bad finding is logged then dropped",        test_bad_finding_logged_when_dropped),
     ("Profiles cheap / real",                     test_profiles),
-    ("Default fallback is cheap",                 test_default_profile_is_cheap_when_unset),
+    ("No profile raises when unset",              test_no_profile_raises_when_unset),
     ("Unknown profile raises",                    test_unknown_profile_raises),
     ("Version constants present",                 test_version_constants),
     ("compute_cascade_signature stable+sensitive", test_cascade_signature_stable_and_sensitive),

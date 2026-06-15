@@ -548,8 +548,10 @@ def main() -> None:
     )
     parser.add_argument("mode", choices=["prime", "grounding", "relate", "all"],
                         help="Which sweep to run")
-    parser.add_argument("--source",       default=str(SOURCE_PATH))
-    parser.add_argument("--silver",       default=str(SILVER_PATH))
+    parser.add_argument("--source",       required=True,
+                        help="Source-cases JSONL (REQUIRED — every mode reads it; no default).")
+    parser.add_argument("--silver",       default=None,
+                        help="Silver findings JSONL (REQUIRED for grounding/relate/all; no default).")
     parser.add_argument("--reports",      default=str(REPORTS_DIR))
     parser.add_argument("--prime-dir",    default=str(PRIME_DIR))
     parser.add_argument("--embedder",     default="gemini", choices=["openai", "gemini"])
@@ -564,10 +566,14 @@ def main() -> None:
                         help="Re-run priming even if cached JSONs exist")
     args = parser.parse_args()
 
+    # No silver default — force the dataset choice for the eval modes (B-069 guard).
+    if args.mode in ("grounding", "relate", "all") and not args.silver:
+        parser.error(f"--silver is required for mode '{args.mode}' (no default — pick the set explicitly)")
+
     prime_dir   = Path(args.prime_dir)
     reports_dir = Path(args.reports)
     source_path = Path(args.source)
-    silver_path = Path(args.silver)
+    silver_path = Path(args.silver) if args.silver else None
     timestamp   = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
 
     # ── Load source cases and apply split ──

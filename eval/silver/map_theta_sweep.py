@@ -969,8 +969,12 @@ def _print_table(rows: list[dict]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="MAP theta sweep harness")
     parser.add_argument("mode", choices=["prime", "collect", "rebuild-cache", "retry-failed", "sweep", "all"])
-    parser.add_argument("--source",        default=str(SOURCE_PATH))
-    parser.add_argument("--silver",        default=str(SILVER_PATH))
+    parser.add_argument("--source",        default=None,
+                        help="Source-cases JSONL (REQUIRED for prime/all; no default — "
+                             "pick the set explicitly).")
+    parser.add_argument("--silver",        default=None,
+                        help="Silver findings JSONL (REQUIRED for sweep/all; no default — "
+                             "pick the set explicitly).")
     parser.add_argument("--reports",       default=str(REPORTS_DIR))
     parser.add_argument("--embedder",      default="openai", choices=["openai", "gemini"])
     parser.add_argument("--embed-cache",   default=None)
@@ -1012,8 +1016,15 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    source_path = Path(args.source)
-    silver_path = Path(args.silver)
+    # No path defaults — force the dataset choice so a sweep can't silently run on
+    # the calibration set when the held-out set was intended (B-069 guard).
+    if args.mode in ("prime", "all") and not args.source:
+        parser.error(f"--source is required for mode '{args.mode}' (no default — pick the set explicitly)")
+    if args.mode in ("sweep", "all") and not args.silver:
+        parser.error(f"--silver is required for mode '{args.mode}' (no default — pick the set explicitly)")
+
+    source_path = Path(args.source) if args.source else None
+    silver_path = Path(args.silver) if args.silver else None
     reports_dir = Path(args.reports)
     timestamp   = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
 

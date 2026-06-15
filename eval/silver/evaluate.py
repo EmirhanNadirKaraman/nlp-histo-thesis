@@ -49,15 +49,20 @@ from eval.silver.schemas import (
 from eval.silver.split import filter_by_split
 
 SILVER_PATH   = Path("eval/data/silver_findings_related15.jsonl")
-PIPELINE_PATH = Path("eval/data/pipeline_findings.jsonl")
+PIPELINE_PATH = Path("eval/data/pipeline_findings_related15.jsonl")
 SOURCE_PATH   = Path("eval/data/source_cases_related15.jsonl")
 REPORTS_DIR   = Path("eval/reports")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate pipeline vs silver findings")
-    parser.add_argument("--silver",   default=str(SILVER_PATH))
-    parser.add_argument("--pipeline", default=str(PIPELINE_PATH))
+    parser.add_argument("--silver",   required=True,
+                        help="Silver findings JSONL (REQUIRED — pick the set explicitly, "
+                             "e.g. silver_findings_heldout15.jsonl; no default so an eval "
+                             "can't silently run on the calibration set).")
+    parser.add_argument("--pipeline", required=True,
+                        help="Pipeline findings JSONL (REQUIRED — must match the silver set, "
+                             "e.g. pipeline_findings_heldout15.jsonl).")
     parser.add_argument("--source",   default=str(SOURCE_PATH),
                         help="Source cases JSONL (required with --inspect)")
     parser.add_argument("--reports",  default=str(REPORTS_DIR))

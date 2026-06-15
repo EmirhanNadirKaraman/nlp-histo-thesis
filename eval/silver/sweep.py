@@ -45,7 +45,7 @@ from eval.silver.schemas import PipelineCaseOutput, SilverCaseResult
 from eval.silver.split import filter_by_split
 
 SILVER_PATH   = Path("eval/data/silver_findings_related15.jsonl")
-PIPELINE_PATH = Path("eval/data/pipeline_findings.jsonl")
+PIPELINE_PATH = Path("eval/data/pipeline_findings_related15.jsonl")
 REPORTS_DIR   = Path("eval/reports")
 
 
@@ -166,8 +166,10 @@ def _print_table(label: str, rows: list[dict], best: dict, n_cases: int, args) -
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Sweep similarity threshold for MAP silver eval")
-    parser.add_argument("--silver",   default=str(SILVER_PATH))
-    parser.add_argument("--pipeline", default=str(PIPELINE_PATH))
+    parser.add_argument("--silver",   required=True,
+                        help="Silver findings JSONL (REQUIRED — pick the set explicitly).")
+    parser.add_argument("--pipeline", required=True,
+                        help="Pipeline findings JSONL (REQUIRED — must match the silver set).")
     parser.add_argument("--reports",  default=str(REPORTS_DIR))
     parser.add_argument("--embed-cache",        default=str(DEFAULT_CACHE_PATH),
                         help="Cache path for OpenAI embeddings")
