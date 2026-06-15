@@ -1024,7 +1024,7 @@ def _run_exp_b2(ctx):
 
 # Module-level constants so tests can monkey-patch without touching env.
 _B2_CACHE_PATH  = _REPO_ROOT / "eval" / "data" / "map_primer" / "voter_cache.json"
-_B2_SILVER_PATH = _REPO_ROOT / "eval" / "data" / "silver_findings.jsonl"
+_B2_SILVER_PATH = _REPO_ROOT / "eval" / "data" / "silver_findings_related15.jsonl"
 
 # Per-voter cost estimate (USD/chunk) — token assumption: 1500 input + 600
 # output, prices from configs/model_prices.json. One model = one row.

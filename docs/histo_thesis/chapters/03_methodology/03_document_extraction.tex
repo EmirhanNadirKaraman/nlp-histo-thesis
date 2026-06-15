@@ -4,11 +4,11 @@
 \def\input@path{{chapters/03_methodology/03_document_extraction}}
 \makeatother
 
-This section describes the document-extraction pipeline, used to convert source PMC Open Access histopathology papers to structured document elements for downstream knowledge extraction explained in \pinktodo{Section 3.4}. PDF and JATS-XML files are extracted from the downloaded packages, but only the PDF files are used for the document-extraction pipeline. This pipeline filters the PDFs based on keyword-filtering on a range of histopathology concepts and page counts of the files. Furthermore, the papers selected for database ingestion are self-containing: meaning the papers that contain supplementary PDF files are filtered out. 
+This section describes the document-extraction pipeline, used to convert source PMC Open Access histopathology papers to structured document elements for downstream knowledge extraction explained in Section~\ref{section:Knowledge_Extraction}. PDF and JATS-XML files are extracted from the downloaded packages, but only the PDF files are used for the document-extraction pipeline. This pipeline filters the PDFs based on keyword-filtering on a range of histopathology concepts and page counts of the files. Furthermore, the papers selected for database ingestion are self-containing: meaning the papers that contain supplementary PDF files are filtered out. 
 
-After the filtering, the document-extraction pipeline transforms the remaining PDF files into persistent representations of document text, sections, figures, tables, captions, and related evidence units, which are consumed by the downstream knowledge-extraction stages, described in \pinktodo{Section 3.4}. 
+After the filtering, the document-extraction pipeline transforms the remaining PDF files into persistent representations of document text, sections, figures, tables, captions, and related evidence units, which are consumed by the downstream knowledge-extraction stages, described in Section~\ref{section:Knowledge_Extraction}. 
 
-The focus of this section is to explain the design of the document-extraction pipeline, the role of PDF and XML inputs, and the structure of the extracted outputs. The performance of the pipeline on the rubric-based evaluation on a subset of papers is reported separately in \pinktodo{Chapter 4, Results}, and discussed in \pinktodo{Chapter 5, Discussion}.
+The focus of this section is to explain the design of the document-extraction pipeline, the role of PDF and XML inputs, and the structure of the extracted outputs. The performance of the pipeline on the rubric-based evaluation on a subset of papers is reported separately in Chapter~\ref{chapter:Results}, and discussed in Chapter~\ref{chapter:Discussion}.
 
 \pinktodo{Add sections for text merging and other stages of the document extraction pipeline.}
 

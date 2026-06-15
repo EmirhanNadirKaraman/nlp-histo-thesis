@@ -106,7 +106,7 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
 
     cache_path = _REPO_ROOT / "eval" / "data" / "map_primer" / "voter_cache.json"
-    silver_path = _REPO_ROOT / "eval" / "data" / "silver_findings.jsonl"
+    silver_path = _REPO_ROOT / "eval" / "data" / "silver_findings_related15.jsonl"
     if not cache_path.exists():
         raise SystemExit(f"voter cache not found: {cache_path}")
     if not silver_path.exists():

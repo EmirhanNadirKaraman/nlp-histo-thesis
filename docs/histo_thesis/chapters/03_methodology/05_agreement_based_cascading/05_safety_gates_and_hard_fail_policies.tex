@@ -1,6 +1,6 @@
-\subsection{Safety gates and hard-fail policies}
+\subsection{Safety gates and hard-fail policies}\label{subsec:abc-safety-gates}
 
-The agreement scorer in \pinktodo{Section 3.5.3, Agreement scoring} only measures the similarity between the claim sets of voters; it cannot see certain contradictions between voter outputs that should override the accept-reject-escalate rule in \pinktodo{Section 3.5.4, Accept, reject, escalate}. Three such safety gates are wired into the cascade for this purpose. 
+The agreement scorer in Subsection~\ref{subsec:abc-agreement-scoring} only measures the similarity between the claim sets of voters; it cannot see certain contradictions between voter outputs that should override the accept-reject-escalate rule in Subsection~\ref{subsec:abc-accept-reject-escalate}. Three such safety gates are wired into the cascade for this purpose. 
 
 The first is the polarity-conflict hard-fail. This gate fires when two voters output findings with matching subject and outcome entities, relation type, and category, but opposite polarity directions. The polarity-conflict gate is intentionally conservative: it only checks the polarity pairs with \texttt{positive} -- \texttt{negative} polarity directions, and ignores the findings with polarity direction values of \texttt{unclear}, \texttt{absent}, \texttt{partial}, and \texttt{no\_direction}.
 
@@ -8,6 +8,6 @@ The second safety gate is the single-voter policy, which decides the behavior of
 
 The third safety mechanism is a schema and provenance screening step, which checks voter outputs for malformed citations and unsupported claims, before they even reach the agreement gate. 
 
-These are conservative safety mechanisms, and do not assume that they necessarily improve strict-F1 scores. Their purpose is to prevent unsafe routing cases, such as accepting a high-consensus tier output that contains a disagreement in polarity directions. The firing frequencies, accuracy metrics for the best combination of these safety gates, as well as their calibration behavior are reported in \pinktodo{Chapter 4, Results} and interpreted in \pinktodo{Chapter 5, Discussion}.
+These are conservative safety mechanisms, and do not assume that they necessarily improve strict-F1 scores. Their purpose is to prevent unsafe routing cases, such as accepting a high-consensus tier output that contains a disagreement in polarity directions. The firing frequencies, accuracy metrics for the best combination of these safety gates, as well as their calibration behavior are reported in Chapter~\ref{chapter:Results} and interpreted in Chapter~\ref{chapter:Discussion}.
 
 \pinktodo{Add experiments for different safety gate combinations.}

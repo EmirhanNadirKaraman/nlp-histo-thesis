@@ -1,4 +1,4 @@
-\subsection{Accept, reject, escalate}
+\subsection{Accept, reject, escalate}\label{subsec:abc-accept-reject-escalate}
 
 At each tier, the cascade uses the deferral score $s$ to decide between three actions: accept, reject, or escalate. This decision is controlled by two thresholds: the accept threshold $\theta$, and the reject threshold $\theta_{\mathrm{reject}}$, with $\theta_{\mathrm{reject}} < \theta$. 
 
@@ -10,6 +10,6 @@ At each tier, the cascade uses the deferral score $s$ to decide between three ac
 
 The reject threshold can also be the toggle for enabling or disabling dropping behavior. Deferral scores lie in $[0,1]$, so setting $\theta_{\mathrm{reject}} = 0$ makes the reject branch unreachable for non-degenerate chunks. In that configuration, every chunk with a deferral score below $\theta$ is escalated at L1 and L2; L3 has a single model that does not have any other model to disagree with, so it is the fallback that always accepts. 
 
-The threshold pair $(\theta, \theta_{\mathrm{reject}})$ is a calibration parameter, selected by the offline calibration protocol explained in \pinktodo{Section 3.5.6, Calibration and replay}, and evaluated in \pinktodo{Chapter 4}. 
+The threshold pair $(\theta, \theta_{\mathrm{reject}})$ is a calibration parameter, selected by the offline calibration protocol explained in Subsection~\ref{subsec:abc-calibration-and-replay}, and evaluated in Chapter~\ref{chapter:Results}. 
 
 Escalation is the main cost control mechanism of the agreement-based cascade system. For each chunk, the initial cost is the total cost in L1, and depending on whether the chunk is escalated to the more expensive tiers, additional costs are incurred. The cost-quality trade-off, therefore, depends on how often L1 and L2 voters can agree confidently, which depends on voter quality, chosen thresholds, and the task difficulty. 

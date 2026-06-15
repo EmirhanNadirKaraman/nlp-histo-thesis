@@ -1,1 +1,8 @@
-\subsection{Document extraction evaluation}
+\subsection{Document extraction evaluation}\label{subsec:eval-doc-extraction}
+
+The document-extraction evaluation measures how accurately the pipeline extracts figures and tables from the 27-paper evaluation dataset, using a four-dimensional, hand-labelled rubric. The rubric evaluates four dimensions: \textbf{crop}, \textbf{caption}, \textbf{footnote}, and \textbf{mask}. The crop dimension asks if the figure or table was cropped correctly -- not too big, not too small -- and is given a partial score in case of such imperfections. The caption dimension checks whether the correct caption is attached to the table of figure. The footnote dimension only applies to tables, and measures whether the table footnotes were captured within the crop. The mask dimension measures whether the artifact region to be removed is correct. Each emitted figure and table is assigned a score between $[0,1]$ for every applicable dimension; dimensions that do not apply to an item, e.g. footnotes for a figure, are marked \texttt{n/a} and are excluded from that dimension's totals. 
+
+A per-artifact strict-F1 treats an artifact as a true positive, only when it scores perfectly on every applicable dimension. A near-miss such as \emph{crop too big} or \emph{table-in-figure}, counts as an error with no partial credit on the strict-F1 score, even though it gets partial credits in some rubric dimensions. 
+
+The per-dimension metrics are kept because these dimensions have different consequences for the downstream stages: a wrong mask, for instance, corrupts the extracted text by leaking table and figure text; a wrong caption, however, only affects the artifact metadata. Section~\ref{section:results-doc-extraction-performance} reports both the strict-F1 and per-dimension scores. 
+

@@ -138,11 +138,11 @@ _RULE_B = {
 def test_corpus_relate_tuple_unpack_does_not_crash():
     """
     Regression: CorpusRelateStage.relate_from_dir must correctly unpack the
-    (relations, raw_pairs) tuple returned by RelateStage.relate.
+    (relations, raw_pairs, skipped_pairs) tuple returned by RelateStage.relate.
 
     Before the fix, raw_relations was assigned the full tuple, causing
-    len(raw_relations) == 2 and _enrich() to iterate over (list, list) instead
-    of list[Relation], producing silent garbage or a TypeError.
+    len(raw_relations) == 3 and _enrich() to iterate over (list, list, list)
+    instead of list[Relation], producing silent garbage or a TypeError.
     """
     from pipeline.stages.summarization.helpers.corpus_relate import CorpusRelateStage
 
@@ -162,8 +162,9 @@ def test_corpus_relate_tuple_unpack_does_not_crash():
 
         output_path = tmp / "corpus_out.json"
 
-        # Mock RelateStage.relate to return the correct tuple without running NLI
-        with patch.object(stage._relate, "relate", return_value=([], [])) as mock_relate:
+        # Mock RelateStage.relate to return the correct 3-tuple
+        # (relations, raw_pairs, skipped_pairs) without running NLI
+        with patch.object(stage._relate, "relate", return_value=([], [], [])) as mock_relate:
             result = stage.relate_from_dir(
                 source_dir=None,
                 output_path=output_path,

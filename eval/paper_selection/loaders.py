@@ -27,7 +27,7 @@ def load_pmcids_from_selection(path: str | Path) -> list[str]:
     """Flatten a ``related``/``diverse``/``hard`` selection YAML to its PMCID list.
 
     Accepts both the wrapped form (a single top-level version key, e.g.
-    ``related15_full_recheck:``) and a bare ``{related: [...], ...}`` mapping.
+    ``related15:``) and a bare ``{related: [...], ...}`` mapping.
     """
     import yaml
 

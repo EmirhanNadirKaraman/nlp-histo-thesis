@@ -95,8 +95,8 @@ PRIMER_DIR   = Path("eval/data/map_primer")
 PRIMER_PATH  = PRIMER_DIR / "primer.json"
 CACHE_PATH   = PRIMER_DIR / "voter_cache.json"
 REPORTS_DIR  = Path("eval/reports")
-SOURCE_PATH  = Path("eval/data/source_cases.jsonl")
-SILVER_PATH  = Path("eval/data/silver_findings.jsonl")
+SOURCE_PATH  = Path("eval/data/source_cases_related15.jsonl")
+SILVER_PATH  = Path("eval/data/silver_findings_related15.jsonl")
 
 # ── Voter configs (production setup) ─────────────────────────────────────────
 

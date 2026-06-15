@@ -1,4 +1,4 @@
-\subsection{Purpose and requirements}
+\subsection{Purpose and requirements}\label{subsec:doc-extraction-purpose}
 
 The document extraction pipeline sits between the raw paper corpus filtered and downloaded from the PMC Open Access dataset, maintained by U.S. National Library of Medicine (or NIH)\pinktodo{Check the name with the previous sections/chapters to verify the name, and then add citations.}, and the LLM-based knowledge-extraction pipeline, explained in \pinktodo{Section 3.4}. 
 
@@ -15,6 +15,6 @@ For each paper, the pipeline produces:
     
 \end{itemize}
 
-The document extraction pipeline produces structured, provenance-preserving document elements for downstream reuse; it is not intended to perfectly reconstruct the source papers. Some failure modes remain: publisher logos and icons are sometimes mislabelled as figures, captions might be attached to the wrong artifact, \pinktodo{some tables are not detected at all}, and some tables have layouts, for which the extraction process could not find a correct crop. These failure modes are documented as known limitations \pinktodo{Section 3.8, Known Limitations}, and quantified in \pinktodo{Chapter 4, Results.}
+The document extraction pipeline produces structured, provenance-preserving document elements for downstream reuse; it is not intended to perfectly reconstruct the source papers. Some failure modes remain: publisher logos and icons are sometimes mislabelled as figures, captions might be attached to the wrong artifact, \pinktodo{some tables are not detected at all}, and some tables have layouts, for which the extraction process could not find a correct crop. These failure modes are documented as known limitations in  Subsection~\ref{subsec:doc-extraction-known-limitations}, and quantified in Chapter~\ref{chapter:Results}.
 
 

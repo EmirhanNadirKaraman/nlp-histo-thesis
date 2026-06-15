@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(
 
 from eval.silver.exporter import export_pipeline_outputs
 
-SOURCE_PATH = Path("eval/data/source_cases.jsonl")
+SOURCE_PATH = Path("eval/data/source_cases_related15.jsonl")
 OUTPUT_PATH = Path("eval/data/pipeline_findings.jsonl")
 
 

@@ -717,7 +717,7 @@ def analyse_bootstrap_ci() -> AnalysisResult:
             notes=f"Import failure: {exc}",
         )
 
-    silver_path = _REPO_ROOT / "eval" / "data" / "silver_findings.jsonl"
+    silver_path = _REPO_ROOT / "eval" / "data" / "silver_findings_related15.jsonl"
     cache_path = _REPO_ROOT / "eval" / "data" / "map_primer" / "voter_cache.json"
     if not silver_path.exists() or not cache_path.exists():
         return AnalysisResult(
@@ -1421,11 +1421,11 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
         )
 
     voter_cache_path = _REPO_ROOT / "eval" / "data" / "map_primer" / "voter_cache.json"
-    silver_path      = _REPO_ROOT / "eval" / "data" / "silver_findings.jsonl"
+    silver_path      = _REPO_ROOT / "eval" / "data" / "silver_findings_related15.jsonl"
     if not voter_cache_path.exists() or not silver_path.exists():
         return AnalysisResult(
             name=name, status="missing",
-            notes="voter_cache.json or silver_findings.jsonl missing.",
+            notes="voter_cache.json or silver_findings_related15.jsonl missing.",
         )
 
     voter_cache = json.loads(voter_cache_path.read_text())

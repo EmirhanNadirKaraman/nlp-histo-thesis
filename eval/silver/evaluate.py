@@ -37,6 +37,7 @@ from eval.silver.matcher import (
     make_embedding_cache,
     compute_sim_matrix,
     match_from_matrix,
+    MATCHERS,
 )
 from eval.silver.schemas import (
     EvalMetrics,
@@ -47,9 +48,9 @@ from eval.silver.schemas import (
 )
 from eval.silver.split import filter_by_split
 
-SILVER_PATH   = Path("eval/data/silver_findings.jsonl")
+SILVER_PATH   = Path("eval/data/silver_findings_related15.jsonl")
 PIPELINE_PATH = Path("eval/data/pipeline_findings.jsonl")
-SOURCE_PATH   = Path("eval/data/source_cases.jsonl")
+SOURCE_PATH   = Path("eval/data/source_cases_related15.jsonl")
 REPORTS_DIR   = Path("eval/reports")
 
 
@@ -66,6 +67,8 @@ def main():
                         help="Embedding provider (default: openai)")
     parser.add_argument("--threshold", type=float, default=SIMILARITY_THRESHOLD,
                         help=f"Similarity threshold (default: {SIMILARITY_THRESHOLD})")
+    parser.add_argument("--matcher", default="greedy", choices=sorted(MATCHERS),
+                        help="One-to-one matching strategy (default: greedy)")
     parser.add_argument("--split", default="all", choices=["dev", "test", "all"],
                         help="Case split to evaluate. Default: all.")
     parser.add_argument("--dev-fraction", type=float, default=0.8)
@@ -143,12 +146,13 @@ def main():
     cache = make_embedding_cache(embed_cache_path, embed_model)
 
     # Match
+    match_fn = MATCHERS[args.matcher]
     match_results: list[MatchResult] = []
     for case_id in common:
         silver = silver_by_case[case_id]
         pipeline = pipeline_by_case[case_id]
         sim, _, _ = compute_sim_matrix(silver, pipeline, embedder, cache)
-        result = match_from_matrix(silver, pipeline, sim, args.threshold)
+        result = match_from_matrix(silver, pipeline, sim, args.threshold, match_fn=match_fn)
         match_results.append(result)
         logger.info("  %s — matched %d / %d silver (pipeline has %d)",
                     case_id, len(result.matched),

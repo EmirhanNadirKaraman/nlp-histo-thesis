@@ -1,1 +1,17 @@
-\subsection{Agreement-based cascading evaluation}
+\subsection{Agreement-based cascading evaluation}\label{subsec:eval-abc}
+
+\pinktodo{Change the number after regenerating silver cases and findings.}
+
+The agreement-based cascading evaluation compares the calibrated cascading system to the single-model baselines. The cascade configuration is selected on the calibration set of Subsection~\ref{subsec:knowledge-extraction-calibration-set}; the calibrated cascade is then evaluated on the held-out evaluation set (Subsection~\ref{subsec:knowledge-extraction-eval-set}).
+
+\pinktodo{Are the ablations made one by one, or is the best combination of flags selected? Is it in the joint sweep, or is it evaluated separately?}
+
+The cascade configuration is selected using the offline replay procedure described in Subsection~\ref{subsec:eval-reprod-and-offline-replay}, which sweeps the agreement threshold $\theta \in \{0.3, 0.4, \dots, 0.9\}$, the rejection threshold $\theta_{\mathrm{reject}} \in \{0.0, 0.1,0.2\}$, and the different agreement scoring strategies: embedding and hybrid, described in Subsection~\ref{subsec:abc-agreement-scoring}. The safety gate policies of Subsection~\ref{subsec:abc-safety-gates} are examined in ablation experiments to find the best combination. The best configuration values found on the calibration set are reported as empirical results in Chapter~\ref{chapter:Results}. 
+
+The cascade with its calibrated configuration values is compared to a set of single-model baselines. All comparisons are done under identical matcher settings on the identical set of held-out silver findings, so that the comparisons differ only in the generated pipeline outputs. Strict F1-score of each system, as well as cost (per-chunk escalation rate and incurred cost), is reported in Chapter~\ref{chapter:Results}.
+
+\pinktodo{Add leave-one-voter-out ablations.}
+
+\pinktodo{Add bootstrap experiments to the code.}
+
+\pinktodo{When the experiments are ready to run, explain what they are in here as a final paragraph.}

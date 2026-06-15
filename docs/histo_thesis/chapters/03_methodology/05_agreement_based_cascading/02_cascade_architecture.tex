@@ -1,6 +1,6 @@
-\subsection{Cascade architecture}
+\subsection{Cascade architecture}\label{subsec:abc-architecture}
 
-The cascade has three tiers, as shown in Figure~\ref{fig:abc-cascade}. The first two tiers have three voters, and the final tier has a single model, which is the strongest model we have in the architecture. A voter emits, per input chunk, either no output, or one typed \texttt{AuditableSummary} object, which is a summary holding atomic findings described in \pinktodo{Section 3.4.3, MAP}, together with the metadata information needed to inspect the voter's extraction result.
+The cascade has three tiers, as shown in Figure~\ref{fig:abc-cascade}. The first two tiers have three voters, and the final tier has a single model, which is the strongest model we have in the architecture. A voter emits, per input chunk, either no output, or one typed \texttt{AuditableSummary} object, which is a summary holding atomic findings described in Subsection~\ref{subsec:knowledge-map}, together with the metadata information needed to inspect the voter's extraction result.
 
 \begin{figure}[htbp]
     \centering
@@ -15,4 +15,4 @@ The cascade has three tiers, as shown in Figure~\ref{fig:abc-cascade}. The first
     \item \textbf{Level 3 -- Single strong voter.} When L2 models also cannot agree on an output, the chunk escalates to the third and last level. L3 is a fallback level, which never escalates from here, and includes the strongest language model in the cascade.
 \end{itemize}
 
-The exact voter models, their configurations, and the production voter profiles are listed in the appendix configuration table. This section focuses on the architecture, rather than the concrete model names. There are two important architectural decisions made: first, voter diversity comes from using models from different providers, not from sampling variation: every production voter runs at temperature zero; second, the objects compared across voters is the typed MAP-stage output of \pinktodo{Section 3.4.3, MAP}. Agreement, therefore, is computed over structured extraction results, not raw free-text summaries.
+The exact voter models, their configurations, and the production voter profiles are listed in the appendix configuration table. This section focuses on the architecture, rather than the concrete model names. There are two important architectural decisions made: first, voter diversity comes from using models from different providers, not from sampling variation: every production voter runs at temperature zero; second, the objects compared across voters is the typed MAP-stage output of Subsection~\ref{subsec:knowledge-map}. Agreement, therefore, is computed over structured extraction results, not raw free-text summaries.

@@ -1,0 +1,24 @@
+# Held-out knowledge-extraction evaluation set: a RANDOM, reproducible sample
+# (seed=19) of 15 eligible papers, disjoint from the ILP-15 calibration
+# cluster and the 27 document-extraction papers. NOT relatedness-selected --
+# the papers sit under `diverse:` only because load_pmcids_from_selection
+# reads the related/diverse/hard buckets; the bucket name is plumbing.
+heldout_random15:
+  related: []
+  diverse:
+  - PMC10529628_dermatopathology-10-00035
+  - PMC12129600_HIS-87-35
+  - PMC12326049_HIS-87-478
+  - PMC3166662_his0059-0008
+  - PMC4035753_pthy-46-165
+  - PMC5803675_dpa-0004-0001
+  - PMC6827452_dpa-0006-0023
+  - PMC6851567_HIS-75-4
+  - PMC6899935_CYT-30-620
+  - PMC7383570_HIS-77-133
+  - PMC7508500_main
+  - PMC8221904_main
+  - PMC9012948_main
+  - PMC9321809_HIS-80-1041
+  - PMC9541515_NEUP-42-239
+  hard: []

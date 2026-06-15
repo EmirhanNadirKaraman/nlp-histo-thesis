@@ -1,6 +1,6 @@
-\subsection{Text assembly and merging}
+\subsection{Text assembly and merging}\label{subsec:doc-text-assembly}
 
-Text assembly converts the cleaned layout into text. It consumes the output of two-pass extraction of \pinktodo{Section 3.3.5, Two-pass extraction}: a cleaned version of PDF from which headers, footers, sidebars, figures, tables, and invisible texts are removed. Therefore, what reaches the text assembly stage is expected to be body text and section heading elements, in reading order. The purpose of the text assembly stage is to turn these elements into hierarchical paragraphs that the knowledge extraction pipeline expects. 
+Text assembly converts the cleaned layout into text. It consumes the output of two-pass extraction of Subsection~\ref{subsec:doc-two-pass}: a cleaned version of PDF from which headers, footers, sidebars, figures, tables, and invisible texts are removed. Therefore, what reaches the text assembly stage is expected to be body text and section heading elements, in reading order. The purpose of the text assembly stage is to turn these elements into hierarchical paragraphs that the knowledge extraction pipeline expects. 
 
 \pinktodo{Hierarchical paragraph claim contradicts the sentence-only structure of knowledge extraction input, change that.}
 
@@ -14,6 +14,6 @@ Citation markers such as "[1,2,3]", double-spaces, URLs are detected with regula
 
 The merging rule is purely syntactic: it only examines tokens and punctuation, not sentence meaning. Therefore, it can over-merge or not merge when it should. This is an accepted trade-off. The heuristic recovers common page-break and column-break cases without adding a second semantic parser. 
 
-The result is a list of hierarchical rows, consisting of merged paragraph text, section path, and the position of the text within its document section. These rows are the textual units, over which the knowledge-extraction pipeline operates. Assigning each row to its position within the section, linking the figures and tables it cites, and writing into the database are explained in \pinktodo{Section 3.3.7, Provenance preserving storage}. 
+The result is a list of hierarchical rows, consisting of merged paragraph text, section path, and the position of the text within its document section. These rows are the textual units, over which the knowledge-extraction pipeline operates. Assigning each row to its position within the section, linking the figures and tables it cites, and writing into the database are explained in Subsection~\ref{subsec:doc-provenance-preserving-storage}. 
 
 

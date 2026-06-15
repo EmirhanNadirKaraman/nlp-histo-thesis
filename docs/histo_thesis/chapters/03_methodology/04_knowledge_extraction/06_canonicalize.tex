@@ -1,8 +1,8 @@
-\subsection{CANONICALIZE}
+\subsection{CANONICALIZE}\label{subsec:knowledge-canonicalize}
 
 The CANONICALIZE stage transforms each \texttt{FindingGroup} into one or more \texttt{CanonicalRule} candidates. This stage is fully deterministic: it does not involve any language models. 
 
-The member findings of each \texttt{FindingGroup} are partitioned into different buckets, based on their direction fields. For each direction, a separate bin is assigned. Non-polarity directions, namely \texttt{unclear} and \texttt{no\_direction}, are also emitted as full canonical rules, instead of being discarded, making the process lossless. A group with three positive and two unclear members therefore yields two \texttt{CanonicalRule} records, not one. However, the RELATE stage (\pinktodo{Section 3.4.7, Relate}) skips any pair with a rule containing a non-polarity direction, in order to prevent unclear or directionless rules to create false support or contradiction edges. 
+The member findings of each \texttt{FindingGroup} are partitioned into different buckets, based on their direction fields. For each direction, a separate bin is assigned. Non-polarity directions, namely \texttt{unclear} and \texttt{no\_direction}, are also emitted as full canonical rules, instead of being discarded, making the process lossless. A group with three positive and two unclear members therefore yields two \texttt{CanonicalRule} records, not one. However, the RELATE stage (Subsection~\ref{subsec:knowledge-relate}) skips any pair with a rule containing a non-polarity direction, in order to prevent unclear or directionless rules to create false support or contradiction edges. 
 
 For each emitted rule, the member with the highest grounding score is selected as the representative: that member supplies the rule's predicate text, while also storing the verbatim text and a pointer to the source text where the verbatim came from, to keep the rule's text and its evidence together. 
 

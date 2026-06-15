@@ -1,1 +1,18 @@
-\subsection{Limitations of evaluation design}
+\subsection{Limitations of evaluation design}\label{subsec:eval-limitations}
+
+The evaluation methodology has several limitations. These limitations are listed here, and their implications for interpretation are discussed in Chapter~\ref{chapter:Discussion}. 
+
+\pinktodo{If we add 300 claim-pairs, can the limitation with relation ablation modes be solved? If yes, remove it from the limitations.}
+
+\pinktodo{Another possible limitation can be that the 300 claim-pair synthetic dataset's related examples might be too related, contradicting examples might be too obviously contradicting. It is different than when it could be sampled from the dataset itself.}
+
+\begin{itemize}
+    \item \textbf{Silver labels are LLM-generated, not ground truth.} The precision of the silver labels is bounded by the biases of the LLM that generated them.
+    \item \textbf{The document-extraction rubric set is small.} The document-extraction rubric set consists of 27 papers, manually and randomly sampled from the ingested corpus, and frozen for reproducibility. Since the paper set is small, the coverage of different figure-table extraction failure modes might be limited.
+    \item \textbf{Cost-quality results depend on the selected voter models.} The reported escalation percentages and incurred costs highly depend on the chosen voter models and their settings.
+    \item \textbf{The corpus is histopathology-focused.} The selected and ingested papers are all histopathology papers in English, selected from the PMC Open Access Subset. Therefore, the results might not be generalizable to other biomedical subfields, non-PMC papers, or non-English literature.
+    \item \textbf{A single person annotated the document-extraction artifacts.} Inter-annotator agreement is not measured on the 27-paper document-extraction dataset, as the labels were produced by a single annotator under the rubric defined in \pinktodo{Section 3.6.3, Document-extraction evaluation}.
+    \item \textbf{NLI four-mode ablations do not have per-pair accuracy labels.} Relation counts for each of the four modes are reported, but a comparison for their accuracy cannot be made, as the pairs do not have ground truth or silver labels.
+\end{itemize}
+
+Chapter~\ref{chapter:Results} reports the numerical outputs of the pipeline and the experiments. The limitations of the evaluation design are listed here, to bound the interpretations of the reported results, discussed in Chapter~\ref{chapter:Discussion}.

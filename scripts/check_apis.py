@@ -201,7 +201,7 @@ def cmd_sync_real() -> int:
     )
     from pipeline.stages.summarization.prompts import build_map_chain
 
-    src = Path("eval/data/source_cases.jsonl")
+    src = Path("eval/data/source_cases_related15.jsonl")
     if not src.exists():
         print(f"source cases not found: {src}", file=sys.stderr)
         return 2

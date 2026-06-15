@@ -66,8 +66,8 @@ from eval.silver.split import filter_by_split
 
 PRIME_DIR   = Path("eval/data/pipeline_raw")
 REPORTS_DIR = Path("eval/reports")
-SOURCE_PATH = Path("eval/data/source_cases.jsonl")
-SILVER_PATH = Path("eval/data/silver_findings.jsonl")
+SOURCE_PATH = Path("eval/data/source_cases_related15.jsonl")
+SILVER_PATH = Path("eval/data/silver_findings_related15.jsonl")
 
 # Sweep ranges
 GROUNDING_THRESHOLDS: list[float | None] = [None, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40,

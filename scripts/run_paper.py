@@ -11,10 +11,10 @@ python scripts/run_paper.py PMC1234567 --sync           # sync (live) mode
 python scripts/run_paper.py PMC1234567 --sync --trace   # enable JSONL traces (sync only)
 python scripts/run_paper.py PMC1234567 --batch --dry-run  # print config and exit
 
-# Omit PMCID to auto-sample from eval/data/source_cases.jsonl:
+# Omit PMCID to auto-sample from eval/data/source_cases_related15.jsonl:
 python scripts/run_paper.py --batch                     # 2 random PMCIDs, seed=42
 python scripts/run_paper.py --sync --sample 3 --seed 7  # 3 random PMCIDs, seed=7
-python scripts/run_paper.py --batch --all               # all PMCIDs in source_cases.jsonl
+python scripts/run_paper.py --batch --all               # all PMCIDs in source_cases_related15.jsonl
 
 Requires: GOOGLE_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY
 """
@@ -298,11 +298,11 @@ def build_batch_runner(
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 def _all_pmcids() -> list[str]:
-    """Return all unique PMCIDs from eval/data/source_cases.jsonl in file order."""
+    """Return all unique PMCIDs from eval/data/source_cases_related15.jsonl in file order."""
     import json
-    source = Path(__file__).parent.parent / "eval" / "data" / "source_cases.jsonl"
+    source = Path(__file__).parent.parent / "eval" / "data" / "source_cases_related15.jsonl"
     if not source.exists():
-        logger.error("source_cases.jsonl not found at %s", source)
+        logger.error("source_cases_related15.jsonl not found at %s", source)
         sys.exit(1)
     pmcids: list[str] = []
     seen: set[str] = set()
@@ -315,12 +315,12 @@ def _all_pmcids() -> list[str]:
             if pmcid and pmcid not in seen:
                 seen.add(pmcid)
                 pmcids.append(pmcid)
-    logger.info("Found %d unique PMCIDs in source_cases.jsonl", len(pmcids))
+    logger.info("Found %d unique PMCIDs in source_cases_related15.jsonl", len(pmcids))
     return pmcids
 
 
 def _sample_pmcids(n: int, seed: int) -> list[str]:
-    """Pick n unique PMCIDs from eval/data/source_cases.jsonl using the given seed."""
+    """Pick n unique PMCIDs from eval/data/source_cases_related15.jsonl using the given seed."""
     import random
     pmcids = _all_pmcids()
     rng = random.Random(seed)
@@ -374,9 +374,9 @@ def main():
     parser = argparse.ArgumentParser(description="Run summarization pipeline on one or more papers.")
     parser.add_argument("pmcid",          nargs="?", default=None,
                         help="PubMed Central ID, e.g. PMC1234567. "
-                             "Omit to auto-sample from eval/data/source_cases.jsonl.")
+                             "Omit to auto-sample from eval/data/source_cases_related15.jsonl.")
     parser.add_argument("--all",           action="store_true",
-                        help="Run all PMCIDs from eval/data/source_cases.jsonl")
+                        help="Run all PMCIDs from eval/data/source_cases_related15.jsonl")
     parser.add_argument("--from-selection", default=None, metavar="PATH",
                         help="Path to a paper-selection YAML "
                              "(e.g. configs/paper_selection/smoke_v2.yaml). "

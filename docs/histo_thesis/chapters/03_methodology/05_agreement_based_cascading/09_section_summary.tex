@@ -1,4 +1,4 @@
-\subsection{Section summary}
+\subsection{Section summary}\label{subsec:abc-section-summary}
 
 This section described how agreement-based cascading, the cost-aware routing system works, and its relationship with the MAP stage of the knowledge-extraction pipeline. ABC replaces a single MAP call with a three-tier voter ensemble, and at each tier, the voter outputs are compared using a max-consensus agreement scorer. Embedding-only and hybrid strategies can be used as the similarity strategy of the agreement scorer. Based on the calculated deferral score, and the calibrated acceptance and rejection thresholds, the cascade decides whether to accept the voter outputs at a certain tier, reject them, or escalate to the next layer with more capable but expensive voters. 
 
@@ -6,4 +6,4 @@ In this section, we also explained the safety policies of the cascade: when ther
 
 The thresholds, models and flag configurations in the cascade are calibrated by an offline replay mechanism, where all voter outputs are cached, removing API calls from the calibration loop, which speeds up the calibration procedure and reduces costs. 
 
-The empirical question is whether the agreement-based cascade mechanism improves the cost-quality trade-off on the histopathology corpus, and the answer to this question is the subject of the following chapters. This section has described the ABC framework and where it sits in the general knowledge extraction pipeline; results are reported in \pinktodo{Chapter 4, Results} and discussed in \pinktodo{Chapter 5, Discussion}.
+The empirical question is whether the agreement-based cascade mechanism improves the cost-quality trade-off on the histopathology corpus, and the answer to this question is the subject of the following chapters. This section has described the ABC framework and where it sits in the general knowledge extraction pipeline; results are reported in Chapter~\ref{chapter:Results} and discussed in Chapter~\ref{chapter:Discussion}.

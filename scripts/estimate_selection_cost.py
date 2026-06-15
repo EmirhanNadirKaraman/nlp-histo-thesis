@@ -8,7 +8,8 @@ production MapConfig defaults, tokenises every sentence with the
 
   - per-paper table:  pmcid | bucket | n_sentences | n_chunks | n_tokens
   - totals
-  - projected MAP cost at three cascade-escalation scenarios
+  - projected MAP cost at four cascade-escalation scenarios
+    (optimistic, middle, pessimistic, and a 95%-escalation worst case)
 
 Usage
 -----
@@ -24,7 +25,7 @@ Or estimate CALIBRATION cost (silver prime + Opus judge) over a source-cases
 JSONL — prints the prime (all voters, no escalation) and Opus silver tables:
 
     python scripts/estimate_selection_cost.py \
-        --source-cases eval/data/source_cases.jsonl --profile real
+        --source-cases eval/data/source_cases_related15.jsonl --profile real
 
 Notes
 -----
@@ -71,8 +72,11 @@ DEFAULT_CHUNK_OVERLAP = 2
 # Prompt overhead per MAP call (system + JSON schema + voter instructions).
 # Conservative middle estimate; real prompts are 1.2–1.8 K tokens.
 PROMPT_OVERHEAD_TOKENS = 1500
-# Output JSON per chunk (AuditableSummary). Realistic 500–1200; use 800.
-OUTPUT_TOKENS_PER_CHUNK = 800
+# Output JSON per chunk (AuditableSummary findings array). Measured over the
+# primed voter cache (2117 real voter outputs): mean ~1100, median ~900,
+# p90 ~2200 tokens. 1500 is a conservative (~p75) choice so the worst case
+# leans high rather than low — output drives the L3/Sonnet cost ($15/1M out).
+OUTPUT_TOKENS_PER_CHUNK = 1500
 
 # ── Calibration (silver) defaults ───────────────────────────────────────────
 # The map_theta_sweep PRIME runs EVERY voter on EVERY chunk (no escalation) so
@@ -413,6 +417,9 @@ def run_cascade_estimate(args, *, book, pricing, resolved_profile, discount,
             Scenario("optimistic", l2_rate=0.10, l3_rate=0.02),
             Scenario("middle",     l2_rate=0.25, l3_rate=0.08),
             Scenario("pessimistic", l2_rate=0.50, l3_rate=0.20),
+            # Worst case: 95% of chunks fail agreement and escalate through
+            # every tier (L1 → L2 → L3), so L2 and L3 each run on 95% of chunks.
+            Scenario("worst_case", l2_rate=0.95, l3_rate=0.95),
         ]
 
     logger.info("Loading %d papers from DB…", len(sel_map))
@@ -570,11 +577,11 @@ def main() -> int:
     parser.add_argument("--from-selection", metavar="PATH",
                         help="Path to a paper-selection YAML (production cascade estimate)")
     parser.add_argument("--source-cases", nargs="?",
-                        const="eval/data/source_cases.jsonl", default=None,
+                        const="eval/data/source_cases_related15.jsonl", default=None,
                         metavar="PATH",
                         help="Estimate CALIBRATION cost (silver prime + Opus judge) "
                              "over a source-cases JSONL. Bare flag uses "
-                             "eval/data/source_cases.jsonl. Combinable with "
+                             "eval/data/source_cases_related15.jsonl. Combinable with "
                              "--from-selection (both sections print).")
     parser.add_argument("--chunk-size",    type=int, default=DEFAULT_CHUNK_SIZE)
     parser.add_argument("--chunk-overlap", type=int, default=DEFAULT_CHUNK_OVERLAP)

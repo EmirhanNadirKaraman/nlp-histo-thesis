@@ -23,7 +23,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Union
+from typing import Callable, Union
 
 import numpy as np
 
@@ -391,34 +391,26 @@ def compute_sim_matrix(
     return sim, silver_texts, pipeline_texts
 
 
-# ── Greedy matching from pre-computed matrix ───────────────────────────────────
+# ── Matcher strategies ─────────────────────────────────────────────────────────
+# A matcher strategy maps a pre-computed similarity matrix + threshold to a list
+# of matched (silver_i, pipeline_j) index pairs. ``match_from_matrix`` assembles
+# the MatchResult around whichever strategy is supplied; greedy is the default.
 
-def match_from_matrix(
-    silver: SilverCaseResult,
-    pipeline: PipelineCaseOutput,
-    sim_matrix: list[list[float]],
-    threshold: float,
-) -> MatchResult:
-    """Apply greedy one-to-one matching to a pre-computed similarity matrix."""
-    n_s = len(silver.findings)
-    n_p = len(pipeline.findings)
-    silver_claims = [f.claim for f in silver.findings]
-    pipeline_claims = [f.claim for f in pipeline.findings]
+MatchFn = Callable[[list[list[float]], float, int, int], list[tuple[int, int]]]
 
-    if not sim_matrix:
-        return MatchResult(
-            case_id=silver.case_id,
-            pmcid=silver.pmcid,
-            te_id=silver.te_id,
-            matched=[],
-            unmatched_silver=silver_claims,
-            unmatched_pipeline=pipeline_claims,
-        )
 
+def greedy_match(
+    sim_matrix: list[list[float]], threshold: float, n_s: int, n_p: int
+) -> list[tuple[int, int]]:
+    """Greedy one-to-one matching.
+
+    Repeatedly takes the highest-similarity unmatched pair strictly above
+    ``threshold``, removing both findings, until none remain. Deterministic but
+    not globally optimal: a locally-best pick can block a better global pairing.
+    """
     used_s: set[int] = set()
     used_p: set[int] = set()
-    matched: list[MatchedPair] = []
-
+    pairs: list[tuple[int, int]] = []
     while True:
         best_score = threshold
         best_i = best_j = -1
@@ -435,11 +427,82 @@ def match_from_matrix(
             break
         used_s.add(best_i)
         used_p.add(best_j)
-        mismatches = _field_mismatches(silver.findings[best_i], pipeline.findings[best_j])
+        pairs.append((best_i, best_j))
+    return pairs
+
+
+def optimal_match(
+    sim_matrix: list[list[float]], threshold: float, n_s: int, n_p: int
+) -> list[tuple[int, int]]:
+    """Globally-optimal one-to-one matching via the Hungarian algorithm.
+
+    Maximises the total similarity of the assignment
+    (``scipy.optimize.linear_sum_assignment`` on the negated matrix), then drops
+    any assigned pair not strictly above ``threshold`` — the same cutoff greedy
+    applies. Unlike greedy, it cannot be trapped by a locally-greedy choice.
+    """
+    if n_s == 0 or n_p == 0:
+        return []
+    from scipy.optimize import linear_sum_assignment
+
+    arr = np.asarray(sim_matrix, dtype=np.float64)
+    row_ind, col_ind = linear_sum_assignment(-arr)  # maximise total similarity
+    return [
+        (int(i), int(j))
+        for i, j in zip(row_ind, col_ind)
+        if arr[i, j] > threshold
+    ]
+
+
+# Registry for CLI / config selection of the matching strategy.
+MATCHERS: dict[str, MatchFn] = {
+    "greedy": greedy_match,
+    "optimal": optimal_match,
+}
+
+
+# ── Matching from pre-computed matrix ──────────────────────────────────────────
+
+def match_from_matrix(
+    silver: SilverCaseResult,
+    pipeline: PipelineCaseOutput,
+    sim_matrix: list[list[float]],
+    threshold: float,
+    *,
+    match_fn: MatchFn = greedy_match,
+) -> MatchResult:
+    """Apply a one-to-one matching strategy to a pre-computed similarity matrix.
+
+    ``match_fn`` selects the strategy (default :func:`greedy_match`): it returns
+    the matched (silver_i, pipeline_j) index pairs, and this function assembles
+    the MatchResult (field mismatches, unmatched lists) around them.
+    """
+    n_s = len(silver.findings)
+    n_p = len(pipeline.findings)
+    silver_claims = [f.claim for f in silver.findings]
+    pipeline_claims = [f.claim for f in pipeline.findings]
+
+    if not sim_matrix:
+        return MatchResult(
+            case_id=silver.case_id,
+            pmcid=silver.pmcid,
+            te_id=silver.te_id,
+            matched=[],
+            unmatched_silver=silver_claims,
+            unmatched_pipeline=pipeline_claims,
+        )
+
+    pairs = match_fn(sim_matrix, threshold, n_s, n_p)
+    used_s = {i for i, _ in pairs}
+    used_p = {j for _, j in pairs}
+
+    matched: list[MatchedPair] = []
+    for i, j in pairs:
+        mismatches = _field_mismatches(silver.findings[i], pipeline.findings[j])
         matched.append(MatchedPair(
-            silver_claim=silver_claims[best_i],
-            pipeline_claim=pipeline_claims[best_j],
-            similarity=best_score,
+            silver_claim=silver_claims[i],
+            pipeline_claim=pipeline_claims[j],
+            similarity=sim_matrix[i][j],
             field_mismatches=mismatches,
         ))
 
@@ -465,12 +528,13 @@ def match_case(
     *,
     cache: EmbeddingCache | None = None,
     threshold: float = SIMILARITY_THRESHOLD,
+    match_fn: MatchFn = greedy_match,
 ) -> MatchResult:
     """Match one case. Uses/updates cache if provided."""
     if cache is None:
         cache = make_embedding_cache(DEFAULT_CACHE_PATH)
     sim, _, _ = compute_sim_matrix(silver, pipeline, embedder, cache)
-    return match_from_matrix(silver, pipeline, sim, threshold)
+    return match_from_matrix(silver, pipeline, sim, threshold, match_fn=match_fn)
 
 
 # ── Metrics ────────────────────────────────────────────────────────────────────

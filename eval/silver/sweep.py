@@ -44,7 +44,7 @@ from eval.silver.matcher import (
 from eval.silver.schemas import PipelineCaseOutput, SilverCaseResult
 from eval.silver.split import filter_by_split
 
-SILVER_PATH   = Path("eval/data/silver_findings.jsonl")
+SILVER_PATH   = Path("eval/data/silver_findings_related15.jsonl")
 PIPELINE_PATH = Path("eval/data/pipeline_findings.jsonl")
 REPORTS_DIR   = Path("eval/reports")
 

@@ -1,4 +1,4 @@
-\subsection{Data flow and intermediate objects}
+\subsection{Data flow and intermediate objects}\label{subsec:data-flow-and-intermediate-objects}
 
 While data passes through the pipeline, it is converted to different typed intermediate objects, and each of these object types have their own database tables for observability. Every object has the information needed to trace it back to the previous stages in the pipeline; with this back-pointer information, each final rule can be traced back to its source paragraph and paper.
 
@@ -20,10 +20,7 @@ While data passes through the pipeline, it is converted to different typed inter
     \item \textbf{Relations.} Pairwise edges between canonical rules, each labelled SUPPORT, CONTRADICT or UNRELATED by an NLI cross-encoder. Only the supporting and contradicting pairs are kept. Each relation has the two canonical rules it connects, alongside the SUPPORT/CONTRADICT label, and the NLI confidence score.
 
     \item \textbf{Final rules.} Canonical rules are augmented with scores to generate final rules. A canonical rule is given a score between 0--1, combining its grounding score, the number of findings behind it, and the support and contradiction relations that touch it. The generated final rule keeps a pointer back to its canonical rule, closing the provenance chain, so that it can also be traced back to its source paragraph.
-
-
 \end{itemize}
 
-\pinktodo{Check the chapter numbers}
+The detailed shape of each object is defined in Sections~\ref{section:Document_Extraction} and~\ref{section:Knowledge_Extraction}.
 
-The detailed shape of each object is defined in Chapters 5 and 6. 
