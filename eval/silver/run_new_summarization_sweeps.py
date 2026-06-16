@@ -62,6 +62,14 @@ silver labels (``eval/data/silver_findings_related15.jsonl``). Offline replay �
 no LLM calls; embedding-cache misses are the only (cheap, cached) cost. Generated
 CSVs land in ``eval/reports/`` and are kept untracked.
 
+CHECKPOINT / RESUME — every stage appends each completed cell to
+``eval/reports/checkpoint_<stage>.csv`` (flushed per cell), so a Ctrl-C keeps all
+finished cells. Re-running the stage resumes automatically: cells already in the
+checkpoint are skipped (the embeddings they used are SQLite-cached too, so a
+resume pays no API). A changed grid / finalists / weights / split rotates the
+stale checkpoint aside and starts fresh; ``--fresh`` forces that. The checkpoint
+is deleted once the stage completes and the final timestamped CSV is written.
+
 Usage:
   python -m eval.silver.run_new_summarization_sweeps --stage structure_screen --list-variants
   python -m eval.silver.run_new_summarization_sweeps --stage structure_screen
@@ -70,6 +78,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import csv
+import hashlib
+import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -360,11 +371,11 @@ def _deviation(row: dict) -> int:
         d += 1
     for knob, default in _DEFAULTS.items():
         v = row.get(knob)
-        if v is not None and float(v) != float(default):
+        if v not in (None, "") and float(v) != float(default):   # "" = blanked/round-tripped inert
             d += 1
     blend = (row.get("w_category"), row.get("w_embedding"),
              row.get("w_entity"), row.get("w_evidence"))
-    if all(b is not None for b in blend):
+    if all(b not in (None, "") for b in blend):
         if tuple(round(float(b), 4) for b in blend) != tuple(round(float(b), 4) for b in _DEFAULT_BLEND):
             d += 1
     return d
@@ -426,13 +437,14 @@ def _select_finalists(struct_best: dict, metric: str, top_k: int,
     return out[:cap]
 
 
-# ── Variant listing / running (share _effective_specs so counts match the run) ─
+# ── Cells + checkpoint / resume ──────────────────────────────────────────────
 
-def _list_variants(stage: str) -> list[str]:
-    """Human-readable per-cell names (no API, no cache needed)."""
+def _iter_cells(stage: str):
+    """Yield one dict per grid cell — the SINGLE enumeration source shared by
+    --list-variants, the run loop, and the checkpoint keys, so the listed count,
+    what actually runs, and the resume keys can never drift apart."""
     embedders, specs, thetas, rejects, policies, polarities, kind_of, align_of, embedder_of = \
         _stage_plan(stage)
-    cells: list[str] = []
     for emb in embedders:
         for s in _effective_specs(emb, specs, embedder_of):
             for t in thetas:
@@ -441,12 +453,134 @@ def _list_variants(stage: str) -> list[str]:
                         continue
                     for pol in policies:
                         for fe in polarities:
-                            cells.append(
-                                f"embedder={emb}  scorer_kind={kind_of[s.name]}  variant={s.name}  "
-                                f"align={align_of[s.name]}  theta={t:.2f}  reject={rj:.2f}  "
-                                f"single_voter={pol}  polarity_fail={fe}"
-                            )
-    return cells
+                            yield {
+                                "embedder": emb, "spec": s,
+                                "scorer_kind": kind_of[s.name], "alignment": align_of[s.name],
+                                "theta": t, "reject": rj, "policy": pol, "polarity": fe,
+                            }
+
+
+def _canonical_key(embedder, variant, theta, reject, policy, polarity) -> tuple:
+    """Canonical cell identity — the ONE place a cell key is built, coercing types
+    identically whether the source is a cell dict or a reloaded CSV row (so a resume
+    skip can never silently miss and re-append a duplicate row)."""
+    return (str(embedder), str(variant), f"{float(theta):.2f}", f"{float(reject):.2f}",
+            str(policy), str(polarity).lower())
+
+
+def _cell_key_from_cell(c: dict) -> tuple:
+    return _canonical_key(c["embedder"], c["spec"].name, c["theta"], c["reject"],
+                          c["policy"], c["polarity"])
+
+
+def _cell_key_from_row(r: dict) -> tuple:
+    # rows use the engine's column name "reject_theta"; cells use "reject"
+    return _canonical_key(r["embedder"], r["variant"], r["theta"], r["reject_theta"],
+                          r["legacy_single_voter_policy"], r["force_escalate_on_polarity_conflict"])
+
+
+def _weights_sig(cfg) -> tuple:
+    """Resolved weight VALUES (not the spec name): editing _DEFAULTS or a default
+    blend between runs invalidates a stale checkpoint even though names are unchanged."""
+    h = getattr(cfg, "hybrid", None)
+    return (
+        cfg.scorer_kind, round(cfg.tau, 6), round(cfg.count_alpha, 6),
+        round(cfg.reuse_weight, 6), round(cfg.contradiction_weight, 6), cfg.alignment_strategy,
+        None if h is None else (round(h.w_category, 6), round(h.w_embedding, 6),
+                                round(h.w_entity, 6), round(h.w_evidence, 6)),
+    )
+
+
+def _plan_signature(stage: str, cells: list[dict], args) -> str:
+    """Hash the intended cell set + resolved weights + run params. A mismatch ⇒ the
+    checkpoint is stale (grid / finalists / weights / split / seed changed)."""
+    specs_seen = {c["spec"].name: c["spec"].weights for c in cells}
+    payload = {
+        "stage": stage,
+        "cells": sorted(_cell_key_from_cell(c) for c in cells),
+        "weights": [[n, _weights_sig(w)] for n, w in sorted(specs_seen.items())],
+        "split": args.split, "seed": args.seed,
+        "dev_fraction": args.dev_fraction, "sim_threshold": args.sim_threshold,
+    }
+    raw = json.dumps(payload, sort_keys=True, default=str)
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _ckpt_csv(stage: str) -> Path:
+    return REPORTS_DIR / f"checkpoint_{stage}.csv"
+
+
+def _ckpt_meta(stage: str) -> Path:
+    return REPORTS_DIR / f"checkpoint_{stage}.meta.json"
+
+
+def _rotate_checkpoint(stage: str, reason: str) -> None:
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    moved = []
+    for p in (_ckpt_csv(stage), _ckpt_meta(stage)):
+        if p.exists():
+            p.rename(p.with_name(p.name + f".stale-{ts}"))
+            moved.append(p.name)
+    if moved:
+        print(f"Checkpoint reset ({reason}) — moved {', '.join(moved)} aside.")
+
+
+def _read_checkpoint_rows(path: Path) -> list[dict]:
+    """Load completed rows; defensively skip a truncated trailing line so an
+    interrupted final write just recomputes that one cell."""
+    required = ("embedder", "variant", "theta", "reject_theta",
+                "legacy_single_voter_policy", "force_escalate_on_polarity_conflict")
+    rows: list[dict] = []
+    with path.open(newline="", encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            if all(r.get(k) not in (None, "") for k in required):
+                rows.append(r)
+    return rows
+
+
+def _checkpoint_state(stage: str, signature: str, fresh: bool) -> tuple[list[dict], bool]:
+    """Return (done_rows, resume). Resume ONLY when both files exist AND the
+    signature matches; otherwise rotate any stale files aside and start fresh
+    (writing a new meta sidecar)."""
+    ckpt, meta = _ckpt_csv(stage), _ckpt_meta(stage)
+    if fresh:
+        _rotate_checkpoint(stage, "--fresh")
+    elif ckpt.exists() and meta.exists():
+        try:
+            saved = json.loads(meta.read_text(encoding="utf-8"))
+        except Exception:
+            saved = {}
+        if saved.get("signature") == signature:
+            done = _read_checkpoint_rows(ckpt)
+            print(f"Resuming {stage}: {len(done)} cell(s) already done in {ckpt.name}.")
+            return done, True
+        _rotate_checkpoint(stage, "config changed (signature mismatch)")
+    elif ckpt.exists() or meta.exists():
+        _rotate_checkpoint(stage, "incomplete checkpoint")
+
+    meta.parent.mkdir(parents=True, exist_ok=True)
+    meta.write_text(json.dumps(
+        {"signature": signature, "stage": stage,
+         "created": datetime.now(timezone.utc).isoformat()}, indent=2), encoding="utf-8")
+    return [], False
+
+
+def _cleanup_checkpoint(stage: str) -> None:
+    for p in (_ckpt_csv(stage), _ckpt_meta(stage)):
+        if p.exists():
+            p.unlink()
+
+
+# ── Variant listing (from _iter_cells, the same source the run uses) ─────────
+
+def _list_variants(stage: str) -> list[str]:
+    """Human-readable per-cell names (no API, no cache needed)."""
+    return [
+        f"embedder={c['embedder']}  scorer_kind={c['scorer_kind']}  variant={c['spec'].name}  "
+        f"align={c['alignment']}  theta={c['theta']:.2f}  reject={c['reject']:.2f}  "
+        f"single_voter={c['policy']}  polarity_fail={c['polarity']}"
+        for c in _iter_cells(stage)
+    ]
 
 
 def _stamp_row(r: dict, emb: str, kind_of: dict, align_of: dict) -> dict:
@@ -467,37 +601,66 @@ def _stamp_row(r: dict, emb: str, kind_of: dict, align_of: dict) -> dict:
 
 
 def _run_stage(stage: str, args) -> list[dict]:
-    embedders, specs, thetas, rejects, policies, polarities, kind_of, align_of, embedder_of = \
-        _stage_plan(stage)
+    """Run the stage cell-by-cell, appending each completed cell to the checkpoint
+    (flushed) and resuming from it. Each cell is one single-element ``run_sweep``
+    call, so the cell key is constructed in exactly one place (the harness)."""
     if stage == "family_refine" and not FINALIST_STRUCTURES:
         raise SystemExit(_FINALIST_EMPTY_MSG)
 
-    all_rows: list[dict] = []
-    for emb in embedders:
-        specs_e = _effective_specs(emb, specs, embedder_of)   # built with THIS embedder's embed_fn
-        if not specs_e:
-            continue
-        ctx = _load_map_context(emb, embed_cache_path=args.embed_cache)
-        rows = run_sweep(
-            voter_cache=ctx.voter_cache,
-            silver_by_case=ctx.silver_by_case,
-            embedder=ctx.embedder,
-            embed_cache=ctx.embed_cache,
-            sim_threshold=args.sim_threshold,
-            scorer_specs=specs_e,
-            thetas=thetas,
-            reject_thetas=rejects,
-            split=args.split,
-            seed=args.seed,
-            dev_fraction=args.dev_fraction,
-            agreement_embed_fn=ctx.agreement_embed_fn,
-            single_voter_policies=policies,
-            force_escalate_on_polarity_conflict_grid=polarities,
-        )
-        for r in rows:
-            _stamp_row(r, emb, kind_of, align_of)
-        all_rows.extend(rows)
-    return all_rows
+    cells = list(_iter_cells(stage))
+    signature = _plan_signature(stage, cells, args)
+    done_rows, resume = _checkpoint_state(stage, signature, args.fresh)
+    done_keys = {_cell_key_from_row(r) for r in done_rows}
+    remaining = [c for c in cells if _cell_key_from_cell(c) not in done_keys]
+
+    if not remaining:
+        print(f"All {len(cells)} cell(s) already in the checkpoint — nothing to run.")
+        return done_rows
+    print(f"{stage}: {len(cells)} cell(s) — {len(done_rows)} done, {len(remaining)} to run"
+          f"{' (resuming)' if resume else ''}.")
+
+    # one ctx load per embedder that still has work (stable, first-seen order)
+    by_emb: dict[str, list[dict]] = {}
+    for c in remaining:
+        by_emb.setdefault(c["embedder"], []).append(c)
+
+    ckpt = _ckpt_csv(stage)
+    ckpt.parent.mkdir(parents=True, exist_ok=True)
+    new_rows: list[dict] = []
+    fh = ckpt.open("a" if resume else "w", newline="", encoding="utf-8")
+    try:
+        writer = csv.DictWriter(fh, fieldnames=_CSV_FIELDS, extrasaction="ignore")
+        if not resume:
+            writer.writeheader()
+            fh.flush()
+        for emb, emb_cells in by_emb.items():
+            ctx = _load_map_context(emb, embed_cache_path=args.embed_cache)
+            for c in emb_cells:
+                rows = run_sweep(
+                    voter_cache=ctx.voter_cache,
+                    silver_by_case=ctx.silver_by_case,
+                    embedder=ctx.embedder,
+                    embed_cache=ctx.embed_cache,
+                    sim_threshold=args.sim_threshold,
+                    scorer_specs=[c["spec"]],
+                    thetas=[c["theta"]],
+                    reject_thetas=[c["reject"]],
+                    split=args.split,
+                    seed=args.seed,
+                    dev_fraction=args.dev_fraction,
+                    agreement_embed_fn=ctx.agreement_embed_fn,
+                    single_voter_policies=[c["policy"]],
+                    force_escalate_on_polarity_conflict_grid=[c["polarity"]],
+                )
+                for r in rows:
+                    _stamp_row(r, emb, {c["spec"].name: c["scorer_kind"]},
+                               {c["spec"].name: c["alignment"]})
+                    writer.writerow(r)
+                    new_rows.append(r)
+                fh.flush()   # durable per cell — a Ctrl-C keeps everything written so far
+    finally:
+        fh.close()
+    return done_rows + new_rows
 
 
 def _fmt_best(r: dict, metric: str) -> str:
@@ -568,6 +731,9 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--embed-cache", default=None,
                     help="Override embedding cache path (default: per-embedder default).")
+    ap.add_argument("--fresh", action="store_true",
+                    help="Ignore any existing checkpoint for this stage and start over "
+                         "(the stale checkpoint is rotated aside, not deleted).")
     args = ap.parse_args()
 
     print(PIN_HINTS[args.stage])
@@ -591,6 +757,7 @@ def main() -> None:
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
     csv_path = REPORTS_DIR / f"new_sweep_{args.stage}_{timestamp}.csv"
     _write_csv(csv_path, rows, _CSV_FIELDS)
+    _cleanup_checkpoint(args.stage)   # stage completed — discard the resume checkpoint
 
     if args.stage == "structure_screen":
         _report_structure_screen(rows, args, csv_path)
