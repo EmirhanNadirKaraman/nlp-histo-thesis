@@ -72,8 +72,11 @@ def main():
                         help="Embedding provider (default: openai)")
     parser.add_argument("--threshold", type=float, default=SIMILARITY_THRESHOLD,
                         help=f"Similarity threshold (default: {SIMILARITY_THRESHOLD})")
-    parser.add_argument("--matcher", default="greedy", choices=sorted(MATCHERS),
-                        help="One-to-one matching strategy (default: greedy)")
+    parser.add_argument("--matcher", default="optimal", choices=sorted(MATCHERS),
+                        help="One-to-one matching strategy. Default: optimal (Hungarian) — the "
+                             "PRIMARY matcher the calibration sweep selects on, so the held-out "
+                             "score stays consistent with calibration. Pass --matcher greedy for "
+                             "the secondary diagnostic.")
     parser.add_argument("--split", default="all", choices=["dev", "test", "all"],
                         help="Case split to evaluate. Default: all.")
     parser.add_argument("--dev-fraction", type=float, default=0.8)

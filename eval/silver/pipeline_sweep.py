@@ -53,8 +53,10 @@ from eval.silver.matcher import (
     SIMILARITY_THRESHOLD,
     EmbeddingCache,
     compute_sim_matrix,
+    greedy_match,
     make_embedding_cache,
     match_from_matrix,
+    optimal_match,
 )
 from eval.silver.schemas import (
     PipelineCaseOutput,
@@ -206,43 +208,66 @@ def _evaluate_outputs(
     embed_cache: EmbeddingCache,
     sim_threshold: float,
 ) -> dict[str, Any]:
-    """Compute P/R/F1 for a list of PipelineCaseOutputs vs silver."""
-    n_silver = n_pipeline = n_matched = 0
-    strict_tp = 0.0
+    """Compute P/R/F1 + strict-F1 vs silver under BOTH one-to-one matchers.
+
+    The similarity matrix is computed once per case; the (cheap) matching is run
+    twice — ``greedy`` and ``optimal`` (Hungarian via
+    ``scipy.optimize.linear_sum_assignment``) — so the caller gets both without a
+    second embedding pass.
+
+    NAMING: ``*_optimal`` is the globally optimal one-to-one assignment **by
+    embedding similarity**. It does NOT mean a globally optimal *strict-F1*
+    assignment — both matchers match on similarity, and the three categorical
+    fields (category / relation_type / direction) are scored afterward.
+
+    Returns explicit ``*_greedy`` and ``*_optimal`` metric sets. The legacy
+    ``precision``/``recall``/``f1``/``strict_f1``/``n_matched`` keys ALIAS the
+    **greedy** matcher (the historical default) for backward compatibility.
+    """
     STRICT_FIELDS = {"category", "relation_type", "direction"}
+    n_silver = n_pipeline = 0
+    matchers = {"greedy": greedy_match, "optimal": optimal_match}
+    acc = {"greedy": [0, 0.0], "optimal": [0, 0.0]}   # name → [n_matched, strict_tp]
 
     for co in case_outputs:
         silver = silver_by_case.get(co.case_id)
         if silver is None:
             continue
         sim, _, _ = compute_sim_matrix(silver, co, embedder, embed_cache)
-        result = match_from_matrix(silver, co, sim, sim_threshold)
-
         n_silver += len(silver.findings)
         n_pipeline += len(co.findings)
-        n_matched += len(result.matched)
+        for name, fn in matchers.items():
+            result = match_from_matrix(silver, co, sim, sim_threshold, match_fn=fn)
+            acc[name][0] += len(result.matched)
+            for pair in result.matched:
+                strict_mismatch = any(m.field in STRICT_FIELDS for m in pair.field_mismatches)
+                acc[name][1] += 0.5 if strict_mismatch else 1.0
 
-        for pair in result.matched:
-            has_strict_mismatch = any(m.field in STRICT_FIELDS
-                                      for m in pair.field_mismatches)
-            strict_tp += 0.5 if has_strict_mismatch else 1.0
+    def _prf(n_matched: int, strict_tp: float) -> tuple[float, float, float, float]:
+        p = n_matched / n_pipeline if n_pipeline else 0.0
+        r = n_matched / n_silver if n_silver else 0.0
+        f1 = (2 * p * r / (p + r)) if (p + r) else 0.0
+        sp = strict_tp / n_pipeline if n_pipeline else 0.0
+        sr = strict_tp / n_silver if n_silver else 0.0
+        sf1 = (2 * sp * sr / (sp + sr)) if (sp + sr) else 0.0
+        return p, r, f1, sf1
 
-    precision = n_matched / n_pipeline if n_pipeline else 0.0
-    recall    = n_matched / n_silver   if n_silver   else 0.0
-    f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
-
-    sp = strict_tp / n_pipeline if n_pipeline else 0.0
-    sr = strict_tp / n_silver   if n_silver   else 0.0
-    strict_f1 = (2 * sp * sr / (sp + sr)) if (sp + sr) else 0.0
+    gp, gr, gf1, gsf1 = _prf(*acc["greedy"])
+    op, orr, of1, osf1 = _prf(*acc["optimal"])
 
     return {
-        "precision":  round(precision, 4),
-        "recall":     round(recall, 4),
-        "f1":         round(f1, 4),
-        "strict_f1":  round(strict_f1, 4),
-        "n_matched":  n_matched,
-        "n_silver":   n_silver,
-        "n_pipeline": n_pipeline,
+        # legacy keys == greedy matcher (historical default; kept for back-compat)
+        "precision": round(gp, 4), "recall": round(gr, 4),
+        "f1": round(gf1, 4), "strict_f1": round(gsf1, 4),
+        "n_matched": acc["greedy"][0], "n_silver": n_silver, "n_pipeline": n_pipeline,
+        # explicit greedy (sensitivity / diagnostic)
+        "precision_greedy": round(gp, 4), "recall_greedy": round(gr, 4),
+        "f1_greedy": round(gf1, 4), "strict_f1_greedy": round(gsf1, 4),
+        "n_matched_greedy": acc["greedy"][0],
+        # explicit optimal / Hungarian (PRIMARY selection matcher)
+        "precision_optimal": round(op, 4), "recall_optimal": round(orr, 4),
+        "f1_optimal": round(of1, 4), "strict_f1_optimal": round(osf1, 4),
+        "n_matched_optimal": acc["optimal"][0],
     }
 
 
