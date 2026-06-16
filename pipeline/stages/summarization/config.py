@@ -304,6 +304,14 @@ class AgreementConfig:
     the harness's ``BEST_SCORER`` constant. Any value outside
     ``{"embedding", "hybrid"}`` raises at runner construction time."""
 
+    embedder: str = "gemini"
+    """Embedding model backing the agreement scorer's similarity. ``"gemini"``
+    (production default — matches the historical hardcoded ``GeminiEmbedder`` in
+    ``scripts/run_paper.py``) or ``"openai"``. Pin to whichever embedder won the
+    ``map_theta_sweep --embedder`` comparison; ``build_runner`` /
+    ``build_batch_runner`` read it to construct ``embed_fn``. Any other value
+    raises in ``_make_embed_fn``."""
+
     hybrid: "HybridConfig" = field(default_factory=lambda: HybridConfig())
     """Hybrid scorer blend weights — only consulted when
     ``scorer_kind == "hybrid"``. Nested config so the YAML reads cleanly

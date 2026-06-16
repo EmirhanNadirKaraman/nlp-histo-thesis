@@ -147,6 +147,27 @@ def _load_summarization_config(config_path: str | Path | None):
     return sum_cfg
 
 
+def _make_embed_fn(embedder_name: str):
+    """Build the agreement-scorer embedder from config: 'gemini' | 'openai'.
+
+    Production historically hardcoded GeminiEmbedder; this routes the choice
+    through cfg.agreement.embedder so the map_theta_sweep --embedder winner can
+    be pinned in configs/run.yaml.
+    """
+    from pipeline.stages.summarization.agreement.providers import (
+        GeminiEmbedder,
+        OpenAIEmbedder,
+    )
+    name = (embedder_name or "gemini").strip().lower()
+    if name == "gemini":
+        return GeminiEmbedder()
+    if name == "openai":
+        return OpenAIEmbedder()
+    raise ValueError(
+        f"agreement.embedder must be 'gemini' or 'openai', got {embedder_name!r}"
+    )
+
+
 def build_runner(
     trace: bool,
     *,
@@ -167,7 +188,6 @@ def build_runner(
     ``SummarizationConfig`` defaults; pass ``None`` to skip YAML loading.
     """
     from pipeline.stages.summarization import SummarizationRunner
-    from pipeline.stages.summarization.agreement.providers import GeminiEmbedder
     from pipeline.stages.summarization.batch.voter_configs import get_profile
     from dataclasses import replace as _dc_replace
     from pipeline.stages.summarization.llm_providers import (
@@ -223,7 +243,7 @@ def build_runner(
         voter_llms=voter_llms,
         level2_voter_llms=level2_voter_llms,
         escalation_llm=escalation_llm,
-        embed_fn=GeminiEmbedder(),
+        embed_fn=_make_embed_fn(sum_cfg.agreement.embedder),
         config=sum_cfg,
         enable_router=sum_cfg.routing.enable_router,
         router_single_voter_policy=sum_cfg.routing.router_single_voter_policy,
@@ -256,7 +276,6 @@ def build_batch_runner(
     config_path: str | Path | None = DEFAULT_CONFIG_PATH,
 ):
     from dataclasses import replace as _dc_replace
-    from pipeline.stages.summarization.agreement.providers import GeminiEmbedder
     from pipeline.stages.summarization.batch import BatchSummarizationRunner
     from pipeline.stages.summarization.batch.voter_configs import get_profile
     from pipeline.stages.summarization.llm_providers import (
@@ -284,7 +303,7 @@ def build_batch_runner(
         router_single_voter_policy=sum_cfg.routing.router_single_voter_policy,
         legacy_single_voter_policy=sum_cfg.routing.legacy_single_voter_policy,
         output_dir=Path("out/summaries"),
-        embed_fn=GeminiEmbedder(),
+        embed_fn=_make_embed_fn(sum_cfg.agreement.embedder),
         cascade_profile=profile.name,
         artifact_root=artifact_root,
         artifact_run_id=artifact_run_id,
