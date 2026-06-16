@@ -312,6 +312,22 @@ class AgreementConfig:
     ``build_batch_runner`` read it to construct ``embed_fn``. Any other value
     raises in ``_make_embed_fn``."""
 
+    alignment_strategy: str = "soft_max"
+    """How findings are matched between two voters when scoring agreement.
+
+    * ``"soft_max"`` (default, unchanged) — bidirectional soft coverage: each
+      finding takes its best counterpart WITH replacement (many-to-one). Uses
+      the full ``tau``/``count_alpha``/``reuse_weight``/``contradiction_weight``
+      penalty set.
+    * ``"greedy"`` / ``"hungarian"`` — ONE-TO-ONE matching (each finding matched
+      at most once; greedy = iterative best-pair, hungarian = global optimum via
+      ``scipy.optimize.linear_sum_assignment``). Scored by a precision/recall F1
+      over matched similarities, so over/under-production is penalised. ``tau``
+      is reused as the minimum valid-pair similarity; ``count_alpha`` /
+      ``reuse_weight`` / ``contradiction_weight`` do NOT apply to the one-to-one
+      modes. Calibrated via the ``map_alignment`` stage. Any value outside
+      ``{"soft_max", "greedy", "hungarian"}`` raises at scoring time."""
+
     hybrid: "HybridConfig" = field(default_factory=lambda: HybridConfig())
     """Hybrid scorer blend weights — only consulted when
     ``scorer_kind == "hybrid"``. Nested config so the YAML reads cleanly

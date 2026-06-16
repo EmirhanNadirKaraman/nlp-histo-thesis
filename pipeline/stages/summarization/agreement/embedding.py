@@ -297,6 +297,65 @@ def _align_precomputed_with_breakdown(
     return score, breakdown
 
 
+def _align_one_to_one(
+    emb_a: np.ndarray,
+    emb_b: np.ndarray,
+    tau: float,
+    strategy: str,
+) -> float:
+    """One-to-one alignment agreement score (greedy / hungarian modes).
+
+    Each finding is matched to at most ONE finding on the other side, so extra
+    unmatched findings on either side lower the score. ``tau`` is the minimum
+    valid-pair similarity — pairs below it cannot be matched. The score is a
+    precision/recall-style F1 over the matched similarities:
+
+        precision = matched_score / |A|,  recall = matched_score / |B|
+
+    so over-production (extra A) lowers precision and under-production (extra B)
+    lowers recall. Operates on pre-normalised embeddings; returns a value in
+    ``[0, 1]``. Does NOT use count_alpha / reuse_weight / contradiction_weight
+    (those are soft_max-only).
+    """
+    na, nb = emb_a.shape[0], emb_b.shape[0]
+    if na == 0 and nb == 0:
+        return 1.0
+    if na == 0 or nb == 0:
+        return 0.0
+
+    sim = np.clip(emb_a @ emb_b.T, 0.0, 1.0)        # (na, nb)
+    sim = np.where(sim < tau, 0.0, sim)              # tau = min valid-pair similarity
+
+    if strategy == "greedy":
+        used_a: set[int] = set()
+        used_b: set[int] = set()
+        matched = 0.0
+        for flat in np.argsort(sim, axis=None)[::-1]:   # candidate pairs, sim desc
+            i, j = divmod(int(flat), nb)
+            s = float(sim[i, j])
+            if s <= 0.0:
+                break                                    # remaining pairs are below tau
+            if i in used_a or j in used_b:
+                continue
+            used_a.add(i)
+            used_b.add(j)
+            matched += s
+    elif strategy == "hungarian":
+        from scipy.optimize import linear_sum_assignment
+        rows, cols = linear_sum_assignment(-sim)         # maximise total similarity
+        matched = float(sum(sim[r, c] for r, c in zip(rows, cols) if sim[r, c] > 0.0))
+    else:
+        raise ValueError(
+            f"alignment_strategy must be 'greedy' or 'hungarian', got {strategy!r}"
+        )
+
+    precision = matched / na
+    recall = matched / nb
+    if precision + recall > 0.0:
+        return 2.0 * precision * recall / (precision + recall)
+    return 0.0
+
+
 def _align(
     embed: EmbedFn,
     a_claims: list[str],
@@ -305,8 +364,13 @@ def _align(
     count_alpha: float = 0.25,
     reuse_weight: float = 0.15,
     contradiction_weight: float = 0.20,
+    alignment_strategy: str = "soft_max",
 ) -> float:
-    """Embed and align two claim lists.  Issues a single embed() call."""
+    """Embed and align two claim lists.  Issues a single embed() call.
+
+    ``alignment_strategy`` selects ``soft_max`` (default, many-to-one coverage
+    with the full penalty set) or one-to-one ``greedy`` / ``hungarian`` (see
+    ``_align_one_to_one``)."""
     if not a_claims and not b_claims:
         return 1.0
     if not a_claims or not b_claims:
@@ -318,10 +382,12 @@ def _align(
     emb_a = normalized[: len(a_claims)]
     emb_b = normalized[len(a_claims) :]
 
-    return _align_precomputed(
-        emb_a, emb_b, a_claims, b_claims,
-        tau, count_alpha, reuse_weight, contradiction_weight,
-    )
+    if alignment_strategy == "soft_max":
+        return _align_precomputed(
+            emb_a, emb_b, a_claims, b_claims,
+            tau, count_alpha, reuse_weight, contradiction_weight,
+        )
+    return _align_one_to_one(emb_a, emb_b, tau, alignment_strategy)
 
 
 def _claims(output: AuditableSummary) -> list[str]:
@@ -364,6 +430,7 @@ class EmbeddingScorer:
         reuse_weight: float = 0.15,
         contradiction_weight: float = 0.20,
         grounding_floor: float = 0.50,
+        alignment_strategy: str = "soft_max",
     ) -> None:
         self._embed: EmbedFn = embed_fn or OpenAIEmbedder()
         self.tau = tau
@@ -371,6 +438,7 @@ class EmbeddingScorer:
         self.reuse_weight = reuse_weight
         self.contradiction_weight = contradiction_weight
         self.grounding_floor = grounding_floor
+        self.alignment_strategy = alignment_strategy
 
     def compute(
         self,
@@ -390,6 +458,7 @@ class EmbeddingScorer:
                 count_alpha=self.count_alpha,
                 reuse_weight=self.reuse_weight,
                 contradiction_weight=self.contradiction_weight,
+                alignment_strategy=self.alignment_strategy,
             )
             if context is not None and context.voter_contexts:
                 pf_i = context.voter_contexts[i].grounding_pass_fraction

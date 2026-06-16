@@ -142,6 +142,11 @@ summarization:
                                 # 'openai'. MUST match the embedder the map_theta_sweep --embedder
                                 # comparison selected; build_runner/build_batch_runner read it to build
                                 # embed_fn (it is NOT derived anywhere else).
+    alignment_strategy: soft_max  # finding-matching mode when scoring agreement: 'soft_max' (default,
+                                # many-to-one coverage + full penalty set) or one-to-one 'greedy'/
+                                # 'hungarian' (precision/recall F1 over matched pairs; tau = min valid
+                                # pair sim; count_alpha/reuse/contradiction do NOT apply). Calibrated
+                                # by the map_alignment stage in run_new_summarization_sweeps.py.
     force_escalate_on_polarity_conflict: true   # B-051 hard-fail policy. true (default) preserves the
                                                 # safety guard: comparable positive/negative findings
                                                 # override the scorer decision to ESCALATE. false records

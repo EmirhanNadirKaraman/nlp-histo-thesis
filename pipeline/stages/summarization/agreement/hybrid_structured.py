@@ -92,6 +92,7 @@ class HybridStructuredSimilarity:
         count_alpha: float = 0.25,
         reuse_weight: float = 0.15,
         contradiction_weight: float = 0.20,
+        alignment_strategy: str = "soft_max",
     ) -> None:
         self._embed: EmbedFn = embed_fn or OpenAIEmbedder()
         self._w_category = w_category
@@ -105,6 +106,9 @@ class HybridStructuredSimilarity:
         self._count_alpha = count_alpha
         self._reuse_weight = reuse_weight
         self._contradiction_weight = contradiction_weight
+        # Alignment mode for the embedding sub-signal; forwarded to the inner
+        # EmbeddingSimilarityStrategy in compute_matrix so hybrid honours it too.
+        self._alignment_strategy = alignment_strategy
 
     @classmethod
     def from_config(cls, agreement_cfg, embed_fn: EmbedFn | None = None,
@@ -135,6 +139,7 @@ class HybridStructuredSimilarity:
             count_alpha=agreement_cfg.count_alpha,
             reuse_weight=agreement_cfg.reuse_weight,
             contradiction_weight=agreement_cfg.contradiction_weight,
+            alignment_strategy=getattr(agreement_cfg, "alignment_strategy", "soft_max"),
             **merged,
         )
 
@@ -150,6 +155,7 @@ class HybridStructuredSimilarity:
                 count_alpha=self._count_alpha,
                 reuse_weight=self._reuse_weight,
                 contradiction_weight=self._contradiction_weight,
+                alignment_strategy=self._alignment_strategy,
             )
         if self._w_entity > 0.0:
             score += self._w_entity * _jaccard(
@@ -182,6 +188,7 @@ class HybridStructuredSimilarity:
                 count_alpha=self._count_alpha,
                 reuse_weight=self._reuse_weight,
                 contradiction_weight=self._contradiction_weight,
+                alignment_strategy=self._alignment_strategy,
             ).compute_matrix(outputs, context=context)
             if self._w_embedding > 0.0
             else None

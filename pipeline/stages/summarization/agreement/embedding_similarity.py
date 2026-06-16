@@ -5,7 +5,7 @@ import numpy as np
 
 from pipeline.stages.summarization.interfaces.scoring import AgreementContext
 from pipeline.stages.summarization.models import AuditableSummary
-from .embedding import _align, _align_precomputed_with_breakdown, _claims
+from .embedding import _align, _align_one_to_one, _align_precomputed_with_breakdown, _claims
 from .providers import EmbedFn, OpenAIEmbedder
 
 
@@ -47,6 +47,7 @@ class EmbeddingSimilarityStrategy:
         reuse_weight: float = 0.15,
         contradiction_weight: float = 0.20,
         grounding_floor: float = 0.50,
+        alignment_strategy: str = "soft_max",
     ) -> None:
         self._embed: EmbedFn = embed_fn or OpenAIEmbedder()
         self._tau = tau
@@ -54,6 +55,7 @@ class EmbeddingSimilarityStrategy:
         self._reuse_weight = reuse_weight
         self._contradiction_weight = contradiction_weight
         self._grounding_floor = grounding_floor
+        self._alignment_strategy = alignment_strategy
 
     @classmethod
     def from_config(cls, agreement_cfg, embed_fn: EmbedFn | None = None) -> "EmbeddingSimilarityStrategy":
@@ -65,6 +67,7 @@ class EmbeddingSimilarityStrategy:
             count_alpha=agreement_cfg.count_alpha,
             reuse_weight=agreement_cfg.reuse_weight,
             contradiction_weight=agreement_cfg.contradiction_weight,
+            alignment_strategy=getattr(agreement_cfg, "alignment_strategy", "soft_max"),
         )
 
     def similarity(self, a: AuditableSummary, b: AuditableSummary) -> float:
@@ -75,6 +78,7 @@ class EmbeddingSimilarityStrategy:
             count_alpha=self._count_alpha,
             reuse_weight=self._reuse_weight,
             contradiction_weight=self._contradiction_weight,
+            alignment_strategy=self._alignment_strategy,
         )
 
     def compute_matrix(
@@ -191,14 +195,31 @@ class EmbeddingSimilarityStrategy:
 
         for i in range(n):
             for j in range(i + 1, n):
-                score, bd = _align_precomputed_with_breakdown(
-                    voter_embs[i], voter_embs[j],
-                    claim_lists[i], claim_lists[j],
-                    tau=self._tau,
-                    count_alpha=self._count_alpha,
-                    reuse_weight=self._reuse_weight,
-                    contradiction_weight=self._contradiction_weight,
-                )
+                if self._alignment_strategy == "soft_max":
+                    score, bd = _align_precomputed_with_breakdown(
+                        voter_embs[i], voter_embs[j],
+                        claim_lists[i], claim_lists[j],
+                        tau=self._tau,
+                        count_alpha=self._count_alpha,
+                        reuse_weight=self._reuse_weight,
+                        contradiction_weight=self._contradiction_weight,
+                    )
+                else:
+                    score = _align_one_to_one(
+                        voter_embs[i], voter_embs[j],
+                        self._tau, self._alignment_strategy,
+                    )
+                    bd = {
+                        "claim_count_a": len(claim_lists[i]),
+                        "claim_count_b": len(claim_lists[j]),
+                        "coverage_a_to_b": 0.0, "coverage_b_to_a": 0.0,
+                        "base": score, "count_factor": 1.0, "reuse_factor": 1.0,
+                        "polarity_contradiction_ratio": 0.0,
+                        "numeric_contradiction_ratio": 0.0,
+                        "contradiction_ratio": 0.0, "contradiction_factor": 1.0,
+                        "pre_grounding_score": score,
+                        "alignment_strategy": self._alignment_strategy,
+                    }
 
                 grounding_factor = 1.0
                 if context is not None and len(context.voter_contexts) == n:
