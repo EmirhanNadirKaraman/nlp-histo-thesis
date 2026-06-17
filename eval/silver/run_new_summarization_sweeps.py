@@ -108,6 +108,15 @@ from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 # ─────────────────────────────────────────────────────────────────────────────
 # Pin-as-you-go winners. Edit after each stage; defaults = current production.
 # ─────────────────────────────────────────────────────────────────────────────
+FINALIST_STRUCTURES = [                                                        
+    ("gemini", "hybrid", "soft_max"),    # top-k                               
+    ("gemini", "hybrid", "greedy"),    # top-k                                 
+    ("gemini", "hybrid", "hungarian"),    # top-k                              
+    ("openai", "hybrid", "soft_max"),    # top-k                               
+    ("openai", "hybrid", "greedy"),    # keep-within                           
+    ("openai", "hybrid", "hungarian"),    # keep-within                        
+]  
+
 BEST_EMBEDDER = "gemini"            # family_refine — "gemini" | "openai"
 BEST_SCORER = "embedding"           # family_refine — "embedding" | "hybrid"
 
@@ -160,7 +169,7 @@ HYBRID_BLEND_GRID: dict[str, tuple[float, float, float, float]] = {
 _DEFAULT_BLEND = HYBRID_BLEND_GRID["default"]   # == HybridConfig() default; the base spec covers it
 
 # structure_screen — coarse threshold grid (cheap; the full grid is re-confirmed in map_theta).
-COARSE_THETA_GRID = [0.70, 0.80, 0.90]
+COARSE_THETA_GRID = [0.70, 0.75, 0.80, 0.85, 0.90]
 COARSE_REJECT_GRID = [0.10, 0.20]
 
 # structure_screen finalist selection.
