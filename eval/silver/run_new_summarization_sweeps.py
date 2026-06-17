@@ -156,7 +156,11 @@ BEST_ALIGNMENT = "greedy"           # E06 family_refine — "soft_max" | "greedy
 BEST_THETA = 0.90                   # provisional from E06; map_theta (E07) re-confirms at the full score fn
 BEST_REJECT_THETA = 0.10            # provisional from E06; must be < BEST_THETA
 
-BEST_VOTER_SUBSET = "all"           # voter_subset_refine — "all" | "drop_l1_i" | "drop_l2_i".
+BEST_VOTER_SUBSET = "all"           # E06c voter_subset_refine CONFIRMED — "all" | "drop_l1_i" | "drop_l2_i".
+#                                     E06b screen: every single-voter drop loses strict_f1 at fixed θ.
+#                                     E06c frontier (full θ grid): no drop dominates "all" — "all" owns
+#                                     the economy knee (0.5005 @ 187 L3 calls) and max-F1 (0.7071); drops
+#                                     only win in a sub-economy band (strict_f1 0.40–0.47) we don't ship.
 #                                     map_theta / map_gates run with THIS subset (default "all").
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -240,7 +244,27 @@ VOTER_SUBSET_SCREEN_CONFIGS: list[dict] = [
 
 # voter_subset_refine input — paste from voter_subset_screen's printed block. Each dict
 # is a (config, voter_subset) pair to re-sweep over the FULL theta grid.
-VOTER_SUBSET_REFINE_CONFIGS: list[dict] = []
+VOTER_SUBSET_REFINE_CONFIGS: list[dict] = [
+    # E06c — rigor check on the voter-subset verdict. The E06b screen (fixed θ)
+    # showed every single-voter drop loses strict_f1; the only drops that cut
+    # Sonnet (L3) cost were the two gemini drops in the ECONOMY config, at ~10
+    # strict_f1 pts. Refine those two across the FULL θ grid to confirm neither
+    # dominates economy@all on the cost-quality frontier (then pin BEST_VOTER_SUBSET="all").
+    # economy@all is the in-run baseline: gives the economy structure's full θ×cost
+    # curve with the new per-tier columns (family_refine's CSV predates them, E09 wants it).
+    {'label': 'economy', 'base_config': 'economy', 'voter_subset': 'all',
+     'embedder': 'openai', 'scorer_kind': 'hybrid', 'alignment_strategy': 'soft_max',
+     'tau': 0.15, 'count_alpha': 0.25, 'reuse_weight': 0.15, 'contradiction_weight': 0.2,
+     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.5, 'w_evidence': 0.05},
+    {'label': 'economy', 'base_config': 'economy', 'voter_subset': 'drop_l1_0',
+     'embedder': 'openai', 'scorer_kind': 'hybrid', 'alignment_strategy': 'soft_max',
+     'tau': 0.15, 'count_alpha': 0.25, 'reuse_weight': 0.15, 'contradiction_weight': 0.2,
+     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.5, 'w_evidence': 0.05},
+    {'label': 'economy', 'base_config': 'economy', 'voter_subset': 'drop_l2_0',
+     'embedder': 'openai', 'scorer_kind': 'hybrid', 'alignment_strategy': 'soft_max',
+     'tau': 0.15, 'count_alpha': 0.25, 'reuse_weight': 0.15, 'contradiction_weight': 0.2,
+     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.5, 'w_evidence': 0.05},
+]
 
 _VS_SCREEN_EMPTY_MSG = (
     "VOTER_SUBSET_SCREEN_CONFIGS is empty.\n"
