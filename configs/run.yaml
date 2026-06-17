@@ -79,8 +79,8 @@ pdf_extraction:
 
 summarization:
   map:
-    theta: 0.9
-    reject_theta: 0.2
+    theta: 0.9                  # E07 map_theta CONFIRMED
+    reject_theta: 0.1           # E07 map_theta pin (was 0.2; reject=0.1 dominates 0.0 — higher strict_f1, lower cost)
     chunk_size: 10
     chunk_overlap: 2
     chunk_workers: 5
@@ -133,7 +133,7 @@ summarization:
     count_alpha: 0.25          # soft claim-count-mismatch penalty exponent
     reuse_weight: 0.15         # reuse-concentration penalty weight
     contradiction_weight: 0.20  # polarity-flip + numeric contradiction penalty
-    scorer_kind: embedding      # similarity strategy: 'embedding' (EmbeddingSimilarityStrategy,
+    scorer_kind: hybrid         # E06 family_refine pin (was 'embedding'). strategy: 'embedding' (EmbeddingSimilarityStrategy,
                                 # production) or 'hybrid' (HybridStructuredSimilarity, blend of
                                 # category + embedding + entity + evidence). Stage 1 of the MAP
                                 # sweep (run_summarization_sweeps --stage map_scorer) picks the
@@ -142,7 +142,7 @@ summarization:
                                 # 'openai'. MUST match the embedder the map_theta_sweep --embedder
                                 # comparison selected; build_runner/build_batch_runner read it to build
                                 # embed_fn (it is NOT derived anywhere else).
-    alignment_strategy: soft_max  # finding-matching mode when scoring agreement: 'soft_max' (default,
+    alignment_strategy: greedy  # E06 family_refine pin (was 'soft_max'). mode when scoring agreement: 'soft_max' (default,
                                 # many-to-one coverage + full penalty set) or one-to-one 'greedy'/
                                 # 'hungarian' (precision/recall F1 over matched pairs; tau = min valid
                                 # pair sim; count_alpha/reuse/contradiction do NOT apply). Calibrated
@@ -158,10 +158,10 @@ summarization:
                                   # (convention; not enforced in code). Stage 1b map_hybrid_blend in
                                   # run_summarization_sweeps explores alternatives; all official
                                   # variants in HYBRID_BLEND_GRID sum to 1.0.
-      w_category: 0.25            # weight on category-set Jaccard
-      w_embedding: 0.40           # weight on H-EMB-01 soft-aligned embedding similarity
-      w_entity: 0.25              # weight on extracted-entity Jaccard
-      w_evidence: 0.10            # weight on evidence text-element-id Jaccard
+      w_category: 0.15            # E06 entity-heavy blend (was 0.25). weight on category-set Jaccard
+      w_embedding: 0.30           # E06 entity-heavy blend (was 0.40). weight on H-EMB-01 soft-aligned embedding similarity
+      w_entity: 0.50              # E06 entity-heavy blend (was 0.25). weight on extracted-entity Jaccard
+      w_evidence: 0.05            # E06 entity-heavy blend (was 0.10). weight on evidence text-element-id Jaccard
                                # NOTE: in the per-paper result-cache hash but not the
                                # chunk-level MAP cache (like theta) — sweep via replay.
 
