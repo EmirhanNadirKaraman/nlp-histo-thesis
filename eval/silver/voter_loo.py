@@ -118,7 +118,9 @@ _CSV_FIELDS = [
     "embedder", "scorer", "alignment", "theta", "reject_theta",
     "strict_f1_optimal", "f1_optimal", "precision_optimal", "recall_optimal",
     "strict_f1_greedy", "f1_greedy",
-    "early_accept_rate", "escalate_rate", "n_pipeline", "n_silver",
+    "early_accept_rate", "escalate_rate",
+    "n_chunks", "n_l1_invoked", "n_l2_invoked", "n_l3_invoked",
+    "n_pipeline", "n_silver",
 ]
 
 

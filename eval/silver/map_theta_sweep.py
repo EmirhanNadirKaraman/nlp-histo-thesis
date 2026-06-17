@@ -672,7 +672,7 @@ def _replay(
     reject_theta: float,
     single_voter_policy: str = "keep",
     force_escalate_on_polarity_conflict: bool = True,
-) -> tuple[list[PipelineCaseOutput], dict[str, int], dict[str, set[str]], int]:
+) -> tuple[list[PipelineCaseOutput], dict[str, int], dict[str, set[str]], int, dict[str, int]]:
     """Replay the legacy L1→L2→L3 cascade for one cell of the sweep grid.
 
     ``single_voter_policy`` mirrors ``RoutingConfig.legacy_single_voter_policy``:
@@ -687,14 +687,20 @@ def _replay(
     the conflict in ``score_details`` but lets the scorer's natural decision
     stand — see the docstring on ``AgreementChecker``.
 
-    Returns ``(case_outputs, accept_counts, early_chunks, n_polarity_conflicts)``:
-      * ``accept_counts`` buckets every chunk by where it resolved —
+    Returns ``(case_outputs, accept_counts, early_chunks, n_polarity_conflicts, invoked)``:
+      * ``accept_counts`` buckets every chunk by where it RESOLVED —
         ``l1`` / ``l2`` (early KEEP), ``l3`` (escalated), ``reject``, ``no_data``.
       * ``early_chunks`` maps ``case_id → {chunk_id}`` for chunks accepted early
         (L1 or L2 KEEP), used to compute deferral-safety precision.
       * ``n_polarity_conflicts`` counts chunks where ``score_details["hard_fail_reason"]``
         equalled ``"polarity_conflict"`` — independent of whether the flag
         forced escalation, so the count is comparable across both flag values.
+      * ``invoked`` counts per-tier INVOCATIONS (a tier actually ran for the chunk),
+        distinct from where it RESOLVED: ``l1`` runs on every chunk with L1 data;
+        ``l2`` only when L1 escalated; ``l3`` only when L2 escalated (or had no data).
+        Needed for cost (cost ∝ invocations × voters/tier); ``early_accept_rate``
+        sums l1+l2 *accepts* and so can't recover the L1↔L2 split on its own.
+        Invariant: ``invoked["l3"] == accept_counts["l3"]``.
     """
     from pipeline.stages.summarization.agreement import AgreementChecker
     from pipeline.stages.summarization.interfaces.scoring import ChunkDecision
@@ -709,6 +715,9 @@ def _replay(
     )
     outputs: list[PipelineCaseOutput] = []
     accept_counts = {"l1": 0, "l2": 0, "l3": 0, "reject": 0, "no_data": 0}
+    # Per-tier INVOCATION counts (a tier actually ran), distinct from where the chunk
+    # RESOLVED above. Cost ∝ invocations × voters/tier; see the return docstring.
+    invoked = {"l1": 0, "l2": 0, "l3": 0}
     early_chunks: dict[str, set[str]] = {}
     # Count chunks where the polarity-conflict marker fired. Counted once per
     # chunk (at L1) — the same chunk re-evaluated at L2 would double-count.
@@ -738,6 +747,7 @@ def _replay(
             chunk_had_polarity_conflict = False
 
             if l1_out:
+                invoked["l1"] += 1
                 b1 = checker.compute(l1_out, source_text=source_text)
                 chunk_had_polarity_conflict = _is_polarity_conflict(b1)
                 if b1.decision == ChunkDecision.KEEP:
@@ -752,6 +762,7 @@ def _replay(
                 l2_raw = entry.get("l2", {}).get(chunk_id) or []
                 l2_out = [AuditableSummary.model_validate(d) for d in l2_raw if d]
                 if l2_out:
+                    invoked["l2"] += 1
                     b2 = checker.compute(l2_out, source_text=source_text)
                     # Count L2 polarity conflicts only when L1 didn't already
                     # surface one for this chunk — keeps the count "per chunk",
@@ -764,11 +775,13 @@ def _replay(
                     elif b2.decision == ChunkDecision.REJECT:
                         accept_level = "reject"
                     else:  # ESCALATE → L3
+                        invoked["l3"] += 1
                         l3_raw = entry.get("l3", {}).get(chunk_id)
                         if l3_raw:
                             selected = l3_raw
                         accept_level = "l3"
                 else:  # no L2 data → L3
+                    invoked["l3"] += 1
                     l3_raw = entry.get("l3", {}).get(chunk_id)
                     if l3_raw:
                         selected = l3_raw
@@ -793,7 +806,7 @@ def _replay(
             findings=findings,
         ))
 
-    return outputs, accept_counts, early_chunks, n_polarity_conflicts
+    return outputs, accept_counts, early_chunks, n_polarity_conflicts, invoked
 
 
 def run_sweep(
@@ -834,7 +847,7 @@ def run_sweep(
                     continue
                 for policy in single_voter_policies:
                     for force_escalate_polarity in force_escalate_on_polarity_conflict_grid:
-                        case_outputs, accept, early_chunks, n_polarity = _replay(
+                        case_outputs, accept, early_chunks, n_polarity, invoked = _replay(
                             voter_cache, scorer, theta, reject_theta,
                             single_voter_policy=policy,
                             force_escalate_on_polarity_conflict=force_escalate_polarity,
@@ -896,6 +909,13 @@ def run_sweep(
                             "cascade_path":          CASCADE_PATH,
                             "early_accept_rate":     round((accept["l1"] + accept["l2"]) / total_chunks, 4),
                             "escalate_rate":         round(accept["l3"] / total_chunks, 4),
+                            # Per-tier invocation counts (cost ∝ invocations × voters/tier).
+                            # l1/l2 ACCEPTS are summed in early_accept_rate, so the L1↔L2
+                            # split — hence L2 cost — is only recoverable from these.
+                            "n_chunks":              total_chunks,
+                            "n_l1_invoked":          invoked["l1"],
+                            "n_l2_invoked":          invoked["l2"],
+                            "n_l3_invoked":          invoked["l3"],
                             "early_accept_precision": early_metrics["precision"],
                             "n_polarity_conflict_chunks": int(n_polarity),
                             "polarity_conflict_rate":    round(n_polarity / total_chunks, 4),
@@ -1253,6 +1273,7 @@ def main() -> None:
                 "cascade_path",
                 "precision", "recall", "f1", "strict_f1",
                 "early_accept_rate", "escalate_rate", "early_accept_precision",
+                "n_chunks", "n_l1_invoked", "n_l2_invoked", "n_l3_invoked",
                 "n_polarity_conflict_chunks", "polarity_conflict_rate",
                 "n_matched", "n_silver", "n_pipeline",
                 "split", "seed", "dev_fraction", "sim_threshold",

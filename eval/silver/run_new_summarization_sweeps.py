@@ -223,7 +223,20 @@ VOTER_SUBSET_GRID = (
 
 # voter_subset_screen input — paste from family_refine's printed block. Each dict is a
 # full operating point (config) to test under VOTER_SUBSET_GRID at its OWN fixed theta.
-VOTER_SUBSET_SCREEN_CONFIGS: list[dict] = []
+VOTER_SUBSET_SCREEN_CONFIGS: list[dict] = [
+    {"label": "quality", "embedder": "gemini", "scorer_kind": "hybrid", "alignment_strategy": "greedy",
+     "tau": 0.15, "count_alpha": 0.25, "reuse_weight": 0.15, "contradiction_weight": 0.20,
+     "w_category": 0.15, "w_embedding": 0.30, "w_entity": 0.50, "w_evidence": 0.05,
+     "theta": 0.9, "reject_theta": 0.1},
+    {"label": "economy", "embedder": "openai", "scorer_kind": "hybrid", "alignment_strategy": "soft_max",
+     "tau": 0.15, "count_alpha": 0.25, "reuse_weight": 0.15, "contradiction_weight": 0.20,
+     "w_category": 0.15, "w_embedding": 0.30, "w_entity": 0.50, "w_evidence": 0.05,
+     "theta": 0.4, "reject_theta": 0.1},
+    {"label": "knee", "embedder": "gemini", "scorer_kind": "hybrid", "alignment_strategy": "greedy",
+     "tau": 0.15, "count_alpha": 0.25, "reuse_weight": 0.15, "contradiction_weight": 0.20,
+     "w_category": 0.15, "w_embedding": 0.30, "w_entity": 0.50, "w_evidence": 0.05,
+     "theta": 0.9, "reject_theta": 0.2},
+]
 
 # voter_subset_refine input — paste from voter_subset_screen's printed block. Each dict
 # is a (config, voter_subset) pair to re-sweep over the FULL theta grid.
@@ -302,6 +315,8 @@ _CSV_FIELDS = [
     "strict_f1_greedy", "f1_greedy", "precision_greedy", "recall_greedy", "n_matched_greedy",
     "n_silver", "n_pipeline",
     "early_accept_rate", "escalate_rate", "early_accept_precision",
+    # Per-tier invocation counts for cost (n_l3_invoked == escalate_rate·n_chunks):
+    "n_chunks", "n_l1_invoked", "n_l2_invoked", "n_l3_invoked",
     "n_polarity_conflict_chunks", "polarity_conflict_rate",
     "split", "seed", "dev_fraction", "sim_threshold",
     # Voter-subset columns — END-appended so existing checkpoints stay prefix-aligned
