@@ -125,7 +125,7 @@ from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 # ─────────────────────────────────────────────────────────────────────────────
 # Pin-as-you-go winners. Edit after each stage. Current values = the E06 family_refine
 # QUALITY winner (gemini/hybrid/greedy, entity-heavy blend, θ=0.9): strict_f1_optimal
-# 0.7133 at escalate_rate 0.962 — provisional until map_theta (E07) re-confirms theta.
+# 0.7133 at escalate_rate 0.962 — CONFIRMED by map_theta (E07) at the full score fn.
 # The cheap "economy" operating point is NOT pinned here; it lives in the E06 frontier
 # CSV / VOTER_SUBSET_SCREEN_CONFIGS (run voter_subset stages to pursue it).
 # ─────────────────────────────────────────────────────────────────────────────
@@ -153,8 +153,8 @@ BEST_W_EVIDENCE = 0.05
 
 BEST_ALIGNMENT = "greedy"           # E06 family_refine — "soft_max" | "greedy" | "hungarian"
 
-BEST_THETA = 0.90                   # provisional from E06; map_theta (E07) re-confirms at the full score fn
-BEST_REJECT_THETA = 0.10            # provisional from E06; must be < BEST_THETA
+BEST_THETA = 0.90                   # E07 map_theta CONFIRMED — true max strict_f1 (0.7133) over the full θ×reject grid
+BEST_REJECT_THETA = 0.10            # E07 map_theta CONFIRMED — reject=0.1 dominates 0.0 (higher F1, lower cost); must be < BEST_THETA
 
 BEST_VOTER_SUBSET = "all"           # E06c voter_subset_refine CONFIRMED — "all" | "drop_l1_i" | "drop_l2_i".
 #                                     E06b screen: every single-voter drop loses strict_f1 at fixed θ.
