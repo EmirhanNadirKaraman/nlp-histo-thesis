@@ -566,6 +566,18 @@ def _build_voter_cache(handle: PrimerHandle, cache_path: Path = CACHE_PATH) -> N
 
 # ── SWEEP ─────────────────────────────────────────────────────────────────────
 
+def _ev(x):
+    """Enum → its ``.value`` (a plain string); anything else unchanged.
+
+    ``AuditableSummary.model_dump()`` yields Enum OBJECTS for relation_type /
+    direction / confidence / category, so a bare ``str(enum)`` produces
+    ``'RelationTypeEnum.demographic'`` — which never matches the silver string
+    ``'demographic'`` and silently strict-penalises every matched finding (B-071).
+    Raw cached dicts already hold the value string, so this is a no-op for them.
+    """
+    return getattr(x, "value", x)
+
+
 def _finding_to_pipeline(f: dict, pmcid: str, chunk_id: str, theta: float) -> PipelineFinding:
     scope = f.get("scope") or {}
     return PipelineFinding(
@@ -573,13 +585,13 @@ def _finding_to_pipeline(f: dict, pmcid: str, chunk_id: str, theta: float) -> Pi
         run_id=f"map_theta_{theta:.2f}",
         pmcid=pmcid,
         chunk_id=chunk_id,
-        category=f.get("category", ""),
+        category=str(_ev(f.get("category", ""))),
         claim=f.get("claim", ""),
         subject_entity=f.get("subject_entity"),
         outcome_entity=f.get("outcome_entity"),
-        relation_type=str(f.get("relation_type", "unclear")),
-        direction=str(f["direction"]) if f.get("direction") else None,
-        confidence=str(f.get("confidence", "medium")),
+        relation_type=str(_ev(f.get("relation_type", "unclear"))),
+        direction=str(_ev(f["direction"])) if f.get("direction") else None,
+        confidence=str(_ev(f.get("confidence", "medium"))),
         verbatim_support=f.get("verbatim_support", ""),
         grounding_score=f.get("grounding_score"),
         scope_disease_subtype=scope.get("disease_subtype"),
