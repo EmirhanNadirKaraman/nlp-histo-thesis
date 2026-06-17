@@ -108,13 +108,13 @@ from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 # ─────────────────────────────────────────────────────────────────────────────
 # Pin-as-you-go winners. Edit after each stage; defaults = current production.
 # ─────────────────────────────────────────────────────────────────────────────
-FINALIST_STRUCTURES = [                                                        
-    ("gemini", "hybrid", "soft_max"),    # top-k                               
-    ("gemini", "hybrid", "greedy"),    # top-k                                 
-    ("gemini", "hybrid", "hungarian"),    # top-k                              
-    ("openai", "hybrid", "soft_max"),    # top-k                               
-    ("openai", "hybrid", "greedy"),    # keep-within                           
-    ("openai", "hybrid", "hungarian"),    # keep-within                        
+FINALIST_STRUCTURES: list[tuple[str, str, str]] = [   # (embedder, scorer_kind, alignment)
+    ("gemini", "hybrid", "soft_max"),
+    ("gemini", "hybrid", "greedy"),
+    ("openai", "hybrid", "soft_max"),
+    ("gemini", "embedding", "soft_max"),
+    ("gemini", "embedding", "greedy"),
+    ("gemini", "embedding", "hungarian"),
 ]  
 
 BEST_EMBEDDER = "gemini"            # family_refine — "gemini" | "openai"
@@ -179,9 +179,6 @@ DEFAULT_KEEP_WITHIN = 0.02          # also keep structures within this gap of th
 PARETO_CAP = 8                      # max non-dominated frontier structures kept as finalists
 MIN_ECONOMY_F1 = 0.50               # quality floor an economy (low-escalate) finalist must clear
 COST_LAMBDA = 0.20                  # knee = argmax(strict_f1_optimal − COST_LAMBDA · escalate_rate)
-
-# Paste the structure_screen output here, then run --stage family_refine.
-FINALIST_STRUCTURES: list[tuple[str, str, str]] = []   # (embedder, scorer_kind, alignment)
 
 _FINALIST_EMPTY_MSG = (
     "FINALIST_STRUCTURES is empty — family_refine has nothing to refine.\n"
