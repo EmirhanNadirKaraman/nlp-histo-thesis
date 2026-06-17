@@ -44,8 +44,10 @@ from eval.silver.map_theta_sweep import REPORTS_DIR, _make_voters
 
 COST_LAMBDA = 0.20  # knee = argmax(strict_f1 − λ·cost_norm); matches structure_screen
 # Anchors (must reproduce): quality θ0.9/r0.1 and economy θ0.4/r0.1.
-_ANCHOR_QUALITY = (0.9, 0.1, 0.7133)
-_ANCHOR_ECONOMY = (0.4, 0.1, 0.5005)
+# Post-B-074 (enum-unwrap fix): quality ≈ unchanged (low early-accept), economy rose
+# 0.5005 → 0.5965 (θ0.4 had ~55% early-accept, the most corrupted).
+_ANCHOR_QUALITY = (0.9, 0.1, 0.7135)
+_ANCHOR_ECONOMY = (0.4, 0.1, 0.5965)
 
 _OUT_FIELDS = [
     "structure", "theta", "reject_theta", "strict_f1_optimal", "f1_optimal",
