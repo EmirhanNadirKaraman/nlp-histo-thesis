@@ -1,4 +1,4 @@
-"""Tests for the leave-one-voter-out diagnostic (eval/silver/voter_loo.py).
+"""Tests for the leave-one-voter-out diagnostic (eval/silver/experiments/E12_voter_loo/voter_loo.py).
 
 The load-bearing guards: dropping a voter nulls EXACTLY that raw index and mutates
 nothing else (so baseline + 6 variants off the same cache stay independent), and
@@ -11,7 +11,7 @@ import copy
 
 import pytest
 
-from eval.silver.voter_loo import (
+from eval.silver.experiments.E12_voter_loo.voter_loo import (
     _assert_cache_matches_voters,
     _drop_voter,
     _max_slots,

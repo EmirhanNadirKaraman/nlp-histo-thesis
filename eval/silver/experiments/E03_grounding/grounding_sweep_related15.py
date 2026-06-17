@@ -16,7 +16,7 @@ Why not pipeline_sweep prime --source related15: that re-runs MAP (paid), and th
 out/summaries cache is the wrong cascade profile (haiku_only) + already filtered.
 
 Usage:
-  python -m eval.silver.grounding_sweep_related15
+  python -m eval.silver.experiments.E03_grounding.grounding_sweep_related15
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 

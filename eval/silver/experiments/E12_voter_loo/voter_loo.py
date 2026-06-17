@@ -25,9 +25,9 @@ subset of already-embedded claims, so misses are negligible). L3 is excluded: it
 is the escalation fallback, not an agreement voter.
 
 Usage:
-  python -m eval.silver.voter_loo --cases 15                     # fast smoke
-  python -m eval.silver.voter_loo                                # full (θ 0.5/0.6/0.7)
-  python -m eval.silver.voter_loo --scorer embedding --theta 0.6 --theta 0.7
+  python -m eval.silver.experiments.E12_voter_loo.voter_loo --cases 15                     # fast smoke
+  python -m eval.silver.experiments.E12_voter_loo.voter_loo                                # full (θ 0.5/0.6/0.7)
+  python -m eval.silver.experiments.E12_voter_loo.voter_loo --scorer embedding --theta 0.6 --theta 0.7
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
