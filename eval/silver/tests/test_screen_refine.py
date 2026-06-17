@@ -17,7 +17,6 @@ import pytest
 from eval.silver.run_new_summarization_sweeps import (
     _DEFAULT_BLEND,
     _DEFAULTS,
-    _MAX_FINALISTS,
     _deviation,
     _refine_specs,
     _select_finalists,
@@ -78,70 +77,78 @@ def test_refine_specs_namespaced_by_embedder():
     assert all(n.startswith("gemini__") for n in g)
 
 
-# ── _select_finalists: additive, capped, diversity ───────────────────────────
+# ── _select_finalists: CELL-LEVEL Pareto (quality + economy + knee) ──────────
 
-def _sb(*rows):
-    """rows: (emb, scorer_kind, align, metric[, escalate[, f1_optimal]])."""
-    out = {}
-    for t in rows:
-        emb, sk, al, m = t[0], t[1], t[2], t[3]
-        esc = t[4] if len(t) > 4 else 0.0
-        f1 = t[5] if len(t) > 5 else m
-        out[(emb, sk, al)] = {"strict_f1_optimal": m, "escalate_rate": esc, "f1_optimal": f1}
-    return out
+def _cells(*specs):
+    """specs: (emb, scorer_kind, align, theta, strict_f1, escalate). Multi-θ cells —
+    the cost axis (escalate) is θ-driven, so the fixtures MUST have >1 cell/structure."""
+    return [{"embedder": e, "scorer_kind": s, "alignment_strategy": a, "theta": t,
+             "reject_theta": 0.1, "strict_f1_optimal": f1, "f1_optimal": f1,
+             "escalate_rate": esc} for e, s, a, t, f1, esc in specs]
 
 
-def test_select_finalists_topk_only():
-    sb = _sb(("gemini", "embedding", "soft_max", 0.80),
-             ("gemini", "hybrid", "soft_max", 0.70),
-             ("openai", "embedding", "greedy", 0.60),
-             ("openai", "hybrid", "hungarian", 0.50))
-    fin = _select_finalists(sb, "strict_f1_optimal", top_k=3, keep_within=0.0)
-    assert [s for s, _ in fin] == [
-        ("gemini", "embedding", "soft_max"),
-        ("gemini", "hybrid", "soft_max"),
-        ("openai", "embedding", "greedy"),
-    ]
+# mirrors the real screen: hybrid wins on F1 at θ0.9; embedding owns the cheap frontier
+SCREEN = _cells(
+    ("gemini", "hybrid",    "soft_max", 0.90, 0.71, 0.97),   # quality corner
+    ("gemini", "hybrid",    "soft_max", 0.70, 0.67, 0.90),
+    ("gemini", "embedding", "soft_max", 0.90, 0.69, 0.92),   # max-F1 cell DOMINATED by hybrid θ0.9
+    ("gemini", "embedding", "soft_max", 0.80, 0.58, 0.65),   # economy cell (f1 ≥ floor)
+    ("gemini", "embedding", "soft_max", 0.70, 0.41, 0.19),   # cheapest globally (below floor)
+    ("openai", "hybrid",    "greedy",   0.90, 0.60, 0.98),   # dominated at every cell
+    ("openai", "hybrid",    "greedy",   0.70, 0.50, 0.95),
+)
 
 
-def test_select_finalists_crowded_bumps_to_four():
-    sb = _sb(("gemini", "embedding", "soft_max", 0.800),
-             ("gemini", "hybrid", "soft_max", 0.795),
-             ("openai", "embedding", "greedy", 0.790),
-             ("openai", "hybrid", "hungarian", 0.785),
-             ("gemini", "embedding", "greedy", 0.600))
-    fin = _select_finalists(sb, "strict_f1_optimal", top_k=3, keep_within=0.02)
-    structs = {s for s, _ in fin}
-    assert len(fin) == 4                                       # crowded → eff K = 4
-    assert ("gemini", "embedding", "greedy") not in structs   # the 0.60 is out of band
-    assert all(r in ("top-k", "keep-within") for _, r in fin)
+def _fin(cells=SCREEN, **kw):
+    base = dict(metric="strict_f1_optimal", top_k=2, keep_within=0.02)
+    base.update(kw)
+    return {s: (reasons, ev) for s, reasons, ev in _select_finalists(cells, **base)}
 
 
-def test_select_finalists_diversity_adds_other_embedder():
-    sb = _sb(("gemini", "embedding", "soft_max", 0.800),
-             ("gemini", "hybrid", "soft_max", 0.790),
-             ("gemini", "embedding", "hungarian", 0.785),
-             ("openai", "embedding", "soft_max", 0.770),   # gap 0.03 ≤ 2×keep_within; new embedder
-             ("gemini", "hybrid", "greedy", 0.600))
-    fin = dict(_select_finalists(sb, "strict_f1_optimal", top_k=3, keep_within=0.02))
-    assert ("openai", "embedding", "soft_max") in fin
-    assert fin[("openai", "embedding", "soft_max")] == "diversity:embedder"
+def test_economy_structure_survives_even_though_its_maxf1_cell_is_dominated():
+    # REGRESSION GUARD: gemini/embedding's max-F1 cell (θ0.9, 0.69/0.92) is dominated by
+    # hybrid θ0.9 — collapsing to per-structure-best would drop it. Its cheap cells are on
+    # the cell-level frontier, so it MUST stay a finalist. Fails on the collapsed design.
+    fin = _fin()
+    s = ("gemini", "embedding", "soft_max")
+    assert s in fin
+    reasons, _ = fin[s]
+    assert "pareto" in reasons and "economy" in reasons
 
 
-def test_select_finalists_additive_caps_and_keeps_topk():
-    keys = [("gemini", "embedding", "soft_max"), ("openai", "embedding", "soft_max"),
-            ("gemini", "hybrid", "soft_max"), ("openai", "hybrid", "soft_max"),
-            ("gemini", "embedding", "greedy"), ("openai", "embedding", "greedy"),
-            ("gemini", "hybrid", "hungarian"), ("openai", "hybrid", "hungarian")]
-    sb = {k: {"strict_f1_optimal": 0.80 - i * 0.001, "escalate_rate": 0.0, "f1_optimal": 0.80}
-          for i, k in enumerate(keys)}
-    fin = _select_finalists(sb, "strict_f1_optimal", top_k=3, keep_within=0.02)
-    assert len(fin) <= _MAX_FINALISTS              # capped
-    assert keys[0] in {s for s, _ in fin}          # genuine best never dropped
+def test_dominated_structure_excluded():
+    assert ("openai", "hybrid", "greedy") not in _fin()      # dominated at every cell
+
+
+def test_economy_respects_quality_floor_and_shows_cheap_cell():
+    _, ev = _fin()[("gemini", "embedding", "soft_max")]
+    econ = ev["economy"]
+    assert float(econ["strict_f1_optimal"]) >= 0.50          # not the 0.41 θ0.7 cell
+    assert abs(float(econ["theta"]) - 0.80) < 1e-9           # the θ0.8 economy cell
+
+
+def test_knee_picks_best_tradeoff_cell():
+    reasons, _ = _fin()[("gemini", "hybrid", "soft_max")]
+    assert "knee" in reasons                                 # max(f1 − 0.2·esc) at λ=0.2
+
+
+def test_topk_is_quality_corner():
+    reasons, _ = _fin()[("gemini", "hybrid", "soft_max")]
+    assert "top-k" in reasons
+
+
+def test_return_shape_is_struct_reasons_evidence():
+    for struct, reasons, evidence in _select_finalists(SCREEN, "strict_f1_optimal", 2, 0.02):
+        assert isinstance(struct, tuple) and isinstance(reasons, list) and isinstance(evidence, dict)
+
+
+def test_selection_ignores_greedy_metric():
+    poisoned = [{**c, "strict_f1_greedy": 0.99, "f1_greedy": 0.99} for c in SCREEN]
+    assert set(_fin()) == set(_fin(cells=poisoned))          # greedy must not move selection
 
 
 def test_select_finalists_empty():
-    assert _select_finalists({}, "strict_f1_optimal", 3, 0.02) == []
+    assert _select_finalists([], "strict_f1_optimal", 2, 0.02) == []
 
 
 # ── _stamp_row: scorer_kind/variant split + inert-weight blanking ────────────

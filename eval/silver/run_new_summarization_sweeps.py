@@ -174,8 +174,11 @@ COARSE_REJECT_GRID = [0.10, 0.20]
 
 # structure_screen finalist selection.
 DEFAULT_TOP_K = 3
-DEFAULT_KEEP_WITHIN = 0.02          # also keep structures within this primary-metric gap of the best
-_MAX_FINALISTS = 6                  # hard cap so family_refine cannot blow up
+DEFAULT_KEEP_WITHIN = 0.02          # also keep structures within this gap of the best primary metric
+# Pareto-aware finalist selection over (strict_f1_optimal ↑, escalate_rate ↓):
+PARETO_CAP = 8                      # max non-dominated frontier structures kept as finalists
+MIN_ECONOMY_F1 = 0.50               # quality floor an economy (low-escalate) finalist must clear
+COST_LAMBDA = 0.20                  # knee = argmax(strict_f1_optimal − COST_LAMBDA · escalate_rate)
 
 # Paste the structure_screen output here, then run --stage family_refine.
 FINALIST_STRUCTURES: list[tuple[str, str, str]] = []   # (embedder, scorer_kind, alignment)
@@ -411,39 +414,97 @@ def _best_per_group(rows: list[dict], group_fields: tuple[str, ...], metric: str
     return best
 
 
-def _select_finalists(struct_best: dict, metric: str, top_k: int,
-                      keep_within: float, cap: int = _MAX_FINALISTS) -> list[tuple]:
-    """PURE: pick finalist structures (embedder, scorer_kind, alignment) from the
-    per-structure best rows. ADDITIVE + capped — never drops/reorders the genuine
-    top-K. Returns [(struct, reason)] ranked best-first.
+def _cell_struct(r: dict) -> tuple:
+    """(embedder, scorer_kind, alignment) identity of a sweep row/cell."""
+    return (r["embedder"], r["scorer_kind"], r["alignment_strategy"])
 
-    reason ∈ {top-k, keep-within, diversity:<axis>}. ``crowded`` (more structures
-    within keep_within than top_k) bumps the effective K to 4. The diversity rule
-    additively pulls in the best near-miss (within 2×keep_within) on any axis the
-    chosen set has collapsed onto a single value."""
-    ranked = sorted(struct_best.items(), key=lambda kv: _rank(kv[1], metric), reverse=True)
-    if not ranked:
+
+def _select_finalists(rows: list[dict], metric: str, top_k: int, keep_within: float, *,
+                      pareto_cap: int = PARETO_CAP, min_economy_f1: float = MIN_ECONOMY_F1,
+                      cost_lambda: float = COST_LAMBDA) -> list[tuple]:
+    """PURE, Pareto-aware finalist selection over (``metric`` ↑, ``escalate_rate`` ↓),
+    so structure_screen keeps BOTH the quality corner (high F1, expensive) AND the
+    economy/knee end (low escalate).
+
+    CELL-LEVEL is load-bearing: the cost axis (escalate_rate) is driven by THETA, not
+    by structure identity, so the Pareto frontier is computed over the FULL cells
+    (structure × theta × reject) — NOT per-structure bests, which would collapse every
+    structure to its θ=0.9 (most-expensive) cell and discard the entire cheap-θ economy
+    frontier. A structure becomes a finalist if it TOUCHES the frontier at any cell.
+    ``top-k`` / ``within-best`` stay QUALITY picks (per-structure max-metric).
+
+    Selection uses ONLY ``metric`` (an optimal-matcher metric) + ``escalate_rate`` —
+    never a greedy metric. Returns ``[(struct, [reasons], {reason: cell})]`` ranked
+    best-first by the structure's max-metric. struct = (embedder, scorer_kind, alignment).
+    Reasons (additive): top-k, within-best, pareto, economy, knee, diversity:<axis>.
+    NOTE: ``--pareto-cap`` trims quality-first (harmless at 12 structures; if the grid
+    grows, trim to preserve the escalate-spread — economy/knee already backstop it)."""
+    if not rows:
         return []
-    top = float(ranked[0][1][metric])
-    within = [kv for kv in ranked if top - float(kv[1][metric]) <= keep_within]
-    eff_k = max(top_k, 4) if len(within) > top_k else top_k   # crowded → prefer K=4
 
-    reason: dict[tuple, str] = {}
-    for struct, _ in ranked[:eff_k]:
-        reason.setdefault(struct, "top-k")
-    for struct, _ in within:
-        reason.setdefault(struct, "keep-within")
+    def q(r):
+        return float(r[metric])
 
-    near = [kv for kv in ranked if top - float(kv[1][metric]) <= 2 * keep_within]
-    for axis_idx, axis_name in ((0, "embedder"), (1, "scorer_kind"), (2, "alignment")):
-        if len({s[axis_idx] for s in reason}) == 1:
-            for struct, _ in near:
-                if struct[axis_idx] not in {s[axis_idx] for s in reason}:
-                    reason.setdefault(struct, f"diversity:{axis_name}")
+    def c(r):
+        return float(r.get("escalate_rate") or 0.0)
+
+    # Quality view: per-structure best-by-metric → top-k / within-best / ranking order.
+    struct_best = _best_per_group(rows, GROUP_FIELDS["structure_screen"], metric)
+    ranked = sorted(struct_best.items(), key=lambda kv: _rank(kv[1], metric), reverse=True)
+    top = q(ranked[0][1])
+
+    reasons: dict[tuple, list[str]] = {}
+    evidence: dict[tuple, dict] = {}
+
+    def add(struct, why, cell):
+        if why not in reasons.setdefault(struct, []):
+            reasons[struct].append(why)
+            evidence.setdefault(struct, {})[why] = cell
+
+    # 1. top-k + 2. within-best — quality (the structure's max-metric cell)
+    for struct, r in ranked[:top_k]:
+        add(struct, "top-k", r)
+    for struct, r in ranked:
+        if top - q(r) <= keep_within:
+            add(struct, "within-best", r)
+
+    # 3. CELL-level Pareto frontier (q ↑, c ↓); keep one cheapest frontier cell per structure
+    frontier = [
+        r for r in rows
+        if not any(q(o) >= q(r) and c(o) <= c(r) and (q(o) > q(r) or c(o) < c(r))
+                   for o in rows if o is not r)
+    ]
+    cheapest_front: dict[tuple, dict] = {}
+    for r in sorted(frontier, key=c):                      # lowest escalate first
+        cheapest_front.setdefault(_cell_struct(r), r)
+    # Cap preserving the CHEAP end: prioritise frontier structures NOT already kept by a
+    # quality reason (top-k/within-best), cheapest first. Quality-first trimming would drop
+    # exactly the cost-efficient structures (e.g. gemini/embedding) this stage exists to keep.
+    by_cost = sorted(cheapest_front, key=lambda s: c(cheapest_front[s]))
+    ordered_front = [s for s in by_cost if s not in reasons] + [s for s in by_cost if s in reasons]
+    for struct in ordered_front[:pareto_cap]:
+        add(struct, "pareto", cheapest_front[struct])
+
+    # 4. economy — lowest-escalate CELL clearing the quality floor
+    eligible = [r for r in rows if q(r) >= min_economy_f1]
+    if eligible:
+        ec = min(eligible, key=c)
+        add(_cell_struct(ec), "economy", ec)
+
+    # 5. knee — best quality − λ·cost CELL
+    kn = max(rows, key=lambda r: q(r) - cost_lambda * c(r))
+    add(_cell_struct(kn), "knee", kn)
+
+    # 6. diversity (additive backstop) on the quality ranking
+    near = [kv for kv in ranked if top - q(kv[1]) <= 2 * keep_within]
+    for ax_i, ax_n in ((0, "embedder"), (1, "scorer_kind"), (2, "alignment")):
+        if len({s[ax_i] for s in reasons}) == 1:
+            for struct, r in near:
+                if struct[ax_i] not in {s[ax_i] for s in reasons}:
+                    add(struct, f"diversity:{ax_n}", r)
                     break
 
-    out = [(struct, reason[struct]) for struct, _ in ranked if struct in reason]
-    return out[:cap]
+    return [(s, reasons[s], evidence[s]) for s, _ in ranked if s in reasons]
 
 
 # ── Cells + checkpoint / resume ──────────────────────────────────────────────
@@ -687,30 +748,52 @@ def _fmt_best(r: dict, metric: str) -> str:
     )
 
 
+# Display the operating point that earns a finalist's MOST cost-relevant reason, so
+# an "economy" finalist shows its CHEAP θ — not its max-F1 θ.
+_REASON_DISPLAY_PRIORITY = ("economy", "knee", "pareto", "within-best", "top-k")
+
+
+def _display_cell(evidence: dict, fallback: dict) -> dict:
+    for why in _REASON_DISPLAY_PRIORITY:
+        if why in evidence:
+            return evidence[why]
+    return fallback
+
+
 def _report_structure_screen(rows: list[dict], args, csv_path: Path) -> None:
     struct_best = _best_per_group(rows, GROUP_FIELDS["structure_screen"], args.metric)
     ranked = sorted(struct_best.items(), key=lambda kv: _rank(kv[1], args.metric), reverse=True)
-    finalists = _select_finalists(struct_best, args.metric, args.top_k, args.keep_within)
-    finalist_reason = dict(finalists)
+    finalists = _select_finalists(rows, args.metric, args.top_k, args.keep_within,
+                                  pareto_cap=args.pareto_cap, min_economy_f1=args.min_economy_f1,
+                                  cost_lambda=args.cost_lambda)
+    reason_of = {s: r for s, r, _ in finalists}
 
-    print(f"\nStructures ranked by {args.metric}  (★ = finalist):")
+    print(f"\nStructures ranked by {args.metric}  (★ = finalist; Pareto over "
+          f"{args.metric} ↑ / escalate_rate ↓).")
+    print("  θ/esc in this table = each structure's MAX-F1 (quality) cell.")
+    print(f"  {'':2}{'embedder':8} {'scorer':10} {'align':10} {'strictF1':>8} {'f1opt':>7} "
+          f"{'esc':>6} {'θ':>4} {'rej':>4} {'[greedy]':>9}  reasons")
     for struct, r in ranked:
         emb, sk, al = struct
-        mark = "★" if struct in finalist_reason else " "
-        print(f"  {mark} {str(emb):7s} {str(sk):9s} {str(al):9s}  "
-              f"{args.metric}={float(r[args.metric]):.4f}  "
-              f"f1_optimal={float(r.get('f1_optimal') or 0):.4f}  "
-              f"esc={float(r.get('escalate_rate') or 0.0):.3f}  "
-              f"[greedy strict_f1={float(r.get('strict_f1_greedy') or 0):.4f}]  "
-              f"theta={r.get('theta')} reject={r.get('reject_theta')}")
+        mark = "★" if struct in reason_of else " "
+        why = "/".join(reason_of.get(struct, []))
+        print(f"  {mark} {str(emb):8} {str(sk):10} {str(al):10} "
+              f"{float(r[args.metric]):8.4f} {float(r.get('f1_optimal') or 0):7.4f} "
+              f"{float(r.get('escalate_rate') or 0):6.3f} {str(r.get('theta')):>4} "
+              f"{str(r.get('reject_theta')):>4} {float(r.get('strict_f1_greedy') or 0):9.4f}  {why}")
 
     print(f"\nCSV → {csv_path}")
-    print("\nPaste the finalists into FINALIST_STRUCTURES near the top of this file, "
-          "then run --stage family_refine:\n")
+    print(f"\n{len(finalists)} finalist(s). Paste into FINALIST_STRUCTURES near the top of this "
+          "file, then run --stage family_refine.")
+    print("(annotation = the operating point that earns each finalist's reason — "
+          "economy/knee show their CHEAP θ, not the max-F1 θ):\n")
     print("FINALIST_STRUCTURES = [")
-    for struct, reason in finalists:
+    for struct, why, ev in finalists:
         emb, sk, al = struct
-        print(f'    ("{emb}", "{sk}", "{al}"),    # {reason}')
+        cell = _display_cell(ev, struct_best[struct])
+        print(f'    ("{emb}", "{sk}", "{al}"),    # {"/".join(why)} '
+              f'@θ{cell.get("theta")} esc={float(cell.get("escalate_rate") or 0):.2f} '
+              f'f1={float(cell[args.metric]):.3f}')
     print("]")
 
 
@@ -727,10 +810,19 @@ def main() -> None:
                          "diagnostic and never selects. Ties: lower escalate_rate, then f1_optimal, "
                          "then simpler config.")
     ap.add_argument("--top-k", type=int, default=DEFAULT_TOP_K,
-                    help="structure_screen: keep this many top structures as finalists "
-                         "(bumped to 4 when the candidate list is crowded).")
+                    help="structure_screen: keep this many top structures (by primary metric) as "
+                         "quality finalists.")
     ap.add_argument("--keep-within", type=float, default=DEFAULT_KEEP_WITHIN,
                     help="structure_screen: also keep structures within this primary-metric gap of the best.")
+    ap.add_argument("--pareto-cap", type=int, default=PARETO_CAP,
+                    help="structure_screen: max non-dominated Pareto-frontier structures to keep.")
+    ap.add_argument("--min-economy-f1", type=float, default=MIN_ECONOMY_F1,
+                    help="structure_screen: quality floor an economy (low-escalate) finalist must clear.")
+    ap.add_argument("--cost-lambda", type=float, default=COST_LAMBDA,
+                    help="structure_screen: knee = argmax(strict_f1_optimal − λ·escalate_rate).")
+    ap.add_argument("--from-csv", default=None,
+                    help="structure_screen: recompute finalists from an existing screen CSV "
+                         "(no rerun, no engine).")
     ap.add_argument("--sim-threshold", type=float, default=SIMILARITY_THRESHOLD)
     ap.add_argument("--split", default="all", choices=["dev", "test", "all"],
                     help="Calibration split. Default 'all' (small silver set → stable estimate). "
@@ -756,6 +848,17 @@ def main() -> None:
         print(f"\n{args.stage}: {len(cells)} variant(s)")
         for c in cells:
             print("  " + c)
+        return
+
+    if args.from_csv:
+        if args.stage != "structure_screen":
+            raise SystemExit("--from-csv only applies to --stage structure_screen")
+        with open(args.from_csv, encoding="utf-8") as fh:
+            rows = list(csv.DictReader(fh))
+        if not rows:
+            raise SystemExit(f"no rows in {args.from_csv}")
+        print(f"Recomputing finalists from {args.from_csv} ({len(rows)} rows) — no rerun, no engine.")
+        _report_structure_screen(rows, args, Path(args.from_csv))
         return
 
     rows = _run_stage(args.stage, args)   # raises SystemExit for an empty family_refine
