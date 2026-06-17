@@ -119,7 +119,7 @@ from eval.silver.map_theta_sweep import (  # reused engine + helpers
     run_sweep,
 )
 from eval.silver.matcher import SIMILARITY_THRESHOLD
-from eval.silver.run_summarization_sweeps import _load_map_context  # reused loader
+from eval.silver.map_context import _load_map_context  # reused loader
 from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 
 # ─────────────────────────────────────────────────────────────────────────────

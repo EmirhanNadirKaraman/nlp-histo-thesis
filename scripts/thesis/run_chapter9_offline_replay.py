@@ -781,7 +781,7 @@ def analyse_bootstrap_ci() -> AnalysisResult:
 
     try:
         from eval.silver.map_theta_sweep import _replay
-        from eval.silver.run_summarization_sweeps import _load_map_context
+        from eval.silver.map_context import _load_map_context
         map_ctx = _load_map_context(cascade_cfg["embedder"], embed_cache_path=None)
         # Replay only dev-split cases.
         # _replay returns a dict; we adapt below.
@@ -934,7 +934,7 @@ def analyse_exp_f_test_split() -> AnalysisResult:
     name = "06_exp_f_test_split"
     try:
         from eval.silver.map_theta_sweep import run_sweep, ScorerSpec
-        from eval.silver.run_summarization_sweeps import _load_map_context
+        from eval.silver.map_context import _load_map_context
         from pipeline.stages.summarization.config import (
             AgreementConfig, HybridConfig,
         )
@@ -1413,7 +1413,7 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
         from eval.silver.jsonl_utils import read_jsonl
         from eval.silver.schemas import SilverCaseResult, PipelineCaseOutput
         from eval.silver.split import assign_split
-        from eval.silver.run_summarization_sweeps import _load_map_context
+        from eval.silver.map_context import _load_map_context
     except Exception as exc:
         return AnalysisResult(
             name=name, status="error",
@@ -1890,7 +1890,7 @@ def analyse_real_profile_grounding_polarity() -> AnalysisResult:
     name = "12_real_profile_grounding_polarity"
     try:
         from eval.silver.split import assign_split
-        from eval.silver.run_summarization_sweeps import _load_map_context
+        from eval.silver.map_context import _load_map_context
         from pipeline.stages.summarization.models import (
             Finding, AuditableSummary,
         )

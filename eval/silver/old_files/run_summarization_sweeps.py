@@ -62,7 +62,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 # Make ``eval.*`` / ``pipeline.*`` importable when run as a file.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -75,29 +75,19 @@ load_dotenv(str(_REPO_ROOT / ".env"))
 
 from pipeline.stages.summarization.config import AgreementConfig
 
-from eval.silver.jsonl_utils import read_jsonl
 from eval.silver.matcher import (
-    DEFAULT_GEMINI_CACHE_PATH,
-    GEMINI_EMBEDDING_MODEL,
     SIMILARITY_THRESHOLD,
-    make_embedding_cache,
 )
-from eval.silver.schemas import SilverCaseResult
 from eval.silver.map_theta_sweep import (
-    CACHE_PATH,
     REJECT_THETA_GRID,
     REPORTS_DIR,
-    SILVER_PATH,
     THETA_GRID,
     ScorerSpec,
-    _make_cached_embed_fn,
-    _prewarm_agreement_cache,
     _print_table,
     _write_csv,
     run_sweep,
 )
 
-import json
 
 # ─────────────────────────────────────────────────────────────────────────────
 # BEST_* — winners pinned after each stage. Edit in place as each stage's CSV
@@ -455,60 +445,10 @@ def _enumerate_cells(stage: str) -> list[str]:
 # Execution (MAP stages only).
 # ─────────────────────────────────────────────────────────────────────────────
 
-@dataclass
-class _MapContext:
-    voter_cache: dict
-    silver_by_case: dict
-    embedder: object
-    embed_cache: object
-    agreement_embed_fn: object
-
-
-def _load_map_context(embedder_kind: str, *, embed_cache_path: Optional[str]) -> _MapContext:
-    """Load voter cache + silver + the gemini/openai embedder and pre-warm the
-    agreement cache. Mirrors map_theta_sweep's sweep-mode setup (no LLM calls)."""
-    if not CACHE_PATH.exists():
-        raise SystemExit(
-            f"voter cache not found: {CACHE_PATH}\n"
-            "Run `python -m eval.silver.map_theta_sweep prime --split all` then `collect`.")
-    if not SILVER_PATH.exists():
-        raise SystemExit(
-            f"silver labels not found: {SILVER_PATH}\n"
-            "Run `python -m eval.silver.generate --batch`.")
-
-    voter_cache = json.loads(CACHE_PATH.read_text(encoding="utf-8"))
-    silver_by_case = {rec.case_id: rec for rec in read_jsonl(SILVER_PATH, SilverCaseResult)}
-
-    import os
-    if embedder_kind == "gemini":
-        api_key = os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            raise SystemExit("GOOGLE_API_KEY not set")
-        from eval.silver.embedders import GeminiEmbedder
-        from pipeline.stages.summarization.agreement.providers import (
-            GeminiEmbedder as AgreementGeminiEmbedder,
-        )
-        embedder = GeminiEmbedder(api_key)
-        path = Path(embed_cache_path) if embed_cache_path else DEFAULT_GEMINI_CACHE_PATH
-        embed_cache = make_embedding_cache(path, GEMINI_EMBEDDING_MODEL)
-        raw_agreement_fn = AgreementGeminiEmbedder()
-    else:
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            raise SystemExit("OPENAI_API_KEY not set")
-        from eval.silver.embedders import OpenAIEmbedder
-        from eval.silver.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
-        from pipeline.stages.summarization.agreement.providers import (
-            OpenAIEmbedder as AgreementOpenAIEmbedder,
-        )
-        embedder = OpenAIEmbedder(api_key)
-        path = Path(embed_cache_path) if embed_cache_path else DEFAULT_CACHE_PATH
-        embed_cache = make_embedding_cache(path, EMBEDDING_MODEL)
-        raw_agreement_fn = AgreementOpenAIEmbedder()
-
-    _prewarm_agreement_cache(voter_cache, raw_agreement_fn, embed_cache)
-    agreement_embed_fn = _make_cached_embed_fn(embed_cache, raw_agreement_fn)
-    return _MapContext(voter_cache, silver_by_case, embedder, embed_cache, agreement_embed_fn)
+# _MapContext / _load_map_context were EXTRACTED to eval/silver/map_context.py
+# (2026-06-17) so the live loader is not stranded in this legacy module. Re-imported
+# here for backward compatibility and for this module's own _run_map_stage (line ~539).
+from eval.silver.map_context import _MapContext, _load_map_context  # noqa: E402,F401
 
 
 def _select_winner(rows: list[dict], metric: str, max_escalate: Optional[float]) -> Optional[dict]:

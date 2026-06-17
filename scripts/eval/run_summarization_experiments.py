@@ -300,7 +300,7 @@ def _per_scorer_best(rows: list[dict], metric: str = "strict_f1") -> list[dict]:
 def _build_exp1_scorer_specs():
     """The 7 scorer ScorerSpecs for EXP 1 / EXP 4 (1 embedding + 6 hybrid blends)."""
     from eval.silver.map_theta_sweep import ScorerSpec
-    from eval.silver.run_summarization_sweeps import HYBRID_BLEND_GRID
+    from eval.silver.old_files.run_summarization_sweeps import HYBRID_BLEND_GRID
     from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 
     specs = [ScorerSpec("embedding_default", "embedding", AgreementConfig())]
@@ -321,7 +321,7 @@ def _agreement_weight_grid_around(base_cfg) -> list:
     hybrid-on-hybrid case but built from the EXP 1 / 4 winner.
     """
     from eval.silver.map_theta_sweep import ScorerSpec
-    from eval.silver.run_summarization_sweeps import (
+    from eval.silver.old_files.run_summarization_sweeps import (
         TAU_GRID, COUNT_ALPHA_GRID, REUSE_WEIGHT_GRID, CONTRADICTION_WEIGHT_GRID,
     )
     from pipeline.stages.summarization.config import AgreementConfig
@@ -363,7 +363,7 @@ def _run_branch_scorer_comparison(
 ) -> ExperimentResult:
     """Shared body for EXP 1 (Gemini) and EXP 4 (OpenAI)."""
     from eval.silver.map_theta_sweep import run_sweep, THETA_GRID, REJECT_THETA_GRID
-    from eval.silver.run_summarization_sweeps import _load_map_context
+    from eval.silver.map_context import _load_map_context
 
     map_ctx = _load_map_context(embedder, embed_cache_path=None)
     specs = _build_exp1_scorer_specs()
@@ -438,7 +438,7 @@ def _run_branch_agreement_weights(
         )
 
     from eval.silver.map_theta_sweep import run_sweep
-    from eval.silver.run_summarization_sweeps import _load_map_context
+    from eval.silver.map_context import _load_map_context
     from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 
     winner_scorer = s[f"BEST_{prefix}_SCORER"]
@@ -513,7 +513,7 @@ def _run_branch_polarity_flag(
         )
 
     from eval.silver.map_theta_sweep import run_sweep, ScorerSpec
-    from eval.silver.run_summarization_sweeps import _load_map_context
+    from eval.silver.map_context import _load_map_context
     from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 
     winner_scorer = s[f"BEST_{prefix}_SCORER"]
@@ -663,7 +663,7 @@ def _run_exp_f(ctx: ExperimentContext) -> ExperimentResult:
     cfg = ctx.state.get(f"FINAL_{prefix}_MAP_CONFIG", final)
 
     from eval.silver.map_theta_sweep import run_sweep, ScorerSpec
-    from eval.silver.run_summarization_sweeps import _load_map_context
+    from eval.silver.map_context import _load_map_context
     from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 
     scorer_kind = "hybrid" if str(cfg["scorer"]).startswith("hybrid") else "embedding"
@@ -1253,7 +1253,7 @@ def _b2_replay_cascade(
     """
     from eval.silver.map_theta_sweep import _replay, ScorerSpec, _build_scorer
     from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
-    from eval.silver.run_summarization_sweeps import _load_map_context
+    from eval.silver.map_context import _load_map_context
 
     scorer_kind = "hybrid" if str(pfm.get("scorer", "")).startswith("hybrid") else "embedding"
 

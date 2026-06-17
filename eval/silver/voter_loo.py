@@ -52,7 +52,7 @@ from eval.silver.map_theta_sweep import (  # reused engine + voter definitions
     run_sweep,
 )
 from eval.silver.matcher import SIMILARITY_THRESHOLD
-from eval.silver.run_summarization_sweeps import _load_map_context
+from eval.silver.map_context import _load_map_context
 from pipeline.stages.summarization.config import AgreementConfig
 
 
