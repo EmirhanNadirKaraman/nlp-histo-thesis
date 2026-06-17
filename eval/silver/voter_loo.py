@@ -186,7 +186,9 @@ def main() -> None:
         all_rows.extend(rows)
 
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
-    csv_path = REPORTS_DIR / f"voter_loo_{ts}.csv"
+    out_dir = REPORTS_DIR / "E12_voter_loo"   # matches docs/readmes/EXPERIMENTS.md
+    out_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = out_dir / f"{ts}.csv"
     _write_csv(csv_path, all_rows, _CSV_FIELDS)
 
     for theta in thetas:

@@ -18,29 +18,39 @@ chosen alignment would discard, while a finalist set (not just the single
 winner) guards against eliminating a structure that only shines after tuning.
 
 STAGES (run one → read its summary → edit the matching ``BEST_*`` /
-``FINALIST_STRUCTURES`` here + the field in ``configs/run.yaml`` → next stage):
+``FINALIST_STRUCTURES`` / ``VOTER_SUBSET_*_CONFIGS`` here + the field in
+``configs/run.yaml`` → next stage). Each stage's output lands in its own
+E-numbered subfolder ``eval/reports/E##_<stage>/`` (see docs/readmes/EXPERIMENTS.md):
 
-  1. structure_screen  embedder × scorer × alignment at DEFAULT weights × a
-                       COARSE theta/reject grid. Identifies promising structures,
-                       not final configs. Prints a copy-pastable FINALIST set
-                       (top-K ∪ within --keep-within, + a diversity safety add).
-                       → paste FINALIST_STRUCTURES.
-  2. family_refine     Refines ONLY the finalist structures: applicable weights ×
-                       the FULL theta/reject grid (weight choice and theta
-                       interact, so they are swept jointly — not at a fixed theta).
-                       Applicable weights: soft_max → tau/count_alpha/reuse/
-                       contradiction (+ hybrid blend); greedy/hungarian → tau only
-                       (+ hybrid blend, which shapes the pre-alignment similarity).
-                       → pin BEST_EMBEDDER, BEST_SCORER, BEST_ALIGNMENT, BEST_TAU,
-                         BEST_COUNT_ALPHA/REUSE_WEIGHT/CONTRADICTION_WEIGHT (only if
-                         soft_max), BEST_W_* (only if hybrid), provisional
-                         BEST_THETA / BEST_REJECT_THETA.
-  3. map_theta         Re-confirm theta × reject_theta at the FINAL score function.
-                       → pin final BEST_THETA, BEST_REJECT_THETA.
-  4. map_gates         single_voter_policy {keep, escalate} ×
-                       force_escalate_on_polarity_conflict {True, False}.
-                       → pin run.yaml routing.legacy_single_voter_policy +
-                         agreement.force_escalate_on_polarity_conflict.
+  1. structure_screen      embedder × scorer × alignment at DEFAULT weights × a
+                           COARSE theta/reject grid. Identifies promising structures,
+                           not final configs (top-K ∪ within --keep-within ∪ Pareto
+                           ∪ economy ∪ knee, + a diversity add). → paste FINALIST_STRUCTURES.
+  2. family_refine         Refines ONLY the finalist structures: applicable weights ×
+                           the FULL theta/reject grid (weight × theta swept jointly).
+                           soft_max → tau/count_alpha/reuse/contradiction (+ blend);
+                           greedy/hungarian → tau only (+ blend, pre-alignment signal).
+                           → pin BEST_EMBEDDER, BEST_SCORER, BEST_ALIGNMENT, BEST_TAU,
+                           BEST_COUNT_ALPHA/REUSE_WEIGHT/CONTRADICTION_WEIGHT (only if
+                           soft_max), BEST_W_* (only if hybrid), provisional BEST_THETA/
+                           REJECT. Also prints VOTER_SUBSET_SCREEN_CONFIGS (quality/
+                           economy/knee operating points).
+  3. voter_subset_screen   [OPTIONAL] VOTER_SUBSET_GRID (leave-one-voter-out, single
+                           drops only) on the pasted configs at each config's FIXED
+                           theta — no theta sweep. → paste VOTER_SUBSET_REFINE_CONFIGS.
+  4. voter_subset_refine   [OPTIONAL] the selected (config, subset) pairs × the FULL
+                           theta grid. → pin BEST_VOTER_SUBSET (+ final BEST_THETA/REJECT
+                           and the winning config's BEST_* if it changed).
+  5. map_theta             Re-confirm theta × reject_theta at the FINAL score function,
+                           using BEST_VOTER_SUBSET. → pin final BEST_THETA, BEST_REJECT_THETA.
+  6. map_gates             single_voter_policy {keep, escalate} ×
+                           force_escalate_on_polarity_conflict {True, False}, using
+                           BEST_VOTER_SUBSET. → pin run.yaml routing.legacy_single_voter_policy
+                           + agreement.force_escalate_on_polarity_conflict.
+
+Stages 3–4 (voter_subset) are OPTIONAL — skip them and BEST_VOTER_SUBSET stays
+"all" — unless you are chasing a cost-efficient cascade by dropping a diluting voter
+(only meaningful at lower theta, where the cheap voters actually drive decisions).
 
 METRIC / MATCHER — selection uses **optimal / Hungarian** one-to-one semantic
 matching (max embedding-similarity assignment) as the PRIMARY matcher: metric
@@ -60,20 +70,26 @@ is reported as generalization.
 Prereqs: a primed voter cache (``eval/data/map_primer/voter_cache.json``) and
 silver labels (``eval/data/silver_findings_related15.jsonl``). Offline replay —
 no LLM calls; embedding-cache misses are the only (cheap, cached) cost. Generated
-CSVs land in ``eval/reports/`` and are kept untracked.
+CSVs land in per-experiment E-numbered subfolders under ``eval/reports/`` (e.g.
+``E06_family_refine/sweep_<ts>.csv``) and are kept untracked.
 
 CHECKPOINT / RESUME — every stage appends each completed cell to
-``eval/reports/checkpoint_<stage>.csv`` (flushed per cell), so a Ctrl-C keeps all
-finished cells. Re-running the stage resumes automatically: cells already in the
-checkpoint are skipped (the embeddings they used are SQLite-cached too, so a
+``eval/reports/E##_<stage>/checkpoint.csv`` (flushed per cell), so a Ctrl-C keeps
+all finished cells. Re-running the stage resumes automatically: cells already in
+the checkpoint are skipped (the embeddings they used are SQLite-cached too, so a
 resume pays no API). A changed grid / finalists / weights / split rotates the
 stale checkpoint aside and starts fresh; ``--fresh`` forces that. The checkpoint
 is deleted once the stage completes and the final timestamped CSV is written.
+The voter-subset axis is backward-compatible in the cell key (subset "all" → the
+original 6-tuple), so adding it never invalidated an in-flight checkpoint.
 
 Usage:
   python -m eval.silver.run_new_summarization_sweeps --stage structure_screen --list-variants
   python -m eval.silver.run_new_summarization_sweeps --stage structure_screen
   python -m eval.silver.run_new_summarization_sweeps --stage family_refine
+  python -m eval.silver.run_new_summarization_sweeps --stage family_refine --from-csv <csv>   # re-print configs, no rerun
+  python -m eval.silver.run_new_summarization_sweeps --stage voter_subset_screen
+  python -m eval.silver.run_new_summarization_sweeps --stage map_theta
 """
 from __future__ import annotations
 
@@ -98,6 +114,7 @@ from eval.silver.map_theta_sweep import (  # reused engine + helpers
     REPORTS_DIR,
     THETA_GRID,
     ScorerSpec,
+    _make_voters,
     _write_csv,
     run_sweep,
 )
@@ -106,7 +123,11 @@ from eval.silver.run_summarization_sweeps import _load_map_context  # reused loa
 from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Pin-as-you-go winners. Edit after each stage; defaults = current production.
+# Pin-as-you-go winners. Edit after each stage. Current values = the E06 family_refine
+# QUALITY winner (gemini/hybrid/greedy, entity-heavy blend, θ=0.9): strict_f1_optimal
+# 0.7133 at escalate_rate 0.962 — provisional until map_theta (E07) re-confirms theta.
+# The cheap "economy" operating point is NOT pinned here; it lives in the E06 frontier
+# CSV / VOTER_SUBSET_SCREEN_CONFIGS (run voter_subset stages to pursue it).
 # ─────────────────────────────────────────────────────────────────────────────
 FINALIST_STRUCTURES: list[tuple[str, str, str]] = [   # (embedder, scorer_kind, alignment)
     ("gemini", "hybrid", "soft_max"),
@@ -117,23 +138,26 @@ FINALIST_STRUCTURES: list[tuple[str, str, str]] = [   # (embedder, scorer_kind, 
     ("gemini", "embedding", "hungarian"),
 ]  
 
-BEST_EMBEDDER = "gemini"            # family_refine — "gemini" | "openai"
-BEST_SCORER = "embedding"           # family_refine — "embedding" | "hybrid"
+BEST_EMBEDDER = "gemini"            # E06 family_refine — "gemini" | "openai"
+BEST_SCORER = "hybrid"              # E06 family_refine — "embedding" | "hybrid"
 
-BEST_TAU = 0.15                     # family_refine — applicable weights of the pinned structure
-BEST_COUNT_ALPHA = 0.25             #   (count_alpha/reuse/contradiction apply only under soft_max)
-BEST_REUSE_WEIGHT = 0.15
+BEST_TAU = 0.15                     # E06 family_refine — applicable weights of the pinned structure
+BEST_COUNT_ALPHA = 0.25             #   count_alpha/reuse/contradiction are INERT under greedy (one-to-one)
+BEST_REUSE_WEIGHT = 0.15            #   — kept at defaults; only tau + the hybrid blend apply here.
 BEST_CONTRADICTION_WEIGHT = 0.20
 
-BEST_W_CATEGORY = 0.25              # family_refine — hybrid blend weights (only if BEST_SCORER=="hybrid")
-BEST_W_EMBEDDING = 0.40
-BEST_W_ENTITY = 0.25
-BEST_W_EVIDENCE = 0.10
+BEST_W_CATEGORY = 0.15              # E06 family_refine — hybrid blend (entity_heavy; only if BEST_SCORER=="hybrid")
+BEST_W_EMBEDDING = 0.30
+BEST_W_ENTITY = 0.50
+BEST_W_EVIDENCE = 0.05
 
-BEST_ALIGNMENT = "soft_max"         # structure_screen/family_refine — "soft_max" | "greedy" | "hungarian"
+BEST_ALIGNMENT = "greedy"           # E06 family_refine — "soft_max" | "greedy" | "hungarian"
 
-BEST_THETA = 0.80                   # map_theta — final theta (re-confirmed at the full score function)
-BEST_REJECT_THETA = 0.20            # map_theta — must be < BEST_THETA
+BEST_THETA = 0.90                   # provisional from E06; map_theta (E07) re-confirms at the full score fn
+BEST_REJECT_THETA = 0.10            # provisional from E06; must be < BEST_THETA
+
+BEST_VOTER_SUBSET = "all"           # voter_subset_refine — "all" | "drop_l1_i" | "drop_l2_i".
+#                                     map_theta / map_gates run with THIS subset (default "all").
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Grids. (theta/reject reuse the validated map_theta_sweep engine grids.)
@@ -188,7 +212,42 @@ _FINALIST_EMPTY_MSG = (
     "  3. Re-run: python -m eval.silver.run_new_summarization_sweeps --stage family_refine"
 )
 
-STAGES = ("structure_screen", "family_refine", "map_theta", "map_gates")
+# ── Voter-subset / leave-one-voter-out (targeted, AFTER family_refine) ────────
+# Single-voter drops only (no combined L1+L2 drops yet). drop_lN_i removes the
+# i-th voter of level N (stable index → model; see docs/readmes/EXPERIMENTS.md).
+VOTER_SUBSET_GRID = (
+    "all",
+    "drop_l1_0", "drop_l1_1", "drop_l1_2",
+    "drop_l2_0", "drop_l2_1", "drop_l2_2",
+)
+
+# voter_subset_screen input — paste from family_refine's printed block. Each dict is a
+# full operating point (config) to test under VOTER_SUBSET_GRID at its OWN fixed theta.
+VOTER_SUBSET_SCREEN_CONFIGS: list[dict] = []
+
+# voter_subset_refine input — paste from voter_subset_screen's printed block. Each dict
+# is a (config, voter_subset) pair to re-sweep over the FULL theta grid.
+VOTER_SUBSET_REFINE_CONFIGS: list[dict] = []
+
+_VS_SCREEN_EMPTY_MSG = (
+    "VOTER_SUBSET_SCREEN_CONFIGS is empty.\n"
+    "  Run family_refine, copy its printed `VOTER_SUBSET_SCREEN_CONFIGS = [...]` block into\n"
+    "  the constant near the top of this file, then re-run --stage voter_subset_screen."
+)
+_VS_REFINE_EMPTY_MSG = (
+    "VOTER_SUBSET_REFINE_CONFIGS is empty.\n"
+    "  Run voter_subset_screen, copy its printed `VOTER_SUBSET_REFINE_CONFIGS = [...]` block\n"
+    "  into the constant near the top of this file, then re-run --stage voter_subset_refine."
+)
+
+STAGES = (
+    "structure_screen",
+    "family_refine",
+    "voter_subset_screen",
+    "voter_subset_refine",
+    "map_theta",
+    "map_gates",
+)
 
 # Group key for the per-stage "Best per …" summary (None → only the overall best).
 GROUP_FIELDS: dict[str, tuple[str, ...]] = {
@@ -207,7 +266,18 @@ PIN_HINTS: dict[str, str] = {
         "PIN after → BEST_EMBEDDER, BEST_SCORER, BEST_ALIGNMENT, BEST_TAU, "
         "BEST_COUNT_ALPHA/REUSE_WEIGHT/CONTRADICTION_WEIGHT (only if BEST_ALIGNMENT==soft_max), "
         "BEST_W_* (only if BEST_SCORER==hybrid), provisional BEST_THETA/BEST_REJECT_THETA. "
+        "Also prints VOTER_SUBSET_SCREEN_CONFIGS — paste it to run --stage voter_subset_screen. "
         "run.yaml: agreement.embedder, scorer_kind, alignment_strategy + the applicable weights."
+    ),
+    "voter_subset_screen": (
+        "voter_subset_screen: tests VOTER_SUBSET_GRID on the pasted VOTER_SUBSET_SCREEN_CONFIGS at "
+        "each config's FIXED theta/reject (no theta sweep). Copy the printed "
+        "`VOTER_SUBSET_REFINE_CONFIGS = [...]` block, then run --stage voter_subset_refine."
+    ),
+    "voter_subset_refine": (
+        "voter_subset_refine: re-sweeps the pasted (config, voter_subset) pairs over the FULL theta "
+        "grid. PIN after → BEST_VOTER_SUBSET (+ final BEST_THETA/BEST_REJECT_THETA and the winning "
+        "config's BEST_* if it changed). map_theta / map_gates then run with BEST_VOTER_SUBSET."
     ),
     "map_theta": (
         "PIN after map_theta → final BEST_THETA, BEST_REJECT_THETA (+ run.yaml map.theta, "
@@ -234,6 +304,10 @@ _CSV_FIELDS = [
     "early_accept_rate", "escalate_rate", "early_accept_precision",
     "n_polarity_conflict_chunks", "polarity_conflict_rate",
     "split", "seed", "dev_fraction", "sim_threshold",
+    # Voter-subset columns — END-appended so existing checkpoints stay prefix-aligned
+    # (the resumed family_refine wrote its header without these; "all" rows omit them).
+    "voter_subset", "dropped_voter_level", "dropped_voter_idx", "dropped_voter_model",
+    "n_l1_voters", "n_l2_voters",
 ]
 
 
@@ -306,6 +380,102 @@ def _refine_specs(emb: str, scorer: str, alignment: str) -> list[ScorerSpec]:
                     w_category=wc, w_embedding=we, w_entity=wn, w_evidence=wv)),
             ))
     return specs
+
+
+# ── Voter-subset filtering + identity (leave-one-voter-out) ──────────────────
+
+def _voter_labels() -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    """Canonical index→(provider, model) for L1 and L2, from _make_voters()."""
+    L1, L2, _ = _make_voters()
+    return ([(v.provider, v.model) for v in L1], [(v.provider, v.model) for v in L2])
+
+
+def _subset_meta(voter_subset: str) -> tuple[str, object, str]:
+    """(level, idx, 'provider/model') for a drop_lN_i subset; ('', '', '') for 'all'."""
+    if voter_subset == "all":
+        return ("", "", "")
+    _, level, idx_str = voter_subset.split("_")        # drop_l1_2 → ('drop','l1','2')
+    idx = int(idx_str)
+    labels = _voter_labels()[0 if level == "l1" else 1]
+    model = f"{labels[idx][0]}/{labels[idx][1]}" if idx < len(labels) else "?"
+    return (level, idx, model)
+
+
+def _subset_voter_counts(voter_subset: str) -> tuple[int, int]:
+    n1, n2 = (len(g) for g in _voter_labels())
+    if voter_subset.startswith("drop_l1"):
+        n1 -= 1
+    elif voter_subset.startswith("drop_l2"):
+        n2 -= 1
+    return n1, n2
+
+
+_FILTER_CACHE: dict[tuple, dict] = {}
+
+
+def _filtered_voter_cache(voter_cache: dict, voter_subset: str) -> dict:
+    """Cache view with one voter dropped (drop_lN_i), WITHOUT mutating the original.
+    ``all`` → the original object. Drops by nulling slot ``idx`` per chunk via
+    ``enumerate`` (never indexes), so short/sparse lists and already-None slots are safe
+    no-ops (the N=1 caveat applies: single_voter_policy='keep' auto-accepts). Memoised
+    per (cache, subset)."""
+    if voter_subset == "all":
+        return voter_cache
+    key = (id(voter_cache), voter_subset)
+    cached = _FILTER_CACHE.get(key)
+    if cached is not None:
+        return cached
+    level, idx, _ = _subset_meta(voter_subset)
+    out: dict = {}
+    for sid, e in voter_cache.items():
+        lvl = {cid: ([None if j == idx else d for j, d in enumerate(lst)] if lst else lst)
+               for cid, lst in e[level].items()}
+        out[sid] = {**e, level: lvl}
+    _FILTER_CACHE[key] = out
+    return out
+
+
+def _assert_cache_matches_voters(voter_cache: dict) -> None:
+    """Fail loud if the cache's per-level slot count != the current _make_voters set —
+    a regenerated cache primed with different voters would mislabel index→model."""
+    n_l1, n_l2 = (len(g) for g in _voter_labels())
+
+    def max_slots(level: str) -> int:
+        return max((len(lst) for e in voter_cache.values()
+                   for lst in e.get(level, {}).values() if lst), default=0)
+
+    ml1, ml2 = max_slots("l1"), max_slots("l2")
+    if ml1 != n_l1 or ml2 != n_l2:
+        raise SystemExit(
+            f"Voter cache slot count ({ml1} L1 / {ml2} L2) != current _make_voters "
+            f"({n_l1} L1 / {n_l2} L2) — index→model labels would be wrong. Re-prime first."
+        )
+
+
+def _validate_config(cfg: dict, need: tuple[str, ...]) -> None:
+    base = ("embedder", "scorer_kind", "alignment_strategy",
+            "tau", "count_alpha", "reuse_weight", "contradiction_weight")
+    missing = [k for k in base + need if k not in cfg]
+    if missing:
+        raise SystemExit(f"voter-subset config {cfg.get('label', cfg)!r} missing keys: {missing}")
+
+
+def _spec_from_config(cfg: dict) -> ScorerSpec:
+    """Build a ScorerSpec from a pasted operating-point config dict."""
+    sk = cfg["scorer_kind"]
+    blend = (cfg.get("w_category"), cfg.get("w_embedding"),
+             cfg.get("w_entity"), cfg.get("w_evidence"))
+    hyb = (HybridConfig(w_category=blend[0], w_embedding=blend[1],
+                        w_entity=blend[2], w_evidence=blend[3])
+           if all(b is not None for b in blend) else HybridConfig())
+    weights = AgreementConfig(
+        scorer_kind=sk, alignment_strategy=cfg["alignment_strategy"],
+        tau=cfg["tau"], count_alpha=cfg["count_alpha"],
+        reuse_weight=cfg["reuse_weight"], contradiction_weight=cfg["contradiction_weight"],
+        hybrid=hyb,
+    )
+    name = cfg.get("label") or f"{cfg['embedder']}__{sk}__{cfg['alignment_strategy']}"
+    return ScorerSpec(name, sk, weights)
 
 
 # ── Per-stage plan (specs + axes + name→{kind,alignment,embedder} maps) ───────
@@ -506,12 +676,43 @@ def _select_finalists(rows: list[dict], metric: str, top_k: int, keep_within: fl
 
 # ── Cells + checkpoint / resume ──────────────────────────────────────────────
 
+def _stage_voter_subset(stage: str) -> str:
+    """Grid stages run a single voter subset: 'all' (screen/family), or BEST_VOTER_SUBSET
+    for map_theta/map_gates (which respect the pinned subset)."""
+    return BEST_VOTER_SUBSET if stage in ("map_theta", "map_gates") else "all"
+
+
 def _iter_cells(stage: str):
-    """Yield one dict per grid cell — the SINGLE enumeration source shared by
-    --list-variants, the run loop, and the checkpoint keys, so the listed count,
-    what actually runs, and the resume keys can never drift apart."""
+    """Yield one dict per cell — the SINGLE enumeration source shared by --list-variants,
+    the run loop, and the checkpoint keys, so the listed count, what actually runs, and the
+    resume keys can never drift apart. Every cell carries a ``voter_subset``."""
+    if stage == "voter_subset_screen":
+        for cfg in VOTER_SUBSET_SCREEN_CONFIGS:
+            _validate_config(cfg, ("theta", "reject_theta"))
+            spec = _spec_from_config(cfg)
+            for subset in VOTER_SUBSET_GRID:          # each config × subsets at its FIXED theta
+                yield {"embedder": cfg["embedder"], "spec": spec,
+                       "scorer_kind": cfg["scorer_kind"], "alignment": cfg["alignment_strategy"],
+                       "theta": cfg["theta"], "reject": cfg["reject_theta"],
+                       "policy": "keep", "polarity": True, "voter_subset": subset}
+        return
+    if stage == "voter_subset_refine":
+        for cfg in VOTER_SUBSET_REFINE_CONFIGS:
+            _validate_config(cfg, ("voter_subset",))
+            spec = _spec_from_config(cfg)
+            for t in THETA_GRID:                      # selected (config, subset) × FULL theta grid
+                for rj in REJECT_THETA_GRID:
+                    if rj >= t:
+                        continue
+                    yield {"embedder": cfg["embedder"], "spec": spec,
+                           "scorer_kind": cfg["scorer_kind"], "alignment": cfg["alignment_strategy"],
+                           "theta": t, "reject": rj, "policy": "keep", "polarity": True,
+                           "voter_subset": cfg["voter_subset"]}
+        return
+
     embedders, specs, thetas, rejects, policies, polarities, kind_of, align_of, embedder_of = \
         _stage_plan(stage)
+    vs = _stage_voter_subset(stage)
     for emb in embedders:
         for s in _effective_specs(emb, specs, embedder_of):
             for t in thetas:
@@ -524,26 +725,37 @@ def _iter_cells(stage: str):
                                 "embedder": emb, "spec": s,
                                 "scorer_kind": kind_of[s.name], "alignment": align_of[s.name],
                                 "theta": t, "reject": rj, "policy": pol, "polarity": fe,
+                                "voter_subset": vs,
                             }
 
 
-def _canonical_key(embedder, variant, theta, reject, policy, polarity) -> tuple:
+def _canonical_key(embedder, variant, theta, reject, policy, polarity, voter_subset="all") -> tuple:
     """Canonical cell identity — the ONE place a cell key is built, coercing types
     identically whether the source is a cell dict or a reloaded CSV row (so a resume
-    skip can never silently miss and re-append a duplicate row)."""
-    return (str(embedder), str(variant), f"{float(theta):.2f}", f"{float(reject):.2f}",
+    skip can never silently miss and re-append a duplicate row).
+
+    BACKWARD-COMPAT: ``voter_subset="all"`` yields the original 6-tuple, so every
+    existing grid stage's keys + signature stay byte-identical to before the
+    voter-subset axis existed (a live family_refine checkpoint remains valid). Only a
+    non-"all" subset appends the 7th element."""
+    base = (str(embedder), str(variant), f"{float(theta):.2f}", f"{float(reject):.2f}",
             str(policy), str(polarity).lower())
+    return base if str(voter_subset) == "all" else base + (str(voter_subset),)
 
 
 def _cell_key_from_cell(c: dict) -> tuple:
     return _canonical_key(c["embedder"], c["spec"].name, c["theta"], c["reject"],
-                          c["policy"], c["polarity"])
+                          c["policy"], c["polarity"], c.get("voter_subset", "all"))
 
 
 def _cell_key_from_row(r: dict) -> tuple:
-    # rows use the engine's column name "reject_theta"; cells use "reject"
+    # rows use the engine's column name "reject_theta"; cells use "reject".
+    # voter_subset missing OR empty-string (old checkpoint rows / blank CSV cell) → "all"
+    # → 6-tuple (back-compat); `or "all"` coerces both None and "" so a blank cell can't
+    # become a spurious 7-tuple that fails to match its 6-tuple cell key.
     return _canonical_key(r["embedder"], r["variant"], r["theta"], r["reject_theta"],
-                          r["legacy_single_voter_policy"], r["force_escalate_on_polarity_conflict"])
+                          r["legacy_single_voter_policy"], r["force_escalate_on_polarity_conflict"],
+                          r.get("voter_subset") or "all")
 
 
 def _weights_sig(cfg) -> tuple:
@@ -573,12 +785,32 @@ def _plan_signature(stage: str, cells: list[dict], args) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
+# Experiment numbers (match docs/readmes/EXPERIMENTS.md) — prefix the output folders
+# so eval/reports/ sorts by experiment.
+_EXP_PREFIX = {
+    "structure_screen": "E05",
+    "family_refine": "E06",
+    "voter_subset_screen": "E06b",
+    "voter_subset_refine": "E06c",
+    "map_theta": "E07",
+    "map_gates": "E08",
+}
+
+
+def _stage_dir(stage: str) -> Path:
+    """Per-experiment subfolder under eval/reports/ (e.g. eval/reports/E06_family_refine/).
+    Keeps each experiment's checkpoint + outputs together — see docs/readmes/EXPERIMENTS.md."""
+    d = REPORTS_DIR / f"{_EXP_PREFIX.get(stage, 'E00')}_{stage}"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def _ckpt_csv(stage: str) -> Path:
-    return REPORTS_DIR / f"checkpoint_{stage}.csv"
+    return _stage_dir(stage) / "checkpoint.csv"
 
 
 def _ckpt_meta(stage: str) -> Path:
-    return REPORTS_DIR / f"checkpoint_{stage}.meta.json"
+    return _stage_dir(stage) / "checkpoint.meta.json"
 
 
 def _rotate_checkpoint(stage: str, reason: str) -> None:
@@ -645,15 +877,15 @@ def _list_variants(stage: str) -> list[str]:
     return [
         f"embedder={c['embedder']}  scorer_kind={c['scorer_kind']}  variant={c['spec'].name}  "
         f"align={c['alignment']}  theta={c['theta']:.2f}  reject={c['reject']:.2f}  "
-        f"single_voter={c['policy']}  polarity_fail={c['polarity']}"
+        f"voter_subset={c['voter_subset']}  single_voter={c['policy']}  polarity_fail={c['polarity']}"
         for c in _iter_cells(stage)
     ]
 
 
-def _stamp_row(r: dict, emb: str, kind_of: dict, align_of: dict) -> dict:
-    """Stamp embedder / scorer_kind / variant / alignment onto a run_sweep row, and
-    blank the soft-align weights that are INERT under one-to-one alignment so the CSV
-    / best-line don't report them as meaningful (``tau`` still applies and stays)."""
+def _stamp_row(r: dict, emb: str, kind_of: dict, align_of: dict, voter_subset: str = "all") -> dict:
+    """Stamp embedder / scorer_kind / variant / alignment + voter-subset metadata onto a
+    run_sweep row, and blank the soft-align weights that are INERT under one-to-one
+    alignment so the CSV / best-line don't report them as meaningful (``tau`` stays)."""
     name = r.get("scorer")                        # run_sweep stamps spec.name here
     r["variant"] = name                           # concrete variant name
     r["scorer_kind"] = kind_of.get(name, name)    # embedding / hybrid
@@ -664,6 +896,10 @@ def _stamp_row(r: dict, emb: str, kind_of: dict, align_of: dict) -> dict:
         r["count_alpha"] = None
         r["reuse_weight"] = None
         r["contradiction_weight"] = None
+    r["voter_subset"] = voter_subset
+    level, idx, model = _subset_meta(voter_subset)
+    r["dropped_voter_level"], r["dropped_voter_idx"], r["dropped_voter_model"] = level, idx, model
+    r["n_l1_voters"], r["n_l2_voters"] = _subset_voter_counts(voter_subset)
     return r
 
 
@@ -673,6 +909,10 @@ def _run_stage(stage: str, args) -> list[dict]:
     call, so the cell key is constructed in exactly one place (the harness)."""
     if stage == "family_refine" and not FINALIST_STRUCTURES:
         raise SystemExit(_FINALIST_EMPTY_MSG)
+    if stage == "voter_subset_screen" and not VOTER_SUBSET_SCREEN_CONFIGS:
+        raise SystemExit(_VS_SCREEN_EMPTY_MSG)
+    if stage == "voter_subset_refine" and not VOTER_SUBSET_REFINE_CONFIGS:
+        raise SystemExit(_VS_REFINE_EMPTY_MSG)
 
     cells = list(_iter_cells(stage))
     signature = _plan_signature(stage, cells, args)
@@ -702,9 +942,12 @@ def _run_stage(stage: str, args) -> list[dict]:
             fh.flush()
         for emb, emb_cells in by_emb.items():
             ctx = _load_map_context(emb, embed_cache_path=args.embed_cache)
+            if stage in ("voter_subset_screen", "voter_subset_refine"):
+                _assert_cache_matches_voters(ctx.voter_cache)   # guard index→model labels
             for c in emb_cells:
+                cache = _filtered_voter_cache(ctx.voter_cache, c["voter_subset"])
                 rows = run_sweep(
-                    voter_cache=ctx.voter_cache,
+                    voter_cache=cache,
                     silver_by_case=ctx.silver_by_case,
                     embedder=ctx.embedder,
                     embed_cache=ctx.embed_cache,
@@ -721,7 +964,7 @@ def _run_stage(stage: str, args) -> list[dict]:
                 )
                 for r in rows:
                     _stamp_row(r, emb, {c["spec"].name: c["scorer_kind"]},
-                               {c["spec"].name: c["alignment"]})
+                               {c["spec"].name: c["alignment"]}, c["voter_subset"])
                     writer.writerow(r)
                     new_rows.append(r)
                 fh.flush()   # durable per cell — a Ctrl-C keeps everything written so far
@@ -794,6 +1037,146 @@ def _report_structure_screen(rows: list[dict], args, csv_path: Path) -> None:
     print("]")
 
 
+# ── Voter-subset reports (config blocks for the next stage + pin hints) ───────
+
+def _num(v):
+    if v in (None, ""):
+        return None
+    try:
+        return round(float(v), 6)
+    except (TypeError, ValueError):
+        return None
+
+
+def _print_config_block(var_name: str, configs: list[dict]) -> None:
+    print(f"{var_name} = [")
+    for cfg in configs:
+        print("    {")
+        for k, v in cfg.items():
+            print(f"        {k!r}: {v!r},")
+        print("    },")
+    print("]")
+
+
+def _config_from_cell(cell: dict, label: str, *, for_refine: bool = False) -> dict:
+    """Turn a result row/cell into a copy-pastable operating-point config dict.
+    screen configs carry theta/reject_theta (fixed); refine configs carry
+    base_config + voter_subset and omit theta (the full grid is swept)."""
+    sk = cell.get("scorer_kind") or cell.get("scorer")
+
+    def w(key, default):
+        v = _num(cell.get(key))
+        return default if v is None else v   # inert (blanked) one-to-one weights → harmless default
+
+    cfg: dict = {"label": label}
+    if for_refine:
+        cfg["base_config"] = label
+        cfg["voter_subset"] = cell.get("voter_subset") or "all"
+    cfg["embedder"] = cell["embedder"]
+    cfg["scorer_kind"] = sk
+    cfg["alignment_strategy"] = cell["alignment_strategy"]
+    cfg["tau"] = w("tau", _DEFAULTS["tau"])
+    cfg["count_alpha"] = w("count_alpha", _DEFAULTS["count_alpha"])
+    cfg["reuse_weight"] = w("reuse_weight", _DEFAULTS["reuse_weight"])
+    cfg["contradiction_weight"] = w("contradiction_weight", _DEFAULTS["contradiction_weight"])
+    is_hybrid = sk == "hybrid"
+    cfg["w_category"] = _num(cell.get("w_category")) if is_hybrid else None
+    cfg["w_embedding"] = _num(cell.get("w_embedding")) if is_hybrid else None
+    cfg["w_entity"] = _num(cell.get("w_entity")) if is_hybrid else None
+    cfg["w_evidence"] = _num(cell.get("w_evidence")) if is_hybrid else None
+    if not for_refine:
+        cfg["theta"] = _num(cell.get("theta"))
+        cfg["reject_theta"] = _num(cell.get("reject_theta"))
+    return cfg
+
+
+def _pick_operating_points(rows: list[dict], metric: str, min_economy_f1: float,
+                           cost_lambda: float) -> dict:
+    """{label: cell} for quality (max metric), economy (lowest escalate ≥ floor),
+    knee (max metric − λ·escalate) — same picks as _select_finalists' reasons."""
+    def q(r):
+        return float(r[metric])
+
+    def c(r):
+        return float(r.get("escalate_rate") or 0.0)
+
+    pts = {"quality": max(rows, key=lambda r: _rank(r, metric))}
+    eligible = [r for r in rows if q(r) >= min_economy_f1]
+    if eligible:
+        pts["economy"] = min(eligible, key=c)
+    pts["knee"] = max(rows, key=lambda r: q(r) - cost_lambda * c(r))
+    return pts
+
+
+def _dedup_points(pts: dict, key_fn) -> list[tuple]:
+    """Merge points mapping to the same cell, joining labels. [(merged_label, cell)]."""
+    seen: dict = {}
+    for label, cell in pts.items():
+        seen.setdefault(key_fn(cell), [cell, []])[1].append(label)
+    return [("_".join(labels), cell) for cell, labels in seen.values()]
+
+
+def _report_family_refine(rows: list[dict], args, csv_path: Path) -> None:
+    group = GROUP_FIELDS["family_refine"]
+    print(f"\nBest per {'/'.join(group)}  (PRIMARY {args.metric}; greedy diagnostic):")
+    for key, r in sorted(_best_per_group(rows, group, args.metric).items(),
+                         key=lambda kv: _rank(kv[1], args.metric), reverse=True):
+        label = "  ".join(f"{f}={v}" for f, v in zip(group, key))
+        print(f"  {label:46s} {args.metric}={float(r[args.metric]):.4f}  "
+              f"f1_optimal={float(r.get('f1_optimal') or 0):.4f}  "
+              f"esc={float(r.get('escalate_rate') or 0):.3f}  "
+              f"theta={r.get('theta')} reject={r.get('reject_theta')}")
+
+    pts = _pick_operating_points(rows, args.metric, args.min_economy_f1, args.cost_lambda)
+    configs = [_config_from_cell(cell, label) for label, cell in _dedup_points(pts, _cell_key_from_row)]
+    print(f"\nCSV → {csv_path}")
+    print("\nPaste into VOTER_SUBSET_SCREEN_CONFIGS near the top of this file, then run "
+          "--stage voter_subset_screen (each config × VOTER_SUBSET_GRID at its fixed theta):\n")
+    _print_config_block("VOTER_SUBSET_SCREEN_CONFIGS", configs)
+
+
+def _report_voter_subset_screen(rows: list[dict], args, csv_path: Path) -> None:
+    def q(r):
+        return float(r[args.metric])
+
+    def c(r):
+        return float(r.get("escalate_rate") or 0.0)
+
+    by_cfg: dict = {}
+    for r in rows:
+        by_cfg.setdefault(r["variant"], []).append(r)
+
+    print(f"\nVoter-subset screen — Δ vs 'all' per config (selection = {args.metric}; greedy diagnostic):")
+    for variant, rs in by_cfg.items():
+        base = next((r for r in rs if r.get("voter_subset") == "all"), None)
+        bq = q(base) if base else 0.0
+        print(f"  {variant}:")
+        for r in sorted(rs, key=lambda r: _rank(r, args.metric), reverse=True):
+            print(f"    {str(r.get('voter_subset')):11s} {args.metric}={q(r):.4f} (Δ{q(r) - bq:+.4f})  "
+                  f"esc={c(r):.3f}  early={float(r.get('early_accept_rate') or 0):.3f}  "
+                  f"[{r.get('dropped_voter_model') or '—'}]")
+
+    pts = _pick_operating_points(rows, args.metric, args.min_economy_f1, args.cost_lambda)
+    configs = [_config_from_cell(cell, label, for_refine=True)
+               for label, cell in _dedup_points(pts, lambda r: (r["variant"], r.get("voter_subset")))]
+    print(f"\nCSV → {csv_path}")
+    print("\nPaste into VOTER_SUBSET_REFINE_CONFIGS near the top of this file, then run "
+          "--stage voter_subset_refine (selected (config, subset) pairs × FULL theta grid):\n")
+    _print_config_block("VOTER_SUBSET_REFINE_CONFIGS", configs)
+
+
+def _report_voter_subset_refine(rows: list[dict], args, csv_path: Path) -> None:
+    best = max(rows, key=lambda r: _rank(r, args.metric))
+    print(f"\nVoter-subset refine — overall best (PRIMARY {args.metric}; tie-break esc, f1_optimal, "
+          f"simpler):\n  {_fmt_best(best, args.metric)}")
+    print(f"      voter_subset={best.get('voter_subset')}  dropped={best.get('dropped_voter_model') or '—'}")
+    print(f"\nCSV → {csv_path}")
+    print(f"\nPIN → BEST_VOTER_SUBSET = {best.get('voter_subset')!r}")
+    print(f"      provisional BEST_THETA = {best.get('theta')}, BEST_REJECT_THETA = {best.get('reject_theta')}")
+    print("      (+ the winning config's BEST_EMBEDDER/SCORER/ALIGNMENT/weights if it changed). "
+          "map_theta / map_gates then run with BEST_VOTER_SUBSET.")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Screen→refine MAP calibration sweep (structure first, then weights, thresholds, gates)."
@@ -837,9 +1220,12 @@ def main() -> None:
     print(PIN_HINTS[args.stage])
 
     if args.list_variants:
-        if args.stage == "family_refine" and not FINALIST_STRUCTURES:
-            print("\nfamily_refine: 0 variant(s) — FINALIST_STRUCTURES is empty.\n")
-            print(_FINALIST_EMPTY_MSG)
+        _empty = {"family_refine": (FINALIST_STRUCTURES, _FINALIST_EMPTY_MSG),
+                  "voter_subset_screen": (VOTER_SUBSET_SCREEN_CONFIGS, _VS_SCREEN_EMPTY_MSG),
+                  "voter_subset_refine": (VOTER_SUBSET_REFINE_CONFIGS, _VS_REFINE_EMPTY_MSG)}
+        if args.stage in _empty and not _empty[args.stage][0]:
+            print(f"\n{args.stage}: 0 variant(s) — paste the input config first.\n")
+            print(_empty[args.stage][1])
             return
         cells = _list_variants(args.stage)
         print(f"\n{args.stage}: {len(cells)} variant(s)")
@@ -848,14 +1234,16 @@ def main() -> None:
         return
 
     if args.from_csv:
-        if args.stage != "structure_screen":
-            raise SystemExit("--from-csv only applies to --stage structure_screen")
+        recompute = {"structure_screen": _report_structure_screen,
+                     "family_refine": _report_family_refine}
+        if args.stage not in recompute:
+            raise SystemExit("--from-csv applies to --stage structure_screen or family_refine")
         with open(args.from_csv, encoding="utf-8") as fh:
             rows = list(csv.DictReader(fh))
         if not rows:
             raise SystemExit(f"no rows in {args.from_csv}")
-        print(f"Recomputing finalists from {args.from_csv} ({len(rows)} rows) — no rerun, no engine.")
-        _report_structure_screen(rows, args, Path(args.from_csv))
+        print(f"Recomputing from {args.from_csv} ({len(rows)} rows) — no rerun, no engine.")
+        recompute[args.stage](rows, args, Path(args.from_csv))
         return
 
     rows = _run_stage(args.stage, args)   # raises SystemExit for an empty family_refine
@@ -864,15 +1252,22 @@ def main() -> None:
         return
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
-    csv_path = REPORTS_DIR / f"new_sweep_{args.stage}_{timestamp}.csv"
+    csv_path = _stage_dir(args.stage) / f"sweep_{timestamp}.csv"
     _write_csv(csv_path, rows, _CSV_FIELDS)
     _cleanup_checkpoint(args.stage)   # stage completed — discard the resume checkpoint
 
-    if args.stage == "structure_screen":
-        _report_structure_screen(rows, args, csv_path)
+    _CUSTOM_REPORT = {
+        "structure_screen": _report_structure_screen,
+        "family_refine": _report_family_refine,
+        "voter_subset_screen": _report_voter_subset_screen,
+        "voter_subset_refine": _report_voter_subset_refine,
+    }
+    if args.stage in _CUSTOM_REPORT:
+        _CUSTOM_REPORT[args.stage](rows, args, csv_path)
         print("\n" + PIN_HINTS[args.stage])
         return
 
+    # map_theta / map_gates → generic best-per (GROUP_FIELDS none) + overall best
     group_fields = GROUP_FIELDS.get(args.stage)
     if group_fields:
         print(f"\nBest per {'/'.join(group_fields)}  (PRIMARY {args.metric}; greedy shown as diagnostic):")

@@ -156,7 +156,7 @@ def test_signature_mismatch_rotates_and_starts_fresh(patched):
     m._ckpt_csv(stage).write_text("embedder,variant\n")
     done, resume = m._checkpoint_state(stage, "CURRENT", fresh=False)
     assert done == [] and resume is False
-    assert list(patched.tmp.glob("*.stale-*"))           # stale files moved aside
+    assert list(patched.tmp.glob("**/*.stale-*"))        # stale files moved aside (now under <stage>/)
 
 
 def test_deviation_tolerates_csv_empty_strings():
