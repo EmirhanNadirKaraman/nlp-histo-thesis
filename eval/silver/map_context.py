@@ -46,20 +46,30 @@ class _MapContext:
     agreement_embed_fn: object
 
 
-def _load_map_context(embedder_kind: str, *, embed_cache_path: Optional[str]) -> _MapContext:
+def _load_map_context(
+    embedder_kind: str,
+    *,
+    embed_cache_path: Optional[str],
+    cache_path: Path = CACHE_PATH,
+    silver_path: Path = SILVER_PATH,
+) -> _MapContext:
     """Load voter cache + silver + the gemini/openai embedder and pre-warm the
-    agreement cache. Mirrors map_theta_sweep's sweep-mode setup (no LLM calls)."""
-    if not CACHE_PATH.exists():
+    agreement cache. Mirrors map_theta_sweep's sweep-mode setup (no LLM calls).
+
+    ``cache_path`` / ``silver_path`` default to the related15 primer/silver but can
+    point at another split (e.g. heldout15) for held-out evaluation."""
+    if not cache_path.exists():
         raise SystemExit(
-            f"voter cache not found: {CACHE_PATH}\n"
-            "Run `python -m eval.silver.map_theta_sweep prime --split all` then `collect`.")
-    if not SILVER_PATH.exists():
+            f"voter cache not found: {cache_path}\n"
+            "Run `python -m eval.silver.map_theta_sweep prime` (with --source/--primer-dir) "
+            "then `collect`.")
+    if not silver_path.exists():
         raise SystemExit(
-            f"silver labels not found: {SILVER_PATH}\n"
+            f"silver labels not found: {silver_path}\n"
             "Run `python -m eval.silver.generate --batch`.")
 
-    voter_cache = json.loads(CACHE_PATH.read_text(encoding="utf-8"))
-    silver_by_case = {rec.case_id: rec for rec in read_jsonl(SILVER_PATH, SilverCaseResult)}
+    voter_cache = json.loads(cache_path.read_text(encoding="utf-8"))
+    silver_by_case = {rec.case_id: rec for rec in read_jsonl(silver_path, SilverCaseResult)}
 
     if embedder_kind == "gemini":
         api_key = os.environ.get("GOOGLE_API_KEY")
