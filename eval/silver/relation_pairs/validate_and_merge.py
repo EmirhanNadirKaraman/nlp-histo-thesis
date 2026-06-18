@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import random
 import re
 import sys
 from collections import Counter
@@ -35,6 +36,10 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from eval.silver.relation_pairs.api_common import (  # noqa: E402
+    GENERATION_META,
+    _load_json,
+)
 from eval.silver.relation_pairs.prepare_manual_batches import (  # noqa: E402
     N_BATCHES,
     PAIRS_PER_BATCH,
@@ -53,6 +58,10 @@ DIFFICULTIES = ("easy", "medium", "hard")
 RAW_DIR = _REPO_ROOT / "eval" / "data" / "relation_pairs" / "raw_batches"
 OUT_JSONL = _REPO_ROOT / "eval" / "data" / "relation_claim_pairs_300.jsonl"
 OUT_META = _REPO_ROOT / "eval" / "data" / "relation_claim_pairs_300.meta.json"
+OUT_CALIB = _REPO_ROOT / "eval" / "data" / "relation_claim_pairs_calibration.jsonl"
+OUT_EVAL = _REPO_ROOT / "eval" / "data" / "relation_claim_pairs_evaluation.jsonl"
+DEFAULT_CALIB_FRAC = 0.5
+DEFAULT_SPLIT_SEED = 42
 
 _PAIR_ID_RE = re.compile(r"^pair_(\d{4})$")
 
@@ -165,9 +174,43 @@ def _content_hash(records: list[dict]) -> str:
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
 
 
+def split_records(records: list[dict], calib_frac: float, seed: int) -> tuple[list[dict], list[dict]]:
+    """Deterministic, label-stratified calibration/evaluation split.
+
+    Within each gold_label, sort by id then shuffle with a fixed seed and take the
+    first ``calib_frac`` for calibration, the rest for evaluation — so the two
+    splits are reproducible and each is balanced across labels. The split exists so
+    the threshold-sweep *sensitivity analysis* can be inspected on calibration
+    while the primary report stays on evaluation; per the thesis, NO threshold is
+    tuned on this set.
+    """
+    calib: list[dict] = []
+    ev: list[dict] = []
+    for lab in LABELS:
+        grp = sorted([r for r in records if r.get("gold_label") == lab], key=lambda r: r.get("id", ""))
+        random.Random(f"{seed}:{lab}").shuffle(grp)
+        n_cal = round(len(grp) * calib_frac)
+        calib.extend(grp[:n_cal])
+        ev.extend(grp[n_cal:])
+    calib.sort(key=lambda r: r.get("id", ""))
+    ev.sort(key=lambda r: r.get("id", ""))
+    return calib, ev
+
+
+def _write_jsonl(path: Path, records: list[dict]) -> None:
+    with open(path, "w", encoding="utf-8") as fh:
+        for r in records:
+            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Validate + merge the 10 manual relation-pair batches (E13).")
+    ap = argparse.ArgumentParser(description="Validate + merge the 10 relation-pair batches, write splits (E13).")
     ap.add_argument("--check", action="store_true", help="validate only; never write the merged dataset")
+    ap.add_argument("--calib-frac", type=float, default=DEFAULT_CALIB_FRAC,
+                    help=f"calibration fraction per label for the split (default {DEFAULT_CALIB_FRAC})")
+    ap.add_argument("--seed", type=int, default=DEFAULT_SPLIT_SEED,
+                    help=f"seed for the stratified split (default {DEFAULT_SPLIT_SEED})")
+    ap.add_argument("--no-split", action="store_true", help="do not write calibration/evaluation split files")
     args = ap.parse_args()
 
     present, missing = [], []
@@ -190,9 +233,9 @@ def main() -> int:
         all_errors.extend(errs)
 
     if missing:
-        print(f"\nIncomplete: {len(missing)} batch file(s) not yet pasted. "
-              "Generate them with prepare_manual_batches, run in Opus 4.7 @ T=0, "
-              f"and save to {RAW_DIR}/batch_0k.jsonl.")
+        print(f"\nIncomplete: {len(missing)} batch file(s) missing from {RAW_DIR}. "
+              "Produce them via the API path (prepare_api_batch_jsonl → submit_api_batch "
+              "→ collect_api_batch) or the manual fallback (prepare_manual_batches).")
         return 1
     if all_errors:
         print(f"\nFAILED: {len(all_errors)} per-batch error(s). Fix the raw files and re-run.")
@@ -218,15 +261,37 @@ def main() -> int:
         return 0
 
     OUT_JSONL.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUT_JSONL, "w", encoding="utf-8") as fh:
-        for r in merged:
-            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+    _write_jsonl(OUT_JSONL, merged)
+
+    # Truthful provenance: prefer the API generator's generation_meta.json when
+    # present (workflow=api_batch, model, batch_ids, no fake temperature); fall
+    # back to the manual workflow otherwise.
+    gen = _load_json(GENERATION_META, None)
+    provenance = gen if gen else {
+        "workflow": "manual",
+        "generator_model": "Opus 4.7 (manual paste)",
+        "temperature": "n/a (manual run)",
+    }
+
+    split_meta = None
+    if not args.no_split:
+        calib, ev = split_records(merged, args.calib_frac, args.seed)
+        _write_jsonl(OUT_CALIB, calib)
+        _write_jsonl(OUT_EVAL, ev)
+        split_meta = {
+            "strategy": "label-stratified, seeded",
+            "calib_frac": args.calib_frac,
+            "seed": args.seed,
+            "calibration_n": len(calib),
+            "evaluation_n": len(ev),
+            "calibration_labels": dict(Counter(r["gold_label"] for r in calib)),
+            "evaluation_labels": dict(Counter(r["gold_label"] for r in ev)),
+            "note": "diagnostic only; per the thesis no threshold is tuned on this set",
+        }
 
     meta = {
         "dataset": "relation_claim_pairs_300",
-        "workflow": "manual",
-        "generator_model": "Opus 4.7",
-        "temperature": 0,
+        **provenance,
         "n_batches": N_BATCHES,
         "pairs_per_batch": PAIRS_PER_BATCH,
         "per_label_per_batch": PER_LABEL_PER_BATCH,
@@ -239,12 +304,18 @@ def main() -> int:
         "n_unique_topics": stats["n_unique_topics"],
         "prompt_template_hash": prompt_hash(),
         "content_hash": _content_hash(merged),
+        "split": split_meta,
         "validated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "n_warnings": len(warnings),
     }
     OUT_META.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
-    print(f"\n✓ wrote {OUT_JSONL.relative_to(_REPO_ROOT)} ({len(merged)} pairs)")
+    print(f"\n✓ wrote {OUT_JSONL.relative_to(_REPO_ROOT)} ({len(merged)} pairs)  "
+          f"[workflow={provenance.get('workflow')}]")
     print(f"✓ wrote {OUT_META.relative_to(_REPO_ROOT)}")
+    if split_meta:
+        print(f"✓ wrote split: {OUT_CALIB.name} ({split_meta['calibration_n']}) + "
+              f"{OUT_EVAL.name} ({split_meta['evaluation_n']})  [seed={args.seed}, "
+              f"calib_frac={args.calib_frac}]")
     print("Next: python -m eval.silver.relation_pairs.inspect")
     return 0
 

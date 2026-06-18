@@ -236,10 +236,13 @@ named_entity_recognition/entity_linking_cache.json
 eval/out/
 eval/pdfs/
 eval/data/*
-# E13: the validated relation-classification eval set is committed (results depend
-# on it); raw manual batches + everything else under eval/data/ stay ignored.
+# E13: the validated relation-classification eval set + its calibration/evaluation
+# splits are committed (results depend on them); raw batches, API request/result
+# intermediates, and everything else under eval/data/ stay ignored.
 !eval/data/relation_claim_pairs_300.jsonl
 !eval/data/relation_claim_pairs_300.meta.json
+!eval/data/relation_claim_pairs_calibration.jsonl
+!eval/data/relation_claim_pairs_evaluation.jsonl
 eval/reports/
 
 # E13: generated per-batch prompt files (template lives in prepare_manual_batches.py)

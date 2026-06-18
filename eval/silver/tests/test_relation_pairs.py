@@ -20,11 +20,16 @@ import copy
 
 import pytest
 
+from types import SimpleNamespace
+
 from eval.silver.experiments.E13_nli_ablation.evaluate import build_shim
+from eval.silver.relation_pairs import api_common
 from eval.silver.relation_pairs import prepare_manual_batches as prep
+from eval.silver.relation_pairs.collect_api_batch import _assign_ids
 from eval.silver.relation_pairs.validate_and_merge import (
     load_batch,
     normalize_claim,
+    split_records,
     validate_full,
     validate_record,
 )
@@ -213,3 +218,72 @@ def test_same_polarity_guard_blocks_contradiction():
     b.direction = DirectionEnum.positive
     lab = _classify_pair(a, b, _scores(0.0, 0.9), _scores(0.0, 0.9), 0.5, 0.5)
     assert lab is None  # two positive findings cannot contradict
+
+
+# ── API batch request building ───────────────────────────────────────────────
+def test_custom_id_roundtrip():
+    assert api_common.custom_id_for(1) == "relation_batch_01"
+    assert api_common.custom_id_for(10) == "relation_batch_10"
+    assert api_common.batch_number_of("relation_batch_07") == 7
+
+
+def test_build_request_shape_no_temperature():
+    req = api_common.build_request(3)
+    assert req["custom_id"] == "relation_batch_03"
+    params = req["params"]
+    assert params["model"] == "claude-opus-4-7"
+    assert "temperature" not in params          # deprecated for this model (B-072)
+    assert params["tool_choice"] == {"type": "tool", "name": api_common.TOOL_NAME}
+    pairs_schema = params["tools"][0]["input_schema"]["properties"]["pairs"]
+    assert pairs_schema["minItems"] == pairs_schema["maxItems"] == 30
+    # gold_label enum is the canonical 3-class set
+    item = pairs_schema["items"]["properties"]
+    assert set(item["gold_label"]["enum"]) == {"SUPPORTING", "CONTRADICTING", "UNRELATED"}
+    assert "id" not in item                     # ids assigned post-hoc on collection
+
+
+def test_extract_pairs_from_tool_use():
+    pairs = [{"claim_a": "a"}, {"claim_a": "b"}]
+    blocks = [
+        SimpleNamespace(type="text", text="ignore me"),
+        SimpleNamespace(type="tool_use", input={"pairs": pairs}),
+    ]
+    assert api_common.extract_pairs_from_content(blocks) == pairs
+    assert api_common.extract_pairs_from_content([SimpleNamespace(type="text")]) == []
+
+
+def test_assign_ids_contiguous_per_batch():
+    pairs = [{"claim_a": f"c{i}"} for i in range(30)]
+    out1 = _assign_ids(pairs, 1)
+    out10 = _assign_ids(pairs, 10)
+    assert out1[0]["id"] == "pair_0001" and out1[-1]["id"] == "pair_0030"
+    assert out10[0]["id"] == "pair_0271" and out10[-1]["id"] == "pair_0300"
+    # original fields preserved
+    assert out1[5]["claim_a"] == "c5"
+
+
+# ── calibration/evaluation split ─────────────────────────────────────────────
+def test_split_records_stratified_reproducible():
+    recs = _make_records()
+    calib, ev = split_records(recs, calib_frac=0.5, seed=42)
+    assert len(calib) == 150 and len(ev) == 150
+    # label-balanced within each split
+    import collections
+    assert collections.Counter(r["gold_label"] for r in calib) == \
+        {"SUPPORTING": 50, "CONTRADICTING": 50, "UNRELATED": 50}
+    # disjoint + complete
+    ids_c = {r["id"] for r in calib}
+    ids_e = {r["id"] for r in ev}
+    assert ids_c.isdisjoint(ids_e)
+    assert ids_c | ids_e == {r["id"] for r in recs}
+    # reproducible
+    calib2, _ = split_records(recs, calib_frac=0.5, seed=42)
+    assert [r["id"] for r in calib2] == [r["id"] for r in calib]
+    # different seed → different calibration membership
+    calib3, _ = split_records(recs, calib_frac=0.5, seed=7)
+    assert {r["id"] for r in calib3} != ids_c
+
+
+def test_split_records_fraction():
+    calib, ev = split_records(_make_records(), calib_frac=0.2, seed=42)
+    assert len(calib) == 60 and len(ev) == 240  # 20 per label calib
