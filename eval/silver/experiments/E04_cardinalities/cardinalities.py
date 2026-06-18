@@ -36,16 +36,19 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from eval.silver.map_theta_sweep import REPORTS_DIR
+from eval.silver.map_theta_sweep import REPORTS_DIR  # noqa: E402
 
 _DEFAULT_SUMMARIES = _REPO_ROOT / "out" / "summaries" / "summaries"
 _DEFAULT_SOURCE = _REPO_ROOT / "eval" / "data" / "source_cases_related15.jsonl"
 # Frozen-config MAP+grounding reference from E03 (related15, θ0.9/r0.1, grounding 0.5):
 _E03_FROZEN = {"map_findings": 2280, "grounded_at_0_5": 2002}
+# Cascade-profile names that ARE the frozen 6-voter cascade (E06–E08 winner).
+# "real" is the production label for that cascade; "6voter_frozen" is a legacy alias.
+_FROZEN_PROFILES = {"6voter_frozen", "real"}
 
 _PER_PAPER_FIELDS = [
     "pmcid", "cascade_profile", "grounding_threshold",
@@ -107,9 +110,11 @@ def main() -> None:
 
     print(f"E04 knowledge-extraction funnel — {n_papers} related15 papers")
     print(f"cascade_profile(s) in source JSONs: {profiles}")
-    if any(p != "6voter_frozen" for p in profiles):
+    if any(p not in _FROZEN_PROFILES for p in profiles):
         print("  ⚠️ NOT the frozen 6-voter cascade — absolute counts are config-specific; "
               "rates below are the config-robust readout. (Frozen MAP+grounding ref from E03 shown.)")
+    else:
+        print("  ✓ frozen 6-voter cascade ('real' profile, θ0.9/reject0.1) — absolute counts are config-final.")
 
     def line(label, n, denom=None):
         pct = f"  ({n/denom:6.1%} of prev)" if denom else ""
