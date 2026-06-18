@@ -117,6 +117,11 @@ class PostgresDatabaseIngester:
                     caption_text=tbl.caption,
                     image_filename=tbl.image_path.name if tbl.image_path else None,
                     image_path=str(tbl.image_path) if tbl.image_path else None,
+                    # B-075: persist the page+bbox the cropper already computed on
+                    # CroppedMedia (Docling coords, y=0 at page bottom) — previously dropped.
+                    page_number=tbl.page,
+                    bbox_x1=tbl.bbox.x1, bbox_y1=tbl.bbox.y1,
+                    bbox_x2=tbl.bbox.x2, bbox_y2=tbl.bbox.y2,
                 )
                 session.add(obj)
                 session.flush()

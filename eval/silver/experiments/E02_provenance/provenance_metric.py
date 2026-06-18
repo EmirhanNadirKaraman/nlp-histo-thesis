@@ -76,13 +76,14 @@ def main() -> None:
         rec("text elements with path_list (section array)", has_pl, nte)
         rec("text elements with non-empty text", has_text, nte)
 
-        # ── TABLE provenance (caption + crop + cross-ref; coordinates unpopulated) ──
-        print("\nTABLE provenance (caption + crop + link; page/bbox/content cols unpopulated):")
+        # ── TABLE provenance (caption + crop + page/bbox + cross-ref) ──
+        # bbox is Docling coords (y=0 at page bottom, so y1>y2); validity = non-degenerate.
+        print("\nTABLE provenance (caption + crop + page/bbox + cross-ref):")
         tab_page = s.query(func.count(Table.id)).filter(Table.page_number.isnot(None)).scalar()
         tab_bbox = s.query(func.count(Table.id)).filter(
             Table.bbox_x1.isnot(None), Table.bbox_y1.isnot(None),
             Table.bbox_x2.isnot(None), Table.bbox_y2.isnot(None),
-            Table.bbox_x2 > Table.bbox_x1, Table.bbox_y2 > Table.bbox_y1).scalar()
+            Table.bbox_x2 != Table.bbox_x1, Table.bbox_y2 != Table.bbox_y1).scalar()
         tab_cap = s.query(func.count(Table.id)).filter(
             Table.caption_text.isnot(None), Table.caption_text != "").scalar()
         tab_content = s.query(func.count(Table.id)).filter(
@@ -92,10 +93,10 @@ def main() -> None:
         tab_linked = s.query(func.count(distinct(TextElementTableReference.table_id))).scalar()
         rec("tables with caption", tab_cap, ntab)
         rec("tables with crop image", tab_img, ntab)
+        rec("tables with page_number", tab_page, ntab)
+        rec("tables with valid bbox", tab_bbox, ntab)
         rec("tables linked to ≥1 referencing paragraph", tab_linked, ntab)
-        rec("tables with page_number  [schema field, unpopulated]", tab_page, ntab)
-        rec("tables with valid bbox   [schema field, unpopulated]", tab_bbox, ntab)
-        rec("tables with extracted content [schema field, unpopulated]", tab_content, ntab)
+        rec("tables with extracted content [unpopulated — no source in crop path]", tab_content, ntab)
 
         # ── FIGURE provenance (no page/bbox in schema) ──
         print("\nFIGURE provenance (caption + section + crop; no page/bbox stored):")
