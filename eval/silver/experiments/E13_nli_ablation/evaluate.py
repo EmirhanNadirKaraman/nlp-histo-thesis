@@ -147,6 +147,20 @@ def classify_all(scored: list[dict], ent_thr: float, con_thr: float) -> tuple[li
     return gold, pred
 
 
+_DIFFS = ["easy", "medium", "hard"]
+
+
+def per_difficulty(records: list[dict], gold: list[str], pred: list[str]) -> dict:
+    """Accuracy bucketed by the dataset's `difficulty` field (aligned to records)."""
+    out = {}
+    for diff in _DIFFS:
+        idx = [i for i, r in enumerate(records) if r.get("difficulty") == diff]
+        n = len(idx)
+        correct = sum(1 for i in idx if gold[i] == pred[i])
+        out[diff] = {"n": n, "accuracy": (correct / n if n else 0.0)}
+    return out
+
+
 def _print_result(title: str, gold: list[str], pred: list[str]) -> dict:
     prf = per_class_prf(gold, pred)
     acc, mf1 = accuracy(gold, pred), macro_f1(prf)
@@ -196,6 +210,7 @@ def main() -> None:
             f"{_DEFAULTS.contradiction_threshold})",
             gold, pred,
         )
+        res["gold"], res["pred"] = gold, pred
         primary[mode] = res
         for c in CLASSES:
             d = res["prf"][c]
@@ -212,6 +227,20 @@ def main() -> None:
     d_acc = primary["scope_aware"]["accuracy"] - primary["predicate_only"]["accuracy"]
     d_mf1 = primary["scope_aware"]["macro_f1"] - primary["predicate_only"]["macro_f1"]
     print(f"  Δaccuracy(scope−pred) = {d_acc:+.4f}   Δmacro-F1 = {d_mf1:+.4f}")
+
+    # ── accuracy by difficulty (default thresholds) — quantifies the easy-skew ──
+    print("\n── accuracy by difficulty (default thresholds) ──")
+    for mode in MODES:
+        pd = per_difficulty(records, primary[mode]["gold"], primary[mode]["pred"])
+        print(f"  {mode:14}: " + "   ".join(
+            f"{d}={pd[d]['accuracy']:.3f} (n={pd[d]['n']})" for d in _DIFFS))
+        for d in _DIFFS:
+            rows.append({
+                "phase": "primary_by_difficulty", "mode": mode,
+                "ent_thr": _DEFAULTS.entailment_threshold,
+                "con_thr": _DEFAULTS.contradiction_threshold, "is_default": True,
+                "accuracy": round(pd[d]["accuracy"], 4), "class": d, "support": pd[d]["n"],
+            })
 
     # ── DIAGNOSTIC threshold sweep (NOT tuning — does not change RelateConfig) ──
     print("\n── DIAGNOSTIC threshold sweep (sensitivity only; pipeline NOT retuned) ──")
