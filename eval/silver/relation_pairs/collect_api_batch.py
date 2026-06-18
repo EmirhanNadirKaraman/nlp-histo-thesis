@@ -20,8 +20,10 @@ hard failure (never writes a partial set).
 """
 from __future__ import annotations
 
+import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -56,6 +58,13 @@ def _assign_ids(pairs: list[dict], batch_number: int) -> list[dict]:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description="Poll + collect the E13 relation-pair Message Batches.")
+    ap.add_argument("--poll-interval", type=int, default=15,
+                    help="seconds between status checks while waiting (default 15)")
+    ap.add_argument("--no-wait", action="store_true",
+                    help="check once and exit if not all batches have ended (no polling loop)")
+    args = ap.parse_args()
+
     states = _load_json(BATCH_STATES, [])
     if not states:
         print(f"No batch state at {BATCH_STATES}. Run submit_api_batch first.")
@@ -63,19 +72,24 @@ def main() -> int:
 
     client = get_client()
 
-    # ── poll all batches ─────────────────────────────────────────────────────
-    all_ended = True
-    for st in states:
-        b = client.beta.messages.batches.retrieve(st["batch_id"])
-        c = b.request_counts
-        print(f"  batch {st['batch_id']}: {b.processing_status}  "
-              f"succeeded={c.succeeded} errored={c.errored} processing={c.processing} "
-              f"canceled={c.canceled} expired={getattr(c, 'expired', 0)}")
-        if b.processing_status != "ended":
-            all_ended = False
-    if not all_ended:
-        print("Not all batches have ended — re-run to check again.")
-        return 0
+    # ── poll all batches until every one has ended (every --poll-interval s) ───
+    while True:
+        all_ended = True
+        for st in states:
+            b = client.beta.messages.batches.retrieve(st["batch_id"])
+            c = b.request_counts
+            print(f"  batch {st['batch_id']}: {b.processing_status}  "
+                  f"succeeded={c.succeeded} errored={c.errored} processing={c.processing} "
+                  f"canceled={c.canceled} expired={getattr(c, 'expired', 0)}")
+            if b.processing_status != "ended":
+                all_ended = False
+        if all_ended:
+            break
+        if args.no_wait:
+            print("Not all batches have ended — re-run to check again (--no-wait set).")
+            return 0
+        print(f"  … not all ended; re-checking in {args.poll_interval}s (Ctrl-C to stop)\n")
+        time.sleep(args.poll_interval)
 
     # ── gather results, latest-submitted batch wins per custom_id ─────────────
     merged: dict[str, object] = {}
