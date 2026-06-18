@@ -827,8 +827,13 @@ def persist_normal_findings(
     try:
         from database.models import SumNormalFinding, SumNormalFindingSpan  # noqa: PLC0415
         from .models import FindingScope  # noqa: PLC0415
+        # Dedupe by normal_id (last-wins, matching the in-memory ``nf_by_id`` dict):
+        # the pipeline treats normal_id as unique and the DB enforces
+        # UNIQUE(pipeline_run_id, normal_id). Without this, a duplicate normal_id
+        # from NORMALIZE aborts the whole insert → 0 rows persisted (B-076).
+        deduped_nfs = list({nf.normal_id: nf for nf in normal_findings}.values())
         with db.session_scope() as session:
-            for nf in normal_findings:
+            for nf in deduped_nfs:
                 scope = nf.scope or FindingScope()
                 row = SumNormalFinding(
                     pipeline_run_id     = db_id,
@@ -899,7 +904,13 @@ def persist_finding_groups(
                 session.flush()
                 group_id_map[fg.group_id] = row.id
                 missing = 0
+                seen_members: set[str] = set()
                 for normal_id in fg.member_ids:
+                    # uq_sum_group_member is (finding_group_id, normal_id); a group
+                    # listing the same normal_id twice would abort the insert (B-076).
+                    if normal_id in seen_members:
+                        continue
+                    seen_members.add(normal_id)
                     nf_db_id = nf_db_id_map.get(normal_id)
                     if nf_db_id is None:
                         missing += 1
