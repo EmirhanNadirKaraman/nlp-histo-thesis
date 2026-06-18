@@ -22,18 +22,18 @@ Two report families:
      connected components, hub entities, the most-corroborated rules, and the
      contradiction pairs.
 
-Outputs land under ``out/corpus_stats/`` (override with ``--out``): one CSV per
-table, an optional PNG per chart, and a ``corpus_stats.md`` headline summary.
+Outputs land under ``eval/reports/corpus_stats/`` (override with ``--out``): one CSV
+per table, an optional PNG per chart, and a ``corpus_stats.md`` headline summary.
 
 Usage
 -----
-    python scripts/corpus_stats.py                       # latest successful run per paper
-    python scripts/corpus_stats.py                       # files mode (default)
-    python scripts/corpus_stats.py --no-plots            # CSV + markdown only
-    python scripts/corpus_stats.py --summaries-dir out/summaries/summaries
-    python scripts/corpus_stats.py --source db           # read the database instead
-    python scripts/corpus_stats.py --source db --corpus-run-id 20260617T101500
-    python scripts/corpus_stats.py --out out/my_stats --top 30
+    python -m eval.silver.experiments.corpus_stats.corpus_stats                       # latest successful run per paper
+    python -m eval.silver.experiments.corpus_stats.corpus_stats                       # files mode (default)
+    python -m eval.silver.experiments.corpus_stats.corpus_stats --no-plots            # CSV + markdown only
+    python -m eval.silver.experiments.corpus_stats.corpus_stats --summaries-dir out/summaries/summaries
+    python -m eval.silver.experiments.corpus_stats.corpus_stats --source db           # read the database instead
+    python -m eval.silver.experiments.corpus_stats.corpus_stats --source db --corpus-run-id 20260617T101500
+    python -m eval.silver.experiments.corpus_stats.corpus_stats --out out/my_stats --top 30
 
 Run from the repo root. ``--source db`` reads DB config from .env
 (see database/db_connection.py); files mode needs no database.
@@ -48,7 +48,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
 from dotenv import load_dotenv
 
@@ -585,7 +585,7 @@ def main():
     ap = argparse.ArgumentParser(description="Descriptive funnel + graph stats over pipeline output.")
     ap.add_argument("--source", choices=["files", "db"], default="files",
                     help="read on-disk summary JSONs (default) or the database")
-    ap.add_argument("--out", default="out/corpus_stats", help="output directory")
+    ap.add_argument("--out", default="eval/reports/corpus_stats", help="output directory")
     ap.add_argument("--status", default="success", help="run status to select (default: success)")
     ap.add_argument("--all-runs", action="store_true",
                     help="include every run/paper (default: status-filtered, latest per paper)")
