@@ -178,6 +178,14 @@ class Figure(Base):
     # Caption and context
     caption_text = Column(Text)
 
+    # Source location in the PDF (Docling coords, y=0 at page bottom ⇒ y1>y2).
+    # Added 0014 (B-075): mirror Table; populated by the cropper via CroppedMedia.
+    page_number = Column(Integer)  # Page where figure appears
+    bbox_x1 = Column(Integer)
+    bbox_y1 = Column(Integer)
+    bbox_x2 = Column(Integer)
+    bbox_y2 = Column(Integer)
+
     # Image file information
     graphic_ref = Column(String(255))  # Original filename from XML
     image_filename = Column(String(255))  # Stored filename

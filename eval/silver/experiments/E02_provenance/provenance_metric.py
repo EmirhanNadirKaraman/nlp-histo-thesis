@@ -98,19 +98,26 @@ def main() -> None:
         rec("tables linked to ≥1 referencing paragraph", tab_linked, ntab)
         rec("tables with extracted content [unpopulated — no source in crop path]", tab_content, ntab)
 
-        # ── FIGURE provenance (no page/bbox in schema) ──
-        print("\nFIGURE provenance (caption + section + crop; no page/bbox stored):")
+        # ── FIGURE provenance (page/bbox added in migration 0014, B-075) ──
+        print("\nFIGURE provenance (caption + crop + page/bbox + cross-ref):")
         fig_cap = s.query(func.count(Figure.id)).filter(
             Figure.caption_text.isnot(None), Figure.caption_text != "").scalar()
-        fig_sec = s.query(func.count(Figure.id)).filter(
-            Figure.section_context.isnot(None), Figure.section_context != "").scalar()
         fig_img = s.query(func.count(Figure.id)).filter(
             Figure.image_path.isnot(None), Figure.image_path != "").scalar()
+        fig_page = s.query(func.count(Figure.id)).filter(Figure.page_number.isnot(None)).scalar()
+        fig_bbox = s.query(func.count(Figure.id)).filter(
+            Figure.bbox_x1.isnot(None), Figure.bbox_y1.isnot(None),
+            Figure.bbox_x2.isnot(None), Figure.bbox_y2.isnot(None),
+            Figure.bbox_x2 != Figure.bbox_x1, Figure.bbox_y2 != Figure.bbox_y1).scalar()
+        fig_sec = s.query(func.count(Figure.id)).filter(
+            Figure.section_context.isnot(None), Figure.section_context != "").scalar()
         fig_linked = s.query(func.count(distinct(TextElementFigureReference.figure_id))).scalar()
         rec("figures with caption", fig_cap, nfig)
-        rec("figures with section_context", fig_sec, nfig)
         rec("figures with crop image", fig_img, nfig)
+        rec("figures with page_number", fig_page, nfig)
+        rec("figures with valid bbox", fig_bbox, nfig)
         rec("figures linked to ≥1 referencing paragraph", fig_linked, nfig)
+        rec("figures with section_context [unpopulated — no source]", fig_sec, nfig)
 
         # ── cross-reference resolution ──
         print("\nCROSS-REFERENCE resolution (in-text mentions → media rows):")
@@ -133,10 +140,10 @@ def main() -> None:
             print(f"  paragraph  {tx.unique_path}")
             print(f"             “{snippet}…”")
             print(f"  → cites    Table “{(tb.caption_text or '')[:70]}”")
-            print(f"             crop {tb.image_path}")
-            print("  → a rule extracted from this paragraph is traceable to its section address")
-            print("    and to the cited table's caption + crop image (coordinate-level page/bbox")
-            print("    is supported by the schema but not populated by the current ingest).")
+            print(f"             page {tb.page_number}  bbox [{tb.bbox_x1},{tb.bbox_y1},"
+                  f"{tb.bbox_x2},{tb.bbox_y2}]  crop {tb.image_path}")
+            print("  → the extracted rule is traceable to its section address AND to an")
+            print("    exact PDF region (page + bbox) of the cited table.")
 
     out_dir = REPORTS_DIR / "E02_provenance"
     out_dir.mkdir(parents=True, exist_ok=True)

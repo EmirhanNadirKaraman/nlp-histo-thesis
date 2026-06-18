@@ -101,6 +101,10 @@ class PostgresDatabaseIngester:
                     caption_text=fig.caption,
                     image_filename=fig.image_path.name if fig.image_path else None,
                     image_path=str(fig.image_path) if fig.image_path else None,
+                    # B-075 (migration 0014): persist the cropper's page+bbox (Docling coords).
+                    page_number=fig.page,
+                    bbox_x1=fig.bbox.x1, bbox_y1=fig.bbox.y1,
+                    bbox_x2=fig.bbox.x2, bbox_y2=fig.bbox.y2,
                 )
                 session.add(obj)
                 session.flush()
