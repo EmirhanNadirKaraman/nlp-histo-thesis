@@ -29,6 +29,7 @@ from eval.silver.relation_pairs.prompt_spec import (
     GOLD_LABELS,
     PROMPT_SPEC_VERSION,
     RELATION_SUBTYPES,
+    SCHEMA_KEYS,
     definitions_block,
 )
 
@@ -59,8 +60,19 @@ def batch_number_of(custom_id: str) -> int:
 
 
 # ── Structured-output tool ───────────────────────────────────────────────────
-# No ``id`` field: ids are assigned deterministically per batch on collection, so
-# they are always contiguous and correct regardless of model numbering.
+# Item fields are derived from SCHEMA_KEYS (single source) minus ``id``: ids are
+# assigned deterministically per batch on collection, so they are always
+# contiguous and correct regardless of model numbering.
+_ITEM_KEYS = tuple(k for k in SCHEMA_KEYS if k != "id")
+_ITEM_ENUMS = {
+    "gold_label": list(GOLD_LABELS),
+    "difficulty": list(DIFFICULTIES),
+    "relation_subtype": list(RELATION_SUBTYPES),
+}
+_ITEM_PROPERTIES = {
+    k: ({"type": "string", "enum": _ITEM_ENUMS[k]} if k in _ITEM_ENUMS else {"type": "string"})
+    for k in _ITEM_KEYS
+}
 RELATION_PAIRS_TOOL = {
     "name": TOOL_NAME,
     "description": (
@@ -76,20 +88,8 @@ RELATION_PAIRS_TOOL = {
                 "maxItems": PAIRS_PER_BATCH,
                 "items": {
                     "type": "object",
-                    "properties": {
-                        "topic": {"type": "string"},
-                        "disease_or_entity": {"type": "string"},
-                        "claim_a": {"type": "string"},
-                        "claim_b": {"type": "string"},
-                        "gold_label": {"type": "string", "enum": list(GOLD_LABELS)},
-                        "difficulty": {"type": "string", "enum": list(DIFFICULTIES)},
-                        "relation_subtype": {"type": "string", "enum": list(RELATION_SUBTYPES)},
-                        "rationale": {"type": "string"},
-                    },
-                    "required": [
-                        "topic", "disease_or_entity", "claim_a", "claim_b",
-                        "gold_label", "difficulty", "relation_subtype", "rationale",
-                    ],
+                    "properties": _ITEM_PROPERTIES,
+                    "required": list(_ITEM_KEYS),
                 },
             }
         },
@@ -113,10 +113,12 @@ def build_user_prompt(batch_number: int) -> str:
         f"(conceptually; do not output id fields). The batch MUST contain exactly "
         f"{PER_LABEL_PER_BATCH} SUPPORTING, {PER_LABEL_PER_BATCH} CONTRADICTING, and "
         f"{PER_LABEL_PER_BATCH} UNRELATED pairs.\n\n"
-        "Vary topics widely within the batch (avoid using any disease, biomarker, or "
-        "organ system more than twice). Aim for a spread of easy/medium/hard "
-        "difficulties within each label. Do NOT make SUPPORTING pairs exact "
-        "duplicates.\n\n"
+        "TOPIC DIVERSITY: cover diverse pathology areas across the batch — include "
+        "morphology, immunohistochemistry (IHC), molecular genetics, prognosis, "
+        "treatment response, and grading/staging. Avoid using the same disease, "
+        "biomarker, or organ system more than twice within one batch. Aim for a "
+        "spread of easy/medium/hard difficulties within each label. Do NOT make "
+        "SUPPORTING pairs exact duplicates.\n\n"
         f"Call the {TOOL_NAME} tool exactly once with all {PAIRS_PER_BATCH} pairs."
     )
 

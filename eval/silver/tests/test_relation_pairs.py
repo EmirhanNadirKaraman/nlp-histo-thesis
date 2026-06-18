@@ -22,11 +22,17 @@ import pytest
 
 from types import SimpleNamespace
 
-from eval.silver.experiments.E13_nli_ablation.evaluate import build_shim
+from eval.silver.experiments.E13_nli_ablation.evaluate import CLASSES, GOLD_MAP, build_shim
 from eval.silver.relation_pairs import api_common
 from eval.silver.relation_pairs import prepare_manual_batches as prep
 from eval.silver.relation_pairs.collect_api_batch import _assign_ids
+from eval.silver.relation_pairs.prompt_spec import (
+    GOLD_TO_RELATE_LABEL,
+    RELATION_SUBTYPES_BY_LABEL,
+    SCHEMA_KEYS,
+)
 from eval.silver.relation_pairs.validate_and_merge import (
+    REQUIRED_KEYS,
     load_batch,
     normalize_claim,
     split_records,
@@ -287,3 +293,47 @@ def test_split_records_stratified_reproducible():
 def test_split_records_fraction():
     calib, ev = split_records(_make_records(), calib_frac=0.2, seed=42)
     assert len(calib) == 60 and len(ev) == 240  # 20 per label calib
+
+
+# ── SCHEMA_KEYS as the single field source ───────────────────────────────────
+def test_required_keys_are_schema_keys():
+    assert REQUIRED_KEYS == set(SCHEMA_KEYS)
+    # the structured-output tool item fields = SCHEMA_KEYS minus the post-hoc id
+    item_props = api_common.RELATION_PAIRS_TOOL["input_schema"]["properties"]["pairs"]["items"]["properties"]
+    assert set(item_props) == set(SCHEMA_KEYS) - {"id"}
+
+
+def test_validate_record_full_schema_record_ok():
+    rec = {k: _make_records()[0][k] for k in SCHEMA_KEYS}
+    assert validate_record(rec, 1, expected_id=rec["id"]) == []
+
+
+# ── relation_subtype validity + gold-label compatibility ─────────────────────
+def test_validate_record_rejects_invalid_subtype():
+    rec = copy.deepcopy(_make_records()[0])
+    rec["relation_subtype"] = "totally_made_up"
+    errs = validate_record(rec, 1)
+    assert any("relation_subtype" in e and "not in" in e for e in errs), errs
+
+
+def test_validate_record_rejects_incompatible_subtype():
+    rec = copy.deepcopy(_make_records()[0])   # gold_label == SUPPORTING
+    assert rec["gold_label"] == "SUPPORTING"
+    rec["relation_subtype"] = "negation"      # valid token, but a CONTRADICTING subtype
+    errs = validate_record(rec, 1)
+    assert any("not compatible" in e for e in errs), errs
+
+
+def test_subtype_compatibility_matrix_holds_for_fixtures():
+    # every fixture record uses a subtype compatible with its gold label
+    for rec in _make_records():
+        assert rec["relation_subtype"] in RELATION_SUBTYPES_BY_LABEL[rec["gold_label"]]
+
+
+# ── evaluator uses the spec's gold→RELATE mapping ────────────────────────────
+def test_evaluator_uses_gold_to_relate_label():
+    assert GOLD_MAP is GOLD_TO_RELATE_LABEL
+    assert GOLD_MAP == {"SUPPORTING": "SUPPORT", "CONTRADICTING": "CONTRADICT",
+                        "UNRELATED": "UNRELATED"}
+    # classifier label space derived from the mapping values, de-duplicated, in order
+    assert CLASSES == ["SUPPORT", "CONTRADICT", "UNRELATED"]

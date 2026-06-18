@@ -52,11 +52,15 @@ from pipeline.stages.summarization.current_stages.relate_stage import (  # noqa:
     _nli_scores,
 )
 
+from eval.silver.relation_pairs.prompt_spec import GOLD_TO_RELATE_LABEL  # noqa: E402
+
 DATASET = _REPO_ROOT / "eval" / "data" / "relation_claim_pairs_300.jsonl"
 REPORTS_DIR = _REPO_ROOT / "eval" / "reports" / "E13_nli_ablation"
 
-GOLD_MAP = {"SUPPORTING": "SUPPORT", "CONTRADICTING": "CONTRADICT", "UNRELATED": "UNRELATED"}
-CLASSES = ["SUPPORT", "CONTRADICT", "UNRELATED"]
+# Map dataset gold labels (SUPPORTING/…) → the production RELATE label space so
+# metrics compare compatible labels. Single source: prompt_spec.GOLD_TO_RELATE_LABEL.
+GOLD_MAP = GOLD_TO_RELATE_LABEL
+CLASSES = list(dict.fromkeys(GOLD_TO_RELATE_LABEL.values()))  # ["SUPPORT", "CONTRADICT", "UNRELATED"]
 MODES = ["predicate_only", "scope_aware"]
 SWEEP = [0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
 _DEFAULTS = RelateConfig()  # frozen pipeline thresholds (0.50 / 0.50)

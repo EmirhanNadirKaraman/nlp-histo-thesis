@@ -62,10 +62,11 @@ output order. You may interleave the labels in any order within the batch.
 {claim_rules}
 
 TOPIC DIVERSITY: within this batch, cover several distinct histopathology /
-pathology areas (biomarkers e.g. Ki-67, p53, PD-L1, HER2, ER/PR, EGFR, ALK, BRAF,
-MSI/MMR; histologic grade/stage; tumour subtypes; staining patterns;
-prognosis/survival; treatment response; morphology). Avoid using the same disease,
-biomarker, or organ system more than twice in one batch unless necessary.
+pathology areas — morphology; immunohistochemistry (IHC); molecular genetics;
+prognosis/survival; treatment response; grading/staging; tumour subtypes; staining
+patterns; biomarkers (e.g. Ki-67, p53, PD-L1, HER2, ER/PR, EGFR, ALK, BRAF,
+MSI/MMR). Avoid using the same disease, biomarker, or organ system more than twice
+in one batch unless necessary.
 
 {difficulty_block}
 

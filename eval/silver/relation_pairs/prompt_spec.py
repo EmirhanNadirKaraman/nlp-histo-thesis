@@ -12,8 +12,32 @@ from __future__ import annotations
 
 PROMPT_SPEC_VERSION = "v1"
 
+# Canonical record schema — the single source for the field list. Used by the
+# validator, the structured-output tool schema, and the generation code so the
+# field set is never duplicated.
+SCHEMA_KEYS = (
+    "id",
+    "topic",
+    "disease_or_entity",
+    "claim_a",
+    "claim_b",
+    "gold_label",
+    "difficulty",
+    "relation_subtype",
+    "rationale",
+)
+
 GOLD_LABELS = ("SUPPORTING", "CONTRADICTING", "UNRELATED")
 DIFFICULTIES = ("easy", "medium", "hard")
+
+# Dataset-facing gold labels → production RELATE classifier label space. The
+# dataset keeps SUPPORTING/CONTRADICTING/UNRELATED; only the E13 evaluator maps to
+# these so metrics compare compatible labels.
+GOLD_TO_RELATE_LABEL = {
+    "SUPPORTING": "SUPPORT",
+    "CONTRADICTING": "CONTRADICT",
+    "UNRELATED": "UNRELATED",
+}
 
 # Controlled relation-subtype vocabulary, grouped by gold label.
 RELATION_SUBTYPES_BY_LABEL = {
@@ -26,7 +50,7 @@ RELATION_SUBTYPES = tuple(s for subs in RELATION_SUBTYPES_BY_LABEL.values() for 
 # ── Shared definition blocks (identical text for manual + API paths) ─────────────
 
 LABEL_DEFINITIONS = """\
-LABEL DEFINITIONS (the relation FROM claim_a TO claim_b):
+LABEL DEFINITIONS (the intended relation between claim_a and claim_b):
   - SUPPORTING   : the two claims make compatible assertions about the same
                    disease/entity/context. They may be paraphrases, equivalent
                    statements, or cases where one claim clearly entails or

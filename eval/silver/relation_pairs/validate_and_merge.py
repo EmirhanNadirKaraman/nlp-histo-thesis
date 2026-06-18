@@ -47,13 +47,16 @@ from eval.silver.relation_pairs.prepare_manual_batches import (  # noqa: E402
     TOTAL_PAIRS,
     prompt_hash,
 )
+from eval.silver.relation_pairs.prompt_spec import (  # noqa: E402
+    DIFFICULTIES,
+    GOLD_LABELS,
+    RELATION_SUBTYPES,
+    RELATION_SUBTYPES_BY_LABEL,
+    SCHEMA_KEYS,
+)
 
-REQUIRED_KEYS = {
-    "id", "topic", "disease_or_entity", "claim_a", "claim_b",
-    "gold_label", "difficulty", "relation_subtype", "rationale",
-}
-LABELS = ("SUPPORTING", "CONTRADICTING", "UNRELATED")
-DIFFICULTIES = ("easy", "medium", "hard")
+REQUIRED_KEYS = set(SCHEMA_KEYS)
+LABELS = GOLD_LABELS
 
 RAW_DIR = _REPO_ROOT / "eval" / "data" / "relation_pairs" / "raw_batches"
 OUT_JSONL = _REPO_ROOT / "eval" / "data" / "relation_claim_pairs_300.jsonl"
@@ -83,10 +86,17 @@ def validate_record(rec: dict, line_no: int, expected_id: str | None = None) -> 
         errs.append(f"line {line_no}: missing keys {sorted(missing)}")
     if extra:
         errs.append(f"line {line_no}: unexpected keys {sorted(extra)}")
-    if rec.get("gold_label") not in LABELS:
-        errs.append(f"line {line_no}: gold_label={rec.get('gold_label')!r} not in {LABELS}")
+    label = rec.get("gold_label")
+    if label not in LABELS:
+        errs.append(f"line {line_no}: gold_label={label!r} not in {LABELS}")
     if rec.get("difficulty") not in DIFFICULTIES:
         errs.append(f"line {line_no}: difficulty={rec.get('difficulty')!r} not in {DIFFICULTIES}")
+    subtype = rec.get("relation_subtype")
+    if subtype not in RELATION_SUBTYPES:
+        errs.append(f"line {line_no}: relation_subtype={subtype!r} not in {RELATION_SUBTYPES}")
+    elif label in RELATION_SUBTYPES_BY_LABEL and subtype not in RELATION_SUBTYPES_BY_LABEL[label]:
+        errs.append(f"line {line_no}: relation_subtype={subtype!r} not compatible with "
+                    f"gold_label={label!r} (allowed: {RELATION_SUBTYPES_BY_LABEL[label]})")
     pid = rec.get("id")
     if not (isinstance(pid, str) and _PAIR_ID_RE.match(pid)):
         errs.append(f"line {line_no}: id={pid!r} not of form pair_NNNN")
