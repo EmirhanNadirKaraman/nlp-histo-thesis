@@ -150,8 +150,16 @@ def extract_pairs_from_content(content_blocks: list) -> list[dict]:
 def get_client():
     import os
 
+    from dotenv import load_dotenv
+    load_dotenv(_REPO_ROOT / ".env")  # keys live in .env, not the shell env
+    key = os.environ.get("ANTHROPIC_API_KEY")
+    if not key:
+        raise SystemExit(
+            "ANTHROPIC_API_KEY not set (checked the shell env and .env). "
+            "Add it to .env at the repo root."
+        )
     import anthropic
-    return anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    return anthropic.Anthropic(api_key=key)
 
 
 def provenance_meta(batch_ids: list[str]) -> dict:
