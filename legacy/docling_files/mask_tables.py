@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+DEPRECATED — helper for the legacy ``scripts/latest_ingest.py`` pipeline (its
+only importer, itself deprecated). Superseded by
+``pipeline/stages/pdf_text_extraction/components/region_masker.py``. Not on the
+production path.
+
 Process Docling JSON results to create masked PDFs.
 
 Run this AFTER you've run Docling to mask tables/figures in PDFs.

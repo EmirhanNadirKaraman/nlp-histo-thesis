@@ -1,18 +1,41 @@
 #!/usr/bin/env python3
 """
-Combined Masked Pipeline (Docling + TATR)
+DEPRECATED — experimental pipeline, superseded by
+``pipeline/stages/pdf_text_extraction/runner.py`` (PipelineRunner). Kept for
+provenance: its header/footer detection was ported to
+``pipeline/stages/pdf_text_extraction/components/region_masker.py``
+(``_detect_header_footer_elements``). Not on the production path; not imported
+by any live module.
+
+Merged Pipeline (Docling + TATR)
+
+Combines functionality from deneme.py and combined_pipeline.py:
+  - Production-ready batch processing with blacklist support
+  - Lazy model loading (Docling, TATR, scispaCy, DB)
+  - Header/footer/sidebar detection and masking
+  - NER-based artifact filtering
+  - Optional table reconstruction from Docling sub-elements
+  - Figure/table cropping with panel counting
+  - Full database ingestion (text elements, figures, tables)
+  - Optional multi-combination text extraction and comparison
 
 For each PDF:
-  1. Extract layout with Docling (original PDF)
-  2. Detect tables with TATR
-  3. Merge Docling + TATR bounding boxes and mask the PDF
-  4. Re-extract layout from masked PDF with Docling
-  5. Stitch text into hierarchical sections (document order)
-  6. Save ordered .txt and ingest to database
+  1.  Extract layout with Docling (original PDF)
+  2.  Optionally reconstruct tables from sub-elements
+  3.  Detect tables with TATR
+  4.  Detect header/footer/sidebar regions
+  5.  Merge all bounding boxes and create masked PDF
+  6.  Re-extract layout from masked PDF with Docling
+  7.  Filter artifacts and irrelevant text via NER
+  8.  Visualize detections (optional)
+  9.  Crop and save figure/table images (with panel counting)
+  10. Stitch text into hierarchical sections (document order)
+  11. Ingest to database (text elements, figures, tables)
 
 Usage:
-    python scripts/combined_pipeline.py --pdf files/organized_pdfs/PMC123.pdf
-    python scripts/combined_pipeline.py --pdf-dir files/organized_pdfs --workers 4
+    python scripts/merged_pipeline.py --pdf files/organized_pdfs/PMC123.pdf
+    python scripts/merged_pipeline.py --pdf-dir files/organized_pdfs
+    python scripts/merged_pipeline.py --pdf-dir files/organized_pdfs --reconstruct --no-vis
 """
 
 import json
@@ -26,31 +49,35 @@ logger = logging.getLogger(__name__)
 
 from parsers.layout_utils import (  # noqa: E402
     DOCLING_MASK_TYPES, TEXT_ELEMENT_TYPES, CAPTION_PATTERN,
-    fix_ligatures, merge_rects,
+    SKIP_TYPES, fix_ligatures, merge_rects,
     FIG_NUM_RE, TAB_NUM_RE, parse_caption_num, union_bbox, nearest_caption,
     MIN_ANCHOR_H, nlp_is_meaningful, filter_artifacts,
     is_relevant_para, extract_text, save_text,
+    build_table_bboxes, build_picture_pages, bbox_overlaps, centroid_inside,
+    count_panels,
 )
+from parsers.text_processing import ContextAwareStitcher, remove_citations  # noqa: E402
 
 TATR_DPI       = 150
 TATR_THRESHOLD = 0.99
 SCALE          = 72 / TATR_DPI   # pixels -> PDF points
 
 
-# ── Core processor ─────────────────────────────────────────────────────────────
-class CombinedPipelineProcessor:
+class MergedPipelineProcessor:
     def __init__(
         self,
-        masked_pdf_dir : str = 'out/masked_pdfs',
-        docling_out_dir: str = 'out/docling_full',
-        text_dir       : str = 'out/text',
-        figures_dir    : str = 'out/figures',
-        tables_dir     : str = 'out/tables',
-        vis_dir        : str = 'out/visualization',
-        blacklist_file : str = 'out/failed_pdfs_blacklist.json',
+        masked_pdf_dir : str   = 'out/masked_pdfs',
+        docling_out_dir: str   = 'out/docling_full',
+        text_dir       : str   = 'out/text',
+        figures_dir    : str   = 'files/figures',
+        tables_dir     : str   = 'files/tables',
+        vis_dir        : str   = 'out/visualization',
+        blacklist_file : str   = 'out/failed_pdfs_blacklist.json',
         tatr_threshold : float = TATR_THRESHOLD,
-        db_ingest      : bool = True,
-        visualize      : bool = True,   # set False to skip visualization PDFs
+        db_ingest      : bool  = True,
+        visualize      : bool  = True,
+        reconstruct    : bool  = False,  # reconstruct tables from Docling sub-elements
+        baseline       : str   = 'masked',
     ):
         self.masked_pdf_dir  = Path(masked_pdf_dir)
         self.docling_out_dir = Path(docling_out_dir)
@@ -62,17 +89,19 @@ class CombinedPipelineProcessor:
         self.tatr_threshold  = tatr_threshold
         self.db_ingest       = db_ingest
         self.visualize       = visualize
+        self.reconstruct     = reconstruct
+        self.baseline        = baseline
 
         for d in [self.masked_pdf_dir, self.docling_out_dir,
                   self.text_dir, self.figures_dir, self.tables_dir, self.vis_dir]:
             d.mkdir(parents=True, exist_ok=True)
         self.blacklist_file.parent.mkdir(parents=True, exist_ok=True)
 
-        self._converter   = None   # lazy Docling
-        self._tatr_proc   = None   # lazy TATR processor
-        self._tatr_model  = None   # lazy TATR model
-        self._db          = None   # lazy DB connection
-        self._nlp         = None   # lazy scispaCy model
+        self._converter  = None   # lazy Docling
+        self._tatr_proc  = None   # lazy TATR processor
+        self._tatr_model = None   # lazy TATR model
+        self._db         = None   # lazy DB connection
+        self._nlp        = None   # lazy scispaCy model
 
         self.blacklist = self._load_blacklist()
 
@@ -155,13 +184,46 @@ class CombinedPipelineProcessor:
                 'bbox' : {'x1': bbox.l, 'y1': bbox.t, 'x2': bbox.r, 'y2': bbox.b},
                 'text' : text.strip() or None,
             })
-        # Reclassify text elements that look like captions
+        # Reclassify TEXT elements that look like captions
+        reclassified = 0
         for el in elements:
             if el['type'] == 'TEXT' and CAPTION_PATTERN.match(el.get('text') or ''):
                 el['type'] = 'CAPTION'
+                reclassified += 1
+        if reclassified:
+            logger.info(f'  Reclassified {reclassified} TEXT elements as CAPTION')
         page_dims = {no: {'width': p.size.width, 'height': p.size.height}
                      for no, p in doc.pages.items()}
         return elements, page_dims
+
+    # ── Step 1b: Reconstruct tables from Docling sub-elements (optional) ───────
+    def _reconstruct_tables(self, pdf_path: Path, elements):
+        """
+        Merge Docling TABLE sub-elements into RECONSTRUCTED_TABLE entries.
+        Requires scripts/visualize_docling_full.py to be present.
+        Returns (elements_raw, reconstructed_elements).
+        """
+        import importlib.util
+        vis_path = Path(__file__).parent / 'visualize_docling_full.py'
+        if not vis_path.exists():
+            logger.warning(f'visualize_docling_full.py not found at {vis_path}, skipping')
+            return elements, elements
+
+        spec   = importlib.util.spec_from_file_location('visualize', vis_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        # Write a temporary JSON so reconstruct_tables_from_lists can read it
+        tmp_json = self.docling_out_dir / f'{pdf_path.stem}_tmp_layout.json'
+        tmp_json.write_text(json.dumps({'elements': elements}, indent=2))
+
+        elements_raw    = list(elements)
+        reconstructed   = module.reconstruct_tables_from_lists(str(tmp_json))
+        n_reconstructed = len([e for e in reconstructed if e.get('type') == 'RECONSTRUCTED_TABLE'])
+        logger.info(f'  Reconstruction: {len(elements_raw)} → {len(reconstructed)} elements '
+                    f'({n_reconstructed} RECONSTRUCTED_TABLE)')
+        tmp_json.unlink(missing_ok=True)
+        return elements_raw, reconstructed
 
     # ── Step 2: TATR table detection ───────────────────────────────────────────
     def _tatr_detect(self, pdf_path: Path):
@@ -170,8 +232,8 @@ class CombinedPipelineProcessor:
         from PIL import Image as PILImage
         tatr_proc, tatr_model = self.tatr
 
-        doc_fitz    = fitz.open(str(pdf_path))
-        detections  = []
+        doc_fitz   = fitz.open(str(pdf_path))
+        detections = []
         for page_num in range(len(doc_fitz)):
             page = doc_fitz[page_num]
             mat  = fitz.Matrix(TATR_DPI / 72, TATR_DPI / 72)
@@ -198,38 +260,23 @@ class CombinedPipelineProcessor:
         doc_fitz.close()
         return detections
 
-    # ── Step 2b: Detect header/footer/sidebar regions from original extraction ──
+    # ── Step 2b: Detect header/footer/sidebar regions ─────────────────────────
     def _detect_header_footer_elements(self, docling_elements, page_dims):
         """
-        Return elements to mask before Docling re-extracts text, covering three
-        categories of artifact:
+        Detects sidebar, header, and footer elements for masking.
 
-        Sidebar elements (left column metadata like Citation, Copyright):
-          Detected by finding the largest x1 gap across all multi-line elements —
-          this gap separates the narrow left annotation column from the main text
-          column.  Elements with x2 < x_left_bound_main are sidebar-only and are
-          masked individually (not as a full-width strip, to avoid clipping
-          full-width elements like the title that also start at the left margin).
-          Sidebar elements are also excluded from the anchor pool so they don't
-          distort the y-bounds.
-
-        Header / footer strips (running headers, page numbers, overflow fragments):
-          Per-page y-bounds are derived from non-sidebar multi-line anchor blocks.
-          Full-page-width strips are created above the topmost anchor and below
-          the bottommost anchor on each page.
-
-        Figure-page fallback (pages with no anchor blocks):
-          NER via nlp_is_meaningful filters individual single-line TEXT elements.
+        - Sidebar: narrow left/right annotation columns, detected by x1 gap analysis.
+        - Header/footer: full-width strips outside anchor block y-bounds per page.
+        - NER fallback: single-line TEXT elements on pages with no anchor blocks.
         """
-        # ── Detect sidebar boundaries from gaps in anchor x1 values ─────────
-        SIDEBAR_MAX_W  = 150   # pts — annotation columns are narrow by definition
-        COLUMN_GAP_MIN = 50    # pts — minimum x1 gap to count as a column boundary
+        SIDEBAR_MAX_W  = 150   # pts — narrow annotation columns
+        COLUMN_GAP_MIN = 50    # pts — minimum x1 gap to detect a column boundary
 
         anchor_x1s = sorted(
             el['bbox']['x1'] for el in docling_elements
             if abs(el['bbox'].get('y1', 0) - el['bbox'].get('y2', 0)) >= MIN_ANCHOR_H
         )
-        sig_gaps = []   # [(gap_size, left_x1, right_x1), ...]
+        sig_gaps = []
         for i in range(len(anchor_x1s) - 1):
             gap = anchor_x1s[i + 1] - anchor_x1s[i]
             if gap > COLUMN_GAP_MIN:
@@ -241,8 +288,7 @@ class CombinedPipelineProcessor:
         def _is_sidebar(el):
             b = el.get('bbox', {})
             x1, x2 = b.get('x1', 0), b.get('x2', 0)
-            width = x2 - x1
-            if width >= SIDEBAR_MAX_W:
+            if (x2 - x1) >= SIDEBAR_MAX_W:
                 return False
             if x_left_bound_main  is not None and x2 < x_left_bound_main:
                 return True
@@ -250,7 +296,7 @@ class CombinedPipelineProcessor:
                 return True
             return False
 
-        # ── Pass 1: per-page anchor bounds, excluding sidebar elements ────────
+        # Pass 1: per-page anchor y-bounds (excluding sidebar elements)
         page_bounds: dict = {}
         for el in docling_elements:
             if _is_sidebar(el):
@@ -268,7 +314,7 @@ class CombinedPipelineProcessor:
                 else:
                     page_bounds[page] = (y1, y2)
 
-        # ── Pass 2: build mask list ───────────────────────────────────────────
+        # Pass 2: build mask list
         mask_elements = []
 
         def _dims(page):
@@ -287,19 +333,15 @@ class CombinedPipelineProcessor:
         for page, (top_bound, bot_bound) in page_bounds.items():
             pw, ph = _dims(page)
             if top_bound < ph:
-                mask_elements.append({
-                    'page': page,
-                    'bbox': {'x1': 0, 'y1': ph, 'x2': pw, 'y2': top_bound},
-                })
+                mask_elements.append({'page': page,
+                                      'bbox': {'x1': 0, 'y1': ph, 'x2': pw, 'y2': top_bound}})
                 n_strips += 1
             if bot_bound > 0:
-                mask_elements.append({
-                    'page': page,
-                    'bbox': {'x1': 0, 'y1': bot_bound, 'x2': pw, 'y2': 0},
-                })
+                mask_elements.append({'page': page,
+                                      'bbox': {'x1': 0, 'y1': bot_bound, 'x2': pw, 'y2': 0}})
                 n_strips += 1
 
-        # Category 3: NER fallback for pages with no anchors
+        # Category 3: NER fallback for pages with no anchor blocks
         n_ner = 0
         pages_with_anchors = set(page_bounds.keys())
         for el in docling_elements:
@@ -323,8 +365,8 @@ class CombinedPipelineProcessor:
     def _create_masked_pdf(self, pdf_path: Path, docling_elements, tatr_detections,
                            output_path: Path, hf_elements=None):
         import fitz
-        doc_fitz   = fitz.open(str(pdf_path))
-        page_rects = {}
+        doc_fitz    = fitz.open(str(pdf_path))
+        page_rects  = {}
         hf_elements = hf_elements or []
 
         for page_num in range(len(doc_fitz)):
@@ -358,7 +400,7 @@ class CombinedPipelineProcessor:
         doc_fitz.save(str(output_path))
         doc_fitz.close()
 
-        n_raw    = sum(
+        n_raw = sum(
             len([d for d in tatr_detections if d['page'] == p]) +
             len([el for el in docling_elements
                  if el.get('type') in DOCLING_MASK_TYPES and el.get('page') == p])
@@ -396,9 +438,10 @@ class CombinedPipelineProcessor:
         logger.info(f'  Saved text: {out_path} ({out_path.stat().st_size / 1024:.1f} KB)')
         return out_path
 
-    # ── Step 6: Database ingestion ─────────────────────────────────────────────
-    def _ingest_db(self, rows, pmcid: str, pdf_path: Path):
-        from database import Document, TextElement
+    # ── Step 6: Database ingestion (text elements + figures + tables) ──────────
+    def _ingest_db(self, rows, pmcid: str, pdf_path: Path,
+                   figure_data=None, table_data=None):
+        from database import Document, TextElement, Figure, Table
         from sqlalchemy.dialects.postgresql import insert as pg_insert
 
         with self.db.session_scope() as session:
@@ -408,17 +451,18 @@ class CombinedPipelineProcessor:
                 return 0
 
             doc = Document(
-                pmcid=pmcid,
-                filename=pdf_path.name,
-                file_path=str(pdf_path.absolute()),
-                title=f'Document {pmcid}',
-                text_source='pdf',
+                pmcid      = pmcid,
+                filename   = pdf_path.name,
+                file_path  = str(pdf_path.absolute()),
+                title      = f'Document {pmcid}',
+                text_source= 'pdf',
             )
             session.add(doc)
             session.flush()
 
+            # ── Text elements ─────────────────────────────────────────────────
             path_counts = defaultdict(int)
-            inserted = 0
+            inserted    = 0
             for path_str, path_list, depth, text in rows:
                 pos_in_sec  = path_counts[path_str]
                 path_counts[path_str] += 1
@@ -437,12 +481,54 @@ class CombinedPipelineProcessor:
                 result = session.execute(stmt)
                 if result.rowcount:
                     inserted += 1
-
             session.flush()
-            logger.info(f'  Ingested {inserted} text elements for {pmcid} (doc id={doc.id})')
+            logger.info(f'  Ingested {inserted} text elements (doc id={doc.id})')
+
+            # ── Figures ───────────────────────────────────────────────────────
+            fig_inserted = 0
+            for fig in (figure_data or []):
+                image_path     = fig.get('image_path')
+                image_filename = Path(image_path).name if image_path else None
+                stmt = pg_insert(Figure).values(
+                    document_id   = doc.id,
+                    figure_id     = fig['figure_id'],
+                    figure_label  = f"Figure {fig['figure_id']}",
+                    figure_number = fig['figure_id'],
+                    caption_text  = fig.get('caption'),
+                    image_filename= image_filename,
+                    image_path    = image_path,
+                ).on_conflict_do_nothing()
+                result = session.execute(stmt)
+                if result.rowcount:
+                    fig_inserted += 1
+            if figure_data:
+                session.flush()
+                logger.info(f'  Ingested {fig_inserted}/{len(figure_data)} figures')
+
+            # ── Tables ────────────────────────────────────────────────────────
+            tbl_inserted = 0
+            for tbl in (table_data or []):
+                image_path     = tbl.get('image_path')
+                image_filename = Path(image_path).name if image_path else None
+                stmt = pg_insert(Table).values(
+                    document_id   = doc.id,
+                    table_id      = tbl['table_id'],
+                    table_label   = f"Table {tbl['table_id']}",
+                    table_number  = tbl['table_id'],
+                    caption_text  = tbl.get('caption'),
+                    image_filename= image_filename,
+                    image_path    = image_path,
+                ).on_conflict_do_nothing()
+                result = session.execute(stmt)
+                if result.rowcount:
+                    tbl_inserted += 1
+            if table_data:
+                session.flush()
+                logger.info(f'  Ingested {tbl_inserted}/{len(table_data)} tables')
+
             return inserted
 
-    # ── Step 6a: Visualize TATR detections ────────────────────────────────────
+    # ── Visualization: TATR detections ────────────────────────────────────────
     def _visualize_tatr(self, pdf_path: Path, tatr_detections, stem: str):
         import fitz
         TATR_COLORS = {
@@ -481,14 +567,14 @@ class CombinedPipelineProcessor:
         doc.close()
         logger.info(f'  Saved TATR visualization: {out_path}')
 
-    # ── Step 6b: Visualize combined (Docling + TATR) merged detections ─────────
+    # ── Visualization: combined (Docling + TATR) merged detections ─────────────
     def _visualize_combined(self, pdf_path: Path, docling_elements, tatr_detections,
                             page_rects, stem: str):
         import fitz
         COLOR_TATR    = (1.0, 0.45, 0.0)
         COLOR_DOCLING = (0.1, 0.45, 0.9)
         COLOR_MERGED  = (0.0, 0.70, 0.2)
-        COLOR_TEXT    = (0.6, 0.0, 0.8)
+        COLOR_TEXT    = (0.6, 0.0,  0.8)
 
         out_path = self.vis_dir / f'{stem}_combined_detections.pdf'
         doc = fitz.open(str(pdf_path))
@@ -547,9 +633,19 @@ class CombinedPipelineProcessor:
         doc.close()
         logger.info(f'  Saved combined visualization: {out_path}')
 
-    # ── Step 6c: Crop and save figure/table images ─────────────────────────────
+    # ── Step 7: Crop and save figure/table images ──────────────────────────────
     def _crop_and_save(self, pdf_path: Path, pmcid: str,
                        docling_elements, tatr_detections):
+        """
+        Crop and save PNG images for each figure and table from the original PDF.
+
+        Figures: sourced from PICTURE/FIGURE Docling elements, merged by caption number.
+                 Panel count is detected and stored in metadata.
+        Tables:  sourced from TATR detections (primary) and TABLE/RECONSTRUCTED_TABLE
+                 Docling elements (supplementary), merged by caption number.
+
+        Returns (figure_data, table_data) — lists of dicts with image_path set.
+        """
         import fitz
         doc = fitz.open(str(pdf_path))
         mat = fitz.Matrix(2, 2)  # 2x scale for quality
@@ -557,11 +653,9 @@ class CombinedPipelineProcessor:
         all_captions = [el for el in docling_elements if el.get('type') == 'CAPTION']
 
         # ── Figures ───────────────────────────────────────────────────────────
-        # Match each PICTURE to its nearest caption, merge duplicates sharing
-        # the same figure number, fall back to a sequential id when no caption.
-        merged_figures = {}   # key: str figure number or fallback id
+        merged_figures = {}
         for el in docling_elements:
-            if el.get('type') != 'PICTURE':
+            if el.get('type') not in ('PICTURE', 'FIGURE'):
                 continue
             cap_el  = nearest_caption(el, all_captions)
             caption = cap_el.get('text', '') if cap_el else ''
@@ -581,28 +675,32 @@ class CombinedPipelineProcessor:
                     existing['caption'] = caption
                 logger.debug(f'  Merged duplicate Figure {num}')
 
+        figure_data = []
         for fig in merged_figures.values():
             page_no = fig['page']
             b       = fig['bbox']
             if page_no is None or b is None:
                 continue
-            page = doc[page_no - 1]
-            h    = page.rect.height
-            rect = fitz.Rect(b['x1'], h - b['y1'], b['x2'], h - b['y2'])
-            pix  = page.get_pixmap(clip=rect, matrix=mat)
-            pix.save(str(self.figures_dir / f'{pmcid}_figure_{fig["figure_id"]}.png'))
+            page     = doc[page_no - 1]
+            h        = page.rect.height
+            rect     = fitz.Rect(b['x1'], h - max(b['y1'], b['y2']),
+                                 b['x2'], h - min(b['y1'], b['y2']))
+            n_panels = count_panels(page, b, h)
+            pix      = page.get_pixmap(clip=rect, matrix=mat)
+            img_path = str(self.figures_dir / f'{pmcid}_figure_{fig["figure_id"]}.png')
+            pix.save(img_path)
+            figure_data.append({**fig, 'image_path': img_path, 'panels': n_panels})
 
         # ── Tables ────────────────────────────────────────────────────────────
-        # TATR detections → nearest caption for table number, same merge logic.
+        # Primary source: TATR detections (already in PDF top-left coords as fitz.Rect)
         merged_tables = {}
         for d in tatr_detections:
-            # Convert TATR fitz.Rect → pseudo-element for nearest_caption
             r  = d['rect']
             ph = doc[d['page'] - 1].rect.height
-            el = {'page': d['page'],
-                  'bbox': {'x1': r.x0, 'y1': ph - r.y0,
-                           'x2': r.x1, 'y2': ph - r.y1}}
-            cap_el  = nearest_caption(el, all_captions)
+            pseudo_el = {'page': d['page'],
+                         'bbox': {'x1': r.x0, 'y1': ph - r.y0,
+                                  'x2': r.x1, 'y2': ph - r.y1}}
+            cap_el  = nearest_caption(pseudo_el, all_captions)
             caption = cap_el.get('text', '') if cap_el else ''
             num     = str(parse_caption_num(caption, TAB_NUM_RE) or (len(merged_tables) + 1))
             if num not in merged_tables:
@@ -613,19 +711,169 @@ class CombinedPipelineProcessor:
                     'page'    : d['page'],
                 }
             else:
-                existing = merged_tables[num]
-                existing['rect'] = existing['rect'] | d['rect']   # fitz union
-                if len(caption) > len(existing['caption'] or ''):
-                    existing['caption'] = caption
-                logger.debug(f'  Merged duplicate Table {num}')
+                merged_tables[num]['rect'] = merged_tables[num]['rect'] | d['rect']
+                if len(caption) > len(merged_tables[num]['caption'] or ''):
+                    merged_tables[num]['caption'] = caption
+                logger.debug(f'  Merged duplicate TATR Table {num}')
 
+        # Supplementary source: TABLE / RECONSTRUCTED_TABLE Docling elements
+        for el in docling_elements:
+            if el.get('type') not in ('TABLE', 'RECONSTRUCTED_TABLE'):
+                continue
+            page_no = el.get('page')
+            b       = el.get('bbox') or {}
+            if page_no is None or not b:
+                continue
+            cap_el  = nearest_caption(el, all_captions)
+            caption = cap_el.get('text', '') if cap_el else el.get('caption') or ''
+            num     = str(parse_caption_num(caption, TAB_NUM_RE) or (len(merged_tables) + 1))
+            ph      = doc[page_no - 1].rect.height
+            rect    = fitz.Rect(b['x1'], ph - b['y1'], b['x2'], ph - b['y2'])
+            if num not in merged_tables:
+                merged_tables[num] = {
+                    'table_id': num,
+                    'caption' : caption or f'Table {num}',
+                    'rect'    : rect,
+                    'page'    : page_no,
+                }
+            else:
+                merged_tables[num]['rect'] = merged_tables[num]['rect'] | rect
+                if len(caption) > len(merged_tables[num]['caption'] or ''):
+                    merged_tables[num]['caption'] = caption
+                logger.debug(f'  Merged Docling Table {num} into existing entry')
+
+        table_data = []
         for tbl in merged_tables.values():
-            page = doc[tbl['page'] - 1]
-            pix  = page.get_pixmap(clip=tbl['rect'], matrix=mat)
-            pix.save(str(self.tables_dir / f'{pmcid}_table_{tbl["table_id"]}.png'))
+            page     = doc[tbl['page'] - 1]
+            pix      = page.get_pixmap(clip=tbl['rect'], matrix=mat)
+            img_path = str(self.tables_dir / f'{pmcid}_table_{tbl["table_id"]}.png')
+            pix.save(img_path)
+            table_data.append({**tbl, 'image_path': img_path})
 
         doc.close()
-        logger.info(f'  Saved {len(merged_figures)} figure(s) and {len(merged_tables)} table(s)')
+        logger.info(f'  Saved {len(figure_data)} figure(s) and {len(table_data)} table(s)')
+        return figure_data, table_data
+
+    # ── Optional: hierarchical text extraction with bbox/centroid filtering ────
+    def _extract_text_hierarchical(self, elements, table_bboxes=None, use_centroid=False):
+        """
+        Extract and stitch hierarchical text from elements.
+
+        Args:
+            elements:      List of element dicts (type, page, level, bbox, text).
+            table_bboxes:  Optional {page: [bbox, ...]} to skip overlapping elements.
+            use_centroid:  If True, skip only when the element centroid is inside a
+                           table/figure bbox (less aggressive than full-overlap check).
+
+        Returns:
+            (stitched_by_path, n_skipped)
+        """
+        overlap_fn    = centroid_inside if use_centroid else bbox_overlaps
+        picture_pages = build_picture_pages(elements)
+
+        hierarchy = {}
+        by_path   = defaultdict(list)
+        skipped   = 0
+
+        for el in elements:
+            etype = el.get('type', '')
+            level = el.get('level', 0)
+            text  = fix_ligatures((el.get('text') or '').strip())
+            if not text:
+                continue
+
+            if etype == 'SECTION_HEADER':
+                hierarchy[level] = text
+                hierarchy = {k: v for k, v in hierarchy.items() if k <= level}
+            elif etype not in SKIP_TYPES:
+                # Drop single-char tokens on figure pages (likely panel labels)
+                if len(text) == 1 and el.get('page') in picture_pages:
+                    skipped += 1
+                    continue
+                if table_bboxes:
+                    page = el.get('page')
+                    bbox = el.get('bbox')
+                    if (page and bbox and
+                            any(overlap_fn(bbox, tb) for tb in table_bboxes.get(page, []))):
+                        skipped += 1
+                        continue
+                path_parts = [hierarchy[k] for k in sorted(hierarchy) if hierarchy.get(k)]
+                by_path[' > '.join(path_parts) or 'Root'].append(text)
+
+        stitcher = ContextAwareStitcher()
+        stitched = {
+            path: stitcher.reconstruct_paragraphs([remove_citations(t) for t in texts])
+            for path, texts in by_path.items()
+        }
+        return stitched, skipped
+
+    # ── Optional: run multiple extraction combinations and compare ─────────────
+    def run_all_combinations(self, elements_raw, masked_elements):
+        """
+        Run text extraction with multiple strategies and return a results dict.
+        Useful for comparing 'direct | raw' vs 'masked' vs 'combined | masked'.
+
+        Args:
+            elements_raw:     Original (unmasked) Docling elements.
+            masked_elements:  Elements extracted from the combined-masked PDF.
+
+        Returns:
+            dict mapping combination name → stitched_by_path dict.
+        """
+        combinations = {
+            'direct | raw': (
+                elements_raw,
+                build_table_bboxes(elements_raw, types=('TABLE', 'PICTURE'))
+            ),
+            'masked': (
+                [el for el in masked_elements if el.get('type') in TEXT_ELEMENT_TYPES],
+                None
+            ),
+        }
+
+        results = {}
+        logger.info('Running text extraction combinations:')
+        for name, (elements, bboxes) in combinations.items():
+            stitched, n_skipped = self._extract_text_hierarchical(elements, bboxes)
+            results[name] = stitched
+            n_paths = len(stitched)
+            n_paras = sum(len(v) for v in stitched.values())
+            logger.info(f'  {name:<26s}: {n_paths} paths, {n_paras} paras, {n_skipped} skipped')
+        return results
+
+    def compare_results(self, results):
+        """Print paragraph-count table and unified diffs across all combinations."""
+        import difflib
+        names     = list(results.keys())
+        others    = [n for n in names if n != self.baseline]
+        all_paths = sorted(set().union(*[set(results[n]) for n in names]))
+
+        header = f"{'Path':<55s}" + ''.join(f" {n[:10]:>10s}" for n in names)
+        logger.info(header)
+        logger.info('-' * len(header))
+        for path in all_paths:
+            counts = [len(results[n].get(path, [])) for n in names]
+            marker = ' *' if len(set(counts)) > 1 else ''
+            logger.info(f"{path[:53]:<55s}" + ''.join(f" {c:>10d}" for c in counts) + marker)
+
+        for other in others:
+            logger.info(f"\n{'='*80}\nDIFF  {self.baseline!r}  vs  {other!r}\n{'='*80}")
+            any_diff = False
+            for path in all_paths:
+                a = results[self.baseline].get(path, [])
+                b = results[other].get(path, [])
+                if a == b:
+                    continue
+                any_diff = True
+                logger.info(f'\n  [{path}]')
+                for line in difflib.unified_diff(
+                        a, b, lineterm='', fromfile=self.baseline, tofile=other):
+                    if line.startswith('+') and not line.startswith('+++'):
+                        logger.info(f'    + {line[1:][:120]}')
+                    elif line.startswith('-') and not line.startswith('---'):
+                        logger.info(f'    - {line[1:][:120]}')
+            if not any_diff:
+                logger.info('  (identical)')
 
     # ── Main entry point ───────────────────────────────────────────────────────
     def process(self, pdf_path: Path, pmcid: str = None) -> bool:
@@ -637,71 +885,78 @@ class CombinedPipelineProcessor:
 
         logger.info(f'Processing {pmcid} ({pdf_path.name})')
         try:
-            # 1. Original layout
-            logger.info('  Step 1/5: Docling extraction (original PDF)...')
+            # Step 1: Docling extraction on original PDF
+            logger.info('  Step 1: Docling extraction (original PDF)...')
             docling_els, page_dims = self._docling_extract(pdf_path)
             logger.info(f'  {len(docling_els)} elements detected')
 
-            # 2. TATR detection
-            logger.info('  Step 2/5: TATR table detection...')
+            # Step 1b: Optional table reconstruction
+            if self.reconstruct:
+                logger.info('  Step 1b: Reconstructing tables from sub-elements...')
+                _, docling_els = self._reconstruct_tables(pdf_path, docling_els)
+
+            # Step 2: TATR table detection
+            logger.info('  Step 2: TATR table detection...')
             tatr_dets = self._tatr_detect(pdf_path)
             logger.info(f'  TATR: {len(tatr_dets)} table(s) detected '
                         f'(threshold={self.tatr_threshold})')
 
-            # 2b. Detect header/footer regions from original extraction
-            logger.info('  Step 2b: Detecting header/footer regions...')
+            # Step 2b: Header/footer/sidebar detection
+            logger.info('  Step 2b: Detecting header/footer/sidebar regions...')
             hf_els = self._detect_header_footer_elements(docling_els, page_dims)
 
-            # 3. Combined masked PDF (tables + figures + headers/footers)
-            logger.info('  Step 3/5: Creating combined masked PDF...')
+            # Step 3: Create combined masked PDF
+            logger.info('  Step 3: Creating combined masked PDF...')
             masked_path = self.masked_pdf_dir / f'{pdf_path.stem}_combined_masked.pdf'
-            page_rects  = self._create_masked_pdf(pdf_path, docling_els, tatr_dets, masked_path,
-                                                  hf_elements=hf_els)
+            page_rects  = self._create_masked_pdf(
+                pdf_path, docling_els, tatr_dets, masked_path, hf_elements=hf_els)
 
-            # Save layout JSON for the masked PDF
+            # Step 4: Re-extract from masked PDF, filter artifacts via NER
+            logger.info('  Step 4: Re-extracting from masked PDF...')
             masked_els = self._docling_extract_masked(masked_path)
             masked_els = filter_artifacts(masked_els, nlp=self.nlp)
-            # Apply NER relevance filter to TEXT elements only
-            # (SECTION_HEADER, TITLE, LIST etc. are kept unconditionally)
-            before = len(masked_els)
+            before     = len(masked_els)
             masked_els = [
                 el for el in masked_els
                 if el.get('type') != 'TEXT'
                 or is_relevant_para(el.get('text') or '', self.nlp)
             ]
-            logger.info(f'  NER relevance filter: {before - len(masked_els)} TEXT element(s) removed')
-            # Normalise text in every element before saving (fixes ligatures and
-            # spurious spaces around accented characters from PDF font encoding)
+            logger.info(f'  NER filter: {before - len(masked_els)} TEXT element(s) removed')
             for el in masked_els:
                 if el.get('text'):
                     el['text'] = fix_ligatures(el['text'])
+
+            # Save layout JSON for the masked extraction
             json_path = self.docling_out_dir / f'{masked_path.stem}_layout.json'
             json_path.write_text(json.dumps({
                 'metadata': {
-                    'pmcid': pmcid,
-                    'pdf_path': str(masked_path),
-                    'source': 'combined_docling_tatr',
-                    'tatr_threshold': self.tatr_threshold,
+                    'pmcid'          : pmcid,
+                    'pdf_path'       : str(masked_path),
+                    'source'         : 'combined_docling_tatr',
+                    'tatr_threshold' : self.tatr_threshold,
                     'extraction_date': datetime.now().isoformat(),
                 },
                 'page_dimensions': page_dims,
-                'elements': masked_els,
+                'elements'       : masked_els,
             }, indent=2, ensure_ascii=False))
 
-            # 4. Visualizations (optional)
-            logger.info('  Step 4/6: Visualizations...' if self.visualize else '  Step 4/6: Visualizations skipped.')
+            # Step 5: Visualizations (optional)
             if self.visualize:
+                logger.info('  Step 5: Generating visualizations...')
                 stem = pdf_path.stem
                 if tatr_dets:
                     self._visualize_tatr(pdf_path, tatr_dets, stem)
                 self._visualize_combined(pdf_path, docling_els, tatr_dets, page_rects, stem)
+            else:
+                logger.info('  Step 5: Visualizations skipped.')
 
-            # 5. Crop and save figures/tables
-            logger.info('  Step 5/6: Cropping and saving figures/tables...')
-            self._crop_and_save(pdf_path, pmcid, docling_els, tatr_dets)
+            # Step 6: Crop and save figures/tables
+            logger.info('  Step 6: Cropping and saving figures/tables...')
+            figure_data, table_data = self._crop_and_save(
+                pdf_path, pmcid, docling_els, tatr_dets)
 
-            # 6. Extract text (document order)
-            logger.info('  Step 6/6: Extracting and stitching text...')
+            # Step 7: Extract and stitch text (document order)
+            logger.info('  Step 7: Extracting and stitching text...')
             text_els = [el for el in masked_els if el.get('type') in TEXT_ELEMENT_TYPES]
             rows, n_skipped = extract_text(text_els, nlp=self.nlp)
             logger.info(f'  {len(rows)} paragraphs across '
@@ -710,24 +965,25 @@ class CombinedPipelineProcessor:
 
             self._save_txt(rows, pmcid)
 
-            # DB ingestion
+            # Step 8: Database ingestion
             if self.db_ingest and self.db:
-                self._ingest_db(rows, pmcid, pdf_path)
+                self._ingest_db(rows, pmcid, pdf_path,
+                                figure_data=figure_data, table_data=table_data)
 
-            logger.info(f'✅ Done: {pmcid}')
+            logger.info(f'Done: {pmcid}')
             return True
 
         except Exception as e:
-            logger.error(f'❌ Failed {pmcid}: {e}', exc_info=True)
+            logger.error(f'Failed {pmcid}: {e}', exc_info=True)
             self._add_to_blacklist(pmcid, str(e))
             return False
 
 
 if __name__ == '__main__':
     PDF_DIR = Path('files/organized_pdfs')
-    pdfs    = sorted(PDF_DIR.glob('*.pdf'))[:5]
+    pdfs    = sorted(PDF_DIR.glob('*.pdf'))
 
-    processor = CombinedPipelineProcessor(db_ingest=True, visualize=True)
+    processor = MergedPipelineProcessor(db_ingest=True, visualize=True)
     for pdf in pdfs:
         pmcid = pdf.stem.split('_')[0]
         processor.process(pdf, pmcid)

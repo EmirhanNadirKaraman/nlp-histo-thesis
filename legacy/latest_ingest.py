@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """
+DEPRECATED — legacy monolithic pipeline, superseded by
+``pipeline/stages/pdf_text_extraction/runner.py`` (PipelineRunner). Kept for
+reference only: not on the production path and not imported by any live module.
+
 Complete PDF Processing Pipeline - Combines comprehensive_ingest.py and notebook workflow
 
 This script provides a unified pipeline that includes all features:
