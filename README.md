@@ -32,7 +32,7 @@ Citation format: `[S1|PMC123456|789]` where:
 │         ▼ pdf_organizer.py                                                  │
 │  organized_pdfs/*.pdf                                                       │
 │         │                                                                   │
-│         ▼ latest_ingest.py (Docling + masking)                              │
+│         ▼ PipelineRunner (pipeline/…/pdf_text_extraction; Docling + masking) │
 │  ┌──────┴──────────────────────────────────────────────────┐                │
 │  │  PostgreSQL Database                                    │                │
 │  │  ├── documents (PMCID, title, journal, year)            │                │
@@ -105,73 +105,53 @@ Citation format: `[S1|PMC123456|789]` where:
 
 ## Project Structure
 
+> Detailed maps live in `docs/readmes/STRUCTURE.md` (architecture) and
+> `docs/readmes/REPOSITORY_GUIDE.md` (file-by-file). This tree is the orientation
+> summary.
+
 ```
 nlp-histo/
-├── file-selector/                      # Stage 1: Data Acquisition
-│   ├── file_downloader.py              # Download tarballs from PMC
-│   ├── tarball_extractor.py            # Extract PDFs from tarballs
-│   └── pdf_organizer.py                # Organize into flat directories
+├── file-selector/                      # Stage 1: data acquisition (PMC download, extract, organize)
 │
-├── parsers/                            # Stage 2: Document Parsing
-│   ├── pdf_parsers/
-│   │   ├── docling_parser.py           # Docling-based PDF parsing
-│   │   ├── pymupdf4llm_parser.py       # PyMuPDF4LLM parser
-│   │   ├── marker_parser.py            # Marker PDF parser
-│   │   ├── nougat_parser.py            # Nougat OCR-based parser
-│   │   ├── ensemble_parser.py          # Ensemble combining parsers
-│   │   ├── pdffigures_parser.py        # PDFFigures2 integration
-│   │   ├── deduplicator.py             # Header/footer removal
-│   │   └── base_parser.py              # Base parser interface
-│   └── text_processing.py              # Citation removal, paragraph stitching
+├── pipeline/                           # Stage 2: the production pipelines (modular, current)
+│   ├── stages/pdf_text_extraction/     #   PDF → hierarchical text + figures/tables → Postgres
+│   │   ├── runner.py                   #     PipelineRunner (8-step orchestrator)
+│   │   ├── config.py                   #     PipelineConfig + sub-configs
+│   │   ├── components/                 #     layout extractor, masker, two-pass ghost-text, croppers…
+│   │   ├── table_detectors/            #     Docling / TATR / Hybrid
+│   │   └── outputs/                    #     text/DB writers, stats + run-manifest writers
+│   ├── stages/summarization/           #   Text → auditable clinical rules (3-tier ABC LLM cascade)
+│   │   ├── runner.py                   #     SummarizationRunner (MAP→…→RESOLVE)
+│   │   ├── current_stages/             #     map / normalize / group / canonicalize / relate / resolve
+│   │   ├── agreement/ routing/ batch/  #     voter scorers, MAP router, async batch dispatch
+│   │   └── helpers/ costing/ observability/
+│   └── utils/                          #   cross-pipeline utilities (memory logging)
 │
-├── scripts/                            # Stage 3: Processing Pipeline
-│   ├── latest_ingest.py                # Main PDF→Database pipeline
-│   ├── docling_files/
-│   │   └── mask_tables.py              # PDF masking with white rectangles
-│   ├── visualize_docling_full.py       # Table reconstruction visualization
-│   ├── process_pdffigures_results.py   # PDFFigures2 result processing
-│   ├── create_tui_gin_index.py         # GIN index for semantic type search
-│   └── copy_relevant_files.py          # File utility script
+├── parsers/                            # Shared parsing hub (layout_utils.py, text_processing.py)
+│   └── pdf_parsers/                    #   research-only alternative parsers (NOT the production path)
 │
-├── database/                           # Database Layer
-│   ├── models.py                       # SQLAlchemy ORM models
-│   └── db_connection.py                # Connection mgmt; schema via Alembic (alembic/ at repo root)
+├── database/                           # SQLAlchemy ORM (models.py) + connection mgmt; schema via Alembic
+├── alembic/                            # Schema migrations (head: 0014)
 │
-├── named_entity_recognition/           # NER Pipeline
-│   ├── batch_ner.py                    # Parallel NER + UMLS linking
-│   ├── ner.py                          # Core NER logic with scispacy
-│   ├── merge_entities_by_umls.py       # Group sentences by UMLS CUI
-│   ├── export_disease_entities.py      # Filter to disease entities only
-│   ├── count_tokens.py                 # Token counting + cost estimation
-│   ├── enums.py                        # UMLS disease semantic types
-│   └── entity_linking_cache.json       # Persistent UMLS cache (~66MB)
+├── named_entity_recognition/           # scispaCy + UMLS entity extraction (ner.py, batch_ner.py, …)
 │
-├── langchain-summarization/            # LLM Summarization Pipeline
-│   ├── langchain_summarization.ipynb   # Main pipeline notebook
-│   ├── evaluator.py                    # Hallucination detection
-│   ├── price-estimator/
-│   │   └── estimator.py                # Cost estimation utilities
-│   ├── test_results_50_docs/           # Input: sentences by UMLS concept
-│   └── summarization_results/          # Output: summaries and rules
-│       ├── summaries/                  # Final JSON summaries
-│       └── rules/                      # Extracted clinical rules
+├── eval/                               # Evaluation harness (measures the two pipelines)
+│   ├── llm_judge/  silver/             #   Opus silver labels + matching + MAP-cascade calibration
+│   ├── silver/experiments/             #   numbered thesis experiments E02…E14 + corpus_stats/
+│   ├── silver/relation_pairs/          #   E13 claim-pair generation (Message-Batches workflow)
+│   ├── paper_selection/                #   calibration-set builder (greedy / ILP)
+│   └── reports/                        #   per-experiment results + RESULTS.md
 │
-├── files/                              # Data Directories
-│   ├── organized_pdfs/                 # Flat organized PDFs
-│   ├── figures/                        # Cropped figure images
-│   └── tables/                         # Cropped table images
+├── configs/                            # run.yaml, model_prices.json, nli_models.yaml, paper_selection/*.yaml
+├── scripts/                            # runners (run_paper.py), inspectors, eval helpers (+ legacy ingests)
+├── tests/                              # pytest suite (~80 tests, summarisation-heavy)
+├── docs/readmes/                       # project docs (STRUCTURE, REPOSITORY_GUIDE, HOW_TO_RUN, BUGS, …)
 │
-├── out/                                # Output Directories
-│   ├── complete_pipeline/              # Layout JSON from Docling
-│   ├── masked_pdfs/                    # PDFs with masked tables/figures
-│   ├── text/                           # Extracted text files
-│   └── failed_pdfs_blacklist.json      # Blacklisted failed PDFs
-│
-├── disease_entities/                   # Disease entities grouped by CUI
-├── umls_entities/                      # All entities grouped by CUI
-│
-├── requirements.txt                    # Python dependencies
-└── .env.example                        # Database config template
+├── langchain-summarization/            # LEGACY summarisation stack (superseded by pipeline/…/summarization)
+├── files/                              # Input PDFs/XMLs (not in repo)
+├── out/                                # Runtime outputs (cached layouts, summaries, run metadata)
+├── requirements.txt
+└── .env.example                        # DB + API-key template
 ```
 
 ## Quick Start
@@ -209,8 +189,8 @@ cd file-selector && python file_downloader.py
 python tarball_extractor.py
 python pdf_organizer.py
 
-# Process and ingest to database
-cd .. && python scripts/latest_ingest.py
+# Process and ingest to database (production pipeline; see HOW_TO_RUN.md §2 for flags)
+cd .. && python pipeline/stages/pdf_text_extraction/runner.py
 ```
 
 ### 4. Run NER Pipeline
@@ -233,17 +213,24 @@ python count_tokens.py
 
 ### 5. Run Summarization Pipeline
 
+The production summariser is `pipeline/stages/summarization/`, driven via
+`scripts/run_paper.py` (sync or async batch). It needs three direct-API keys in
+`.env`: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`. See
+[`docs/readmes/HOW_TO_RUN.md`](docs/readmes/HOW_TO_RUN.md) §3 for the full recipe.
+
 ```bash
-# Set OpenAI API key
-export OPENAI_API_KEY=your_key
+# Single paper, sync (live) mode — pmcid is positional
+python scripts/run_paper.py PMC1234567 --sync
 
-# Run Jupyter notebook
-cd langchain-summarization
-jupyter notebook langchain_summarization.ipynb
+# Single paper, async batch mode (cheaper)
+python scripts/run_paper.py PMC1234567 --batch
 
-# Verify outputs for hallucinations
-python evaluator.py
+# A whole calibration set from a YAML selection
+python scripts/run_paper.py --from-selection configs/paper_selection/related15.yaml --batch
 ```
+
+> The old notebook stack under `langchain-summarization/` is legacy and kept for
+> reference only.
 
 ## Output Examples
 
