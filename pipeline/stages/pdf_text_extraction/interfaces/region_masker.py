@@ -16,14 +16,5 @@ class RegionMasker(Protocol):
     """
 
     def mask(self, pdf_path: Path, regions: List[BoundingBox]) -> Path:
-        """
-        Mask regions in a PDF with white rectangles.
-
-        Args:
-            pdf_path: Path to the input PDF.
-            regions:  Bounding boxes (Docling coords) of regions to mask.
-
-        Returns:
-            Path to the newly written masked PDF.
-        """
+        """Draw white rectangles over the regions (Docling coords) and return the masked PDF path."""
         ...

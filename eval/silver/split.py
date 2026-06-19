@@ -11,6 +11,9 @@ _T = TypeVar("_T")
 
 def assign_split(case_id: str, dev_fraction: float = 0.8, seed: int = 42) -> str:
     """Hash-based split — stable under re-ordering and re-runs."""
+    # Each case is hashed independently, so a case's dev/test membership never
+    # shifts as the sample set grows (unlike shuffle-then-slice). seed and
+    # dev_fraction are frozen so the dev/test partition is fixed across runs.
     h = int(hashlib.md5(f"{seed}:{case_id}".encode()).hexdigest(), 16)
     return "dev" if (h % 100) < int(dev_fraction * 100) else "test"
 

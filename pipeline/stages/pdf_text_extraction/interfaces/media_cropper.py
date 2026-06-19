@@ -21,14 +21,5 @@ class MediaCropper(Protocol):
         pdf_path: Path,
         layout: LayoutResult,
     ) -> Tuple[List[CroppedMedia], List[CroppedMedia]]:
-        """
-        Crop and save figure and table regions from a PDF.
-
-        Args:
-            pdf_path: Path to the original (unmasked) PDF.
-            layout:   Layout result containing PICTURE / TABLE element positions.
-
-        Returns:
-            (figures, tables) — two lists of CroppedMedia metadata.
-        """
+        """Crop figure/table regions from the (unmasked) PDF → (figures, tables) metadata."""
         ...

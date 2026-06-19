@@ -17,13 +17,5 @@ class LayoutExtractor(Protocol):
     """
 
     def extract(self, pdf_path: Path) -> LayoutResult:
-        """
-        Extract the full layout from a PDF.
-
-        Args:
-            pdf_path: Path to the input PDF file.
-
-        Returns:
-            A LayoutResult with all detected elements and page metadata.
-        """
+        """Extract the full layout (typed elements + page metadata) from a PDF."""
         ...

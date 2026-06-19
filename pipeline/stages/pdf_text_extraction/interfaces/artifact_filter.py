@@ -15,13 +15,5 @@ class ArtifactFilter(Protocol):
     """
 
     def filter_elements(self, elements: List[LayoutElement]) -> List[LayoutElement]:
-        """
-        Remove layout artifacts from a list of elements.
-
-        Args:
-            elements: Raw elements from a layout extraction pass.
-
-        Returns:
-            Cleaned list with artifact elements removed.
-        """
+        """Drop artifact elements (headers, footers, single-char floats, …)."""
         ...

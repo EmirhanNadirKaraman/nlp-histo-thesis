@@ -41,6 +41,8 @@ def sample_source_cases(
 
     Returns list of dicts matching SourceCase schema.
     No pipeline imports — only database access.
+
+    ``seed`` is frozen at 42 so the silver source-case set is reproducible.
     """
     import sys
     from pathlib import Path as _Path

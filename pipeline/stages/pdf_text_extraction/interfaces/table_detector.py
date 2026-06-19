@@ -16,13 +16,5 @@ class TableDetector(Protocol):
     """
 
     def detect(self, pdf_path: Path) -> TableDetectionResult:
-        """
-        Detect tables in the given PDF.
-
-        Args:
-            pdf_path: Path to the input PDF file.
-
-        Returns:
-            A TableDetectionResult containing detected table regions and metadata.
-        """
+        """Detect table regions in the given PDF."""
         ...

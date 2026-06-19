@@ -23,7 +23,7 @@ from eval.paper_selection.loaders import DBLoader
 from eval.paper_selection.fingerprints import build_fingerprint
 from eval.paper_selection.selectors import SelectionConfig, _eligible_short
 
-SEED, N = 19, 15
+SEED, N = 19, 15  # frozen seed → deterministic, reproducible held-out draw
 
 # exclude the calibration cluster and the document-extraction set
 ilp = set(re.findall(r"PMC\d+", (_REPO_ROOT / "configs/paper_selection/related15.yaml").read_text()))

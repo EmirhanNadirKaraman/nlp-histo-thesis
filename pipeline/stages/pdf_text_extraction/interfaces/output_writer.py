@@ -23,14 +23,6 @@ class OutputWriter(Protocol):
         tables: List[CroppedMedia],
         pdf_path: Path | None = None,
     ) -> None:
-        """
-        Persist pipeline results for a single document.
-
-        Args:
-            pmcid:    PubMed Central document identifier.
-            rows:     Hierarchical text rows assembled from the layout.
-            figures:  Cropped figure metadata.
-            tables:   Cropped table metadata.
-            pdf_path: Path to the source PDF (used by some writers, e.g. DB ingester).
-        """
+        """Persist results for one document. ``pdf_path`` is used only by some
+        writers (e.g. the DB ingester); writers ignore the inputs they don't need."""
         ...

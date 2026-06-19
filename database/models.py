@@ -1,6 +1,8 @@
 """
-SQLAlchemy models for the NLP Histopathology database.
-Defines Document and TextElement models with relationships.
+SQLAlchemy ORM models for the NLP-histo PostgreSQL database: the source paper
+(Document), its hierarchical text (TextElement), extracted media (Figure,
+Table), NER entities (Entity), and the summarization-pipeline persistence
+tables further down the file.
 """
 
 from sqlalchemy import (
@@ -17,8 +19,9 @@ Base = declarative_base()
 
 class Document(Base):
     """
-    Represents an XML document (paper) in the database.
-    Each document has multiple text elements.
+    One source paper (PMC article), keyed by ``pmcid``. Holds either an XML- or
+    PDF-derived body (see ``text_source``) and is the cascade-delete root for its
+    text elements, figures, and tables.
     """
     __tablename__ = 'documents'
 
@@ -162,8 +165,9 @@ class TextElementTableReference(Base):
 
 class Figure(Base):
     """
-    Represents a figure (image) with caption from a paper.
-    Each figure belongs to one document.
+    A figure cropped from the source PDF: its caption, the stored image file, and
+    the page/bbox it was cut from. ``text_references`` links the paragraphs that
+    mention it.
     """
     __tablename__ = 'figures'
 
@@ -215,8 +219,9 @@ class Figure(Base):
 
 class Table(Base):
     """
-    Represents a table with caption from a paper.
-    Each table belongs to one document.
+    A table extracted from the source paper: caption, optional raw content, and
+    the cropped table image. ``text_references`` links the paragraphs that
+    mention it.
     """
     __tablename__ = 'tables'
 
@@ -266,8 +271,8 @@ class Table(Base):
 
 class Entity(Base):
     """
-    Represents a named entity extracted from text via NER.
-    Each entity is linked to a specific text element.
+    A named entity found in one TextElement by the scispaCy NER pass, with its
+    optional UMLS link (CUI, canonical name, semantic types) from the UMLS linker.
     """
     __tablename__ = 'entities'
 

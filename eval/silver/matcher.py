@@ -40,6 +40,10 @@ from .schemas import (
 
 logger = logging.getLogger(__name__)
 
+# Frozen eval constants. 0.55 is the cosine cutoff for accepting a
+# pipeline↔silver claim match — kept fixed so precision/recall stay comparable
+# across runs and threshold sweeps. EMBEDDING_MODEL is part of the on-disk
+# embedding cache key, so changing it silently invalidates the cached vectors.
 SIMILARITY_THRESHOLD = 0.55
 EMBEDDING_MODEL = "text-embedding-3-small"
 GEMINI_EMBEDDING_MODEL = "gemini-embedding-001"

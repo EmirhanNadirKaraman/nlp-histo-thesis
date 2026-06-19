@@ -16,13 +16,5 @@ class TextAssembler(Protocol):
     """
 
     def assemble(self, layout: LayoutResult) -> List[HierarchicalRow]:
-        """
-        Assemble text from a layout into hierarchical rows.
-
-        Args:
-            layout: Layout result from a LayoutExtractor.
-
-        Returns:
-            List of HierarchicalRow objects in document order.
-        """
+        """Assemble the layout into hierarchical rows in document order."""
         ...
