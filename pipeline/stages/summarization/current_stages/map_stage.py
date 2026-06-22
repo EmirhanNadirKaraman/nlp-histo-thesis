@@ -25,6 +25,7 @@ import logging
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import TYPE_CHECKING
 from ..agreement import (
     AgreementChecker,
     CascadeDecisionLog,
@@ -47,6 +48,9 @@ from ..prompts import build_map_chain
 from ..routing import MapOutputRouter
 from ..routing.routing_dataset import RoutingDataset, RoutingRecord
 from pipeline.stages.summarization.interfaces.scoring import ChunkDecision
+
+if TYPE_CHECKING:
+    from ..config import CitationConfig
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +175,7 @@ class MapStage:
         cascade_profile:    str = "custom",
         legacy_single_voter_policy: str = "keep",
         force_escalate_on_polarity_conflict: bool = True,
+        citation_config: "CitationConfig | None" = None,
     ) -> None:
         if not voter_llms:
             raise ValueError("voter_llms must contain at least one LLM.")
@@ -212,6 +217,11 @@ class MapStage:
             force_escalate_on_polarity_conflict=force_escalate_on_polarity_conflict,
         )
         self._router = router
+        # Finding-level citation filter (B-080) — applied to the selected chunk
+        # summary in _cascade, covering every cascade level. None → default
+        # CitationConfig (enabled). See helpers/citation_filter.py.
+        from ..config import CitationConfig  # noqa: PLC0415 — avoid import cycle at module load
+        self._citation_cfg = citation_config or CitationConfig()
         self._escalation_lock = threading.Lock()
         self._last_escalation_counts: dict[str, int] = {}
         self._routing_collector = routing_collector
@@ -744,6 +754,27 @@ class MapStage:
                     pmcid=pmcid, chunk_id=chunk_id, level="l3",
                     voters_full=[result], voter_specs=[self._l3_spec],
                     voter_timings=None, selected_voter_index=0,
+                )
+
+        # ── Citation filter (B-080) ─────────────────────────────────────────
+        # Drop findings whose citation fails structural validation against this
+        # chunk's source index — the production check the dormant router-only
+        # ProvenanceValidator never ran on the legacy path. Runs on the SELECTED
+        # result (any level), BEFORE runner._replace_verbatim_from_db, so the
+        # optional verbatim check sees the cited sentence, not the DB paragraph.
+        if self._citation_cfg.enabled and result is not None and result.findings:
+            from ..helpers.citation_filter import filter_summary_by_citation  # noqa: PLC0415
+            n_before = len(result.findings)
+            result, dropped = filter_summary_by_citation(
+                result, chunk, pmcid,
+                check_verbatim=self._citation_cfg.check_verbatim,
+                fabricated_threshold=self._citation_cfg.fabricated_threshold,
+            )
+            if dropped:
+                logger.info(
+                    "Chunk %s: citation filter dropped %d/%d finding(s) "
+                    "(invalid sentence/te_id/pmcid citation).",
+                    chunk_id, len(dropped), n_before,
                 )
 
         # RoutingDataset audit row — emit on every router-path chunk (both

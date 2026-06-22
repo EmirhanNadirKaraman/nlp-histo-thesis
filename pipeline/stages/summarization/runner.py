@@ -268,6 +268,7 @@ class SummarizationRunner:
             force_escalate_on_polarity_conflict=(
                 cfg.agreement.force_escalate_on_polarity_conflict
             ),
+            citation_config=cfg.citation,
         )
         self._normalize = NormalizeStage(extra_synonyms=cfg.normalize.extra_synonyms)
         self._group = GroupStage()
@@ -1360,6 +1361,15 @@ class SummarizationRunner:
             # set widened). Companion to MAP_SCHEMA_VERSION which invalidates
             # the chunk-level PipelineCache; both must move together.
             "map_agreement_policy_version": MAP_AGREEMENT_POLICY_VERSION,
+            # B-080 — citation filter changes the post-MAP finding set, so it
+            # must invalidate cached summaries. Kept in sync with the batch
+            # runner's hash.
+            "citation_enabled":        cfg.citation.enabled,
+            "citation_check_verbatim": cfg.citation.check_verbatim if cfg.citation.enabled else None,
+            "citation_fabricated_threshold": (
+                cfg.citation.fabricated_threshold
+                if cfg.citation.enabled and cfg.citation.check_verbatim else None
+            ),
         }
         models = {
             "voter_models":        self._config_snapshot.get("voter_models"),

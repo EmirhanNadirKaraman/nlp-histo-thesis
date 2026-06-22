@@ -109,7 +109,7 @@ def _load_pmcids_from_selection(path: Path) -> list[str]:
     return out
 
 
-def _match_summary_paths(pmcids: list[str]) -> list[Path]:
+def _match_summary_paths(pmcids: list[str], summaries_dir: Path = _SUMMARIES_DIR) -> list[Path]:
     """For each PMCID prefix, find its matching ``<pmcid>.json`` in summaries.
 
     The selection YAML uses bare PMC IDs (``PMC10100421``) but the on-disk
@@ -117,7 +117,7 @@ def _match_summary_paths(pmcids: list[str]) -> list[Path]:
     Greedy ``startswith`` match keeps a 1:1 mapping; ambiguous prefixes
     raise.
     """
-    available = sorted(_SUMMARIES_DIR.glob("*.json"))
+    available = sorted(summaries_dir.glob("*.json"))
     available = [p for p in available if not p.name.startswith("_")]
     matched: list[Path] = []
     for pmcid in pmcids:
@@ -219,10 +219,31 @@ def main() -> int:
         "--config", default="configs/run.yaml", metavar="PATH",
         help="Summarisation YAML to load (default: configs/run.yaml).",
     )
+    parser.add_argument(
+        "--summaries-dir", default=None, metavar="PATH",
+        help="Read per-paper MAP JSONs from this dir instead of "
+             "out/summaries/summaries/ (corpus_relations.json is written to its "
+             "parent). Use for an isolated split, e.g. "
+             "out/summaries/heldout15/summaries.",
+    )
+    parser.add_argument(
+        "--no-db", action="store_true",
+        help="Files-only: never open a sum_pipeline_run row, so every per-stage "
+             "DB persister no-ops (pipeline_run_db_id stays None). Keeps an "
+             "isolated split (e.g. heldout15) out of the shared corpus tables. "
+             "Funnel/rule/relation counts still come back in the result dict + JSON.",
+    )
     args = parser.parse_args()
 
     if args.pmcids and args.from_selection:
         parser.error("--pmcids and --from-selection are mutually exclusive")
+
+    # ── Resolve the (possibly isolated) summaries dir + corpus_relations target ──
+    summaries_dir = Path(args.summaries_dir) if args.summaries_dir else _SUMMARIES_DIR
+    corpus_relations = (
+        summaries_dir.parent / "corpus_relations.json"
+        if args.summaries_dir else _CORPUS_RELATIONS
+    )
 
     # Make the profile resolvable to voter_configs.get_profile()
     os.environ["NLP_HISTO_PROFILE"] = args.profile
@@ -230,17 +251,17 @@ def main() -> int:
     # ── Resolve which papers to rebuild ─────────────────────────────────────
     if args.from_selection:
         pmcids = _load_pmcids_from_selection(Path(args.from_selection))
-        paths = _match_summary_paths(pmcids)
+        paths = _match_summary_paths(pmcids, summaries_dir)
     elif args.pmcids:
-        paths = _match_summary_paths(args.pmcids)
+        paths = _match_summary_paths(args.pmcids, summaries_dir)
     else:
         paths = sorted(
-            p for p in _SUMMARIES_DIR.glob("*.json")
+            p for p in summaries_dir.glob("*.json")
             if not p.name.startswith("_")
         )
 
     if not paths:
-        logger.error("No matching JSONs found in %s", _SUMMARIES_DIR)
+        logger.error("No matching JSONs found in %s", summaries_dir)
         return 2
 
     logger.info("Rebuilding downstream stages for %d papers from cached MAP", len(paths))
@@ -254,6 +275,9 @@ def main() -> int:
         db=_open_db_connection("rebuild_from_cached_map"),
         chunk_workers=args.chunk_workers,
         config_path=args.config,
+        # Isolate ALL runner outputs (per-paper JSON, cache, traces, cost) under the
+        # split's dir so a held-out rebuild never writes into the related15 corpus.
+        output_dir=summaries_dir.parent if args.summaries_dir else Path("out/summaries"),
     )
 
     # ── Rebuild each paper ──────────────────────────────────────────────────
@@ -267,9 +291,13 @@ def main() -> int:
             # 1) Open a fresh sum_pipeline_run row so the per-stage persisters
             #    can attach to it (they no-op when db_id is None — that's
             #    what caused the post-rebuild "0 rows for pmcid=..." warnings
-            #    in the first rebuild pass).
-            run_id = runner._make_run_id(pmcid)
-            pipeline_run_db_id = runner._create_pipeline_run(pmcid, run_id)
+            #    in the first rebuild pass). With --no-db we deliberately leave
+            #    it None so an isolated split never writes into the corpus tables.
+            if args.no_db:
+                pipeline_run_db_id = None
+            else:
+                run_id = runner._make_run_id(pmcid)
+                pipeline_run_db_id = runner._create_pipeline_run(pmcid, run_id)
 
             handle = _build_handle_from_cached_json(
                 cached,
@@ -302,8 +330,8 @@ def main() -> int:
     # Forward the active relate config (scope_aware_nli, use_verbatim_for_nli,
     # NLI thresholds) so the corpus_relate NLI matches the within-paper one.
     _run_corpus_relate(
-        summaries_dir=_SUMMARIES_DIR,
-        output_path=_CORPUS_RELATIONS,
+        summaries_dir=summaries_dir,
+        output_path=corpus_relations,
         skip=args.no_corpus_relate,
         relate_config=getattr(runner, "_cfg_full", None) and runner._cfg_full.relate,
     )

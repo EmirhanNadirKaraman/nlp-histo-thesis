@@ -593,6 +593,7 @@ def _finding_to_pipeline(f: dict, pmcid: str, chunk_id: str, theta: float) -> Pi
         direction=str(_ev(f["direction"])) if f.get("direction") else None,
         confidence=str(_ev(f.get("confidence", "medium"))),
         verbatim_support=f.get("verbatim_support", ""),
+        evidence=f.get("evidence") or [],
         grounding_score=f.get("grounding_score"),
         scope_disease_subtype=scope.get("disease_subtype"),
         scope_cohort_n=scope.get("cohort_n"),
@@ -684,6 +685,9 @@ def _replay(
     reject_theta: float,
     single_voter_policy: str = "keep",
     force_escalate_on_polarity_conflict: bool = True,
+    citation_enabled: bool = True,
+    citation_check_verbatim: bool = False,
+    citation_fabricated_threshold: float = 0.25,
 ) -> tuple[list[PipelineCaseOutput], dict[str, int], dict[str, set[str]], int, dict[str, int]]:
     """Replay the legacy L1→L2→L3 cascade for one cell of the sweep grid.
 
@@ -717,6 +721,7 @@ def _replay(
     from pipeline.stages.summarization.agreement import AgreementChecker
     from pipeline.stages.summarization.interfaces.scoring import ChunkDecision
     from pipeline.stages.summarization.models import AuditableSummary
+    from pipeline.stages.summarization.helpers.citation_filter import citation_drop_indices
 
     checker = AgreementChecker(
         scorer,
@@ -806,7 +811,25 @@ def _replay(
                 n_polarity_conflicts += 1
 
             if selected is not None:
-                for f in selected.get("findings", []):
+                raw_findings = selected.get("findings", [])
+                # Citation filter (B-080) — mirror production: drop findings whose
+                # citation fails structural validation against the chunk source
+                # index. Index-filter the RAW cached dicts so kept findings stay
+                # byte-identical (the off/on delta is purely the citation effect).
+                if citation_enabled and raw_findings:
+                    chunk = entry.get("chunk_map", {}).get(chunk_id) or []
+                    summary = AuditableSummary.model_validate(selected)
+                    if len(summary.findings) == len(raw_findings):
+                        drop = citation_drop_indices(
+                            summary, chunk, pmcid,
+                            check_verbatim=citation_check_verbatim,
+                            fabricated_threshold=citation_fabricated_threshold,
+                        )
+                        if drop:
+                            raw_findings = [
+                                f for i, f in enumerate(raw_findings) if i not in drop
+                            ]
+                for f in raw_findings:
                     findings.append(_finding_to_pipeline(f, pmcid, chunk_id, theta))
 
         outputs.append(PipelineCaseOutput(

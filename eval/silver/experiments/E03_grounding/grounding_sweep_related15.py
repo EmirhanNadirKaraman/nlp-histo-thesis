@@ -7,8 +7,11 @@ all 6 voters) over the related15 voter_cache, scores every MAP finding with the
 pipeline's OWN grounding NLI (PubMedBERT-MNLI-MedNLI, premise=verbatim_support →
 hyp=claim), then sweeps the grounding threshold and scores survivors vs silver.
 
-No prime files and no API calls: the cascade selection comes from cached voter
-outputs, grounding is a local cross-encoder. This collapses pipeline_sweep's
+No prime files and no API calls (cascade selection from cached voter outputs,
+grounding is a local cross-encoder), but the DB must be reachable and populated:
+step 1b swaps each finding's LLM-paraphrased verbatim_support for the real cited
+paragraph from the DB (mirroring production runner.py) so grounding scores real
+source text, not paraphrases. This collapses pipeline_sweep's
 prime+grounding into one pass, reusing _replay + the SAME _apply_grounding_threshold
 / _evaluate_outputs / _write_csv that the stock sweep uses (no schema/filename risk).
 
@@ -95,6 +98,13 @@ def main() -> None:
         single_voter_policy="keep", force_escalate_on_polarity_conflict=True,
     )
     case_outputs = [co for co in case_outputs if co.case_id in ctx.silver_by_case]
+
+    # 1b. Reconcile with production: replace LLM-paraphrased verbatim_support with the
+    #     real cited paragraph from the DB (mirrors runner.py _replace_verbatim_from_db),
+    #     so grounding scores real source text rather than paraphrases.
+    from database import get_db_connection
+    from pipeline.stages.summarization.persistence import replace_verbatim_from_db
+    replace_verbatim_from_db(get_db_connection(), case_outputs)
 
     # 2. Ground every finding through the pipeline's own NLI path (local, free).
     pipe = GroundingFilter(threshold=0.0)._pipe

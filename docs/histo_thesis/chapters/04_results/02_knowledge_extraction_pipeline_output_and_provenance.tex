@@ -1,0 +1,50 @@
+\section{Knowledge-extraction pipeline output and provenance}\label{section:results-ke-pipeline-output-and-provenance}
+
+This section reports the outputs of the knowledge-extraction pipeline, per stage, following the evaluation setup of Subsection~\ref{subsec:eval-knowledge-extraction}. Then, it measures how consistently the provenance is preserved through the pipeline. The results in this section are computed on the frozen six-voter cascade output over the 15 related papers, as we expected a greater number of supporting and contradicting rules to be generated on a set of related papers, rather than a randomly selected subset of papers. The best configuration found during the calibration stage ($\theta_{\mathrm{reject}} = 0.1$, and grounding threshold~0.5) was used, as explained in Section~\ref{section:results-abc-calibration}. All values were reproduced offline from the primer, the values from which were reused with the help of a cache-bridge, described in \pinktodo{Not described yet.}
+
+\begin{table}[htpb]
+    \caption[Knowledge-extraction funnel]{Knowledge-extraction funnel for the related15 set: 15 papers processed with the frozen cascade.}
+    \label{tab:knowledge-extraction-funnel}
+    \centering
+    \small
+    \begin{tabular}{@{}l r l@{}}
+        \toprule
+        Stage & Count & Retained vs previous \\
+        \midrule
+        MAP findings
+            & 2\,280
+            & -- \\
+        $\rightarrow$ grounded
+            & 1\,911
+            & 83.8\% \\
+        $\rightarrow$ normalized/deduplicated
+            & 1\,847
+            & 96.7\% \\
+        $\rightarrow$ groupable
+            & 1\,801
+            & 97.5\% \\
+        $\rightarrow$ canonical rules
+            & 1\,729
+            & 96.0\% \\
+        $\rightarrow$ final rules
+            & 1\,729
+            & 115.3 per paper \\
+        Relations
+            & 26
+            & 14 intra-paper + 12 cross-paper, including 3 contradictions \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Two observations can be made by looking at the numbers in Table~\ref{tab:knowledge-extraction-funnel}. First, consolidation of rules is limited. NORMALIZE, GROUP, and CANONICALIZE stages retain most of the rules: 1\,729 canonical rules are produced from 1\,847 normalized findings, corresponding to a ratio of approximately 93.6\%. This can be explained by the MAP stage emitting findings that are mostly atomic and distinct, correctly following the prompt instructions. Therefore, the pipeline produces approximately one final rule per normalized finding, rather than compressing many findings into a smaller set of rules. The RESOLVE stage does not change the number of canonical rules that were produced, it only calculates scores for each canonical rule, and orders them based on this score.
+
+Second, the relation output is sparse. Across 15 related papers, the RELATE stage emits 14 intra-paper and 12 cross-paper relations. Only three of these 26 relations are labelled CONTRADICT: one intra-paper and two cross-paper contradictions. This sparsity explains why a synthetic balanced set of claim-pairs was used for Section~\ref{section:results-nli-in-grounding-and-relation-classification}, in order to evaluate the relation classifier: the corpus simply does not contain enough relations or contradictions to estimate per-class accuracy.
+
+The provenance carry-rate measures whether every extracted rule or artifact can be traced back to its source. Measured on the entire ingested corpus with 977 documents, 35\,896 text elements, 4\,479 figures, and 1\,960 tables, the provenance chain is complete, and every populated field is traceable to its source. All paragraphs have a \texttt{unique\_path} field containing the PMCID, section path, and position of the paragraph within the section, making it possible to trace them back to their source papers. 
+
+Media provenance is also strong for table and figure objects. They can not only be traced back to the papers, but also to the coordinates in the pages in which they appear: both extracted figures and tables carry their cropped image and bounding-box information 100\% of the time. All extracted tables carry their caption texts; however, the percentage of figures with caption text is 86.3\%. Cross-reference linking, where figures and tables are linked to the texts in which they are mentioned, resolves for 53.6\% of figures and 58.9\% of tables. Only 12.8\% of paragraphs cite any figures or tables; but more importantly, no downstream stage in the pipeline uses the cross-reference linking outputs, so this does not affect any results in this thesis. These results are reported only for completeness. 
+
+\pinktodo{Should we add the knowledge-extraction funnel for the evaluation set?}
+
+RQ2 also investigates the quality of the extracted findings. The strict-F1 quality -- \pinktodo{0.7135} on \texttt{related15}, and \pinktodo{second\_number} on the evaluation subset -- is determined by the MAP-stage cascade configuration, and is therefore reported together with the cascade calibration and cost-quality comparison in Sections~\ref{section:results-abc-calibration} and~\ref{section:results-cost-quality-comparison}, rather than being duplicated here. This section therefore covers the pipeline funnel and the provenance carry-rate; Sections~\ref{section:results-abc-calibration} and~\ref{section:results-cost-quality-comparison} cover the strict-F1 quality of the findings.
+

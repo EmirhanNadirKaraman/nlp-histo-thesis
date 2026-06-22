@@ -85,6 +85,13 @@ class GeminiBatchProvider:
                     for m in user_messages
                 ],
                 "config": config,
+                # B-081: tag every request with its custom_id so retrieve() can
+                # match responses by KEY, not by list position. Gemini's
+                # inlined_responses are not guaranteed to preserve src order or
+                # to include a slot for every request, so positional recovery
+                # silently grafts one paper's output onto another. InlinedRequest
+                # /InlinedResponse both carry a `metadata` field that round-trips.
+                "metadata": {"custom_id": req.custom_id},
             }
 
             inline_requests.append(gemini_req)
@@ -119,6 +126,22 @@ class GeminiBatchProvider:
             job.status = "in_progress"
         return job
 
+    @staticmethod
+    def _custom_id_from_metadata(inline_response) -> str | None:
+        """Pull the round-tripped ``custom_id`` from an InlinedResponse's
+        ``metadata`` (B-081). Returns None when absent so the caller can fall
+        back to positional. Handles both dict and attr-style metadata."""
+        md = getattr(inline_response, "metadata", None)
+        if md is None:
+            return None
+        if isinstance(md, dict):
+            cid = md.get("custom_id")
+        else:
+            cid = getattr(md, "custom_id", None)
+            if cid is None and hasattr(md, "get"):
+                cid = md.get("custom_id")
+        return str(cid) if cid else None
+
     def retrieve(self, job: ProviderJob) -> list[BatchResult]:
         _, ids_str = job.output_location.split(_ID_SEP, 1)
         custom_ids = ids_str.split(",")
@@ -126,9 +149,27 @@ class GeminiBatchProvider:
         batch_job = self._client.batches.get(name=job.job_id)
         inline_responses = batch_job.dest.inlined_responses or []
 
+        # B-081 guard: a count mismatch GUARANTEES positional recovery is wrong
+        # (the old code silently stamped `unknown_{i}` and grafted cross-paper
+        # output). Fail loud — the caller's retry/finalize path treats this as a
+        # provider error rather than persisting mislabelled results.
+        if len(inline_responses) != len(custom_ids):
+            raise RuntimeError(
+                f"Gemini batch {job.job_id}: response/request count mismatch "
+                f"({len(inline_responses)} responses vs {len(custom_ids)} "
+                f"requests) — cannot safely map custom_ids (B-081)."
+            )
+
+        n_positional = 0
         results: list[BatchResult] = []
         for i, inline_response in enumerate(inline_responses):
-            custom_id = custom_ids[i] if i < len(custom_ids) else f"unknown_{i}"
+            # Prefer the round-tripped metadata key; fall back to positional
+            # ONLY when metadata is unavailable, and count it so the fallback is
+            # never silent (the original B-081 failure mode).
+            custom_id = self._custom_id_from_metadata(inline_response)
+            if custom_id is None:
+                custom_id = custom_ids[i] if i < len(custom_ids) else f"unknown_{i}"
+                n_positional += 1
             if inline_response.error:
                 results.append(BatchResult(
                     custom_id=custom_id, content=None, error=str(inline_response.error)
@@ -151,4 +192,13 @@ class GeminiBatchProvider:
                 results.append(BatchResult(
                     custom_id=custom_id, content=None, error="empty response"
                 ))
+
+        if n_positional:
+            logger.warning(
+                "Gemini batch %s: %d/%d results matched by POSITION, not metadata "
+                "key — response metadata round-trip unavailable; results may be "
+                "mislabelled (B-081). Verify the google-genai version echoes "
+                "InlinedRequest.metadata onto InlinedResponse.metadata.",
+                job.job_id, n_positional, len(inline_responses),
+            )
         return results

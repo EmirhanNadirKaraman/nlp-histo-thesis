@@ -3,13 +3,15 @@
 
 \chapter{Results}\label{chapter:Results}
 
-\pinktodo{DON'T FORGET TO ADD THE RELATION CLASSIFICATION EVALUATION RESULTS, WE ONLY HAVE COMPARISONS AND STATS NOW.}
+This chapter reports the empirical findings of the thesis, in the order of the system architecture. Section~\ref{section:results-doc-extraction-performance} analyses the document extraction quality (RQ1); Section~\ref{section:results-ke-pipeline-output-and-provenance} analyses the output of each stage in the knowledge extraction pipeline and how much provenance has been preserved (RQ2); Section~\ref{section:results-abc-calibration} explains the calibration results of the agreement-based cascading system; Section~\ref{section:results-cost-quality-comparison} explains the cost-quality comparison, which is the central result for RQ3. Section~\ref{section:results-nli-in-grounding-and-relation-classification} investigates the two NLI components -- the grounding filter and the relation classification -- and answers RQ4. Finally, Section~\ref{section:results-generalization-to-heldout-papers} reports the findings of the generalization test of RQ5, run on a held-out evaluation set.
+
+Each reported number is tied to its corresponding metric definition in \pinktodo{Section 3.6, Evaluation methodology}. Each comparison is reported either with confidence intervals, or explicitly marked as descriptive. All knowledge-extraction and cascade results are produced by replaying cached voter artifacts as described in Subsection~\ref{subsec:abc-calibration-and-replay}, so that no API calls are made to models during the experimentation process. 
+
+The overall result is mixed. Document-extraction (Section~\ref{section:results-doc-extraction-performance}) and provenance preservation (Section~\ref{section:results-ke-pipeline-output-and-provenance}) meet their intended targets. The agreement cascade reaches the quality of the strong single-model baseline (Sonnet 4.6) and significantly outperforms each cheaper model, but does not improve the accuracy of the strongest model itself: there is no statistically significant strict-F1 score improvement over the strong single model. Since the cascade is more expensive to run, the usage of the cascade over a single strong model is not justified; Section~\ref{section:results-cost-quality-comparison} states the results of RQ3 plainly. The NLI components of Section~\ref{section:results-nli-in-grounding-and-relation-classification} behave as designed, and the calibrated configuration of the system generalizes cleanly to the held-out evaluation set, as reported in Section~\ref{section:results-generalization-to-heldout-papers}.
 
 \input{chapters/04_results/01_document_extraction_performance}
-\input{chapters/04_results/02_provenance_preservation}
-\input{chapters/04_results/03_grounding_and_filtering_behavior}
-\input{chapters/04_results/04_agreement_based_cascading_results}
-\input{chapters/04_results/05_nli_ablations_for_relation_classification}
-\input{chapters/04_results/06_held_out_test_performance}
-\input{chapters/04_results/07_qualitative_provenance_example}
-\input{chapters/04_results/08_summary_of_findings}
+\input{chapters/04_results/02_knowledge_extraction_pipeline_output_and_provenance}
+\input{chapters/04_results/03_agreement_based_cascading_calibration}
+\input{chapters/04_results/04_cost_quality_comparison}
+\input{chapters/04_results/05_nli_in_grounding_and_relation_classification}
+\input{chapters/04_results/06_generalization_to_heldout_papers}

@@ -44,8 +44,9 @@ from eval.silver.map_theta_sweep import REPORTS_DIR  # noqa: E402
 
 _DEFAULT_SUMMARIES = _REPO_ROOT / "out" / "summaries" / "summaries"
 _DEFAULT_SOURCE = _REPO_ROOT / "eval" / "data" / "source_cases_related15.jsonl"
-# Frozen-config MAP+grounding reference from E03 (related15, θ0.9/r0.1, grounding 0.5):
-_E03_FROZEN = {"map_findings": 2280, "grounded_at_0_5": 2002}
+# Frozen-config MAP+grounding reference from E03 (related15, θ0.9/r0.1, grounding 0.5,
+# DB-paragraph grounding = production path; now matches this funnel's grounded count, B-079):
+_E03_FROZEN = {"map_findings": 2280, "grounded_at_0_5": 1911}
 # Cascade-profile names that ARE the frozen 6-voter cascade (E06–E08 winner).
 # "real" is the production label for that cascade; "6voter_frozen" is a legacy alias.
 _FROZEN_PROFILES = {"6voter_frozen", "real"}

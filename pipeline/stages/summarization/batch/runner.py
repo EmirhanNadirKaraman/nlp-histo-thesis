@@ -500,9 +500,28 @@ class BatchSummarizationRunner:
                 pmcid,
             )
 
-        chunk_summaries = [
-            AuditableSummary.model_validate(v) for v in handle.finalized.values()
-        ]
+        # Citation filter (B-080) — single chokepoint covering every cascade
+        # level (L1/L2 KEEP at finalized[1259], L3 at finalized[1407]). Runs
+        # before grounding / _replace_verbatim_from_db so the optional verbatim
+        # check sees the cited sentence. Mirrors sync MapStage._cascade.
+        chunk_summaries = []
+        _cit = self._cfg_full.citation
+        for chunk_id, v in handle.finalized.items():
+            summary = AuditableSummary.model_validate(v)
+            if _cit.enabled and summary.findings:
+                from ..helpers.citation_filter import filter_summary_by_citation  # noqa: PLC0415
+                n_before = len(summary.findings)
+                summary, dropped = filter_summary_by_citation(
+                    summary, handle.chunk_map.get(chunk_id) or [], pmcid,
+                    check_verbatim=_cit.check_verbatim,
+                    fabricated_threshold=_cit.fabricated_threshold,
+                )
+                if dropped:
+                    logger.info(
+                        "[%s] chunk %s: citation filter dropped %d/%d finding(s).",
+                        pmcid, chunk_id, len(dropped), n_before,
+                    )
+            chunk_summaries.append(summary)
 
         # ── Filesystem persistence setup (opt-in) ─────────────────────────────
         run_id = self._artifact_run_id_override or self._make_run_id(pmcid)
@@ -901,6 +920,13 @@ class BatchSummarizationRunner:
             # MAP_SCHEMA_VERSION (chunk-level PipelineCache); both must move
             # together to fully invalidate stale KEEP decisions.
             "map_agreement_policy_version": MAP_AGREEMENT_POLICY_VERSION,
+            # B-080 — citation filter; kept identical to the sync runner's hash.
+            "citation_enabled":        cfg.citation.enabled,
+            "citation_check_verbatim": cfg.citation.check_verbatim if cfg.citation.enabled else None,
+            "citation_fabricated_threshold": (
+                cfg.citation.fabricated_threshold
+                if cfg.citation.enabled and cfg.citation.check_verbatim else None
+            ),
         }
         models = {
             "voter_models":        [v.model for v in self._l1],

@@ -70,6 +70,7 @@ class PipelineFinding(BaseModel):
     direction: str | None = None
     confidence: str = "medium"
     verbatim_support: str = ""
+    evidence: list[str] = []  # ["S{i}|{pmcid}|{te_id}", …] — carried so grounding can DB-substitute (E03)
     grounding_score: float | None = None
     scope_disease_subtype: str | None = None
     scope_cohort_n: int | None = None

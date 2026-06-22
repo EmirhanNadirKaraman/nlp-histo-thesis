@@ -105,6 +105,15 @@ summarization:
   grounding:
     threshold: 0.5             # null disables the entailment filter
 
+  citation:                    # finding-level citation/provenance filter (B-080)
+    enabled: true              # drop MAP findings whose S{n}|PMCID|te_id citation
+                               # fails structural validation vs the chunk source
+                               # index (nonexistent sentence / te_id / pmcid).
+    check_verbatim: false      # also drop fuzzy-fabricated verbatim quotes (off:
+                               # structural checks are exact; grounding NLI covers
+                               # claim<->support quality).
+    fabricated_threshold: 0.25 # only consulted when check_verbatim: true
+
   relate:
     entailment_threshold: 0.50
     contradiction_threshold: 0.50

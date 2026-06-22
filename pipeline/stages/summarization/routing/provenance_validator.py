@@ -25,10 +25,21 @@ from pipeline.stages.summarization.models import AuditableSummary, Finding
 from .models import FindingValidation, ReasonCode
 
 # PMC token accepts word-chars + hyphens so document-id suffixes such as
-# `PMC10100421_HIS-82-393` or `PMC7150310_main` parse correctly. The captured
-# pmcid is compared exactly against the expected doc id below, so the broader
-# regex doesn't widen the cross-document safety check.
+# `PMC10100421_HIS-82-393` or `PMC7150310_main` parse correctly.
 _CITATION_RE = re.compile(r"^S(\d+)\|(PMC[\w\-]+)\|(\d+)$")
+
+# B-082: the corpus uses suffixed document ids (e.g. `PMC4329418_his0066-0409`),
+# but models frequently cite the bare canonical accession (`PMC4329418`) — the
+# SAME paper. The cross-document check below compares the base `PMC<digits>`
+# accession so bare-vs-suffixed is NOT a false cross-document error. A genuinely
+# different paper still has a different base accession and is still caught.
+_PMC_BASE_RE = re.compile(r"(PMC\d+)")
+
+
+def _base_accession(pmcid: str) -> str:
+    """Bare ``PMC<digits>`` accession, ignoring any ``_suffix`` (B-082)."""
+    m = _PMC_BASE_RE.match(pmcid or "")
+    return m.group(1) if m else (pmcid or "")
 
 # Verbatim match thresholds.
 # Below FABRICATED_THRESHOLD: the quote is unrecognisable in the source → hard REJECT.
@@ -116,8 +127,9 @@ class ProvenanceValidator:
             cited_pmcid = m.group(2)
             cited_te_id = int(m.group(3))
 
-            # Cross-document PMCID
-            if cited_pmcid != self._pmcid:
+            # Cross-document PMCID — compare base accession (B-082), so citing the
+            # bare `PMC4329418` matches the suffixed document `PMC4329418_his...`.
+            if _base_accession(cited_pmcid) != _base_accession(self._pmcid):
                 codes.append(ReasonCode.CROSS_DOCUMENT_SOURCE_ERROR)
                 explanations.append(
                     f"citation PMCID {cited_pmcid!r} != document {self._pmcid!r}"

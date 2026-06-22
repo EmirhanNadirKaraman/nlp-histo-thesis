@@ -51,7 +51,7 @@ from eval.silver.bridge_one_case_proof import (  # noqa: E402
     _resolve_chunk,
     _sorted_cids,
 )
-from eval.silver.map_context import _load_map_context  # noqa: E402
+from eval.silver.map_context import CACHE_PATH, _load_map_context  # noqa: E402
 from eval.silver.map_theta_sweep import _build_scorer, _replay  # noqa: E402
 from pipeline.stages.summarization.agreement import AgreementChecker  # noqa: E402
 from pipeline.stages.summarization.models import AuditableSummary  # noqa: E402
@@ -147,13 +147,22 @@ def main() -> int:
                          "default writes to the non-destructive staging dir")
     ap.add_argument("--validate", action="store_true",
                     help="Phase-A checks: map_chunks reconstruct + findings == sweep θ0.9 replay")
+    ap.add_argument("--primer", default=None, metavar="PATH",
+                    help="voter_cache.json to bridge (default: the related15 primer). "
+                         "Point at eval/data/map_primer_heldout15/voter_cache.json for the "
+                         "isolated held-out run.")
+    ap.add_argument("--out-dir", default=None, metavar="PATH",
+                    help="write per-paper JSONs here instead of the related15 staging/summaries "
+                         "dir (e.g. out/summaries/heldout15/summaries). Overrides --install/staging "
+                         "and skips the SUMMARIES_DIR backup — use for an isolated split.")
     args = ap.parse_args()
 
     if not args.all and not args.pmcids:
         ap.error("pass --all or --pmcids PMCID [PMCID ...]")
 
     print(f"Bridge: primer θ{THETA}/reject{REJECT} cascade MAP → per-paper JSONs (per-case, overlap 0)")
-    ctx = _load_map_context("gemini", embed_cache_path=None)
+    primer_path = Path(args.primer) if args.primer else CACHE_PATH
+    ctx = _load_map_context("gemini", embed_cache_path=None, cache_path=primer_path)
     scorer = _build_scorer(_frozen_spec(), ctx.agreement_embed_fn)
     checker = AgreementChecker(scorer, theta=THETA, reject_theta=REJECT,
                                single_voter_policy="keep",
@@ -166,14 +175,21 @@ def main() -> int:
         print(f"  not in primer: {missing}\n  available e.g.: {sorted(by_pmcid)[:3]}")
         return 1
 
-    out_dir = SUMMARIES_DIR if args.install else STAGING_DIR
+    if args.out_dir:
+        out_dir = Path(args.out_dir)
+        if not out_dir.is_absolute():
+            out_dir = _REPO_ROOT / out_dir
+    else:
+        out_dir = SUMMARIES_DIR if args.install else STAGING_DIR
     print(f"  output dir: {out_dir.relative_to(_REPO_ROOT)}   papers: {len(targets)}\n")
 
     all_ok = True
     for pmcid in targets:
         cases = by_pmcid[pmcid]
         map_chunks, seen, n_find = _build_paper_map_chunks(cases, checker)
-        if args.install:
+        # Back up the related15 corpus only when installing into the shared SUMMARIES_DIR;
+        # an explicit --out-dir is an isolated split, nothing to protect.
+        if args.install and not args.out_dir:
             BACKUP_DIR.mkdir(parents=True, exist_ok=True)
             existing = SUMMARIES_DIR / f"{pmcid}.json"
             if existing.exists() and not (BACKUP_DIR / f"{pmcid}.json").exists():

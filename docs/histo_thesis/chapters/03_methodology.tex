@@ -7,6 +7,8 @@
 
 \pinktodo{Remove anything that refers to Chapters 4 or 5 (Results and Discussion), and add the section/subsection number instead, to be more precise.}
 
+\pinktodo{Remove the parts saying Opus 4.7 API calls were made at temp 0, temp setting does not work anymore.}
+
 This chapter describes how the system processes a corpus of histopathology papers, and converts them into a set of structured biomedical claims, each of which can be traced back to which paper and paragraph it was taken from. The system consists of two pipelines, connected by a relational database: a document-extraction pipeline, which parses each PDF into text elements, figures, tables, the cross-references between them, while preserving provenance; and a knowledge-extraction pipeline, which decomposes the extracted text into atomic findings, and refines them through grounding, normalization, grouping, canonicalization, relation classification and scoring stages. 
 
 At the core of the knowledge-extraction pipeline is the MAP stage with agreement-based cascading: a cascade that routes text chunks between voter tiers of different quality and cost, according to how strongly independent voters at a certain tier agree; and it decides whether to accept a cheap-tier output, to reject the voter outputs, or to escalate the text chunk to a more capable (but expensive) tier. The system is designed to surface traceable rule candidates for expert review; it does not aim to produce clinical rules autonomously.

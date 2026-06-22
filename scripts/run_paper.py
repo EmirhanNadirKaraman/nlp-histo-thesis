@@ -274,6 +274,7 @@ def build_batch_runner(
     run_ner: bool = False,
     chunk_workers: int | None = None,
     config_path: str | Path | None = DEFAULT_CONFIG_PATH,
+    output_dir: Path = Path("out/summaries"),
 ):
     from dataclasses import replace as _dc_replace
     from pipeline.stages.summarization.batch import BatchSummarizationRunner
@@ -302,7 +303,7 @@ def build_batch_runner(
         enable_router=sum_cfg.routing.enable_router,
         router_single_voter_policy=sum_cfg.routing.router_single_voter_policy,
         legacy_single_voter_policy=sum_cfg.routing.legacy_single_voter_policy,
-        output_dir=Path("out/summaries"),
+        output_dir=output_dir,
         embed_fn=_make_embed_fn(sum_cfg.agreement.embedder),
         cascade_profile=profile.name,
         artifact_root=artifact_root,

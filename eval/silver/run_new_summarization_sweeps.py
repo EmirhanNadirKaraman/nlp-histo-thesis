@@ -130,13 +130,30 @@ from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 # CSV / VOTER_SUBSET_SCREEN_CONFIGS (run voter_subset stages to pursue it).
 # ─────────────────────────────────────────────────────────────────────────────
 FINALIST_STRUCTURES: list[tuple[str, str, str]] = [   # (embedder, scorer_kind, alignment)
-    ("gemini", "hybrid", "soft_max"),
-    ("gemini", "hybrid", "greedy"),
-    ("openai", "hybrid", "soft_max"),
-    ("gemini", "embedding", "soft_max"),
-    ("gemini", "embedding", "greedy"),
-    ("gemini", "embedding", "hungarian"),
-]  
+    # E05 structure_screen 2026-06-21 (sweep_20260621T134042) — 12 finalists,
+    # ranked by strict_f1_optimal at each structure's max-F1 cell. Annotations =
+    # the operating point that earned each finalist's reason (economy/knee show
+    # their CHEAP θ, not the max-F1 θ).
+    # All 12 structures kept (hungarian RESTORED 2026-06-21): greedy≈hungarian was measured
+    # equivalent only at DEFAULT weights (E05, max|ΔstrictF1|=0.0015); family_refine sweeps
+    # NON-default weights, so we run both one-to-one aligners here rather than defend that
+    # extrapolation. The θ (≥0.5) and reject ({0,0.2}) reductions stay (both defensible).
+    # Annotations re-derived 2026-06-21 with the COST-AWARE axis (_cost_frac, price-weighted
+    # L1→L2 + L2→L3) — reasons/operating points differ from the old escalate_rate picks
+    # (pareto moved greedy→hungarian for gemini/hybrid; gemini/embedding/greedy knee θ0.8→0.85).
+    ("gemini", "hybrid",    "greedy"),     # top-k/within-best        @θ0.9  cost=0.95 esc=0.94 sf1=0.712
+    ("gemini", "hybrid",    "hungarian"),  # top-k/within-best/pareto @θ0.7  cost=0.38 esc=0.32 sf1=0.612
+    ("gemini", "hybrid",    "soft_max"),   # top-k/within-best/pareto @θ0.7  cost=0.30 esc=0.24 sf1=0.593
+    ("openai", "hybrid",    "soft_max"),   # within-best              @θ0.9  cost=0.97 esc=0.96 sf1=0.707
+    ("openai", "hybrid",    "greedy"),     # within-best              @θ0.9  cost=0.97 esc=0.97 sf1=0.707
+    ("openai", "hybrid",    "hungarian"),  # within-best              @θ0.9  cost=0.97 esc=0.97 sf1=0.707
+    ("openai", "embedding", "soft_max"),   # within-best/pareto       @θ0.75 cost=0.38 esc=0.31 sf1=0.617
+    ("openai", "embedding", "greedy"),     # within-best/pareto       @θ0.7  cost=0.37 esc=0.30 sf1=0.606
+    ("openai", "embedding", "hungarian"),  # within-best/pareto       @θ0.7  cost=0.37 esc=0.30 sf1=0.606
+    ("gemini", "embedding", "greedy"),     # within-best/pareto/knee  @θ0.85 cost=0.59 esc=0.51 sf1=0.664
+    ("gemini", "embedding", "hungarian"),  # within-best/pareto       @θ0.7  cost=0.20 esc=0.15 sf1=0.565
+    ("gemini", "embedding", "soft_max"),   # pareto/economy           @θ0.7  cost=0.09 esc=0.08 sf1=0.538
+]
 
 BEST_EMBEDDER = "gemini"            # E06 family_refine — "gemini" | "openai"
 BEST_SCORER = "hybrid"              # E06 family_refine — "embedding" | "hybrid"
@@ -200,13 +217,56 @@ _DEFAULT_BLEND = HYBRID_BLEND_GRID["default"]   # == HybridConfig() default; the
 COARSE_THETA_GRID = [0.70, 0.75, 0.80, 0.85, 0.90]
 COARSE_REJECT_GRID = [0.10, 0.20]
 
+# family_refine — reject ENDPOINTS {0.0, 0.2}: the no-rejection baseline and the grid's most
+# aggressive setting, swept jointly with EVERY weight config so reject sensitivity is tested
+# off-default HERE (not extrapolated from default-weight screening). Semantics: reject rejects
+# primary <= reject_theta. reject=0.0 → only primary==0.0, and EXP_1 showed rej=-1.0 ≡ rej=0.0
+# (2026-05-26) → no gate chunk scores exactly 0, so 0.0 = reject NOTHING. The only score mass in
+# [0,0.2] is a ~0 hard-disagreement cluster; (0.1,0.2] is empty (score_distribution.py: 0/3704),
+# so reject=0.2 reproduces 0.1's rejections. The two endpoints bracket the whole effect — no
+# third regime between them. Pinned reject=0.1 is interior to the tested range; map_theta keeps
+# the full REJECT_THETA_GRID for the final re-confirmation.
+FAMILY_REFINE_REJECT_GRID = [0.0, 0.2]
+
+# family_refine — local theta grid starting at 0.5 (drops 0.30, 0.40). The quality winner is at
+# θ=0.90 (monotone: more L3 escalation → higher strict_f1; post-gemini E05 structure_screen had
+# ALL structures max at θ=0.9), and family_refine ranks structures by their max-F1 cell, so a
+# 0.5-start grid selects the SAME winner — only the cheap (low-escalation) end of the cost/quality
+# frontier below 0.5 is dropped here. map_theta KEEPS the full THETA_GRID, so the winning config's
+# θ (incl. the sub-0.5 economy region) is re-confirmed there. Trims cells 14→10/spec (−29%).
+FAMILY_REFINE_THETA_GRID = [0.5, 0.6, 0.7, 0.8, 0.9]
+
 # structure_screen finalist selection.
 DEFAULT_TOP_K = 3
 DEFAULT_KEEP_WITHIN = 0.02          # also keep structures within this gap of the best primary metric
-# Pareto-aware finalist selection over (strict_f1_optimal ↑, escalate_rate ↓):
+# Pareto-aware finalist selection over (strict_f1_optimal ↑, cost_frac ↓):
 PARETO_CAP = 8                      # max non-dominated frontier structures kept as finalists
-MIN_ECONOMY_F1 = 0.50               # quality floor an economy (low-escalate) finalist must clear
-COST_LAMBDA = 0.20                  # knee = argmax(strict_f1_optimal − COST_LAMBDA · escalate_rate)
+MIN_ECONOMY_F1 = 0.50               # quality floor an economy (low-cost) finalist must clear
+COST_LAMBDA = 0.20                  # knee = argmax(strict_f1_optimal − COST_LAMBDA · cost_frac)
+
+# Cost axis for pareto/economy/knee. Blended in+out $/1M per tier, summed over the tier's
+# voters (configs/model_prices.json × batch/voter_configs.py): L1 = flash-lite(0.5) +
+# gpt-4o-mini(0.75) + gpt-4.1-nano(0.5); L2 = flash(2.8) + gpt-4.1-mini(2.0) + haiku(4.8);
+# L3 = sonnet(18.0). NOTE: assumes the default "all" voter subset and ~equal tokens/call; a
+# voter-subset run (dropping a voter) would lower a tier's weight — not modelled here yet.
+TIER_COST_BLENDED = {"l1": 1.75, "l2": 9.60, "l3": 18.00}
+
+
+def _cost_frac(row: dict) -> float:
+    """Price-weighted escalation cost in [0,1] — the cost axis for pareto/economy/knee.
+
+    ``(w2·n_l2_invoked + w3·n_l3_invoked) / ((w2+w3)·n_chunks)``. The L1 term is constant
+    (``n_l1_invoked == n_chunks``, every chunk runs L1) so it is omitted — this is
+    rank-equivalent to total per-chunk cost. Unlike ``escalate_rate`` (= n_l3/n_chunks),
+    this charges the L1→L2 escalation too (L2 ≈ 5.5× L1 per call), so an L2-heavy variant
+    is no longer mis-scored as cheap. Falls back to 0.0 on missing counts."""
+    n = float(row.get("n_chunks") or 0.0)
+    if n <= 0:
+        return 0.0
+    w2, w3 = TIER_COST_BLENDED["l2"], TIER_COST_BLENDED["l3"]
+    l2 = float(row.get("n_l2_invoked") or 0.0)
+    l3 = float(row.get("n_l3_invoked") or 0.0)
+    return (w2 * l2 + w3 * l3) / ((w2 + w3) * n)
 
 _FINALIST_EMPTY_MSG = (
     "FINALIST_STRUCTURES is empty — family_refine has nothing to refine.\n"
@@ -546,7 +606,7 @@ def _stage_plan(stage: str):
                 align_of[sp.name] = alignment
                 embedder_of[sp.name] = emb
         embedders = sorted({e for e, _, _ in FINALIST_STRUCTURES})
-        return (embedders, specs, list(THETA_GRID), list(REJECT_THETA_GRID),
+        return (embedders, specs, list(FAMILY_REFINE_THETA_GRID), list(FAMILY_REFINE_REJECT_GRID),
                 ("keep",), (True,), kind_of, align_of, embedder_of)
 
     if stage == "map_theta":
@@ -601,11 +661,11 @@ def _deviation(row: dict) -> int:
 
 def _rank(row: dict, metric: str) -> tuple[float, float, float, int]:
     """Selection key: higher PRIMARY metric (an optimal-matcher metric), then LOWER
-    escalate_rate, then higher f1_optimal, then SIMPLER config (fewer deviations
+    cost_frac (price-weighted escalation), then higher f1_optimal, then SIMPLER config (fewer deviations
     from defaults). Greedy metrics NEVER enter the key."""
     return (
         float(row[metric]),
-        -float(row.get("escalate_rate") or 0.0),
+        -_cost_frac(row),
         float(row.get("f1_optimal") or 0.0),
         -_deviation(row),
     )
@@ -628,18 +688,22 @@ def _cell_struct(r: dict) -> tuple:
 def _select_finalists(rows: list[dict], metric: str, top_k: int, keep_within: float, *,
                       pareto_cap: int = PARETO_CAP, min_economy_f1: float = MIN_ECONOMY_F1,
                       cost_lambda: float = COST_LAMBDA) -> list[tuple]:
-    """PURE, Pareto-aware finalist selection over (``metric`` ↑, ``escalate_rate`` ↓),
+    """PURE, Pareto-aware finalist selection over (``metric`` ↑, ``cost_frac`` ↓),
     so structure_screen keeps BOTH the quality corner (high F1, expensive) AND the
-    economy/knee end (low escalate).
+    economy/knee end (low cost).
 
-    CELL-LEVEL is load-bearing: the cost axis (escalate_rate) is driven by THETA, not
+    COST AXIS is ``_cost_frac`` (price-weighted L1→L2 + L2→L3 escalation), NOT bare
+    ``escalate_rate`` — the latter counts only L3 reach and is blind to the L2 cost an
+    L2-heavy variant pays (L2 ≈ 5.5× L1/call). ``escalate_rate`` stays a reported column.
+
+    CELL-LEVEL is load-bearing: the cost axis (cost_frac) is driven by THETA, not
     by structure identity, so the Pareto frontier is computed over the FULL cells
     (structure × theta × reject) — NOT per-structure bests, which would collapse every
     structure to its θ=0.9 (most-expensive) cell and discard the entire cheap-θ economy
     frontier. A structure becomes a finalist if it TOUCHES the frontier at any cell.
     ``top-k`` / ``within-best`` stay QUALITY picks (per-structure max-metric).
 
-    Selection uses ONLY ``metric`` (an optimal-matcher metric) + ``escalate_rate`` —
+    Selection uses ONLY ``metric`` (an optimal-matcher metric) + ``cost_frac`` —
     never a greedy metric. Returns ``[(struct, [reasons], {reason: cell})]`` ranked
     best-first by the structure's max-metric. struct = (embedder, scorer_kind, alignment).
     Reasons (additive): top-k, within-best, pareto, economy, knee, diversity:<axis>.
@@ -652,7 +716,7 @@ def _select_finalists(rows: list[dict], metric: str, top_k: int, keep_within: fl
         return float(r[metric])
 
     def c(r):
-        return float(r.get("escalate_rate") or 0.0)
+        return _cost_frac(r)
 
     # Quality view: per-structure best-by-metric → top-k / within-best / ranking order.
     struct_best = _best_per_group(rows, GROUP_FIELDS["structure_screen"], metric)
@@ -1051,14 +1115,14 @@ def _report_structure_screen(rows: list[dict], args, csv_path: Path) -> None:
           f"{args.metric} ↑ / escalate_rate ↓).")
     print("  θ/esc in this table = each structure's MAX-F1 (quality) cell.")
     print(f"  {'':2}{'embedder':8} {'scorer':10} {'align':10} {'strictF1':>8} {'f1opt':>7} "
-          f"{'esc':>6} {'θ':>4} {'rej':>4} {'[greedy]':>9}  reasons")
+          f"{'cost':>6} {'esc':>6} {'θ':>4} {'rej':>4} {'[greedy]':>9}  reasons")
     for struct, r in ranked:
         emb, sk, al = struct
         mark = "★" if struct in reason_of else " "
         why = "/".join(reason_of.get(struct, []))
         print(f"  {mark} {str(emb):8} {str(sk):10} {str(al):10} "
               f"{float(r[args.metric]):8.4f} {float(r.get('f1_optimal') or 0):7.4f} "
-              f"{float(r.get('escalate_rate') or 0):6.3f} {str(r.get('theta')):>4} "
+              f"{_cost_frac(r):6.3f} {float(r.get('escalate_rate') or 0):6.3f} {str(r.get('theta')):>4} "
               f"{str(r.get('reject_theta')):>4} {float(r.get('strict_f1_greedy') or 0):9.4f}  {why}")
 
     print(f"\nCSV → {csv_path}")
@@ -1071,8 +1135,8 @@ def _report_structure_screen(rows: list[dict], args, csv_path: Path) -> None:
         emb, sk, al = struct
         cell = _display_cell(ev, struct_best[struct])
         print(f'    ("{emb}", "{sk}", "{al}"),    # {"/".join(why)} '
-              f'@θ{cell.get("theta")} esc={float(cell.get("escalate_rate") or 0):.2f} '
-              f'f1={float(cell[args.metric]):.3f}')
+              f'@θ{cell.get("theta")} cost={_cost_frac(cell):.2f} esc={float(cell.get("escalate_rate") or 0):.2f} '
+              f'sf1={float(cell[args.metric]):.3f}')
     print("]")
 
 
@@ -1137,7 +1201,7 @@ def _pick_operating_points(rows: list[dict], metric: str, min_economy_f1: float,
         return float(r[metric])
 
     def c(r):
-        return float(r.get("escalate_rate") or 0.0)
+        return _cost_frac(r)
 
     pts = {"quality": max(rows, key=lambda r: _rank(r, metric))}
     eligible = [r for r in rows if q(r) >= min_economy_f1]
@@ -1226,7 +1290,7 @@ def main() -> None:
     ap.add_argument("--metric", default="strict_f1_optimal",
                     choices=["strict_f1_optimal", "f1_optimal"],
                     help="PRIMARY selection metric — optimal/Hungarian matcher only; greedy is a "
-                         "diagnostic and never selects. Ties: lower escalate_rate, then f1_optimal, "
+                         "diagnostic and never selects. Ties: lower cost_frac, then f1_optimal, "
                          "then simpler config.")
     ap.add_argument("--top-k", type=int, default=DEFAULT_TOP_K,
                     help="structure_screen: keep this many top structures (by primary metric) as "
@@ -1321,7 +1385,7 @@ def main() -> None:
 
     best = max(rows, key=lambda r: _rank(r, args.metric))
     print(f"\nOverall best — selected by PRIMARY {args.metric} "
-          f"(tie-break: lower escalate_rate, then f1_optimal, then simpler config):\n  "
+          f"(tie-break: lower cost_frac, then f1_optimal, then simpler config):\n  "
           f"{_fmt_best(best, args.metric)}")
     print(f"\nCSV → {csv_path}")
     print("\n" + PIN_HINTS[args.stage])

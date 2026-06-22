@@ -1,1 +1,103 @@
 \section{Document extraction performance}\label{section:results-doc-extraction-performance}
+
+The document-extraction pipeline is evaluated on the 27-PDF rubric set, described in Subsection~\ref{subsec:eval-datasets}. The evaluation uses the four rubric dimensions, and reports the strict-F1 performance, where an extracted element is counted as a true positive only if it scores the top label for each rubric dimension. Both the rubric dimensions and the strict-F1 definitions are explained in Subsection~\ref{subsec:eval-doc-extraction}.
+
+\pinktodo{We might not have described the sweeps for document- and knowledge-extraction. Check that!}
+
+\pinktodo{Docling behavior for caption matching and icons might have run on all variants, check that.}
+
+The production configuration of document extraction was selected by the staged configuration sweep described in \pinktodo{Section~\ref{}}. The Docling baseline was good enough for the goals of this thesis, so the figure-extraction behavior of Docling was not modified. The best configuration for table extraction was found to be a hybrid configuration, from which artifacts were extracted by unioning Docling and Microsoft TATR table detector. The achieved table-extraction metrics for the most important variants, as well as the figure-extraction metrics across all variants, are shown in Tables~\ref{tab:table-emission-metrics} and~\ref{tab:figure-emission-metrics}.
+
+\begin{table}[htpb]
+    \caption[Per-dimension table-emission metrics]{Per-dimension table-emission metrics across the key sweep configurations, evaluated on the 27-PDF rubric set.}
+    \label{tab:table-emission-metrics}
+    \centering
+    \small
+    \begin{tabular}{@{}l r r r r r@{}}
+        \toprule
+        Configuration (variant)
+            & Crop F1
+            & Mask F1
+            & \makecell[r]{Caption\\P}
+            & \makecell[r]{Footnote\\P}
+            & Strict F1 \\
+        \midrule
+        Docling baseline (v01)
+            & 91.4\%
+            & 94.3\%
+            & 93.8\%
+            & 43.8\%
+            & 40.0\% \\
+        \makecell[l]{Hybrid @0.99, no\\footnote-expand (v07)}
+            & 86.4\%
+            & 97.7\%
+            & 94.3\%
+            & 48.6\%
+            & 42.0\% \\
+        \makecell[l]{Docling + footnote-expand\\$\times 1.2$ (v16)}
+            & 88.6\%
+            & 91.4\%
+            & 93.8\%
+            & 90.6\%
+            & 80.0\% \\
+        \makecell[l]{TATR + footnote-expand\\$\times 1.2$ (v17)}
+            & 91.9\%
+            & 91.9\%
+            & 94.3\%
+            & 71.4\%
+            & 64.9\% \\
+        \makecell[l]{Hybrid + footnote-expand\\$\times 1.2$ (v18, pinned)}
+            & 91.9\%
+            & 91.9\%
+            & 94.3\%
+            & 91.4\%
+            & 83.8\% \\
+        \bottomrule
+    \end{tabular}
+
+    \vspace{0.35em}
+    \begin{minipage}{0.95\textwidth}
+        \footnotesize
+        Crop and mask are reported as F1 scores; caption and footnote are reported as precision, measuring detected-item accuracy. Footnote-expand uses multiplier $\times 1.2$. Variants v17 and v18 also apply the caption/crop-geometry family fixes. Strict F1 requires every applicable dimension to receive the top rubric label.
+    \end{minipage}
+\end{table}
+
+\begin{table}[htpb]
+    \caption[Figure-emission metrics]{Figure-emission metrics on the 27-PDF rubric set. These metrics are invariant across all 32 sweep variants because the sweep varies only table handling.}
+    \label{tab:figure-emission-metrics}
+    \centering
+    \small
+    \begin{tabular}{@{}r r r r r r l@{}}
+        \toprule
+        Crop F1
+            & Mask F1
+            & \makecell[r]{Caption\\P}
+            & \makecell[r]{Strict\\P}
+            & \makecell[r]{Strict\\R}
+            & Strict F1
+            & \makecell[l]{Decorative-icon\\FPs} \\
+        \midrule
+        89.9\%
+            & 100.0\%
+            & 90.3\%
+            & 72.4\%
+            & 100.0\%
+            & 84.0\%
+            & 14 of 21 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+
+The main improvement is observed for table extraction. Compared with the Docling baseline, strict-F1 rises from 40\% to 83.8\% for tables in the hybrid variant with footnote expand multiplier set to $\times1.2$. Docling does not detect table footnotes at all: Docling's footnote precision result of 43.8\% comes from tables that do not have footnotes, and are labelled as correct by the rubric. The strict-F1 improvement was driven mainly by footnote expansion, with an increase in footnote precision accuracy from 43.8\% to 91.4\%.
+
+Crop and bounding-box detections were strong in the baseline, with a 91.4\% crop F1, and a 94.3\% mask F1; the bottleneck was in including the footnotes in the table crop, and extending the detected table crop downward (footnote-expand $\times1.2$) over the hybrid detector more than doubled the strict-F1 score of the baseline. 
+
+Since figures do not have footnotes, the footnote dimension of the rubric was disabled for figure strict-F1 calculations. Docling's performance was good enough for the goals of this thesis, so no changes were made to Docling's default figure detection behavior. Therefore the reported results do not change across variants. The production configuration has an 89.9\% crop F1, and a 84.0\% strict-F1, as reported in Table~\ref{tab:figure-emission-metrics}.
+
+\pinktodo{Maybe add the label stats for the most common failures here}
+
+The remaining table-failure modes are caption-attachment errors and cropping errors. Caption-attachment errors are caused by continuation markers parsed as separate tables, tables spanning multiple pages, rotated tables, or captions attached to the side or corner of the tables. Cropping errors are caused by multiple tables on the same page, side-by-side, causing failures due to not being able to detect the boundaries of the tables, erroneously detecting a single table. 
+
+The observed figure-failure modes are mostly caused by icons and in-text decorative images. Although these artifacts are falsely detected as figures, they are still masked, and the text in them does not bleed into the main content. Therefore, they do not cause an issue for the remainder of the pipeline, and solutions for this problem were not investigated further. Nevertheless, removing these artifacts is the route to obtaining higher F1 scores, and is noted as a possible future improvement. These results address \textbf{RQ1}.
+

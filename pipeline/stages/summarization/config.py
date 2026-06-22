@@ -136,6 +136,33 @@ class GroundingConfig:
 
 
 @dataclass
+class CitationConfig:
+    """Finding-level citation/provenance filter applied to selected MAP output (B-080).
+
+    The legacy cascade (``enable_router=False``) runs no citation validation;
+    this filter drops MAP findings whose ``S{n}|PMCID|te_id`` citation fails
+    structural validation against the chunk source index (nonexistent sentence
+    position, te_id mismatch, cross-document pmcid). Applied in both runners and
+    in the offline replay so eval mirrors production. See
+    ``helpers/citation_filter.py`` and BUGS.md B-080."""
+
+    enabled: bool = True
+    """Drop findings with hard structural citation failures. False = legacy
+    behaviour (no citation check — citations shipped unvalidated)."""
+
+    check_verbatim: bool = False
+    """Also drop findings whose ``verbatim_support`` fuzzy-matches the cited
+    source sentence below ``fabricated_threshold`` (FABRICATED_VERBATIM_SUPPORT).
+    Off by default: the structural te_id/pmcid checks are exact, but verbatim
+    matching is a fuzzy ratio and the grounding NLI filter already covers
+    claim↔support quality."""
+
+    fabricated_threshold: float = 0.25
+    """SequenceMatcher ratio below which verbatim is treated as fabricated.
+    Only consulted when ``check_verbatim=True``."""
+
+
+@dataclass
 class RelateConfig:
     """NLI thresholds for the RELATE stage pairwise relation detection."""
 
@@ -374,6 +401,7 @@ class SummarizationConfig:
     routing: RoutingConfig = field(default_factory=RoutingConfig)
     normalize: NormalizeConfig = field(default_factory=NormalizeConfig)
     grounding: GroundingConfig = field(default_factory=GroundingConfig)
+    citation: CitationConfig = field(default_factory=CitationConfig)
     relate: RelateConfig = field(default_factory=RelateConfig)
     resolve: ResolveConfig = field(default_factory=ResolveConfig)
     cost: CostConfig = field(default_factory=CostConfig)
