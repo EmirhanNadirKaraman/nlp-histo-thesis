@@ -1,9 +1,0 @@
-\subsection{Reproducibility and offline replay}\label{subsec:eval-reprod-and-offline-replay}
-
-A single offline batch driver produces all results reported in Chapter~\ref{chapter:Results}. The driver reads artifact files saved by the extraction pipelines. Each analysis creates one CSV and one JSON file. A global \texttt{manifest.json} file is also created, which records the status of each analysis experiment, its input and output files, and key numbers. 
-
-The batch driver does not make any external LLM calls. Everything is read from already cached or pre-computed artifacts, including matcher embeddings, agreement-scorer embeddings, voter outputs, NLI scores, and pricing data. 
-
-\pinktodo{Maybe add bootstrapping experiments here too, once they are added to the code and run}
-
-The evaluation sets are frozen, and all results reported in Chapter~\ref{chapter:Results} are reproducible from the stored artifacts. A reader can re-run the offline batch and re-derive the reported results, without making any API calls, generating new embeddings, or voter outputs.

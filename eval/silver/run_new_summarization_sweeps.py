@@ -173,12 +173,16 @@ BEST_ALIGNMENT = "greedy"           # E06 family_refine — "soft_max" | "greedy
 BEST_THETA = 0.90                   # E07 map_theta CONFIRMED — true max strict_f1 (0.7133) over the full θ×reject grid
 BEST_REJECT_THETA = 0.10            # E07 map_theta CONFIRMED — reject=0.1 dominates 0.0 (higher F1, lower cost); must be < BEST_THETA
 
-BEST_VOTER_SUBSET = "all"           # E06c voter_subset_refine CONFIRMED — "all" | "drop_l1_i" | "drop_l2_i".
-#                                     E06b screen: every single-voter drop loses strict_f1 at fixed θ.
-#                                     E06c frontier (full θ grid): no drop dominates "all" — "all" owns
-#                                     the economy knee (0.5005 @ 187 L3 calls) and max-F1 (0.7071); drops
-#                                     only win in a sub-economy band (strict_f1 0.40–0.47) we don't ship.
-#                                     map_theta / map_gates run with THIS subset (default "all").
+BEST_VOTER_SUBSET = "all"           # PROVISIONAL (2026-06-22) — under re-evaluation, NOT yet re-confirmed.
+#                                     Prior verdict (old configs): E06b every drop loses, E06c no drop
+#                                     dominates "all" → keep all 6. SUPERSEDED by the 2026-06-22 corrected
+#                                     economy/knee configs: the E06b fixed-θ screen (price-weighted per-chunk
+#                                     cost) shows drop-haiku (drop_l2_2) is strict_f1-neutral (+0.0016) at
+#                                     −18% cost at the QUALITY config, and two L1 drops (drop_l1_2 +0.0333,
+#                                     drop_l1_1 +0.0321) Pareto-dominate "all" at ECONOMY.
+#                                     E06c (voter_subset_refine) is re-running on the dominating drops over
+#                                     the full θ grid; the final pin — and whether map_theta/map_gates use
+#                                     "all" — waits on that result. Keep "all" as the default until E06c lands.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Grids. (theta/reject reuse the validated map_theta_sweep engine grids.)
@@ -287,43 +291,62 @@ VOTER_SUBSET_GRID = (
 
 # voter_subset_screen input — paste from family_refine's printed block. Each dict is a
 # full operating point (config) to test under VOTER_SUBSET_GRID at its OWN fixed theta.
+# Re-derived 2026-06-22 from E06 family_refine sweep_20260622T013444 under the COST-AWARE
+# selection (cost_frac = price-weighted L1→L2 + L2→L3; escalation_breakdown.py). quality =
+# max strict_f1; economy = min cost_frac ≥ 0.50 floor; knee = argmax(strict_f1 − 0.20·cost_frac).
+# NOTE the knee fix: the script's first print (run without the cost_frac column) picked the
+# CHEAPER pure-embedding cell (gemini/embedding θ0.8, sf1 0.630 @ cost 0.42); the cost_frac
+# rule's true argmax is hybrid/embedding_heavy θ0.8 (sf1 0.674 @ cost 0.63). Frontier plot:
+# eval/reports/E06_family_refine/frontier_20260622.png.
 VOTER_SUBSET_SCREEN_CONFIGS: list[dict] = [
     {"label": "quality", "embedder": "gemini", "scorer_kind": "hybrid", "alignment_strategy": "greedy",
      "tau": 0.15, "count_alpha": 0.25, "reuse_weight": 0.15, "contradiction_weight": 0.20,
-     "w_category": 0.15, "w_embedding": 0.30, "w_entity": 0.50, "w_evidence": 0.05,
-     "theta": 0.9, "reject_theta": 0.1},
-    {"label": "economy", "embedder": "openai", "scorer_kind": "hybrid", "alignment_strategy": "soft_max",
+     "w_category": 0.15, "w_embedding": 0.30, "w_entity": 0.50, "w_evidence": 0.05,   # entity_heavy
+     "theta": 0.9, "reject_theta": 0.2},   # sf1 0.7131 @ cost 0.977 (reject 0.2 ≡ 0.1: empty (0.1,0.2] band)
+    {"label": "economy", "embedder": "gemini", "scorer_kind": "hybrid", "alignment_strategy": "greedy",
      "tau": 0.15, "count_alpha": 0.25, "reuse_weight": 0.15, "contradiction_weight": 0.20,
-     "w_category": 0.15, "w_embedding": 0.30, "w_entity": 0.50, "w_evidence": 0.05,
-     "theta": 0.4, "reject_theta": 0.1},
+     "w_category": 0.15, "w_embedding": 0.30, "w_entity": 0.15, "w_evidence": 0.40,   # evidence_heavy
+     "theta": 0.5, "reject_theta": 0.0},   # sf1 0.5419 @ cost 0.0741 (cheapest cell ≥ 0.50 floor)
     {"label": "knee", "embedder": "gemini", "scorer_kind": "hybrid", "alignment_strategy": "greedy",
      "tau": 0.15, "count_alpha": 0.25, "reuse_weight": 0.15, "contradiction_weight": 0.20,
-     "w_category": 0.15, "w_embedding": 0.30, "w_entity": 0.50, "w_evidence": 0.05,
-     "theta": 0.9, "reject_theta": 0.2},
+     "w_category": 0.15, "w_embedding": 0.65, "w_entity": 0.15, "w_evidence": 0.05,   # embedding_heavy
+     "theta": 0.8, "reject_theta": 0.0},   # sf1 0.6744 @ cost 0.6324 (argmax sf1 − 0.20·cost_frac)
 ]
 
 # voter_subset_refine input — paste from voter_subset_screen's printed block. Each dict
 # is a (config, voter_subset) pair to re-sweep over the FULL theta grid.
 VOTER_SUBSET_REFINE_CONFIGS: list[dict] = [
-    # E06c — rigor check on the voter-subset verdict. The E06b screen (fixed θ)
-    # showed every single-voter drop loses strict_f1; the only drops that cut
-    # Sonnet (L3) cost were the two gemini drops in the ECONOMY config, at ~10
-    # strict_f1 pts. Refine those two across the FULL θ grid to confirm neither
-    # dominates economy@all on the cost-quality frontier (then pin BEST_VOTER_SUBSET="all").
-    # economy@all is the in-run baseline: gives the economy structure's full θ×cost
-    # curve with the new per-tier columns (family_refine's CSV predates them, E09 wants it).
+    # E06c — full-θ frontier test of the drops that DOMINATE 'all' at fixed θ on the
+    # 2026-06-22 corrected configs (E06b screen + price-weighted per-chunk cost; supersedes
+    # the old "every drop loses → keep all" reading, which was measured on the prior
+    # openai/θ0.4 economy). Fixed-θ domination ≠ frontier domination ('all' at a different θ
+    # may match a drop), so each dominating drop is re-swept over the FULL θ/reject grid
+    # against its 'all' baseline. Selected drops (fixed-θ, in-sample):
+    #   quality θ0.9  drop haiku (L2_2): Δsf1 +0.0016 (noise) @ -18% cost  → near-free cost cut
+    #   economy θ0.5  drop gpt-4.1-nano (L1_2): Δsf1 +0.0333 @ -2.5% cost   → dominates
+    #   economy θ0.5  drop gpt-4o-mini (L1_1):  Δsf1 +0.0321 @ -7.6% cost   → dominates
+    # (knee drops help sf1 but COST MORE — a trade, not domination — so excluded here.)
+    # Weights mirror VOTER_SUBSET_SCREEN_CONFIGS; theta omitted (full grid swept).
+    {'label': 'quality', 'base_config': 'quality', 'voter_subset': 'all',
+     'embedder': 'gemini', 'scorer_kind': 'hybrid', 'alignment_strategy': 'greedy',
+     'tau': 0.15, 'count_alpha': 0.25, 'reuse_weight': 0.15, 'contradiction_weight': 0.2,
+     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.5, 'w_evidence': 0.05},   # entity_heavy
+    {'label': 'quality', 'base_config': 'quality', 'voter_subset': 'drop_l2_2',
+     'embedder': 'gemini', 'scorer_kind': 'hybrid', 'alignment_strategy': 'greedy',
+     'tau': 0.15, 'count_alpha': 0.25, 'reuse_weight': 0.15, 'contradiction_weight': 0.2,
+     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.5, 'w_evidence': 0.05},   # drop haiku
     {'label': 'economy', 'base_config': 'economy', 'voter_subset': 'all',
-     'embedder': 'openai', 'scorer_kind': 'hybrid', 'alignment_strategy': 'soft_max',
+     'embedder': 'gemini', 'scorer_kind': 'hybrid', 'alignment_strategy': 'greedy',
      'tau': 0.15, 'count_alpha': 0.25, 'reuse_weight': 0.15, 'contradiction_weight': 0.2,
-     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.5, 'w_evidence': 0.05},
-    {'label': 'economy', 'base_config': 'economy', 'voter_subset': 'drop_l1_0',
-     'embedder': 'openai', 'scorer_kind': 'hybrid', 'alignment_strategy': 'soft_max',
+     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.15, 'w_evidence': 0.4},   # evidence_heavy
+    {'label': 'economy', 'base_config': 'economy', 'voter_subset': 'drop_l1_2',
+     'embedder': 'gemini', 'scorer_kind': 'hybrid', 'alignment_strategy': 'greedy',
      'tau': 0.15, 'count_alpha': 0.25, 'reuse_weight': 0.15, 'contradiction_weight': 0.2,
-     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.5, 'w_evidence': 0.05},
-    {'label': 'economy', 'base_config': 'economy', 'voter_subset': 'drop_l2_0',
-     'embedder': 'openai', 'scorer_kind': 'hybrid', 'alignment_strategy': 'soft_max',
+     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.15, 'w_evidence': 0.4},   # drop gpt-4.1-nano
+    {'label': 'economy', 'base_config': 'economy', 'voter_subset': 'drop_l1_1',
+     'embedder': 'gemini', 'scorer_kind': 'hybrid', 'alignment_strategy': 'greedy',
      'tau': 0.15, 'count_alpha': 0.25, 'reuse_weight': 0.15, 'contradiction_weight': 0.2,
-     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.5, 'w_evidence': 0.05},
+     'w_category': 0.15, 'w_embedding': 0.3, 'w_entity': 0.15, 'w_evidence': 0.4},   # drop gpt-4o-mini
 ]
 
 _VS_SCREEN_EMPTY_MSG = (
@@ -1300,9 +1323,11 @@ def main() -> None:
     ap.add_argument("--pareto-cap", type=int, default=PARETO_CAP,
                     help="structure_screen: max non-dominated Pareto-frontier structures to keep.")
     ap.add_argument("--min-economy-f1", type=float, default=MIN_ECONOMY_F1,
-                    help="structure_screen: quality floor an economy (low-escalate) finalist must clear.")
+                    help="structure_screen / family_refine: strict_f1 floor the economy point (the "
+                         "min-cost_frac cell) must clear.")
     ap.add_argument("--cost-lambda", type=float, default=COST_LAMBDA,
-                    help="structure_screen: knee = argmax(strict_f1_optimal − λ·escalate_rate).")
+                    help="structure_screen / family_refine: knee = argmax(strict_f1_optimal − λ·cost_frac) "
+                         "(cost_frac = price-weighted L1→L2 + L2→L3 escalation, NOT bare escalate_rate).")
     ap.add_argument("--from-csv", default=None,
                     help="structure_screen: recompute finalists from an existing screen CSV "
                          "(no rerun, no engine).")
