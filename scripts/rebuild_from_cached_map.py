@@ -187,7 +187,7 @@ def main() -> int:
         epilog=__doc__,
     )
     parser.add_argument(
-        "--profile", required=True, choices=["cheap", "real", "haiku_only"],
+        "--profile", required=True, choices=["cheap", "real", "real_5", "haiku_only"],
         help="Cascade profile that the original run used; must match so the "
              "rebuilt cascade_signature in artifacts is consistent.",
     )

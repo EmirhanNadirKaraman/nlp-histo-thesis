@@ -19,7 +19,11 @@ runs cannot silently burn an unintended cascade.
   real       — 3-tier production cascade. L1: Gemini-Flash-Lite, GPT-4o-mini,
                GPT-4.1-nano (cheapest tier; no Claude voter at L1). L2:
                Gemini-Flash, GPT-4.1-mini, Claude-Haiku. L3: Claude-Sonnet
-               (temperature=0.0). Use for real evaluation runs.
+               (temperature=0.0). The 6-voter set the thesis EVAL uses (with a
+               drop_l2_2 selection over the 6-voter primer).
+  real_5     — `real` minus Claude-Haiku at L2 (5 voters): the calibrated 2026-06-22
+               PRODUCTION cascade (cost + evaluator-independence; see
+               _make_real5_profile). PRODUCTION ONLY — the eval keeps `real` (6).
   haiku_only — Single-voter Claude-Haiku at L1 (N=1 → KEEP under
                ``legacy_single_voter_policy="keep"``; L2/L3 never fire). Use
                for cost-effective production runs; ~\\$0.0036/chunk, accepts
@@ -148,6 +152,34 @@ def _make_real_profile() -> CascadeProfile:
     return CascadeProfile(name="real", l1_voters=l1, l2_voters=l2, l3_voter=l3)
 
 
+def _make_real5_profile() -> CascadeProfile:
+    """`real` minus Claude-Haiku at L2 — the calibrated 5-voter PRODUCTION cascade.
+
+    Same as `real` but L2 drops Claude-Haiku (E06c, 2026-06-22): the 5-voter cascade is
+    strict-F1-equivalent to the 6-voter at ~18% lower per-chunk cost, and removing the only
+    sub-L3 Anthropic voter makes the L1/L2 voting provider-independent of the Opus silver
+    labeller (L3 stays Sonnet). L1: Gemini-Flash-Lite, GPT-4o-mini, GPT-4.1-nano.
+    L2: Gemini-Flash, GPT-4.1-mini. L3: Claude-Sonnet. temperature=0.0.
+
+    PRODUCTION ONLY. The thesis EVAL keeps the 6-voter `real` profile + a `drop_l2_2`
+    SELECTION over the 6-voter primer (the primer was gathered with 6 voters; E12's LOO and
+    the eval's voter-subset machinery require `real` = 6 voters — do NOT point the eval here).
+    Pair with run.yaml `routing.legacy_single_voter_policy: escalate` + `map.reject_theta: 0.2`.
+    """
+    from .models import VoterBatchConfig
+    l1 = [
+        VoterBatchConfig(GEMINI_L1, provider="gemini", temperature=0.0),
+        VoterBatchConfig(OPENAI_L1, provider="openai", temperature=0.0),
+        VoterBatchConfig(OPENAI_L1_B, provider="openai", temperature=0.0),
+    ]
+    l2 = [
+        VoterBatchConfig(GEMINI_L2, provider="gemini", temperature=0.0),
+        VoterBatchConfig(OPENAI_L2, provider="openai", temperature=0.0),
+    ]
+    l3 = VoterBatchConfig(CLAUDE_L3, provider="claude", temperature=0.0)
+    return CascadeProfile(name="real_5", l1_voters=l1, l2_voters=l2, l3_voter=l3)
+
+
 def _make_haiku_only_profile() -> CascadeProfile:
     """Single-voter Haiku at L1 — no escalation fires.
 
@@ -189,6 +221,7 @@ def _make_haiku_only_profile() -> CascadeProfile:
 _PROFILE_BUILDERS = {
     "cheap":      _make_cheap_profile,
     "real":       _make_real_profile,
+    "real_5":     _make_real5_profile,
     "haiku_only": _make_haiku_only_profile,
 }
 

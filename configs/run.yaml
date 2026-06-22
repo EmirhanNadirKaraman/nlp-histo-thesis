@@ -80,7 +80,7 @@ pdf_extraction:
 summarization:
   map:
     theta: 0.9                  # E07 map_theta CONFIRMED
-    reject_theta: 0.1           # E07 map_theta pin (was 0.2; reject=0.1 dominates 0.0 — higher strict_f1, lower cost)
+    reject_theta: 0.2           # E07 map_theta (5-voter, 2026-06-22): reject=0.2 weakly dominates 0.1 (the (0.0,0.1] band is empty for the 5-voter ensemble; the lowest-consensus chunk sits in (0.1,0.2])
     chunk_size: 10
     chunk_overlap: 0            # aligned to the calibration regime: E06–E12 replayed the
                                # per-case primer, which uses disjoint (overlap-0) chunks.
@@ -94,7 +94,7 @@ summarization:
                                 # sync and batch paths cannot diverge. The θ sweep replays the legacy
                                 # path only — re-validate any chosen θ against the router before flipping.
     router_single_voter_policy: escalate   # only when enable_router=true: 'escalate' lone voter to L3, or 'keep'
-    legacy_single_voter_policy: keep       # only when enable_router=false: AgreementChecker N=1 handling.
+    legacy_single_voter_policy: escalate   # E08 (5-voter, 2026-06-22): escalate the N=1 case to L3/Sonnet (N=1-at-L2 is more common with 2 L2 voters; a lone voter has no agreement signal). only when enable_router=false: AgreementChecker N=1 handling.
                                            # 'keep' preserves prior implicit behaviour (lone API-survivor
                                            # accepted with synthetic confidence=1.0); 'escalate' treats N=1
                                            # as low-evidence and routes the chunk up the cascade.

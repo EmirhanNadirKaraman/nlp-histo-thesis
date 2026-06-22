@@ -49,8 +49,11 @@ from eval.silver.map_theta_sweep import (
 )
 from eval.silver.matcher import SIMILARITY_THRESHOLD
 from eval.silver.pipeline_sweep import _evaluate_outputs
+from eval.silver.run_new_summarization_sweeps import (
+    BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,
+)
 
-THETA, REJECT = 0.9, 0.1
+THETA, REJECT = BEST_THETA, BEST_REJECT_THETA   # calibrated 5-voter operating point (E07: θ0.9 / reject0.2)
 
 _OUT_FIELDS = [
     "baseline", "cascade_strict_f1", "baseline_strict_f1", "observed_delta",
@@ -93,8 +96,14 @@ def main() -> None:
 
     # cascade (frozen, in-run) + every single model
     scorer = _build_scorer(_frozen_spec(), ctx.agreement_embed_fn)
-    cascade_outputs = _replay(ctx.voter_cache, scorer, THETA, REJECT,
-                              single_voter_policy="keep", force_escalate_on_polarity_conflict=True)[0]
+    # CASCADE arm = the calibrated 5-voter selection (BEST_VOTER_SUBSET=drop_l2_2); same filter
+    # as the sweep. The single-model baselines below stay on the FULL 6-voter cache — Claude-Haiku
+    # is still a legitimate single-model baseline to compare the cascade against.
+    cascade_cache = _filtered_voter_cache(ctx.voter_cache, BEST_VOTER_SUBSET)
+    print(f"  cascade voter subset = {BEST_VOTER_SUBSET}")
+    cascade_outputs = _replay(cascade_cache, scorer, THETA, REJECT,
+                              single_voter_policy="escalate",  # E08: escalate best for 5-voter
+                              force_escalate_on_polarity_conflict=True)[0]
     L1, L2, L3 = _make_voters()
     L3_list = L3 if isinstance(L3, (list, tuple)) else [L3]
     voters = [("l1", i, v) for i, v in enumerate(L1)] + [("l2", i, v) for i, v in enumerate(L2)] \

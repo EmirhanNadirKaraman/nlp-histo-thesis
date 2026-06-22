@@ -45,15 +45,19 @@ from eval.silver.map_theta_sweep import (
 from eval.silver.matcher import SIMILARITY_THRESHOLD
 from eval.silver.pipeline_sweep import _apply_grounding_threshold, _evaluate_outputs
 from eval.silver.map_context import _load_map_context
+from eval.silver.run_new_summarization_sweeps import (
+    BEST_FORCE_ESCALATE_POLARITY, BEST_REJECT_THETA, BEST_SINGLE_VOTER_POLICY,
+    BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,
+)
 from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 from pipeline.stages.summarization.helpers.grounding_filter import GroundingFilter, _score_pairs
 
-# Frozen MAP config (= BEST_* in run_new_summarization_sweeps, pinned into run.yaml).
-THETA, REJECT = 0.9, 0.1
+# Frozen MAP config = the shipped 5-voter / escalate pins (BEST_*).
+THETA, REJECT = BEST_THETA, BEST_REJECT_THETA
 # Grounding thresholds to sweep. None = filter off (keep everything).
 GRID: list[float | None] = [None, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-# E07 map_theta anchor at θ=0.9/reject=0.1 — total findings at threshold None MUST match.
-EXPECTED_N_PIPELINE = 2280
+# 5-voter MAP finding count at θ0.9/reject0.2 (threshold None), 2026-06-22. (6-voter was 2280.)
+EXPECTED_N_PIPELINE = 2294
 
 _CSV_FIELDS = [
     "grounding_threshold", "n_kept", "retention",
@@ -91,11 +95,15 @@ def main() -> None:
     print(f"E03 grounding sweep — frozen MAP θ={THETA}/reject={REJECT}, related15 (offline, no API)")
     ctx = _load_map_context("gemini", embed_cache_path=None)
     scorer = _build_scorer(_frozen_spec(), ctx.agreement_embed_fn)
+    # SHIPPED config: 5-voter selection (drop_l2_2) over the 6-voter primer + the escalate gate.
+    voter_cache = _filtered_voter_cache(ctx.voter_cache, BEST_VOTER_SUBSET)
+    print(f"  voter subset = {BEST_VOTER_SUBSET}, single_voter_policy = {BEST_SINGLE_VOTER_POLICY}")
 
     # 1. Frozen-config cascade selection per case (cached voter outputs, no LLM).
     case_outputs, accept, _early, _npol, _invoked = _replay(
-        ctx.voter_cache, scorer, THETA, REJECT,
-        single_voter_policy="keep", force_escalate_on_polarity_conflict=True,
+        voter_cache, scorer, THETA, REJECT,
+        single_voter_policy=BEST_SINGLE_VOTER_POLICY,
+        force_escalate_on_polarity_conflict=BEST_FORCE_ESCALATE_POLARITY,
     )
     case_outputs = [co for co in case_outputs if co.case_id in ctx.silver_by_case]
 
@@ -120,7 +128,7 @@ def main() -> None:
     flag = "OK" if n_total == EXPECTED_N_PIPELINE else "⚠️ MISMATCH"
     print(f"\nvalidation: n_findings={n_total}  vs E07 n_pipeline={EXPECTED_N_PIPELINE}  [{flag}]")
     if n_total != EXPECTED_N_PIPELINE:
-        print("  replay diverged from E07 — investigate before trusting the curve.")
+        print(f"  (n differs from the 6-voter anchor {EXPECTED_N_PIPELINE} — expected for the 5-voter config.)")
 
     print("\ngrounding-score distribution (frozen-config MAP findings):")
     _distribution(scores)

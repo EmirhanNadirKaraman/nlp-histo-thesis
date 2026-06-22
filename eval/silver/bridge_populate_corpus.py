@@ -44,9 +44,13 @@ os.environ["ANTHROPIC_API_KEY"] = ""
 os.environ["OPENAI_API_KEY"] = ""
 
 from eval.silver.bridge_one_case_proof import (  # noqa: E402
-    THETA,
+    BEST_FORCE_ESCALATE_POLARITY,
+    BEST_SINGLE_VOTER_POLICY,
+    BEST_VOTER_SUBSET,
     REJECT,
+    THETA,
     _claim_key,
+    _filtered_voter_cache,
     _frozen_spec,
     _resolve_chunk,
     _sorted_cids,
@@ -95,7 +99,7 @@ def _write_paper_json(out_dir: Path, pmcid: str, map_chunks: list[dict]) -> Path
     path = out_dir / f"{pmcid}.json"
     payload = {
         "pmcid": pmcid,
-        "cascade_profile": "real",
+        "cascade_profile": "real_5",  # 5-voter shipped config (drop_l2_2 applied during the cascade replay)
         "_bridge": {
             "source": "eval/data/map_primer/voter_cache.json",
             "theta": THETA, "reject_theta": REJECT,
@@ -128,8 +132,8 @@ def _validate_paper(pmcid: str, cases: list[tuple[str, dict]], map_chunks: list[
     # (c) pooled findings == sweep θ0.9 replay for this paper
     sub = {sid: e for sid, e in cases}
     replay_findings = [f for co in _replay(sub, scorer, THETA, REJECT,
-                                           single_voter_policy="keep",
-                                           force_escalate_on_polarity_conflict=True)[0]
+                                           single_voter_policy=BEST_SINGLE_VOTER_POLICY,
+                                           force_escalate_on_polarity_conflict=BEST_FORCE_ESCALATE_POLARITY)[0]
                        for f in co.findings]
     bridge_findings = [f for c in map_chunks for f in (c.get("findings") or [])]
     match = sorted(map(_claim_key, bridge_findings)) == sorted(map(_claim_key, replay_findings))
@@ -163,12 +167,14 @@ def main() -> int:
     print(f"Bridge: primer θ{THETA}/reject{REJECT} cascade MAP → per-paper JSONs (per-case, overlap 0)")
     primer_path = Path(args.primer) if args.primer else CACHE_PATH
     ctx = _load_map_context("gemini", embed_cache_path=None, cache_path=primer_path)
+    voter_cache = _filtered_voter_cache(ctx.voter_cache, BEST_VOTER_SUBSET)  # shipped 5-voter selection
+    print(f"  voter subset = {BEST_VOTER_SUBSET}, single_voter_policy = {BEST_SINGLE_VOTER_POLICY}")
     scorer = _build_scorer(_frozen_spec(), ctx.agreement_embed_fn)
     checker = AgreementChecker(scorer, theta=THETA, reject_theta=REJECT,
-                               single_voter_policy="keep",
-                               force_escalate_on_polarity_conflict=True)
+                               single_voter_policy=BEST_SINGLE_VOTER_POLICY,
+                               force_escalate_on_polarity_conflict=BEST_FORCE_ESCALATE_POLARITY)
 
-    by_pmcid = _cases_by_pmcid(ctx.voter_cache)
+    by_pmcid = _cases_by_pmcid(voter_cache)
     targets = sorted(by_pmcid) if args.all else [p for p in args.pmcids]
     missing = [p for p in targets if p not in by_pmcid]
     if missing:

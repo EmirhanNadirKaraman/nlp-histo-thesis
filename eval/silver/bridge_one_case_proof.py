@@ -54,8 +54,13 @@ from pipeline.stages.summarization.config import AgreementConfig, HybridConfig  
 from pipeline.stages.summarization.current_stages.map_stage import MapStage  # noqa: E402
 from pipeline.stages.summarization.interfaces.scoring import ChunkDecision  # noqa: E402
 from pipeline.stages.summarization.models import AuditableSummary  # noqa: E402
+from eval.silver.run_new_summarization_sweeps import (  # noqa: E402
+    BEST_FORCE_ESCALATE_POLARITY, BEST_REJECT_THETA, BEST_SINGLE_VOTER_POLICY,
+    BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,  # noqa: F401  (BEST_VOTER_SUBSET/_filtered used by importers)
+)
 
-THETA, REJECT = 0.9, 0.1
+# Shipped 5-voter / escalate pins (BEST_*). bridge_populate_corpus imports THETA/REJECT from here.
+THETA, REJECT = BEST_THETA, BEST_REJECT_THETA
 _PROVIDER_SPEC = {"claude": "anthropic", "anthropic": "anthropic",
                   "openai": "openai", "gemini": "gemini"}
 
@@ -149,8 +154,8 @@ def _build_mapstage(prof, scorer, *, chunk_overlap: int) -> MapStage:
         scorer=scorer, router=None,
         voter_specs=l1_specs, level2_voter_specs=l2_specs, escalation_spec=l3_spec,
         cascade_profile="real",
-        legacy_single_voter_policy="keep",
-        force_escalate_on_polarity_conflict=True,
+        legacy_single_voter_policy=BEST_SINGLE_VOTER_POLICY,
+        force_escalate_on_polarity_conflict=BEST_FORCE_ESCALATE_POLARITY,
     )
 
 
@@ -159,8 +164,8 @@ def main() -> int:
     ctx = _load_map_context("gemini", embed_cache_path=None)
     scorer = _build_scorer(_frozen_spec(), ctx.agreement_embed_fn)
     checker = AgreementChecker(scorer, theta=THETA, reject_theta=REJECT,
-                               single_voter_policy="keep",
-                               force_escalate_on_polarity_conflict=True)
+                               single_voter_policy=BEST_SINGLE_VOTER_POLICY,
+                               force_escalate_on_polarity_conflict=BEST_FORCE_ESCALATE_POLARITY)
 
     # 1. pick the first MULTI-chunk case (so chunk alignment is actually exercised)
     safe_id, entry = next(
@@ -202,8 +207,8 @@ def main() -> int:
 
     # 3. validated θ0.9 output for the case (the sweep's own replay) + per-chunk resolve
     f_replay = _replay({safe_id: entry}, scorer, THETA, REJECT,
-                       single_voter_policy="keep",
-                       force_escalate_on_polarity_conflict=True)[0][0].findings
+                       single_voter_policy=BEST_SINGLE_VOTER_POLICY,
+                       force_escalate_on_polarity_conflict=BEST_FORCE_ESCALATE_POLARITY)[0][0].findings
     per_chunk = [(_resolve_chunk(entry, c, checker)) for c in cids]
 
     # 4. populate the MAP cache from the resolved summaries, keyed by MapStage's own chunks

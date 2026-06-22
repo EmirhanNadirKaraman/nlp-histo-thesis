@@ -457,7 +457,7 @@ def main():
     )
     parser.add_argument(
         "--profile", required=True, metavar="NAME",
-        choices=["cheap", "real", "haiku_only"],
+        choices=["cheap", "real", "real_5", "haiku_only"],
         help="Cascade profile (required — no implicit default to prevent "
              "accidental spend). Registered in "
              "pipeline/stages/summarization/batch/voter_configs.py:\n"

@@ -41,13 +41,19 @@ from dotenv import load_dotenv
 load_dotenv(str(_REPO_ROOT / ".env"))
 
 from eval.silver.map_theta_sweep import REPORTS_DIR, _make_voters
+from eval.silver.run_new_summarization_sweeps import (
+    BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _subset_meta,
+)
 
-COST_LAMBDA = 0.20  # knee = argmax(strict_f1 − λ·cost_norm); matches structure_screen
-# Anchors (must reproduce): quality θ0.9/r0.1 and economy θ0.4/r0.1.
-# Post-B-074 (enum-unwrap fix): quality ≈ unchanged (low early-accept), economy rose
-# 0.5005 → 0.5965 (θ0.4 had ~55% early-accept, the most corrupted).
-_ANCHOR_QUALITY = (0.9, 0.1, 0.7135)
-_ANCHOR_ECONOMY = (0.4, 0.1, 0.5965)
+COST_LAMBDA = 0.20      # knee = argmax(strict_f1 − λ·cost_norm); matches structure_screen
+MIN_ECONOMY_F1 = 0.50   # economy = cheapest operating point on the curve clearing this strict-F1 floor
+# Verification anchor: the SHIPPED operating point (BEST_THETA/BEST_REJECT_THETA, escalate gate) must
+# reproduce the E08 5-voter strict-F1 (0.7160). 2026-06-22: this experiment builds the frontier from the
+# SHIPPED config's OWN θ-curve — the E08b stage (map_theta_shipped: θ×reject re-swept at the chosen gate,
+# voter_subset=BEST_VOTER_SUBSET) — not a quality+economy two-structure join (voter sets differ now and
+# E06c has no drop_l2_2 economy). REQUIRES E08b to have run. (θ0.9 is gate-invariant; E08b characterizes
+# the shipped config, it does not re-select θ.)
+_ANCHOR_SF1 = 0.7160
 
 _OUT_FIELDS = [
     "structure", "theta", "reject_theta", "strict_f1_optimal", "f1_optimal",
@@ -80,14 +86,16 @@ def _price_lookup() -> dict:
 
 
 def _tier_factors() -> tuple[float, float, float]:
-    """Σ voter prices per tier — the per-INVOCATION cost weight (all tier voters
-    fire when the tier is invoked)."""
+    """Σ voter prices per tier — the per-INVOCATION cost weight (all tier voters fire when the
+    tier is invoked). EXCLUDES the shipped dropped voter (BEST_VOTER_SUBSET) so the cost matches
+    the 5-voter cascade — a dropped L2 voter lowers the L2 price paid on every escalated chunk."""
     price = _price_lookup()
     l1, l2, l3 = _make_voters()
     l3_list = l3 if isinstance(l3, (list, tuple)) else [l3]
-    return (sum(price(v.model) for v in l1),
-            sum(price(v.model) for v in l2),
-            sum(price(v.model) for v in l3_list))
+    dl, di, _ = _subset_meta(BEST_VOTER_SUBSET)
+    def tp(voters, lvl):
+        return sum(price(v.model) for i, v in enumerate(voters) if not (lvl == dl and i == di))
+    return tp(l1, "l1"), tp(l2, "l2"), tp(l3_list, "l3")
 
 
 def _f(r: dict, k: str) -> float:
@@ -119,15 +127,19 @@ def _pareto(rows: list[dict], cost_key: str) -> set:
 
 
 def main() -> None:
-    q_csv = _latest(str(REPORTS_DIR / "E07_map_theta" / "sweep_*.csv"))
-    e_csv = _latest(str(REPORTS_DIR / "E06c_voter_subset_refine" / "sweep_*.csv"))
-    print(f"quality θ-curve : {q_csv}")
-    print(f"economy θ-curve : {e_csv}  (voter_subset=all)")
-
-    rows = _load(q_csv, "quality", None) + _load(e_csv, "economy", "all")
+    q_csv = _latest(str(REPORTS_DIR / "E08b_map_theta_shipped" / "sweep_*.csv"))
+    print(f"5-voter cost-quality frontier — the SHIPPED config's own θ×reject curve (E08b): {q_csv}")
+    # The shipped config's θ-curve IS the cost-quality frontier: θ0.3 (cheap) → θ0.9 (max-F1), one
+    # voter-consistent config. quality/economy/knee are operating points ON this curve. (The old
+    # two-structure quality+economy join mixed a separate 6-voter economy from E06c — incoherent for
+    # the 5-voter config, and E06c has no drop_l2_2 economy curve to combine.)
+    rows = _load(q_csv, "shipped", None)
+    subsets = sorted({r.get("voter_subset", "all") for r in rows})
+    print(f"  voter_subset in E07: {subsets}  (shipped = {BEST_VOTER_SUBSET})")
 
     L1f, L2f, L3f = _tier_factors()
-    print(f"per-invocation cost weights (Σ voter $/1M tok): L1={L1f:.2f}  L2={L2f:.2f}  L3={L3f:.2f}")
+    print(f"per-invocation cost weights (Σ voter $/1M tok, dropped voter excluded): "
+          f"L1={L1f:.2f}  L2={L2f:.2f}  L3={L3f:.2f}")
     for r in rows:
         nch = _f(r, "n_chunks") or 1.0
         r["cost_per_chunk"] = round(
@@ -137,16 +149,14 @@ def main() -> None:
     for r in rows:
         r["cost_norm"] = round(r["cost_per_chunk"] / cmax, 4)
 
-    # ── verification anchors (catch a bad join before trusting the frontier) ──
-    def _find(struct, th, rj):
-        return next((r for r in rows if r["structure"] == struct
-                     and abs(_f(r, "theta") - th) < 1e-9 and abs(_f(r, "reject_theta") - rj) < 1e-9), None)
-    qa, ea = _find("quality", *_ANCHOR_QUALITY[:2]), _find("economy", *_ANCHOR_ECONOMY[:2])
-    ok = (qa and abs(_f(qa, "strict_f1_optimal") - _ANCHOR_QUALITY[2]) < 5e-4
-          and ea and abs(_f(ea, "strict_f1_optimal") - _ANCHOR_ECONOMY[2]) < 5e-4)
-    print(f"\nverification: quality θ0.9/r0.1={_f(qa,'strict_f1_optimal') if qa else None} "
-          f"economy θ0.4/r0.1={_f(ea,'strict_f1_optimal') if ea else None}  "
-          f"[{'OK' if ok else '⚠️ MISMATCH — check the CSV join'}]")
+    # ── verification anchor: the calibrated operating point reproduces the E07 5-voter strict-F1 ──
+    qa = next((r for r in rows
+               if abs(_f(r, "theta") - BEST_THETA) < 1e-9
+               and abs(_f(r, "reject_theta") - BEST_REJECT_THETA) < 1e-9), None)
+    ok = qa is not None and abs(_f(qa, "strict_f1_optimal") - _ANCHOR_SF1) < 5e-4
+    print(f"\nverification: θ{BEST_THETA}/r{BEST_REJECT_THETA} strict_f1="
+          f"{_f(qa, 'strict_f1_optimal') if qa else None} vs anchor {_ANCHOR_SF1}  "
+          f"[{'OK' if ok else '⚠️ MISMATCH — check the E07 CSV / pins'}]")
 
     # ── frontiers under both cost models (robustness check) ──
     fr_cost = _pareto(rows, "cost_per_chunk")
@@ -155,14 +165,14 @@ def main() -> None:
         r["on_frontier_cost"] = "true" if i in fr_cost else "false"
         r["on_frontier_escalate"] = "true" if i in fr_esc else "false"
 
-    # ── tagged operating points ──
+    # ── tagged operating points (all on the shipped config's θ-curve) ──
     quality_pt = max(rows, key=lambda r: _f(r, "strict_f1_optimal"))
-    economy_pt = ea or min((r for r in rows if r["structure"] == "economy"),
-                           key=lambda r: r["cost_per_chunk"])
+    eligible = [r for r in rows if _f(r, "strict_f1_optimal") >= MIN_ECONOMY_F1]
+    economy_pt = min(eligible or rows, key=lambda r: r["cost_per_chunk"])
     knee_pt = max(rows, key=lambda r: _f(r, "strict_f1_optimal") - COST_LAMBDA * r["cost_norm"])
     for r in rows:
         r["operating_point"] = ""
-    quality_pt["operating_point"] = "quality"
+    quality_pt["operating_point"] = (quality_pt["operating_point"] + "|quality").strip("|")
     economy_pt["operating_point"] = (economy_pt["operating_point"] + "|economy").strip("|")
     knee_pt["operating_point"] = (knee_pt["operating_point"] + "|knee").strip("|")
 

@@ -52,10 +52,15 @@ from eval.silver.map_theta_sweep import (  # noqa: E402
 )
 from eval.silver.matcher import SIMILARITY_THRESHOLD  # noqa: E402
 from eval.silver.pipeline_sweep import _evaluate_outputs  # noqa: E402
+from eval.silver.run_new_summarization_sweeps import (  # noqa: E402
+    BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,
+)
 from pipeline.stages.summarization.config import AgreementConfig, HybridConfig  # noqa: E402
 
-THETA, REJECT = 0.9, 0.1
-RELATED15_STRICT_F1 = 0.7135  # E06/E07 calibration reference (the number to generalize)
+THETA, REJECT = BEST_THETA, BEST_REJECT_THETA   # calibrated 5-voter operating point (E07: θ0.9 / reject0.2)
+# 5-voter (drop_l2_2 = Claude-Haiku dropped), θ0.9/reject0.2, single_voter_policy=escalate
+# related15 calibration reference — E08 (escalate is the gate argmax for the 5-voter config).
+RELATED15_STRICT_F1 = 0.7160
 THETA_GRID = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
 _HELDOUT_PRIMER = _REPO_ROOT / "eval" / "data" / "map_primer_heldout15" / "voter_cache.json"
@@ -75,7 +80,7 @@ def _frozen_spec() -> ScorerSpec:
 def _score(voter_cache, scorer, silver_by_case, embedder, embed_cache, sim_thr, theta, reject):
     case_outputs, accept, _early, _npol, invoked = _replay(
         voter_cache, scorer, theta, reject,
-        single_voter_policy="keep", force_escalate_on_polarity_conflict=True,
+        single_voter_policy="escalate", force_escalate_on_polarity_conflict=True,  # E08: escalate best for 5-voter
     )
     m = _evaluate_outputs(case_outputs, silver_by_case, embedder, embed_cache, sim_thr)
     n_chunks = sum(accept.values())
@@ -99,10 +104,16 @@ def main() -> int:
         cache_path=Path(args.primer), silver_path=Path(args.silver),
     )
     scorer = _build_scorer(_frozen_spec(), ctx.agreement_embed_fn)
+    # SHIPPED config = the calibrated voter selection (BEST_VOTER_SUBSET; drop_l2_2 = 5-voter,
+    # Claude-Haiku dropped). Filter the 6-voter primer to the shipped set via the SAME
+    # _filtered_voter_cache the sweep (E07/E08) uses, so every stage drops identically.
+    # "all" → no-op (full 6 voters).
+    voter_cache = _filtered_voter_cache(ctx.voter_cache, BEST_VOTER_SUBSET)
+    print(f"  voter subset = {BEST_VOTER_SUBSET}")
 
     # ── PRIMARY: frozen θ0.9/reject0.1 → strict-F1 vs silver ──
     m, accept, invoked, escalate = _score(
-        ctx.voter_cache, scorer, ctx.silver_by_case, ctx.embedder, ctx.embed_cache,
+        voter_cache, scorer, ctx.silver_by_case, ctx.embedder, ctx.embed_cache,
         args.sim_threshold, THETA, REJECT,
     )
     sf1 = m["strict_f1_optimal"]
@@ -131,7 +142,7 @@ def main() -> int:
         print(f"  {'theta':>6} {'strict_f1':>10} {'escalate':>9} {'l3_calls':>9}")
         for theta in THETA_GRID:
             mm, acc, inv, esc = _score(
-                ctx.voter_cache, scorer, ctx.silver_by_case, ctx.embedder, ctx.embed_cache,
+                voter_cache, scorer, ctx.silver_by_case, ctx.embedder, ctx.embed_cache,
                 args.sim_threshold, theta, REJECT,
             )
             print(f"  {theta:6.2f} {mm['strict_f1_optimal']:10.4f} {esc:9.3f} {inv.get('l3', 0):9d}")

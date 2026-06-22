@@ -46,7 +46,12 @@ E-numbered subfolder ``eval/reports/E##_<stage>/`` (see docs/readmes/EXPERIMENTS
   6. map_gates             single_voter_policy {keep, escalate} ×
                            force_escalate_on_polarity_conflict {True, False}, using
                            BEST_VOTER_SUBSET. → pin run.yaml routing.legacy_single_voter_policy
-                           + agreement.force_escalate_on_polarity_conflict.
+                           + agreement.force_escalate_on_polarity_conflict (→ BEST_SINGLE_VOTER_POLICY).
+  7. map_theta_shipped     [E08b] θ × reject re-swept at the SHIPPED gate (the one E08 chose,
+                           BEST_SINGLE_VOTER_POLICY) — the shipped config's θ-curve. CHARACTERIZATION,
+                           not a θ re-selection (θ0.9 is gate-invariant; map_theta/E07 stays the
+                           default-gate selection record). → this is the curve E09's cost-quality
+                           frontier reads. No new pin.
 
 Stages 3–4 (voter_subset) are OPTIONAL — skip them and BEST_VOTER_SUBSET stays
 "all" — unless you are chasing a cost-efficient cascade by dropping a diluting voter
@@ -170,19 +175,36 @@ BEST_W_EVIDENCE = 0.05
 
 BEST_ALIGNMENT = "greedy"           # E06 family_refine — "soft_max" | "greedy" | "hungarian"
 
-BEST_THETA = 0.90                   # E07 map_theta CONFIRMED — true max strict_f1 (0.7133) over the full θ×reject grid
-BEST_REJECT_THETA = 0.10            # E07 map_theta CONFIRMED — reject=0.1 dominates 0.0 (higher F1, lower cost); must be < BEST_THETA
+BEST_THETA = 0.90                   # E07 map_theta (5-voter drop_l2_2, 2026-06-22) — argmax over the full θ×reject grid, strict_f1 0.7147
+BEST_REJECT_THETA = 0.20            # E07 (5-voter) — reject=0.2 weakly dominates 0.1 (sf1 0.7147 vs 0.7140, 1 fewer L3 call).
+#                                     The (0.0,0.1] band is now EMPTY (reject 0.0≡0.1) and the lowest-consensus chunk sits in
+#                                     (0.1,0.2], so 0.2 rejects it. (The 6-voter config had the empty band at (0.1,0.2] → reject 0.1;
+#                                     dropping haiku shifted the agreement-score distribution.) Must be < BEST_THETA. Noise-level.
 
-BEST_VOTER_SUBSET = "all"           # PROVISIONAL (2026-06-22) — under re-evaluation, NOT yet re-confirmed.
-#                                     Prior verdict (old configs): E06b every drop loses, E06c no drop
-#                                     dominates "all" → keep all 6. SUPERSEDED by the 2026-06-22 corrected
-#                                     economy/knee configs: the E06b fixed-θ screen (price-weighted per-chunk
-#                                     cost) shows drop-haiku (drop_l2_2) is strict_f1-neutral (+0.0016) at
-#                                     −18% cost at the QUALITY config, and two L1 drops (drop_l1_2 +0.0333,
-#                                     drop_l1_1 +0.0321) Pareto-dominate "all" at ECONOMY.
-#                                     E06c (voter_subset_refine) is re-running on the dominating drops over
-#                                     the full θ grid; the final pin — and whether map_theta/map_gates use
-#                                     "all" — waits on that result. Keep "all" as the default until E06c lands.
+BEST_VOTER_SUBSET = "drop_l2_2"     # SELECTED on calibration (related15, E06c, 2026-06-22): drop Claude-Haiku
+#                                     from L2 → 5-voter cascade. E06c (full θ×reject grid): quality/drop_l2_2
+#                                     owns the max-F1 operating point, 0.7147 vs all 0.7131 (+0.0016 = NOISE,
+#                                     within E11's ±0.004 CI) at −18% per-chunk cost. So this is an
+#                                     F1-EQUIVALENT, cheaper config; selected for (1) cost and (2) evaluator-
+#                                     independence — the 5-voter L1/L2 ensemble is entirely non-Anthropic, so
+#                                     its agreement with the Opus-silver labeler is not a same-provider artifact
+#                                     (L3 is still Sonnet). NOT an F1 claim.
+#                                     Decision made ENTIRELY on calibration. E14 REPORTS the 5-voter held-out
+#                                     generalization once (descriptive) — it does NOT gate this pin; choosing
+#                                     the config on the held-out set would be test-set selection.
+#                                     map_theta/map_gates (E07/E08) replay this drop_l2_2 SELECTION over the
+#                                     6-voter primer. _make_voters() and E12 (LOO) stay on the full 6 voters
+#                                     (the primer was gathered with 6; re-prime is the avoided billable step).
+
+BEST_SINGLE_VOTER_POLICY = "escalate"   # SHIPPED gate, chosen by E08 map_gates (5-voter): escalate is the gate argmax
+#                                         (0.7160 vs keep 0.7147). With 2 L2 voters the N=1 case is more common, and a lone
+#                                         voter has no agreement signal → escalate it to L3/Sonnet (escalate-when-uncertain).
+#                                         Gain over keep is noise-level; chosen as the E08 argmax + principled N=1 handling.
+#                                         The SHIPPED config — used by ALL downstream stages: the map_theta re-run (so E09's
+#                                         frontier is the shipped curve), E09/E10/E11/E14, + run.yaml routing. The θ DECISION
+#                                         (θ0.9) was made at the default gate (the original keep E07) and is gate-invariant,
+#                                         so the escalate map_theta re-run regenerates the shipped curve WITHOUT re-selecting θ.
+BEST_FORCE_ESCALATE_POLARITY = True     # E08 — force-escalate on polarity conflict (unchanged default; ~no effect at θ0.9).
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Grids. (theta/reject reuse the validated map_theta_sweep engine grids.)
@@ -367,6 +389,7 @@ STAGES = (
     "voter_subset_refine",
     "map_theta",
     "map_gates",
+    "map_theta_shipped",
 )
 
 # Group key for the per-stage "Best per …" summary (None → only the overall best).
@@ -405,8 +428,13 @@ PIN_HINTS: dict[str, str] = {
     ),
     "map_gates": (
         "PIN after map_gates → run.yaml routing.legacy_single_voter_policy + "
-        "agreement.force_escalate_on_polarity_conflict. Then run the held-out evaluation "
-        "(separate runbook: run_paper.py --sync → export_pipeline → evaluate --matcher optimal)."
+        "agreement.force_escalate_on_polarity_conflict. Then run --stage map_theta_shipped (E08b)."
+    ),
+    "map_theta_shipped": (
+        "map_theta_shipped (E08b): the SHIPPED config's θ-curve — θ × reject re-swept at the gate E08 "
+        "chose (BEST_SINGLE_VOTER_POLICY). This is what E09's cost-quality frontier reads. NO new pin: "
+        "θ0.9/reject0.2 are unchanged (gate-invariant) — this only characterizes the shipped config. "
+        "Expect θ0.9/reject0.2 → the E08 headline. Then run the held-out battery (E09–E14)."
     ),
 }
 
@@ -634,6 +662,9 @@ def _stage_plan(stage: str):
 
     if stage == "map_theta":
         spec = ScorerSpec(BEST_SCORER, BEST_SCORER, _pinned_agreement(BEST_ALIGNMENT))
+        # E07 — θ SELECTION at the DEFAULT gate (keep). The gate is chosen next (E08, map_gates); the
+        # SHIPPED config's θ-curve at the chosen gate is E08b (map_theta_shipped). Forward protocol —
+        # this stage stays at the default gate so it remains the clean, reproducible θ-selection record.
         return ([BEST_EMBEDDER], [spec], list(THETA_GRID), list(REJECT_THETA_GRID),
                 ("keep",), (True,), {spec.name: BEST_SCORER}, {spec.name: BEST_ALIGNMENT}, None)
 
@@ -641,6 +672,16 @@ def _stage_plan(stage: str):
         spec = ScorerSpec(BEST_SCORER, BEST_SCORER, _pinned_agreement(BEST_ALIGNMENT))
         return ([BEST_EMBEDDER], [spec], [BEST_THETA], [BEST_REJECT_THETA],
                 ("keep", "escalate"), (True, False),
+                {spec.name: BEST_SCORER}, {spec.name: BEST_ALIGNMENT}, None)
+
+    if stage == "map_theta_shipped":
+        spec = ScorerSpec(BEST_SCORER, BEST_SCORER, _pinned_agreement(BEST_ALIGNMENT))
+        # E08b — the SHIPPED config's θ-curve: re-sweep θ × reject at the gate E08 chose
+        # (BEST_SINGLE_VOTER_POLICY / BEST_FORCE_ESCALATE_POLARITY). CHARACTERIZATION for E09's frontier
+        # + the headline — NOT a θ re-selection (θ0.9 was selected by E07 at the default gate and is
+        # gate-invariant). Same pins as map_theta; only the gate differs. → E09 reads this stage's CSV.
+        return ([BEST_EMBEDDER], [spec], list(THETA_GRID), list(REJECT_THETA_GRID),
+                (BEST_SINGLE_VOTER_POLICY,), (BEST_FORCE_ESCALATE_POLARITY,),
                 {spec.name: BEST_SCORER}, {spec.name: BEST_ALIGNMENT}, None)
 
     raise SystemExit(f"unknown stage {stage!r} (choices: {', '.join(STAGES)})")
@@ -805,7 +846,7 @@ def _select_finalists(rows: list[dict], metric: str, top_k: int, keep_within: fl
 def _stage_voter_subset(stage: str) -> str:
     """Grid stages run a single voter subset: 'all' (screen/family), or BEST_VOTER_SUBSET
     for map_theta/map_gates (which respect the pinned subset)."""
-    return BEST_VOTER_SUBSET if stage in ("map_theta", "map_gates") else "all"
+    return BEST_VOTER_SUBSET if stage in ("map_theta", "map_gates", "map_theta_shipped") else "all"
 
 
 def _iter_cells(stage: str):
@@ -920,6 +961,7 @@ _EXP_PREFIX = {
     "voter_subset_refine": "E06c",
     "map_theta": "E07",
     "map_gates": "E08",
+    "map_theta_shipped": "E08b",
 }
 
 

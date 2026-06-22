@@ -44,12 +44,15 @@ from eval.silver.map_theta_sweep import (
 )
 from eval.silver.matcher import SIMILARITY_THRESHOLD
 from eval.silver.pipeline_sweep import _evaluate_outputs
+from eval.silver.run_new_summarization_sweeps import (
+    BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache, _subset_meta,
+)
 from eval.silver.schemas import PipelineCaseOutput
 from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
 from pipeline.stages.summarization.models import AuditableSummary
 
-THETA, REJECT = 0.9, 0.1
-_ANCHOR_CASCADE_STRICT_F1 = 0.7133  # E07 frozen-config max — cascade row must reproduce it
+THETA, REJECT = BEST_THETA, BEST_REJECT_THETA   # calibrated 5-voter operating point (E07: θ0.9 / reject0.2)
+_ANCHOR_CASCADE_STRICT_F1 = 0.7160  # 5-voter (drop_l2_2) related15, θ0.9/r0.2, single_voter_policy=escalate (E08)
 
 _OUT_FIELDS = [
     "system", "model", "strict_f1_optimal", "delta_vs_cascade", "f1_optimal",
@@ -114,21 +117,30 @@ def main() -> None:
         co = [c for c in case_outputs if c.case_id in ctx.silver_by_case]
         return _evaluate_outputs(co, ctx.silver_by_case, ctx.embedder, ctx.embed_cache, SIMILARITY_THRESHOLD)
 
-    # ── cascade (in-run, frozen config) ──
+    # ── cascade (in-run, calibrated SHIPPED config) ──
+    # Cascade arm = the calibrated voter selection (BEST_VOTER_SUBSET=drop_l2_2 → 5-voter,
+    # Claude-Haiku dropped), filtered the SAME way the sweep does. The single-model baselines
+    # below stay on the FULL 6-voter cache (Haiku is still a legitimate single-model baseline).
     scorer = _build_scorer(_frozen_spec(), ctx.agreement_embed_fn)
+    cascade_cache = _filtered_voter_cache(ctx.voter_cache, BEST_VOTER_SUBSET)
+    print(f"  cascade voter subset = {BEST_VOTER_SUBSET}")
     casc_outputs, _accept, _e, _n, invoked = _replay(
-        ctx.voter_cache, scorer, THETA, REJECT, single_voter_policy="keep",
+        cascade_cache, scorer, THETA, REJECT, single_voter_policy="escalate",  # E08: escalate best for 5-voter
         force_escalate_on_polarity_conflict=True)
     casc = score(casc_outputs)
     L1, L2, L3 = _make_voters()
     L3_list = L3 if isinstance(L3, (list, tuple)) else [L3]
-    L1f = sum(price(v.model) for v in L1)
-    L2f = sum(price(v.model) for v in L2)
-    L3f = sum(price(v.model) for v in L3_list)
+    # Per-tier $ EXCLUDING the dropped voter, so the cascade cost reflects the SHIPPED voter set
+    # (a dropped L2 voter lowers the L2 price paid on every escalated chunk).
+    _dl, _di, _ = _subset_meta(BEST_VOTER_SUBSET)
+    def _tier_price(voters, lvl):
+        return sum(price(v.model) for i, v in enumerate(voters) if not (lvl == _dl and i == _di))
+    L1f, L2f, L3f = _tier_price(L1, "l1"), _tier_price(L2, "l2"), _tier_price(L3_list, "l3")
     n_chunks = sum(len(e.get("chunk_map", {})) for e in ctx.voter_cache.values()) or 1
     casc_cost = (invoked["l1"] * L1f + invoked["l2"] * L2f + invoked["l3"] * L3f) / n_chunks
 
-    rows = [{"system": "CASCADE (6-voter)", "model": "gemini/hybrid/greedy θ0.9", **casc,
+    n_voters = len(L1) + len(L2) - (1 if _dl in ("l1", "l2") else 0)
+    rows = [{"system": f"CASCADE ({n_voters}-voter)", "model": "gemini/hybrid/greedy θ0.9", **casc,
              "cost_per_chunk": round(casc_cost, 2)}]
 
     # ── verification anchor ──
