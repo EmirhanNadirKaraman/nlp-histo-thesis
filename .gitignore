@@ -4,9 +4,12 @@
 /docs/sources/
 /docs/readmes/
 
-# LaTeX build 
+# LaTeX build
 docs/histo_thesis/build/
 docs/histo_thesis_old/
+
+# Local thesis working drafts (drafted in .md, pasted into the .tex source — keep local)
+docs/histo_thesis/chapters/*/drafts/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

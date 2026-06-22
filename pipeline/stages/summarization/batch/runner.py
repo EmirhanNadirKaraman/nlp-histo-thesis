@@ -506,9 +506,24 @@ class BatchSummarizationRunner:
         # check sees the cited sentence. Mirrors sync MapStage._cascade.
         chunk_summaries = []
         _cit = self._cfg_full.citation
+        # B-083 — a handle rebuilt from cached MAP (rebuild_from_cached_map's
+        # _build_handle_from_cached_json) sets `finalized` but never `chunk_map`,
+        # because the cached audit_trail.map_chunks carry no per-chunk source
+        # index. With no source index the citation filter has nothing to validate
+        # against and would emit one "empty chunk" WARNING per chunk. Detect the
+        # whole-handle case, skip the filter, and note it ONCE at debug. Verified
+        # no-op: under the shipped config the filter drops 0 findings anyway (see
+        # B-083). The per-chunk warning stays live for the real pipeline, where a
+        # single empty chunk among populated ones is genuinely suspicious.
+        _citation_active = _cit.enabled and bool(handle.chunk_map)
+        if _cit.enabled and not handle.chunk_map:
+            logger.debug(
+                "[%s] citation filter skipped: rebuild handle carries no per-chunk "
+                "source index (%d chunks); see B-083", pmcid, len(handle.finalized),
+            )
         for chunk_id, v in handle.finalized.items():
             summary = AuditableSummary.model_validate(v)
-            if _cit.enabled and summary.findings:
+            if _citation_active and summary.findings:
                 from ..helpers.citation_filter import filter_summary_by_citation  # noqa: PLC0415
                 n_before = len(summary.findings)
                 summary, dropped = filter_summary_by_citation(
@@ -617,7 +632,15 @@ class BatchSummarizationRunner:
                     pipeline_run_db_id, pmcid, canonical_rules, fg_db_id_map,
                 )
                 # Cross-paper relate must run after canonical_rules are in DB.
-                self._corpus_relate_incremental(pmcid, canonical_rules)
+                # Gate on pipeline_run_db_id (B-084): with --no-db this run
+                # persists nothing and the DB holds a *different* corpus (e.g. a
+                # held-out split rebuilt against the related15 DB), so the
+                # incremental compare would pool the wrong rules — C(N,2) gate
+                # churn against the wrong corpus — and write 0-row deletes. The
+                # isolated cross-paper result still comes from the final
+                # file-based _run_corpus_relate pass over the split's own dir.
+                if pipeline_run_db_id is not None:
+                    self._corpus_relate_incremental(pmcid, canonical_rules)
 
                 logger.info("[%s] RELATE — start (%d canonical rules)",
                             pmcid, len(canonical_rules))
@@ -730,7 +753,11 @@ class BatchSummarizationRunner:
             self._write_batch_cost_artifacts(handle, writer, run_id, pmcid)
 
             # Issue G — post-run row-count audit (batch parity with sync).
-            if self._db is not None:
+            # Gate on pipeline_run_db_id too (B-084): with --no-db nothing was
+            # persisted (every per-stage persister no-ops), so the audit would
+            # FAIL every table by construction. Only audit when this run is
+            # actually writing to the DB.
+            if self._db is not None and pipeline_run_db_id is not None:
                 try:
                     from ..health_checks import assert_persistence_row_counts  # noqa: PLC0415
                     assert_persistence_row_counts(self._db, pmcid)

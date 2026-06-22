@@ -189,6 +189,11 @@ def _aggregate_funnel(per_run):
     if not n:
         return {}
     totals = {key: sum(r[key] or 0 for r in per_run) for key, _ in FUNNEL_STAGES}
+    map_pre_tot = totals.get("map_pre") or 0
+    map_post_tot = totals.get("map_post") or 0
+    normal_tot = totals.get("normal") or 0
+    final_tot = totals.get("final") or 0
+    nongroup_tot = sum(r["non_groupable"] or 0 for r in per_run)
 
     # Mean per-paper fraction of pre-grounding MAP at each stage (papers with
     # map_pre==0 are excluded from the fraction average for that stage).
@@ -196,6 +201,16 @@ def _aggregate_funnel(per_run):
     for key, _ in FUNNEL_STAGES:
         fracs = [r[key] / r["map_pre"] for r in per_run if r["map_pre"]]
         frac_mean[key] = statistics.mean(fracs) if fracs else None
+
+    # Pooled fraction of pre-grounding MAP = ratio of corpus sums (NOT mean of
+    # per-paper ratios). This is what the thesis funnel reports (E04 / §02 / §05 /
+    # §06) — e.g. grounding retention 1923/2294 = 83.8 %. The report shows pooled
+    # (so it agrees with the thesis headline); the per-paper mean stays in
+    # funnel_corpus.csv for the per-paper view.
+    frac_pooled = {
+        key: (totals[key] / map_pre_tot if map_pre_tot else None)
+        for key, _ in FUNNEL_STAGES
+    }
 
     comp = [r["compression_ratio"] for r in per_run if r["compression_ratio"] is not None]
     dedup = [r["dedup_factor"] for r in per_run if r["dedup_factor"] is not None]
@@ -206,11 +221,17 @@ def _aggregate_funnel(per_run):
         "n_papers": n,
         "totals": totals,
         "frac_mean": frac_mean,
+        "frac_pooled": frac_pooled,
         "compression_ratio_median": statistics.median(comp) if comp else None,
         "compression_ratio_mean": statistics.mean(comp) if comp else None,
+        "compression_ratio_pooled": (final_tot / map_pre_tot) if map_pre_tot else None,
         "dedup_factor_mean": statistics.mean(dedup) if dedup else None,
         "grounding_rejection_rate_mean": statistics.mean(grej) if grej else None,
+        "grounding_rejection_rate_pooled": (
+            (map_pre_tot - map_post_tot) / map_pre_tot if map_pre_tot else None
+        ),
         "non_groupable_rate_mean": statistics.mean(ngrej) if ngrej else None,
+        "non_groupable_rate_pooled": (nongroup_tot / normal_tot) if normal_tot else None,
     }
 
 
@@ -447,11 +468,13 @@ def write_funnel_csvs(out: Path, per_run, agg, by_category, reasons):
     attrition = [
         {"stage": label, "key": key,
          "total": agg.get("totals", {}).get(key),
+         "pooled_fraction_of_map": agg.get("frac_pooled", {}).get(key),
          "mean_fraction_of_map": agg.get("frac_mean", {}).get(key)}
         for key, label in FUNNEL_STAGES
     ]
     _write_csv(out / "funnel_corpus.csv",
-               ["stage", "key", "total", "mean_fraction_of_map"], attrition)
+               ["stage", "key", "total", "pooled_fraction_of_map", "mean_fraction_of_map"],
+               attrition)
 
     _write_csv(out / "rejections_by_category.csv", ["category", "grounding_rejected"],
                [{"category": c, "grounding_rejected": n}
@@ -481,21 +504,21 @@ def write_markdown(out: Path, agg, g):
         lines += [
             f"**Papers analysed:** {agg['n_papers']}", "",
             "## Funnel (corpus totals)", "",
-            "| Stage | Total | Mean % of MAP |",
+            "| Stage | Total | % of MAP (pooled) |",
             "|---|---|---|",
         ]
         for key, label in FUNNEL_STAGES:
-            frac = agg["frac_mean"].get(key)
+            frac = agg["frac_pooled"].get(key)
             fp = f"{frac * 100:.1f}%" if frac is not None else "—"
             lines.append(f"| {label} | {t.get(key, 0)} | {fp} |")
         lines += [
             "",
-            f"- Median compression ratio (final / MAP-pre): "
-            f"{_fmt(agg['compression_ratio_median'])}",
+            f"- Compression ratio (final / MAP-pre, pooled): "
+            f"{_fmt(agg['compression_ratio_pooled'])}",
             f"- Mean dedup factor (raw findings / CanonicalRule): "
             f"{_fmt(agg['dedup_factor_mean'])}",
-            f"- Mean grounding rejection rate: {_fmt(agg['grounding_rejection_rate_mean'])}",
-            f"- Mean non-groupable rate: {_fmt(agg['non_groupable_rate_mean'])}",
+            f"- Grounding rejection rate (pooled): {_fmt(agg['grounding_rejection_rate_pooled'])}",
+            f"- Non-groupable rate (pooled): {_fmt(agg['non_groupable_rate_pooled'])}",
             "",
         ]
     if g and g.get("n_edges"):
@@ -635,10 +658,10 @@ def main():
     if agg:
         print(f"\nFunnel ({agg['n_papers']} papers):")
         for key, label in FUNNEL_STAGES:
-            frac = agg["frac_mean"].get(key)
+            frac = agg["frac_pooled"].get(key)
             fp = f"{frac * 100:5.1f}% of MAP" if frac is not None else "        —"
             print(f"  {label:<24} {agg['totals'].get(key, 0):>7}  ({fp})")
-        print(f"  compression ratio (median): {_fmt(agg['compression_ratio_median'])}")
+        print(f"  compression ratio (pooled): {_fmt(agg['compression_ratio_pooled'])}")
         print(f"  dedup factor (mean):        {_fmt(agg['dedup_factor_mean'])}")
     if g is None:
         print("\nGraph: no corpus relations found "
