@@ -102,6 +102,17 @@ figure_labels:
     footnote: n/a
     mask: 1.0
 
+  # Off-the-shelf Docling (no nearest_caption) crops the figure correctly but
+  # attaches no caption at all (the real caption sits on the same page, usually
+  # directly below, but is not associated; stock also auto-numbers it wrong).
+  # The dominant figure failure for the 00_docling_offtheshelf baseline. Short,
+  # reusable key — crop OK, caption dimension fails.
+  'correct figure, no caption':
+    crop: 1.0
+    caption: 0.0
+    footnote: n/a
+    mask: 1.0
+
   # Attacher pulled the real caption AND extra adjacent text (often a
   # duplicated caption block or surrounding body text).  Real caption is
   # in there but contaminated — half credit.
@@ -153,6 +164,23 @@ table_labels:
     caption: 1.0
     footnote: 0.0
     mask: 1.0          # table region masked; footnote omission affects crop completeness only
+
+  # Off-the-shelf Docling (no nearest_caption) often finds the table region but
+  # attaches no caption at all — a class the pipeline variants never produced
+  # (they always re-match a caption).  Crop/mask fine; caption dimension fails.
+  # Use the second form when the table ALSO has footnotes the unexpanded crop cuts
+  # off (stock Docling has no footnote-expand).
+  no caption:
+    crop: 1.0
+    caption: 0.0
+    footnote: 1.0
+    mask: 1.0
+
+  'no caption, missing footnotes':
+    crop: 1.0
+    caption: 0.0
+    footnote: 0.0
+    mask: 1.0
 
   # Discovered FP class — filter (drop_tables_inside_figures) catches these.
   # The containing figure WAS masked correctly though.
