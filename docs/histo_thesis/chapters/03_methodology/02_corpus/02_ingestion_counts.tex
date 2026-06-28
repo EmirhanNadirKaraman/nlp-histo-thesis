@@ -25,6 +25,8 @@ The acquisition step targets the 1\,093 targeted PMC OA identifiers selected in 
 
 Two filters define the main corpus selected for document extraction. First, any package that contains supplementary PDF material is excluded entirely from the corpus; only papers with a single, self-contained PDF text are kept, leaving 1\,070 papers. Second, a page count cap for faster document extraction is run, and files with more than 30 pages (p92 when page counts are in ascending order) are filtered out: the long tail is a small subset of papers with a large share of extraction time, so capping the page counts roughly halves extraction time, while dropping under a tenth of papers, as seen in Table~\ref{tab:page-cap-tradeoff}. This leaves 981 candidates, of which 977 are parsed successfully, extracted and ingested into the database; the details of the extraction is explained in Section~\ref{section:Document_Extraction}. Four candidate papers fail Docling conversion on malformed PDF files (missing page-dimension metadata). 
 
+\pinktodo{Change the table caption.}
+
 \begin{table}[t]
   \centering
   \caption{Page-count cap trade-off over the single-PDF candidate pool ($n=1\,070$ papers, 16\,277 pages total). Page-volume is a proxy for document-extraction cost.}

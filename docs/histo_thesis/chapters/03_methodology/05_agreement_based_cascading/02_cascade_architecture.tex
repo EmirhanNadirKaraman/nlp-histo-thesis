@@ -1,6 +1,6 @@
 \subsection{Cascade architecture}\label{subsec:abc-architecture}
 
-The cascade has three tiers, as shown in Figure~\ref{fig:abc-cascade}. The first two tiers have three voters, and the final tier has a single model, which is the strongest model we have in the architecture. A voter emits, per input chunk, either no output, or one typed \texttt{AuditableSummary} object, which is a summary holding atomic findings described in Subsection~\ref{subsec:knowledge-map}, together with the metadata information needed to inspect the voter's extraction result.
+The cascade has three tiers, as shown in Figure~\ref{fig:abc-cascade}. Each of the first two tiers has up to three voters, and the final tier has a single model, which is the strongest model we have in the architecture. A voter emits, per input chunk, either no output, or one typed \texttt{AuditableSummary} object, which is a summary holding atomic findings described in Subsection~\ref{subsec:knowledge-map}, together with the metadata information needed to inspect the voter's extraction result. The best voter subset is selected during cascade calibration (Section~\ref{section:results-abc-calibration}): the production cascade has all three Level-1 voters, but drops one Level-2 voter, resulting in a cascade architecture with five voters.
 
 \begin{figure}[htbp]
     \centering
@@ -11,7 +11,9 @@ The cascade has three tiers, as shown in Figure~\ref{fig:abc-cascade}. The first
 
 \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
     \item \textbf{Level 1 -- Cheap voters.} The first level consists of cheap models that run in parallel on every input chunk. The voter pool has models by different providers (OpenAI and Google), and different model families. When models agree at this level, this means that a genuine consensus across distinct model families was reached.
-    \item \textbf{Level 2 -- Mid-tier voters.} When the L1 agreement score is not sufficient for acceptance, a second pool of moderately stronger models is invoked. At this level, a third provider, Anthropic, is added, extending the provider mix. At L2, the knowledge extraction is retried on a different and stronger set of models, instead of replaying it with the same cheap voters. 
+    
+    \item \textbf{Level 2 -- Mid-tier voters.} When the L1 agreement score is not sufficient for acceptance, a second pool of moderately stronger models is invoked. The Level-2 candidate pool includes an Anthropic model, but the optimal voter-subset selection of Section~\ref{section:results-abc-calibration} drops it; therefore, similar to L1, the shipped L2 has Google and OpenAI models; Anthropic model only enters the picture at the last level, L3. At L2, the knowledge extraction is retried on a different and stronger set of models, instead of replaying it with the same cheap voters. 
+    
     \item \textbf{Level 3 -- Single strong voter.} When L2 models also cannot agree on an output, the chunk escalates to the third and last level. L3 is a fallback level, which never escalates from here, and includes the strongest language model in the cascade.
 \end{itemize}
 

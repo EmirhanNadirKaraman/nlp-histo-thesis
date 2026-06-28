@@ -3,8 +3,6 @@
 
 \chapter{Methodology}\label{chapter:Methodology}
 
-\pinktodo{VERY IMPORTANT: Clarify the distinction between the calibration and evaluation datasets.}
-
 \pinktodo{Remove anything that refers to Chapters 4 or 5 (Results and Discussion), and add the section/subsection number instead, to be more precise.}
 
 \pinktodo{Remove the parts saying Opus 4.7 API calls were made at temp 0, temp setting does not work anymore.}
@@ -13,9 +11,7 @@ This chapter describes how the system processes a corpus of histopathology paper
 
 At the core of the knowledge-extraction pipeline is the MAP stage with agreement-based cascading: a cascade that routes text chunks between voter tiers of different quality and cost, according to how strongly independent voters at a certain tier agree; and it decides whether to accept a cheap-tier output, to reject the voter outputs, or to escalate the text chunk to a more capable (but expensive) tier. The system is designed to surface traceable rule candidates for expert review; it does not aim to produce clinical rules autonomously.
 
-\pinktodo{Four research questions are mentioned in the next paragraph. Change that if we add a new research question.}
-
-This chapter follows the flow of data throughout the system. Section~\ref{section:system_overview} presents the end-to-end architecture, and the principles that were followed in the design and the implementation: reproducibility, provenance, and modularity. Section~\ref{section:Corpus} describes the corpus drawn from PubMed Central Open Access Subset, and the datasets used for calibration and evaluation of the pipeline. Then, Sections~\ref{section:Document_Extraction} and~\ref{section:Knowledge_Extraction} explain the document- and knowledge-extraction pipelines. Later, in Section~\ref{section:Agreement_Based_Cascading}, the agreement-based cascading mechanism that is used at the first stage of the knowledge-extraction pipeline is described in detail. Finally, Section~\ref{section:Evaluation_Methodology} defines how the four research questions of Table~\ref{tab:research-questions} were measured: document-extraction faithfulness (RQ1), knowledge-extraction accuracy and provenance carry-rate (RQ2), cascade cost-quality trade-off (RQ3), and the behaviour of the grounding and relation classification gates (RQ4). 
+This chapter follows the flow of data throughout the system. Section~\ref{section:system_overview} presents the end-to-end architecture, and the principles that were followed in the design and the implementation: reproducibility, provenance, and modularity. Section~\ref{section:Corpus} describes the corpus drawn from PubMed Central Open Access Subset, and the datasets used for calibration and evaluation of the pipeline. Then, Sections~\ref{section:Document_Extraction} and~\ref{section:Knowledge_Extraction} explain the document- and knowledge-extraction pipelines. Later, in Section~\ref{section:Agreement_Based_Cascading}, the agreement-based cascading mechanism that is used at the first stage of the knowledge-extraction pipeline is described in detail. Finally, Section~\ref{section:Evaluation_Methodology} defines how the five research questions of Table~\ref{tab:research-questions} were measured: document-extraction faithfulness (RQ1), knowledge-extraction accuracy and provenance carry-rate (RQ2), cascade cost-quality trade-off (RQ3), and the behaviour of the grounding and relation classification gates (RQ4), and the generalization of the calibrated configuration to a held-out set of papers (RQ5).
 
 
 \input{chapters/03_methodology/01_system_overview}

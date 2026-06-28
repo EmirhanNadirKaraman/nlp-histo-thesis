@@ -1,7 +1,5 @@
 \subsection{Grounding and relation classification evaluation}\label{subsec:eval-grounding-and-relation-classification}
 
-\pinktodo{Don't forget to write this section}
-
 Two components of the knowledge-extraction pipeline use a shared biomedical natural-language-inference (NLI) model, described in Subsection~\ref{subsec:knowledge-grounding}, as their backbone: the grounding filter and the relation-classifier. The grounding filter scores how much a claim is entailed by the evidence paragraph it cites, whereas the relation-classifier in the RELATE stage scores pairs of rules or findings, and assigns them a SUPPORT, CONTRADICT, or UNRELATED label. These two components reuse the same backbone, but they apply it to different inputs; therefore they are evaluated separately. The evaluation procedure for the components is explained here; the corresponding empirical results are reported in Chapter~\ref{chapter:Results}.
 
 \medskip{}

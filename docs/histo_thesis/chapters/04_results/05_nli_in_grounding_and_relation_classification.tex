@@ -1,18 +1,10 @@
 \section{NLI in grounding and relation classification}\label{section:results-nli-in-grounding-and-relation-classification}
 
-Natural language inference (NLI) is used in two downstream components, and both of them use the same NLI model, \texttt{pritamdeka/PubMedBERT-MNLI-MedNLI} \pinktodo{add citation}. The first component is the grounding filter, which checks whether a claim is entailed by its cited source paragraph; the second component is the relation classifier, which labels claim pairs as supporting, contradicting, or unrelated. This section evaluates both of these components, and answers \textbf{RQ4}.
+Natural language inference (NLI) is used in two downstream components, and both of them use the same NLI model, \texttt{pritamdeka/PubMedBERT-MNLI-MedNLI}~\parencite{gu2021biomedbert, williams2018mnli, romanov2018mednli}. The first component is the grounding filter, which checks whether a claim is entailed by its cited source paragraph; the second component is the relation classifier, which labels claim pairs as supporting, contradicting, or unrelated. This section evaluates both of these components, and answers \textbf{RQ4}.
 
 \medskip{}
 
 \textbf{Grounding filter (E03).} The grounding filter takes the cited source paragraph for each extracted claim, computes an entailment score, and drops the findings below a certain threshold. A threshold sweep is run over the MAP findings that were emitted by the pipeline using the configuration frozen after calibration, and the survivors are scored against silver. The distribution of the grounding entailment scores is shown in Figure~\ref{fig:results-grounding-hist}. 
-
-% \begin{figure}[htpb]
-% \centering
-% \includegraphics[width=\linewidth]{figures/04_results/05_nli_in_grounding_and_relation_classification/03_grounding_combined.pdf}
-%     \caption[Grounding filter: score distribution and threshold
-%     trade-off]{\textbf{(a)}~Distribution of grounding entailment scores over 2\,294 frozen-config MAP findings on \texttt{related15}; for each claim, NLI scores how well its cited paragraph entails it: the distribution is bimodal, with 77.5\% of findings scoring $\geq 0.9$, and approximately 14\% of findings scoring $< 0.3$. The filter drops every finding with a score lower than the pinned 0.5 threshold (dashed), retaining 83.8\% of findings.\quad\textbf{(b)}~Precision, recall, and strict-F1 against the Opus silver, as the grounding threshold varies. Recall and strict-F1 both fall as threshold rises, precision stays flat: the grounding filter trades recall for groundedness. The 0.5 threshold (dashed in both figures) achieves strict-F1 0.652.} 
-% \label{fig:results-grounding}
-% \end{figure}
 
 \begin{figure}[htpb]
     \begin{subfigure}[b]{0.49\linewidth} 
@@ -29,7 +21,7 @@ Natural language inference (NLI) is used in two downstream components, and both 
     \label{fig:results-grounding}
 \end{figure}
 
-Two observations can be made by looking at the results of the grounding threshold sweep and scoring. First, the entailment scores are \textbf{bimodal} (Figure~\ref{fig:results-grounding-hist}): most findings have high entailment scores ($\geq0.7$), while a smaller tail receives lower scores ($<0.3$). The filter removes a clearly separated minority of findings, whose claims are not supported by the evidence paragraph they cite. Second, the grounding filter is not a strict-F1 optimizer; it is a source-faithfulness guard. The highest strict-F1 score is obtained when the filter is disabled, at 0.7160, which is the result reported in Section~\ref{section:results-cost-quality-comparison}. Raising the grounding threshold keeps precision about the same, and trades recall for groundedness (Figure~\ref{fig:results-grounding-tradeoff}). At the pinned 0.5, 83.8\% (1923 of 2294 findings) is retained, and silver precision barely moves (0.875 against 0.872 with the filter off). Grounding and silver-agreement are therefore independent. The key finding here is that $\approx16\%$ of findings dropped by the grounding filter is not silver-false; it is ungrounded: a finding can match the Opus silver, while its claim fails to be entailed by its evidence paragraph.
+Two observations can be made by looking at the results of the grounding threshold sweep and scoring. First, the entailment scores are \textbf{bimodal} (Figure~\ref{fig:results-grounding-hist}): most findings have high entailment scores ($77.5\%$ of findings scoring $\geq0.9$), while a smaller tail receives lower scores ($<0.3$). The filter removes a clearly separated minority of findings, whose claims are not supported by the evidence paragraph they cite. Second, the grounding filter is not a strict-F1 optimizer; it is a source-faithfulness guard. The highest strict-F1 score is obtained when the filter is disabled, at 0.7160, which is the result reported in Section~\ref{section:results-cost-quality-comparison}. Raising the grounding threshold keeps precision about the same, and trades recall for groundedness (Figure~\ref{fig:results-grounding-tradeoff}). At the pinned 0.5, 83.8\% (1923 of 2294 findings) is retained, and silver precision barely moves (0.875 against 0.872 with the filter off). Grounding and silver-agreement are therefore independent. The key finding here is that the filter drops about $16\%$ of findings ($371$ of $2294$), yet roughly $86\%$ of those dropped findings agree with the Opus-silver; a finding can match the Opus silver, while its claim fails to be entailed by its evidence paragraph.
 
 Strict-F1 measures agreement with the Opus labeler, not the faithfulness of a finding's claim to its evidence, so strict-F1 is not the right metric to tune the threshold against. Therefore, the pipeline accepts a six-point strict-F1 decrease ($0.716 \rightarrow 0.652$) in the final knowledge base on silver-agreement to guarantee that every retained claim is supported by the evidence it cites. This trade is deliberately chosen for the clinical-knowledge base. 
 
@@ -37,21 +29,7 @@ Strict-F1 measures agreement with the Opus labeler, not the faithfulness of a fi
 
 \textbf{Relation classifier (E13).} The pipeline output with the frozen configuration contains too few real contradictions to estimate per-class accuracy. Therefore, the relation classifier is evaluated on a synthetic, class-balanced dataset generated by Claude Opus, with 100 supporting, 100 contradicting and 100 unrelated claim pairs. 
 
-The NLI relation-classifier has two modes: \texttt{predicate\_only} and \texttt{scope\_aware}. \texttt{predicate\_only} is the default option, where only the claim text is considered per claim; \texttt{scope\_aware} prepends a scope prefix (disease/entity the claim is about) to each claim's sentence. These two NLI modes are evaluated on this synthetic dataset with \texttt{RelateConfig}, where \texttt{entailment\_threshold} and \texttt{contradiction\_threshold} are both set to 0.5. The NLI model does not output SUPPORTING, CONTRADICTING, or UNRELATED labels, and only outputs entailment and contradiction probabilities; so an NLI output for a claim pair is considered SUPPORTING if it is above the \texttt{entailment\_threshold}; CONTRADICTING if above the \texttt{contradiction\_threshold}; and UNRELATED if the output is below both thresholds. These two thresholds are frozen: they are not tuned on the synthetic evaluation set, to keep the evaluation process out-of-sample.
-
-% \begin{table}[htpb]
-% \caption[NLI relation-classifier performance]{Relation-classifier performance on a synthetic, class-balanced set of 300 claim pairs.}
-%     \label{tab:results-nli-relation-classifier-performance}
-%     \centering
-%     \begin{tabular}{l r r r r r}
-%     \toprule
-%     Mode & Accuracy & Macro-F1 & Support F1 & Contradict F1 & Unrelated F1 \\
-%     \midrule
-%     \texttt{predicate\_only} & \textbf{0.927} & \textbf{0.927} & 0.958 & 0.922 & 0.902 \\
-%     \texttt{scope\_aware} & 0.923 & 0.924 & 0.953 & 0.922 & 0.897 \\
-%     \bottomrule
-% \end{tabular}
-% \end{table}
+The NLI relation-classifier has two modes: \texttt{predicate\_only} and \texttt{scope\_aware}. \texttt{predicate\_only} only considers the claim text for each claim; \texttt{scope\_aware} prepends a scope prefix (disease/entity the claim is about) to each claim's sentence. These two NLI modes are evaluated on this synthetic dataset with \texttt{RelateConfig}, where \texttt{entailment\_threshold} and \texttt{contradiction\_threshold} are both set to $0.5$. The NLI model does not output SUPPORTING, CONTRADICTING, or UNRELATED labels, and only outputs entailment and contradiction probabilities; so an NLI output for a claim pair is considered SUPPORTING if it is above the \texttt{entailment\_threshold}; CONTRADICTING if above the \texttt{contradiction\_threshold}; and UNRELATED if the output is below both thresholds. These two thresholds are frozen: they are not tuned on the synthetic evaluation set, to keep the evaluation process out-of-sample.
 
 \begin{table}[htpb]
 \caption[Relation-classification performance per
@@ -63,8 +41,8 @@ input modes at the frozen 0.50/0.50 thresholds.}
     \centering
     \begin{tabular}{l ccc ccc}
     \toprule
-    & \multicolumn{3}{c}{Predicate-only (primary)} &
-    \multicolumn{3}{c}{Scope-aware} \\
+    & \multicolumn{3}{c}{Predicate-only} &
+    \multicolumn{3}{c}{Scope-aware (chosen)} \\
     \cmidrule(lr){2-4} \cmidrule(lr){5-7}
     Class & P & R & F1 & P & R & F1 \\
     \midrule
@@ -85,7 +63,7 @@ input modes at the frozen 0.50/0.50 thresholds.}
 
 The results in Table~\ref{tab:results-relation-classification-detailed} show that the NLI relation-classifier is strong with 0.927 accuracy under \texttt{predicate\_only} mode, and that SUPPORTING class is especially strong with 1.000 precision in both modes, and most errors occur on the boundary between UNRELATED and CONTRADICTING pairs. 
 
-The \texttt{scope\_aware} mode performs marginally worse with a difference of $0.004$ in accuracy, but it is assumed to help the more ambiguous cases on real papers, where two claims might look similar on the surface, but are about different diseases or entities. A diagnostic joint sweep over (\texttt{entailment\_threshold} $\times$ 
+The \texttt{scope\_aware} mode performs marginally worse with a difference of $0.004$ in accuracy, but it is the mode used in production, based on the assumption that it would help more ambiguous cases on real papers, where two claims might look similar on the surface, but are about different diseases or entities. A diagnostic joint sweep over (\texttt{entailment\_threshold} $\times$ 
 \texttt{contradiction\_threshold}), both in ranges $\{0.4, 0.5, \dots, 0.9\}$ confirms that the result obtained with default, frozen thresholds at 0.5/0.5 is within a fraction of a percent of the optimum (0.4/0.4: accuracy 0.930, macro-F1 0.9305), so no further calibration for the two NLI thresholds was run, preserving the out-of-sample property of the evaluation set.
 
 These results address \textbf{RQ4}. Both NLI components behave as designed: the grounding filter enforces source faithfulness, and the relation classifier is accurate on the class-balanced synthetic set of 300 claim-pairs. The cases in the synthetic set might be too unchallenging for the NLI model, so the attained result of $93\%$ accuracy is optimistic; classifying the cases encountered in production might be harder for the NLI model, as discussed in Section~\ref{subsec:eval-limitations}.

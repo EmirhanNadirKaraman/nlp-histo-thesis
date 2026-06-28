@@ -1,15 +1,16 @@
 \section{Document extraction performance}\label{section:results-doc-extraction-performance}
 
-The document-extraction pipeline is evaluated on the 27-PDF rubric set, described in Subsection~\ref{subsec:eval-datasets}. The evaluation uses the four rubric dimensions, and reports the strict-F1 performance, where an extracted element is counted as a true positive only if it scores the top label for each rubric dimension. Both the rubric dimensions and the strict-F1 definitions are explained in Subsection~\ref{subsec:eval-doc-extraction}.
+The document-extraction pipeline is evaluated on the 27-PDF rubric set, described in Subsection~\ref{subsec:eval-datasets}. The evaluation uses the four rubric dimensions, and reports the strict-F1 performance, where an extracted element is counted as a true positive only if it scores the top label for each rubric dimension. Then, the production configuration for document-extraction was selected by the staged configuration sweep. Rubric dimensions, strict-F1 definitions, and the staged sweep are explained in detail in Subsection~\ref{subsec:eval-doc-extraction}. 
 
-\pinktodo{We might not have described the sweeps for document- and knowledge-extraction. Check that!}
+% Docling's figure detection was sufficient for the goals of this thesis, and was therefore not changed. For that reason, the figure metrics do not change across the table-handling sweep variants. The pipeline's figure post-processing -- icon and size filtering, sub-figure merging, and caption matching -- increases off-the-shelf Docling's $44.7\%$ figure strict-F1 to the production's $84.0\%$. 
 
-\pinktodo{Docling behavior for caption matching and icons might have run on all variants, check that.}
+The best configuration for table extraction was found to be a hybrid configuration, from which artifacts were extracted by unioning Docling and Microsoft TATR table detector. The achieved table-extraction metrics for the most important variants, as well as the figure-extraction metrics across all variants, are shown in Tables~\ref{tab:table-emission-metrics} and~\ref{tab:figure-emission-metrics}.
 
-The production configuration of document extraction was selected by the staged configuration sweep described in \pinktodo{Section~\ref{}}. The Docling baseline was good enough for the goals of this thesis, so the figure-extraction behavior of Docling was not modified. The best configuration for table extraction was found to be a hybrid configuration, from which artifacts were extracted by unioning Docling and Microsoft TATR table detector. The achieved table-extraction metrics for the most important variants, as well as the figure-extraction metrics across all variants, are shown in Tables~\ref{tab:table-emission-metrics} and~\ref{tab:figure-emission-metrics}.
+The v01 baseline in Table~\ref{tab:table-emission-metrics} is not off-the-shelf Docling: it is the full document-extraction pipeline with its masking, caption matching, icon and size filtering, and cropping stages; this variant runs the whole document-extraction pipeline, where Docling-only table detection and the table-handling options are disabled. Docling's figure and table detection is used as is, but the surrounding structure supporting the Docling output is applied for all variants other than the off-the-shelf Docling. The off-the-shelf Docling variant strips the scaffolding away, so that its results can be compared to the other variants, and the effect of the scaffolding around it can be shown.
 
 \begin{table}[htpb]
-    \caption[Per-dimension table-emission metrics]{Per-dimension table-emission metrics across the key sweep configurations, evaluated on the 27-PDF rubric set.}
+    \caption[Per-dimension table-emission metrics]{Per-dimension table-emission metrics across off-the-shelf Docling and the key sweep configurations, evaluated on the 27-PDF rubric set.}
+
     \label{tab:table-emission-metrics}
     \centering
     \small
@@ -20,38 +21,52 @@ The production configuration of document extraction was selected by the staged c
             & Mask F1
             & \makecell[r]{Caption\\P}
             & \makecell[r]{Footnote\\P}
-            & Strict F1 \\
+            & Strict-F1 \\
         \midrule
-        Docling baseline (v01)
+        
+        Off-the-shelf Docling
+          & 90.1\%
+          & 95.8\%
+          & 90.6\%
+          & 43.8\%
+          & 36.6\% \\
+        \midrule
+        
+        \makecell[l]{Pipeline baseline,\\Docling-only tables (v01)} 
             & 91.4\%
             & 94.3\%
             & 93.8\%
             & 43.8\%
             & 40.0\% \\
+            
         \makecell[l]{Hybrid @0.99, no\\footnote-expand (v07)}
             & 86.4\%
             & 97.7\%
             & 94.3\%
             & 48.6\%
             & 42.0\% \\
+            
         \makecell[l]{Docling + footnote-expand\\$\times 1.2$ (v16)}
             & 88.6\%
             & 91.4\%
             & 93.8\%
             & 90.6\%
             & 80.0\% \\
+            
         \makecell[l]{TATR + footnote-expand\\$\times 1.2$ (v17)}
             & 91.9\%
             & 91.9\%
             & 94.3\%
             & 71.4\%
             & 64.9\% \\
+            
         \makecell[l]{Hybrid + footnote-expand\\$\times 1.2$ (v18, pinned)}
             & 91.9\%
             & 91.9\%
             & 94.3\%
             & 91.4\%
             & 83.8\% \\
+            
         \bottomrule
     \end{tabular}
 
@@ -63,37 +78,32 @@ The production configuration of document extraction was selected by the staged c
 \end{table}
 
 \begin{table}[htpb]
-    \caption[Figure-emission metrics]{Figure-emission metrics on the 27-PDF rubric set. These metrics are invariant across all 32 sweep variants because the sweep varies only table handling.}
+    \caption[Figure-emission metrics]{Figure-emission metrics on the 27-PDF rubric set, for off-the-shelf Docling and the production pipeline. The production figure metrics are the same across all sweep variants because the sweep varies only table handling; off-the-shelf Docling does not apply the figure post-processing of the pipeline.}
     \label{tab:figure-emission-metrics}
     \centering
     \small
-    \begin{tabular}{@{}r r r r r r l@{}}
-        \toprule
-        Crop F1
-            & Mask F1
-            & \makecell[r]{Caption\\P}
-            & \makecell[r]{Strict\\P}
-            & \makecell[r]{Strict\\R}
-            & Strict F1
-            & \makecell[l]{Decorative-icon\\FPs} \\
-        \midrule
-        89.9\%
-            & 100.0\%
-            & 90.3\%
-            & 72.4\%
-            & 100.0\%
-            & 84.0\%
-            & 14 of 21 \\
-        \bottomrule
-    \end{tabular}
+    \begin{tabular}{@{}l r r r r r r l@{}}
+    \toprule
+          Configuration & Crop F1 & Mask F1 &
+          \makecell[r]{Caption\\P} & \makecell[r]{Strict\\P} &
+          \makecell[r]{Strict\\R} & Strict-F1 &
+          \makecell[l]{Decorative-icon\\FPs} \\
+          \midrule
+          Off-the-shelf Docling & 61.7\% & 98.5\% & 60.6\% & 28.8\%
+  & 100.0\% & 44.7\% & 73 of 99 \\
+          \makecell[l]{Production\\(all sweep variants)} & 89.9\% &
+  100.0\% & 90.3\% & 72.4\% & 100.0\% & 84.0\% & 14 of 21 \\
+          \bottomrule
+      \end{tabular}
 \end{table}
 
+The main improvement is observed for table extraction. Compared with the Docling-only pipeline baseline, strict-F1 rises from 40\% to 83.8\% for tables in the hybrid variant with footnote expand multiplier set to $\times1.2$. Docling does not detect table footnotes at all: Docling's footnote precision result of 43.8\% comes from tables that do not have footnotes, and are labelled as correct by the rubric. The strict-F1 improvement was driven mainly by footnote expansion, with an increase in footnote precision from 43.8\% to 91.4\%.
 
-The main improvement is observed for table extraction. Compared with the Docling baseline, strict-F1 rises from 40\% to 83.8\% for tables in the hybrid variant with footnote expand multiplier set to $\times1.2$. Docling does not detect table footnotes at all: Docling's footnote precision result of 43.8\% comes from tables that do not have footnotes, and are labelled as correct by the rubric. The strict-F1 improvement was driven mainly by footnote expansion, with an increase in footnote precision accuracy from 43.8\% to 91.4\%.
+Crop and bounding-box detections were strong in the baseline, with a 91.4\% crop F1, and a 94.3\% mask F1; the bottleneck was in including the footnotes in the table crop, and extending the detected table crop downward (footnote-expand $\times1.2$) over the hybrid detector more than doubled the strict-F1 score of the baseline. This came at a small cost in mask-F1 ($94.3\% \rightarrow 91.9\%$), due to the downward crop expansion for footnote detection occasionally over-masking the region just below the table crop. 
 
-Crop and bounding-box detections were strong in the baseline, with a 91.4\% crop F1, and a 94.3\% mask F1; the bottleneck was in including the footnotes in the table crop, and extending the detected table crop downward (footnote-expand $\times1.2$) over the hybrid detector more than doubled the strict-F1 score of the baseline. 
+The off-the-shelf Docling rows separate the effect of the pipeline scaffold from the table-handling sweep. Off-the-shelf Docling achieves $36.6\%$ strict-F1, which is slightly below the v01 pipeline baseline, at $40.0\%$ strict-F1. The 3-point strict-F1 improvement comes from the pipeline's caption matching. These results show that, despite the small improvement caused by the pipeline scaffold, Docling-only variants both fail the strict rubric, with or without the pipeline scaffold, for the same reason: neither captures the table footnotes. The rise to $83.8\%$ therefore comes mainly from footnote expansion. Notably, off-the-shelf and the other configurations without footnote expansion have the highest mask F1 scores, because crops are never extended downward to detect footnotes, eliminating the errors caused by over-masking; mask F1 rewards doing less, while strict-F1 exposes the footnote detection failure, which is the decisive metric of the final evaluation.
 
-Since figures do not have footnotes, the footnote dimension of the rubric was disabled for figure strict-F1 calculations. Docling's performance was good enough for the goals of this thesis, so no changes were made to Docling's default figure detection behavior. Therefore the reported results do not change across variants. The production configuration has an 89.9\% crop F1, and a 84.0\% strict-F1, as reported in Table~\ref{tab:figure-emission-metrics}.
+Figures are handled differently. Docling's figure detection was sufficient for the goals of this thesis, and was therefore not changed. For this reason, the figure metrics do not change across the table-handling sweep variants. The footnote dimension is also disabled, as figures do not carry footnotes. After figure detection, the pipeline post-processes every figure: icon and size filtering and sub-figure merging cut emitted crops from 139 to 76, decorative icon false positives decrease from 73 to 14, and caption matching increases the share of figures with correct captions from $60.6\%$ to $90.3\%$. All of these changes together raise the figure strict-F1 from off-the-shelf Docling's $44.7\%$ to $84.0\%$ for the production configuration, as reported in Table~\ref{tab:figure-emission-metrics}.
 
 \pinktodo{Maybe add the label stats for the most common failures here}
 
