@@ -1,28 +1,25 @@
-\chapter{\abstractname}
+% \chapter{\abstractname}
 
 %TODO: Abstract
 
-
-
-
-
 \makeatletter
 \ifthenelse{\pdf@strcmp{\languagename}{english}=0}
-{\renewcommand{\abstractname}{Kurzfassung}}
+% {\renewcommand{\abstractname}{Kurzfassung}}
 {\renewcommand{\abstractname}{Abstract}}
 \makeatother
 
 \chapter{\abstractname}
 
 %TODO: Abstract in other language
-\begin{otherlanguage}{english} % TODO: select other language, either ngerman or english !
-
+\begin{otherlanguage}{english} % TODO: either ngerman or english!
 \end{otherlanguage}
 
+A large amount of diagnostic knowledge in histopathology literature is in unstructured form: much of this knowledge appears in narrative prose, tables, figures, captions, and footnotes, rather than in structured databases. Extracting that knowledge in scale is therefore useful, but difficult. The components that appear in scientific PDFs must first be separated from each other and reconstructed into reliable text, table, and figure objects. Large language models can then extract structured claims, but they may hallucinate, omit evidence, fail to attach their outputs to a verifiable source, and quickly become expensive when the best models are used to process every paper.
 
-% Undo the name switch
-\makeatletter
-\ifthenelse{\pdf@strcmp{\languagename}{english}=0}
-{\renewcommand{\abstractname}{Abstract}}
-{\renewcommand{\abstractname}{Kurzfassung}}
-\makeatother
+This thesis presents an end-to-end pipeline that converts open access histopathology papers into a structured, source-faithful, and auditable knowledge base, where every extracted rule, figure, or table can be traced back to its source page, span, and coordinates. The first stage is a hybrid document-extraction pipeline, where a document-layout model is combined with a table-detection transformer, footnote expansion, crop correction, caption matching, and a filtering stage to remove text that is invisible to a human reader. The output of this stage is fed into a seven-stage knowledge-extraction pipeline (MAP $\rightarrow$ grounding $\rightarrow$ normalization $\rightarrow$ grouping $\rightarrow$ canonicalization $\rightarrow$ relation detection $\rightarrow$ resolution). Only the MAP stage is stochastic; once the MAP stage output is fixed, the downstream stages are deterministic. Every emitted claim carries its source evidence, and a natural-language-inference grounding score.
+
+The MAP stage is where the main cost-quality trade-off arises. Instead of running the strongest LLM for each text chunk, the thesis uses agreement-based cascading (ABC), routing each text chunk through a multi-provider ensemble of voters, differing in strength and pricing. Only the text chunks with no sufficient agreement among voters are escalated to more expensive model tiers. 
+
+Provenance is preserved across the full ingested corpus of $977$ papers: every figure and table retains its crop and bounding box information. On a human-labeled rubric set, the document-extraction stage reaches a strict-F1 of about $0.84$, significantly improving the baseline strict-F1 scores at $0.45$. The calibrated cascade reaches approximately $0.72$ on the silver-labeled knowledge-extraction evaluation --- statistically indistinguishable from the best single-model baseline that costs $24\%$ less, while beating every other single model --- and generalizes to a held-out set without meaningful overfitting. Therefore, the cascade is not cost-justified against the strong model on quality alone, and its defensible value lies in its provider-independence.
+
+The lasting contribution of the thesis is the entire framework that preserves provenance as top priority, treats cost and quality as explicit knobs that can be calibrated, and surfaces rule candidates for a domain expert to validate.

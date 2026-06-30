@@ -20,18 +20,21 @@
   \vspace{15mm}
   \ifthenelse{\pdf@strcmp{\languagename}{english}=0}
   {
-  {\huge\bfseries \getTitle{}}
-
-  \vspace{10mm}
-  {\huge\bfseries \foreignlanguage{ngerman}{\getTitleGer{}}}
-  }
-  {
-  {\huge\bfseries \getTitleGer{}}
-
-  \vspace{10mm}
-  {\huge\bfseries \foreignlanguage{english}{\getTitle{A Pipeline for Extracting Simple Rules from Medical Literature for Automatic Disease Detection in Histopathology}}}
+    {\huge\bfseries \getTitle{}\par}
+    % {\huge\bfseries \getTitleGer{}}
   }
   \makeatother
+
+  % \vspace{10mm}
+  % {\huge\bfseries \foreignlanguage{ngerman}{\getTitleGer{}}}
+  % }
+  % {
+  % {\huge\bfseries \getTitleGer{}}
+
+  % \vspace{10mm}
+  % {\huge\bfseries \foreignlanguage{english}{\getTitle{A Pipeline for Extracting Simple Rules from Medical Literature for Automatic Disease Detection in Histopathology}}}
+  % }
+  % \makeatother
 
   \vspace{15mm}
   \begin{tabular}{l l}
