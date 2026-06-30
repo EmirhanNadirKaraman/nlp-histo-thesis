@@ -5,6 +5,17 @@ NLP pipeline. These are **proxy labels, not clinical ground truth**. They measur
 whether the pipeline's extracted rules and relations are consistent with what a
 capable LLM would extract from the same text.
 
+> **Scope.** This README documents only the LLM-as-Judge track (`eval/llm_judge/`).
+> The `eval/` directory also hosts other measurement tracks, each with its own
+> entry point:
+> - **Figure/table detection P/R** — `eval/run.py`, `eval/precision_recall.py`, `eval/recall.py`
+> - **Silver-label loop + thesis experiments E01–E14** — `eval/silver/` (see `eval/silver/experiments/`)
+> - **Calibration-set selection** — `eval/paper_selection/`
+> - **Frozen-artifact threshold sweeps** — `eval/sweeps/` (see `eval/sweeps/README.md`)
+>
+> The canonical reproduction commands for all tracks live in
+> `docs/readmes/HOW_TO_RUN.md`.
+
 ---
 
 ## Recommended first run

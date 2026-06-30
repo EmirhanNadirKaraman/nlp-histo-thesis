@@ -94,7 +94,7 @@ Works exactly the same way, just cleaner:
 # Any of these will automatically load .env:
 from database import get_db_connection
 from database import Document, TextElement
-from database.ingest import ingest_document
+# (DB ingestion now lives in pipeline/stages/pdf_text_extraction/outputs/db_ingester.py)
 
 # .env is already loaded by the time you import
 db = get_db_connection()  # Uses credentials from .env
@@ -128,7 +128,9 @@ from database import get_db_connection
 To verify it works:
 
 ```bash
-# 1. Create a .env file
+# 1. Create a .env file (copy from .env.example at the repo root, which also
+#    carries the summarization API keys OPENAI_API_KEY / GOOGLE_API_KEY /
+#    ANTHROPIC_API_KEY — only the DB_* vars are needed for the database layer)
 cat > .env << EOF
 DB_HOST=localhost
 DB_PORT=5432
@@ -172,10 +174,10 @@ alembic current  # Uses 'custom_db', not the .env value
 
 **One line of code** in `db_connection.py` eliminated **15+ lines** from every other script. That's good software engineering! 🎉
 
-**Files simplified:**
-- ✅ `setup_db.py` - removed dotenv loading
-- ✅ `ingest.py` - removed dotenv loading
-- ✅ All future scripts - won't need dotenv loading
+**Files simplified** (historical note — `setup_db.py` and `ingest.py` have
+since been removed from `database/`; the schema is now Alembic-managed and
+ingestion lives in the pipeline):
+- ✅ all scripts that import from `database` - no longer need dotenv loading
 
 **Centralized in:**
 - ✅ `db_connection.py` - loads .env once, automatically

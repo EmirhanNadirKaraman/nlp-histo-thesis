@@ -1,6 +1,14 @@
 # Summarization Pipeline — Reference
 
-This document describes what each file in `pipeline/stages/summarization/` does, the key design decisions made in each, and known issues. Keep it up to date when making structural changes.
+This document describes the summarization stage — what each stage does, the key design decisions, and known issues. Keep it up to date when making structural changes.
+
+**File layout.** The stage implementations live in subpackages, not at the top level of `pipeline/stages/summarization/`. The `## <stage>.py` section headers below name each stage file; use this map to find it:
+
+- `current_stages/` — `map_stage.py`, `normalize_stage.py`, `group_stage.py`, `canonicalize_stage.py`, `relate_stage.py`, `resolve_stage.py`
+- `helpers/` — `grounding_filter.py`, `contradiction_detector.py`, `corpus_relate.py`, `citation_filter.py`, `paragraph_lookup.py`, `entity_linker.py`
+- `old_stages/` — `reduce_stage.py`, `rule_stage.py` (optional secondary block; still imported by `runner.py` but off by default — note the name/location tension)
+- top level — `runner.py`, `config.py` (`SummarizationConfig` + per-stage configs; the home of every tunable referenced below), `models.py`, `prompts.py`, `persistence.py`, `cache.py`, `llm_providers.py`, `nli_config.py`, `health_checks.py`
+- NER is a **repo-root** module: `named_entity_recognition/ner.py` (not under `summarization/`).
 
 ---
 
@@ -39,7 +47,10 @@ result JSON + DB persistence
 ```
 
 MAP/REDUCE/RULES/CANONICALIZE make LLM calls.
-GROUNDING FILTER and RELATE share one NLI model instance (`cross-encoder/nli-deberta-v3-base`).
+GROUNDING FILTER and RELATE share one NLI model instance. The active model is
+selected from the registry in `configs/nli_models.yaml` (default
+`pubmedbert_mednli` = `pritamdeka/PubMedBERT-MNLI-MedNLI`; overridable via
+`$NLP_HISTO_NLI_MODEL`), resolved by `nli_config.py`.
 NORMALIZE, GROUP, and RESOLVE are fully deterministic.
 
 ---

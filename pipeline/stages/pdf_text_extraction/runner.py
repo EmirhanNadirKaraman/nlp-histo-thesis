@@ -328,7 +328,7 @@ class PipelineRunner:
         name when NER paths are active. Includes `STAGE_CACHE_VERSION` so
         format / behaviour changes invalidate older artifacts.
 
-        Not in the hash but documented in `docs/HOW_TO_RUN.md`: scispaCy /
+        Not in the hash but documented in `docs/readmes/HOW_TO_RUN.md`: scispaCy /
         spaCy package + model-weights versions. Run `rm -rf out/stage_cache/`
         after dependency upgrades that affect NLP output.
         """

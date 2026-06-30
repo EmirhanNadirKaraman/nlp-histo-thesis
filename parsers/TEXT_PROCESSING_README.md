@@ -222,6 +222,9 @@ assert remove_citations("Text. 12 More") == "Text. More"
 | `remove_citations()` | Remove citations | String | Cleaned string |
 | `clean_text()` | Combined cleaning | String | Cleaned string |
 
-**Lines of code:** ~320 lines (extracted from parse_single_pdf.py)
+**Lines of code:** ~370 lines (`parsers/text_processing.py`). Originally
+extracted from the legacy `parse_single_pdf.py`, which has since been removed
+from the repo; the current callers are `parsers/layout_utils.py` and
+`pipeline/stages/pdf_text_extraction/components/text_assembler.py`.
 
 **Reusability:** ⭐⭐⭐⭐⭐ High - can be used by any text processing script

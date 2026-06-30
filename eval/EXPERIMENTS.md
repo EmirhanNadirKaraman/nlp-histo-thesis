@@ -1,5 +1,14 @@
 # Summarization Pipeline — Evaluation Experiments
 
+> **HISTORICAL (planning roadmap, ~2026-05-29).** This file is the original
+> forward-looking experiment plan using the `M-/N-/Gr-/C-/R-/Rs-` priority IDs.
+> The experiment program was later realized under a **different taxonomy** —
+> the `E01`–`E14` series in `eval/silver/experiments/` (run via
+> `python -m eval.silver.experiments.<Exx>.<mod>`), with results in
+> `eval/reports/RESULTS.md`. Use those for the current experiment set; this file
+> is kept for provenance and is **not** a current registry. Several items below
+> marked "Not yet implemented" were never built under these IDs.
+
 Judge model: `claude-opus-4-7` (same as existing Q1–Q5 harness).  
 All batch-mode costs use 50% Anthropic batch discount.  
 Baseline sample: **15 papers, ~80 post-MAP findings/paper**.

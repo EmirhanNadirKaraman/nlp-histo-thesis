@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 class StageName:
     """Disk paths depend on these. Renaming a value here invalidates the
-    on-disk cache layout (see `docs/HOW_TO_RUN.md`)."""
+    on-disk cache layout (see `docs/readmes/HOW_TO_RUN.md`)."""
 
     TABLE_DETECTION = "table_detection"
     FILTERING = "filtering"

@@ -19,9 +19,10 @@ able to clone the repo, run one Python command, and get the same CSV /
 Markdown report we cite.
 
 `eval/sweeps/` contains a small framework (`_lib.py`) plus one script per
-knob (e.g. `grounding.py`). Layer A scripts simulate a knob over already-
-persisted artifacts; they never call APIs, never re-run NLI / UMLS, and
-never re-execute pipeline stages. Re-runs are deterministic.
+knob (e.g. `grounding.py`, with a plotting companion `grounding_plot.py`).
+Layer A scripts simulate a knob over already-persisted artifacts; they never
+call APIs, never re-run NLI / UMLS, and never re-execute pipeline stages.
+Re-runs are deterministic.
 
 ## Layer A vs Layer B
 

@@ -64,37 +64,24 @@ Citation format: `[S1|PMC123456|789]` where:
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    LLM SUMMARIZATION PIPELINE                               │
+│           LLM KNOWLEDGE-EXTRACTION PIPELINE (summarization stage)            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  MAP (GPT-4o-mini)                                                  │    │
-│  │  Chunks of 10 sentences → Atomic findings with citations            │    │
-│  │  Categories: morphology | IHC | molecular_genetics | staging |      │    │
-│  │              treatment | prognosis                                  │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                    │                                        │
-│                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  REDUCE (GPT-4o)                                                    │    │
-│  │  Consolidate chunk analyses → Master clinical brief                 │    │
-│  │  Sections: clinical_significance | histopathological_features |     │    │
-│  │            management_outcomes | risk_factors_associations          │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                    │                                        │
-│                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  RULE EXTRACTION (GPT-4o)                                           │    │
-│  │  Generate IF-THEN clinical rules with evidence chains               │    │
-│  │  Types: Diagnostic | Prognostic | Management                        │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                    │                                        │
-│                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  EVALUATION (evaluator.py)                                          │    │
-│  │  Verify citations against source text                               │    │
-│  │  Detect hallucinations via numeric + UMLS concept matching          │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
+│  Production path = agreement-based cascading (ABC) over a multi-provider    │
+│  voter pool (DeepSeek, Gemini, Mistral, Claude Haiku, Claude Sonnet 4.6),   │
+│  via direct provider APIs (no LangChain on this path).                      │
+│                                                                             │
+│   MAP ─► GROUNDING ─► NORMALIZE ─► GROUP ─► CANONICALIZE ─► RELATE ─► RESOLVE │
+│    │         │            │          │           │            │         │    │
+│   ABC       NLI         UMLS +    (subject,   predicate     NLI pair-  final │
+│  cascade  entailment   synonym    outcome,    selection +   wise rel.  rule  │
+│  voting    filter      dedup      relation)   surface form  detection  score │
+│                                                                             │
+│  Optional secondary block (off by default):  REDUCE ─► RULES                │
+│                                                                             │
+│  Every FinalRule traces back: CanonicalRule → NormalFinding → source         │
+│  paragraph → source document (provenance recorded at generation time).      │
+│  Results persist to the sum_* Postgres tables via summarization/persistence. │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │
@@ -137,15 +124,15 @@ nlp-histo/
 │
 ├── eval/                               # Evaluation harness (measures the two pipelines)
 │   ├── llm_judge/  silver/             #   Opus silver labels + matching + MAP-cascade calibration
-│   ├── silver/experiments/             #   numbered thesis experiments E02…E14 + corpus_stats/
+│   ├── silver/experiments/             #   numbered thesis experiments E01…E14 (non-contiguous) + corpus_stats/
 │   ├── silver/relation_pairs/          #   E13 claim-pair generation (Message-Batches workflow)
 │   ├── paper_selection/                #   calibration-set builder (greedy / ILP)
 │   └── reports/                        #   per-experiment results + RESULTS.md
 │
 ├── configs/                            # run.yaml, model_prices.json, nli_models.yaml, paper_selection/*.yaml
 ├── scripts/                            # runners (run_paper.py), inspectors, eval helpers (+ legacy ingests)
-├── tests/                              # pytest suite (~80 tests, summarisation-heavy)
-├── docs/readmes/                       # project docs — other_readmes/ (STRUCTURE, REPOSITORY_GUIDE, HOW_TO_RUN, BUGS, …) + thesis_review/
+├── tests/                              # pytest suite (77 test files, ~1,080 test functions; summarisation-heavy)
+├── docs/readmes/                       # project docs — HOW_TO_RUN.md + other_readmes/ (STRUCTURE, REPOSITORY_GUIDE, BUGS, …) + thesis_review/
 │
 ├── langchain-summarization/            # LEGACY summarisation stack (superseded by pipeline/…/summarization)
 ├── files/                              # Input PDFs/XMLs (not in repo)
@@ -160,9 +147,10 @@ nlp-histo/
 
 ```bash
 pip install -r requirements.txt
-
-# For summarization pipeline
-pip install langchain langchain-openai tiktoken python-dotenv
+# requirements.txt covers the production pipelines (PDF extraction +
+# the multi-provider summarization cascade, which uses direct provider APIs).
+# The langchain/* packages are only needed for the legacy
+# langchain-summarization/ prototype, which is no longer the production path.
 ```
 
 ### 2. Set Up Database
@@ -216,17 +204,22 @@ python count_tokens.py
 The production summariser is `pipeline/stages/summarization/`, driven via
 `scripts/run_paper.py` (sync or async batch). It needs three direct-API keys in
 `.env`: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`. See
-[`docs/readmes/other_readmes/HOW_TO_RUN.md`](docs/readmes/other_readmes/HOW_TO_RUN.md) §3 for the full recipe.
+[`docs/readmes/HOW_TO_RUN.md`](docs/readmes/HOW_TO_RUN.md) §3 for the full recipe.
+
+`run_paper.py` requires a mode (`--sync` or `--batch`), a `--profile NAME`, and
+`--health-check yes|no`. Valid profiles are `cheap`, `real`, `real_5`,
+`haiku_only` (defined in `pipeline/stages/summarization/batch/voter_configs.py`
+via `get_profile`); see HOW_TO_RUN.md §3.
 
 ```bash
 # Single paper, sync (live) mode — pmcid is positional
-python scripts/run_paper.py PMC1234567 --sync
+python scripts/run_paper.py PMC1234567 --sync --profile cheap --health-check no
 
 # Single paper, async batch mode (cheaper)
-python scripts/run_paper.py PMC1234567 --batch
+python scripts/run_paper.py PMC1234567 --batch --profile real --health-check no
 
 # A whole calibration set from a YAML selection
-python scripts/run_paper.py --from-selection configs/paper_selection/related15.yaml --batch
+python scripts/run_paper.py --from-selection configs/paper_selection/related15.yaml --batch --profile real --health-check no
 ```
 
 > The old notebook stack under `langchain-summarization/` is legacy and kept for
@@ -282,9 +275,10 @@ Every summary includes:
 | PDF Parsing | Docling, PyMuPDF, Marker, Nougat |
 | Database | PostgreSQL + SQLAlchemy |
 | NER | scispacy (en_core_sci_lg) + UMLS linker |
-| LLM Pipeline | LangChain + OpenAI (GPT-4o-mini, GPT-4o) |
+| LLM Pipeline | Multi-provider agreement-based cascade — DeepSeek, Gemini, Mistral, Claude Haiku, Claude Sonnet 4.6 (direct provider APIs) |
+| NLI backbone | PubMedBERT (MNLI/MedNLI-tuned, default `pubmedbert_mednli`) for grounding + relation classification |
 | Structured Output | Pydantic schemas |
-| Evaluation | Hallucination detection via UMLS concept matching |
+| Evaluation | Opus silver-label judge + grounding/relation NLI; UMLS concept matching |
 
 ## Database Schema
 
@@ -315,6 +309,16 @@ text_element_figure_references (junction)
 text_element_table_references (junction)
 ```
 
+The schema above is the document-extraction core (7 tables). The full schema is
+**21 Alembic-managed tables** (`alembic upgrade head`): the 7 above, plus
+`pipeline_runs` and `llm_judge_cache`, plus 12 summarization-persistence tables
+(`sum_map_findings`, `sum_map_voter_outputs`, `sum_normal_findings`,
+`sum_normal_finding_spans`, `sum_finding_groups`, `sum_group_members`,
+`sum_canonical_rules`, `sum_relations`, `sum_final_rules`,
+`sum_rejection_summaries`, `sum_rejected_findings`, `sum_corpus_relations`)
+written via `pipeline/stages/summarization/persistence.py`. See
+`database/models.py` for the authoritative definitions.
+
 ## Key Features
 
 ### Medical-Grade PDF Parsing
@@ -327,7 +331,7 @@ text_element_table_references (junction)
 
 ### Named Entity Recognition
 - **UMLS Linking**: Maps extracted entities to UMLS concepts (CUI)
-- **Persistent Cache**: 66MB cache avoids redundant UMLS API calls
+- **Persistent Cache**: on-disk entity-linking cache (`named_entity_recognition/entity_linking_cache.json`, ~30 MB) avoids redundant UMLS lookups
 - **Semantic Types**: Filters entities by UMLS semantic types (diseases, chemicals, etc.)
 - **Token Counting**: Estimates LLM costs before running summarization
 
@@ -349,8 +353,10 @@ DB_NAME=nlp_histo
 DB_USER=postgres
 DB_PASSWORD=your_password
 
-# OpenAI (for summarization)
+# Summarization cascade — direct provider APIs (see .env.example)
 OPENAI_API_KEY=your_key
+GOOGLE_API_KEY=your_key
+ANTHROPIC_API_KEY=your_key
 ```
 
 ## License
