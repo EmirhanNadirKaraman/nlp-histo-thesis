@@ -20,7 +20,7 @@ winner) guards against eliminating a structure that only shines after tuning.
 STAGES (run one → read its summary → edit the matching ``BEST_*`` /
 ``FINALIST_STRUCTURES`` / ``VOTER_SUBSET_*_CONFIGS`` here + the field in
 ``configs/run.yaml`` → next stage). Each stage's output lands in its own
-E-numbered subfolder ``eval/reports/E##_<stage>/`` (see docs/readmes/EXPERIMENTS.md):
+E-numbered subfolder ``eval/reports/E##_<stage>/`` (see docs/readmes/other_readmes/EXPERIMENTS.md):
 
   1. structure_screen      embedder × scorer × alignment at DEFAULT weights × a
                            COARSE theta/reject grid. Identifies promising structures,
@@ -304,7 +304,7 @@ _FINALIST_EMPTY_MSG = (
 
 # ── Voter-subset / leave-one-voter-out (targeted, AFTER family_refine) ────────
 # Single-voter drops only (no combined L1+L2 drops yet). drop_lN_i removes the
-# i-th voter of level N (stable index → model; see docs/readmes/EXPERIMENTS.md).
+# i-th voter of level N (stable index → model; see docs/readmes/other_readmes/EXPERIMENTS.md).
 VOTER_SUBSET_GRID = (
     "all",
     "drop_l1_0", "drop_l1_1", "drop_l1_2",
@@ -952,7 +952,7 @@ def _plan_signature(stage: str, cells: list[dict], args) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
-# Experiment numbers (match docs/readmes/EXPERIMENTS.md) — prefix the output folders
+# Experiment numbers (match docs/readmes/other_readmes/EXPERIMENTS.md) — prefix the output folders
 # so eval/reports/ sorts by experiment.
 _EXP_PREFIX = {
     "structure_screen": "E05",
@@ -967,7 +967,7 @@ _EXP_PREFIX = {
 
 def _stage_dir(stage: str) -> Path:
     """Per-experiment subfolder under eval/reports/ (e.g. eval/reports/E06_family_refine/).
-    Keeps each experiment's checkpoint + outputs together — see docs/readmes/EXPERIMENTS.md."""
+    Keeps each experiment's checkpoint + outputs together — see docs/readmes/other_readmes/EXPERIMENTS.md."""
     d = REPORTS_DIR / f"{_EXP_PREFIX.get(stage, 'E00')}_{stage}"
     d.mkdir(parents=True, exist_ok=True)
     return d

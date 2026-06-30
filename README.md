@@ -105,8 +105,8 @@ Citation format: `[S1|PMC123456|789]` where:
 
 ## Project Structure
 
-> Detailed maps live in `docs/readmes/STRUCTURE.md` (architecture) and
-> `docs/readmes/REPOSITORY_GUIDE.md` (file-by-file). This tree is the orientation
+> Detailed maps live in `docs/readmes/other_readmes/STRUCTURE.md` (architecture) and
+> `docs/readmes/other_readmes/REPOSITORY_GUIDE.md` (file-by-file). This tree is the orientation
 > summary.
 
 ```
@@ -145,7 +145,7 @@ nlp-histo/
 ├── configs/                            # run.yaml, model_prices.json, nli_models.yaml, paper_selection/*.yaml
 ├── scripts/                            # runners (run_paper.py), inspectors, eval helpers (+ legacy ingests)
 ├── tests/                              # pytest suite (~80 tests, summarisation-heavy)
-├── docs/readmes/                       # project docs (STRUCTURE, REPOSITORY_GUIDE, HOW_TO_RUN, BUGS, …)
+├── docs/readmes/                       # project docs — other_readmes/ (STRUCTURE, REPOSITORY_GUIDE, HOW_TO_RUN, BUGS, …) + thesis_review/
 │
 ├── langchain-summarization/            # LEGACY summarisation stack (superseded by pipeline/…/summarization)
 ├── files/                              # Input PDFs/XMLs (not in repo)
@@ -216,7 +216,7 @@ python count_tokens.py
 The production summariser is `pipeline/stages/summarization/`, driven via
 `scripts/run_paper.py` (sync or async batch). It needs three direct-API keys in
 `.env`: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`. See
-[`docs/readmes/HOW_TO_RUN.md`](docs/readmes/HOW_TO_RUN.md) §3 for the full recipe.
+[`docs/readmes/other_readmes/HOW_TO_RUN.md`](docs/readmes/other_readmes/HOW_TO_RUN.md) §3 for the full recipe.
 
 ```bash
 # Single paper, sync (live) mode — pmcid is positional

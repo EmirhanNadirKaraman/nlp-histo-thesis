@@ -16,7 +16,7 @@ DEFAULT_MODEL = "claude-opus-4-7"
 DEFAULT_MAX_TOKENS = 8192
 # No `temperature` is sent: claude-opus-4-7 rejects it ("temperature is deprecated
 # for this model", B-072). The forced extract_findings tool keeps extraction
-# variance low; the model uses its default sampling. See docs/readmes/BUGS.md B-072.
+# variance low; the model uses its default sampling. See docs/readmes/other_readmes/BUGS.md B-072.
 
 # Known category aliases the LLM produces that map to canonical values.
 # Only documented aliases are listed — unknown invalid values are left for Pydantic to reject.
