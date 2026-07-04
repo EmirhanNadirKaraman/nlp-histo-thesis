@@ -13,5 +13,7 @@ The evaluation methodology has several limitations. These limitations are listed
     
     \item \textbf{A single person annotated the document-extraction artifacts.} Inter-annotator agreement is not measured on the 27-paper document-extraction dataset, as the labels were produced by a single annotator under the rubric defined in Subsection~\ref{subsec:eval-doc-extraction}.
     
-    \item \textbf{NLI four-mode ablations do not have per-pair accuracy labels.} Relation counts for each of the four modes are reported, but a comparison for their accuracy cannot be made, as the pairs do not have ground truth or silver labels.
+    % \item \textbf{NLI four-mode ablations do not have per-pair accuracy labels.} Relation counts for each of the four modes are reported, but a comparison for their accuracy cannot be made, as the pairs do not have ground truth or silver labels.
+
+    \item \textbf{The relation classifier is evaluated only on synthetic, labeled data.} The evaluation uses the class-balanced synthetic set of Subsection~\ref{subsec:relation-classification-eval-set}, and covers only the \texttt{predicate\_only} and \texttt{scope\_aware} modes. Relations extracted from the real corpus do not have ground truth or silver labels, so classifier accuracy could not be measured directly on production outputs.
 \end{itemize}

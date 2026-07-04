@@ -1,6 +1,6 @@
 \subsection{Data flow and intermediate objects}\label{subsec:data-flow-and-intermediate-objects}
 
-While data passes through the pipeline, it is converted to different typed intermediate objects, and each of these object types have their own database tables for observability. Every object stores a back-pointer to the stage that produced it, so the full chain below can be traced end to end.
+While data passes through the pipeline, it is converted to different typed intermediate objects, and each of these object types have their own database tables for observability. Every derived object stores a back-pointer to the upstream object that produced it, so the full chain below can be traced end to end.
 
 \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
     \item \textbf{Documents.} One row per ingested paper, with its PMC ID saved as a unique key in the database -- the root of the provenance chain that every later object points back to.
@@ -15,11 +15,11 @@ While data passes through the pipeline, it is converted to different typed inter
 
     \item \textbf{Finding groups.} Normal findings are grouped by their subject, outcome, relation type and category. A finding group lists the normal findings it contains.
 
-    \item \textbf{Canonical rules.} Finding groups are separated into different bins based on their directions. Per direction bin per finding group, a representative claim with the best grounding score is selected. The canonical rule keeps pointers to its group and to the normal findings it summarizes; the representative source paragraph that the selected claim is drawn from is reached through these normal findings.
+    \item \textbf{Canonical rules.} Finding groups are separated into different bins based on their directions. Per direction bin per finding group, a representative claim with the best grounding score is selected. The canonical rule keeps pointers to its group and to the normal findings it summarizes.
 
-    \item \textbf{Relations.} Pairwise edges between canonical rules, each labelled SUPPORT, CONTRADICT or UNRELATED by an NLI cross-encoder. Only the supporting and contradicting pairs are kept. Each relation has the two canonical rules it connects, alongside the SUPPORT/CONTRADICT label, and the directional NLI scores.
+    \item \textbf{Relations.} Pairwise edges between canonical rules, each labeled SUPPORT, CONTRADICT or UNRELATED by an NLI cross-encoder. Only the supporting and contradicting pairs are kept. Each relation has the two canonical rules it connects, alongside the SUPPORT/CONTRADICT label, and the directional NLI scores.
 
-    \item \textbf{Final rules.} Canonical rules are augmented with scores to generate final rules. A canonical rule is given a score between 0--1, combining its grounding score, the number of findings behind it, and the support and contradiction relations that touch it. The generated final rule keeps a pointer back to its canonical rule, closing the provenance chain, so that it can also be traced back to its source paragraph.
+    \item \textbf{Final rules.} Canonical rules are augmented with scores to generate final rules. A canonical rule is given a score between 0--1, combining its grounding score, the number of findings behind it, and the support and contradiction relations that touch it. The generated final rule keeps a pointer back to its canonical rule.
 \end{itemize}
 
 The detailed shape of each object is defined in Sections~\ref{section:Document_Extraction} and~\ref{section:Knowledge_Extraction}.

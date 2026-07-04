@@ -7,7 +7,7 @@ The provenance chain is preserved for each \texttt{FinalRule} the RESOLVE stage 
     
     \item \textbf{CanonicalRule $\to$ NormalFinding.} Each \texttt{CanonicalRule} lists the \texttt{normal\_id}s of the \texttt{NormalFinding} records in its direction bin. Each \texttt{NormalFinding} records the MAP finding identifiers it was merged from, and its deduplicated source spans that connect the \texttt{NormalFinding} back to source text.
     
-    \item \textbf{NormalFinding $\to$ source paragraph.} Each source span carries a citation identifier of the form \texttt{$S_\textit{i}$|PMCID|te\_id}, where \texttt{te\_id} is the primary key of the text element the finding was derived from. The source text lives in the relational database, and can be fetched on demand.
+    \item \textbf{NormalFinding $\to$ source paragraph.} Each source span carries a citation identifier of the form \texttt{[$S_{i}$|PMCID|$te\_id$]}, where \texttt{te\_id} is the primary key of the text element the finding was derived from. The source text lives in the relational database, and can be fetched on demand.
     
     \item \textbf{Source paragraph $\to$ source document.} Each paragraph row has a foreign key to its document row, which carries the paper's PMCID and document-level metadata.
 \end{itemize}

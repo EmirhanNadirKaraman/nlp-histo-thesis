@@ -4,11 +4,11 @@ The document-extraction pipeline has several failure modes that were identified,
 
 \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
 
-    \item \textbf{Caption-attachment failures.} The caption-linking procedure discussed in Subsection~\ref{subsec:doc-table-and-figure-handling} relies on a geometric nearest-caption heuristic. This heuristic fails on rotated tables, continuation captions like "Table 1. Continued", and table captions attached to the sides or corners.
+    \item \textbf{Caption-attachment failures.} The caption-linking procedure discussed in Subsection~\ref{subsec:doc-table-and-figure-handling} relies on a geometric nearest-caption heuristic. This heuristic fails on rotated tables, continuation captions like "Table 1. Continued", table captions attached to the sides or corners of the artifact, and captions placed on a different page than their table.
     
     \item \textbf{Complex tables.} Multi-page or rotated tables reduce the precision of the table detection. The hybrid detector operates on one page at a time, so a multi-page table is detected as separate regions. Some tables are also missed entirely, reducing recall; others are cropped too tightly or too loosely because the detected region cannot match the true table boundaries.
 
-    \item \textbf{Decorative figures.} Publisher logos and small inline icons are geometrically valid \texttt{PICTURE} elements, so Docling emits them as figures. The size filter cannot eliminate all of them, which reduces figure-output precision. They do not affect the extracted body text, as they are still masked correctly. 
+    \item \textbf{Decorative figures.} Publisher logos and small inline icons are geometrically valid \texttt{PICTURE} elements, so Docling emits them as figures. The size filter cannot eliminate all of them, which reduces figure-output precision but not body-text quality, since the regions are still masked (Subsection~\ref{subsec:doc-table-and-figure-handling}).
     
     \item \textbf{Paragraph-merging and citation-stripping errors.} The syntactic stitcher (Subsection~\ref{subsec:doc-text-assembly}) can over-merge because of blocks ending with an abbreviation, and the regex citation-stripper can delete real context and information in the text. Both affect stored body text, without leaving a signal in the rubric-based evaluation.  
     

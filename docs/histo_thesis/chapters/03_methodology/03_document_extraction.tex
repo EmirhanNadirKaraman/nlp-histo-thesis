@@ -4,9 +4,11 @@
 \def\input@path{{chapters/03_methodology/03_document_extraction}}
 \makeatother
 
-This section describes the document-extraction pipeline, which converts the selected PMC Open Access histopathology papers into structured document elements for the downstream knowledge extraction of Section~\ref{section:Knowledge_Extraction}. Each downloaded package contains PDF and JATS-XML files; the pipeline consumes only the PDF. The preceding corpus-filtering steps, namely histopathology keyword selection, the single-PDF self-containedness requirement, and the page-count cap, are described in Section~\ref{section:Corpus} and are not repeated here.
+% This section describes the document-extraction pipeline, which converts the selected PMC Open Access histopathology papers into structured document elements for the downstream knowledge extraction of Section~\ref{section:Knowledge_Extraction}. Each downloaded package contains PDF and JATS-XML files; the pipeline consumes only the PDF. The preceding corpus-filtering steps, namely histopathology keyword selection, the single-PDF self-containedness requirement, and the page-count cap, are described in Section~\ref{section:Corpus} and are not repeated here.
 
-The pipeline then transforms these PDF files into persistent representations of document text, sections, figures, tables, captions, and related evidence units, which are consumed by the downstream knowledge-extraction stages.
+% The pipeline then transforms these PDF files into persistent representations of document text, sections, figures, tables, captions, and related evidence units, which are consumed by the downstream knowledge-extraction stages.
+
+This section describes the document-extraction pipeline, which transforms the selected PMC Open Access histopathology papers into persistent representations of document text, sections, figures, tables, captions, and related evidence units for the downstream knowledge extraction of Section~\ref{section:Knowledge_Extraction}. The preceding corpus-filtering steps, namely histopathology keyword selection, the single-PDF self-containedness requirement, and the page-count cap, are described in Section~\ref{section:Corpus} and are not repeated here.
 
 The focus of this section is to explain the design of the document-extraction pipeline, the role of PDF and XML inputs, and the structure of the extracted outputs. The performance of the pipeline on the rubric-based evaluation on a subset of papers is reported separately in Chapter~\ref{chapter:Results}, and discussed in Chapter~\ref{chapter:Discussion}.
 

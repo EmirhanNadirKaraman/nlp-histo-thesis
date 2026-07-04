@@ -14,6 +14,4 @@ Agreement-based cascading operates at the MAP stage. It does not filter individu
 
 ABC's contribution to the quality of the pipeline output is bounded by what MAP voters can produce: even the output of an optimal cascade is still filtered through GROUNDING and re-scored in the RESOLVE stage. The cascade reduces the reliance on expensive MAP calls where there is a strong agreement between voters, and the later stages provide additional safeguards and filters against unsupported, conflicting, duplicated, or weakly scored claims. 
 
-ABC is therefore one component within a layered quality-control design; it does not replace the grounding, normalization, 
-grouping, canonicalization, relation, and scoring stages that 
-follow it.
+ABC is therefore one component within a layered quality-control design; it does not replace the downstream stages listed above.

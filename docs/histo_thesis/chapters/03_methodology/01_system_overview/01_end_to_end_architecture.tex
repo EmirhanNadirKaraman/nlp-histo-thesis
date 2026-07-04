@@ -19,9 +19,6 @@ The first stage of the knowledge extraction pipeline, MAP, is the core of this p
     \label{fig:system-architecture}
 \end{figure}
 
-\item \textbf{Final outputs and evaluation.} The system emits scored rules with full provenance, where the source evidence for each rule can be tracked and retrieved from the database. The experiments and evaluation scripts read the persisted artifacts offline, then measure and report the behavior of each subsystem. 
+\item \textbf{Final outputs and evaluation.} The system emits scored rules with full provenance, where the source evidence for each rule can be tracked and retrieved from the database. The experiments and evaluation scripts read the persisted artifacts offline (Section~\ref{subsec:overview-reproducibility-and-artifact-design}), to measure and report the behavior of each subsystem. 
 
 \end{enumerate}
-
-The system separates document extraction from claim extraction, 
-keeping the architecture modular and enabling easier debugging and development. In the end, the system generates traceable rule candidates for later expert review and validation; it does not aim to produce clinically valid rules autonomously.

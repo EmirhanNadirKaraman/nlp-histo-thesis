@@ -9,7 +9,7 @@ The main separation of concerns is as follows:
 
     \item \textbf{Knowledge extraction} consumes text elements and emits atomic biomedical claims; it does not parse PDFs.
 
-    \item \textbf{Cascade and routing} decide which model outputs will be accepted: the cascade determines whether the output of cheap voters is sufficient or whether the system should escalate to stronger models. It does not redefine the schema of the MAP outputs; it only selects which model outputs are passed to the downstream pipeline.
+    \item \textbf{Cascade and routing} decide which model outputs will be accepted: the cascade determines whether the output of cheap voters is sufficient or whether the system should escalate to stronger models, or whether the chunk output should be rejected. It does not redefine the schema of the MAP outputs; it only selects which model outputs are passed to the downstream pipeline.
 
     \item \textbf{Grounding and relation classification} filter and relate the claims that are already extracted by the MAP stage. Grounding checks whether a claim is supported by its source text, while relation classification identifies whether two claims support or contradict each other. These stages do not re-extract and generate biomedical claims themselves.
 

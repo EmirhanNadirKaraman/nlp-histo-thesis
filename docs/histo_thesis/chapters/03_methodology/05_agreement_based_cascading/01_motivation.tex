@@ -2,7 +2,7 @@
 
 LLM-based extraction faces a cost-quality trade-off. 
 
-Running the strongest available model on every input is accurate but expensive, whereas running a cheaper model on every input is more affordable but less reliable on difficult or ambiguous cases. A cascade system mitigates this trade-off: cheaper models are used when possible, and stronger models are used when they are needed~\parencite{chen2024frugalgpt}. The main design problem is this: how should the system decide, for each input, whether the cheap output is good enough to accept, or the input should be escalated to a stronger and more expensive tier.
+Running the strongest available model on every input is accurate but expensive, whereas running a cheaper model on every input is more affordable but less reliable on difficult or ambiguous cases. A cascade system mitigates this trade-off: cheaper models are used when possible, and stronger models are used when they are needed~\parencite{chen2024frugalgpt}. The main design problem is this: how should the system decide, for each input, whether the cheap output is good enough to accept, whether the input should be escalated to a stronger and more expensive tier, or dropped when agreement is very weak (Subsection~\ref{subsec:abc-accept-reject-escalate}).
 
 Agreement-based cascading uses inter-voter agreement between cheap voters as a routing signal. Three cheap voters are run in parallel on the same input. When these independent voters agree, the input is treated as straightforward, so the cascade accepts the cheap-tier result. When they disagree, the input is treated as ambiguous, and is escalated to a stronger and costlier tier.
 

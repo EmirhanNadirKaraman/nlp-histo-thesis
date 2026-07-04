@@ -3,8 +3,8 @@
 At each tier, the cascade uses the deferral score $s$ to decide between three actions: accept, reject, or escalate. This decision is controlled by two thresholds: the accept threshold $\theta$, and the reject threshold $\theta_{\mathrm{reject}}$, with $\theta_{\mathrm{reject}} < \theta$. 
 
 \begin{itemize}
-    \item \textbf{Accept.} If $s \geq \theta$, the cascade accepts the most central voter's output, and does not escalate.
-    
+    \item \textbf{Accept.} If $s \geq \theta$, the cascade accepts the output of the most consensus-aligned voter (Subsection~\ref{subsec:abc-agreement-scoring}) and does not escalate.
+
     \item \textbf{Reject}. If $s \leq \theta_{\mathrm{reject}}$, the cascade rejects the chunk, no findings are emitted from the voter, and escalation does not occur. This behavior is conservative: it is reserved for cases where voter agreement is too weak to trust.
     
     \item \textbf{Escalate}. Otherwise (when $\theta_{\mathrm{reject}} < s < \theta$), the cascade escalates to the next tier. A chunk that reaches the last level is accepted there; the cascade has no better model tier to escalate to.
@@ -14,4 +14,4 @@ The reject threshold can also be the toggle for enabling or disabling dropping b
 
 The threshold pair $(\theta, \theta_{\mathrm{reject}})$ is a calibration parameter, selected by the offline calibration protocol explained in Subsection~\ref{subsec:abc-calibration-and-replay}, and evaluated in Chapter~\ref{chapter:Results}. 
 
-Escalation is the main cost control mechanism of the agreement-based cascade system. For each chunk, the initial cost is the total cost in L1, and depending on whether the chunk is escalated to the more expensive tiers, additional costs are incurred. The cost-quality trade-off, therefore, depends on how often L1 and L2 voters can agree confidently, which depends on voter quality, chosen thresholds, and the task difficulty. 
+Escalation is the main cost control mechanism of the agreement-based cascade system. Chunks accepted at an early tier incur only the costs of the lower tiers, whereas escalated chunks adds the cost of each additional tier they reach. The resulting cost-quality trade-off is analyzed in Subsection~\ref{subsec:abc-cost-quality}.
