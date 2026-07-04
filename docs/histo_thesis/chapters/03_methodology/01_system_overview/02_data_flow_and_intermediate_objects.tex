@@ -1,13 +1,13 @@
 \subsection{Data flow and intermediate objects}\label{subsec:data-flow-and-intermediate-objects}
 
-While data passes through the pipeline, it is converted to different typed intermediate objects, and each of these object types have their own database tables for observability. Every derived object stores a back-pointer to the upstream object that produced it, so the full chain below can be traced end to end.
+While data passes through the pipeline, it is converted to different typed intermediate objects, and each of these object types has its own database table. Every derived object stores a back-pointer to the upstream object that produced it, so the full chain below can be traced end to end.
 
 \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
     \item \textbf{Documents.} One row per ingested paper, with its PMC ID saved as a unique key in the database -- the root of the provenance chain that every later object points back to.
 
     \item \textbf{Text elements.} Paragraphs and headings, each with its unique path, content, depth and position within section. A text element points back to its document, and is the unit that the knowledge extraction pipeline consumes.
     
-    \item \textbf{Figures and tables.} Cropped images of figures and tables identified in papers. Each of these figures and tables carries their caption and bounding box information, as well as cross-references where they are mentioned in text.
+    \item \textbf{Figures and tables.} Cropped images of figures and tables identified in papers. Each of these figures and tables carries its caption and bounding box information, as well as cross-references where it is mentioned.
 
     \item \textbf{MAP findings.} The MAP stage generates an auditable summary of atomic biomedical claims for each chunk. Each MAP finding has a subject entity, outcome entity, relation, direction and more, as well as an evidence pointer, pointing back to the text element it was inferred from.
 

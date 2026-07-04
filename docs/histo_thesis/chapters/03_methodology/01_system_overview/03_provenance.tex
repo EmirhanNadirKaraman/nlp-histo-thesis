@@ -2,14 +2,23 @@
 
 Provenance is one of the primary goals of this thesis. The system was designed not only to produce final biomedical rules, but more importantly, to make each of these final rules traceable back to the source. 
 
-The provenance chain has four links: 
+% The provenance chain has four links: 
 
-\begin{itemize}
-    \item \textbf{Final rule $\rightarrow$ canonical rule.} Each final rule stores the canonical rule it was scored from.
-    \item \textbf{Canonical rule $\rightarrow$ normalized MAP findings.} Each canonical rule retains references to the normal findings that constitute its group bin, and each normal finding retains references to the MAP findings it was produced from.
-    \item \textbf{MAP finding $\rightarrow$ source text element.} Each MAP finding stores a reference to the source text element it was inferred from. 
-    \item \textbf{Text element $\rightarrow$ source document.} Each text element points to the document it is taken from. 
-\end{itemize}
+% \begin{itemize}
+%     \item \textbf{Final rule $\rightarrow$ canonical rule.} Each final rule stores the canonical rule it was scored from.
+%     \item \textbf{Canonical rule $\rightarrow$ normalized MAP findings.} Each canonical rule retains references to the normal findings that constitute its group bin, and each normal finding retains references to the MAP findings it was produced from.
+%     \item \textbf{MAP finding $\rightarrow$ source text element.} Each MAP finding stores a reference to the source text element it was inferred from. 
+%     \item \textbf{Text element $\rightarrow$ source document.} Each text element points to the document it is taken from. 
+% \end{itemize}
+
+Using the back-pointers introduced in Subsection~\ref{subsec:data-flow-and-intermediate-objects}, each intermediate object can be traced back to its source through the provenance chain (Final rule $\rightarrow$ Canonical rule $\rightarrow$ Normal finding $\rightarrow$ MAP finding $\rightarrow$ Text element $\rightarrow$ Document).
+
+% \begin{center}
+%     
+%     \resizebox{\linewidth}{!}{%
+%         Final rule $\rightarrow$ Canonical rule $\rightarrow$ Normal finding $\rightarrow$ MAP finding $\rightarrow$ Text element $\rightarrow$ Document.
+%     }\par
+% \end{center}
 
 This provenance chain is enforced through typed intermediate objects and back-pointers between stages. Upstream stages populate provenance fields when they produce their outputs, and downstream stages preserve these references. As a result, the output of every later stage --- normalization, grouping, and scoring --- can be followed back to the original evidence, so a reviewer can inspect a final rule, trace it back to its source text element, and compare the two.
 

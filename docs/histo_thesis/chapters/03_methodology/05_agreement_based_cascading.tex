@@ -8,8 +8,6 @@ This section describes agreement-based cascading, the framework used to make the
 
 This section first introduces the three-tier voter structure. It defines the agreement scorer, used to quantify the consensus between the output of different voter models. Then, it describes the escalation policy: the policy that determines whether to accept, escalate, or reject the output of the models in a tier, based on the agreement score. 
 
-% Later, this section introduces two routing gates that can override the default escalation policy: a polarity-conflict gate, which forces escalation when voters disagree on claim polarity; and a schema and provenance checker that verifies the structural and provenance validity of the voter outputs. Finally, this section describes the offline calibration procedure, with which the production scorer and thresholds were tuned. 
-
 Later, this section introduces three safety gates. Two can override the default escalation policy: a polarity-conflict gate, which forces escalation when voters disagree on claim polarity; and a single-voter policy, which decides whether to keep or escalate a tier, in which only one voter output survives; while a third, a schema-and-provenance screen discards voter outputs that are structurally invalid or unsupported. Finally, this section describes the offline calibration procedure, with which the production scorer and thresholds were tuned. 
 
 The evaluation protocol for agreement-based cascading is defined in Section~\ref{section:Evaluation_Methodology}; the empirical results are reported in Chapter~\ref{chapter:Results}, and discussed in Chapter~\ref{chapter:Discussion}.
