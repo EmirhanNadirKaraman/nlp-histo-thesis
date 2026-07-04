@@ -1,15 +1,16 @@
 \subsection{End-to-end architecture}\label{subsec:end-to-end-architecture}
 
-The system takes biomedical papers from the PubMed Central Open Access Subset, parses them to convert everything into a structured format suitable for writing into a structural database, and produces structured biomedical claims, each field of which can be traced back to its source. The end-to-end flow consists of four stages, shown in Figure~\ref{fig:system-architecture}.
+The system takes biomedical papers from the PubMed Central Open Access Subset, parses them into a structured format suitable for a relational database, and produces biomedical claims whose every field can be traced back to its source. The end-to-end flow consists of four stages, shown in Figure~\ref{fig:system-architecture}.
 
 \begin{enumerate} 
-\item \textbf{Paper selection and filtering.} PubMed Central Open Access paper catalogue is a keyword-filtered, histopathology-focused, English subset of papers; these selected papers were then downloaded. Both PDF and JATS-XML are available, but only the PDF files were used, as preliminary work found the XML lower quality, and we wanted the system to use PDFs, because they are a more widely used file format for scientific documents.
 
-\item \textbf{Document extraction pipeline.} Each of the downloaded papers are parsed by a PDF document extraction pipeline. A Docling-backed hybrid table detector and a two-pass invisible-text guard are used for text extraction with better quality. The resulting output is a set of provenance-preserving document elements (text, figures, tables, captions, and cross-references). These results are written into a PostgreSQL relational database.
+\item \textbf{Paper selection and filtering.} Papers are selected by keyword filtering (e.g. histopathology, histology, immunohistochemistry, H\&E, biopsy, whole-slide image) in the article title/citation, while excluding other imaging modalities (MRI, CT, ultrasound) and non-human studies (mouse, rat, veterinary). These keywords were suggested by an LLM. The selected papers are then downloaded; all downloaded papers are available as both PDF and JATS-XML, but only the PDF files were used, since PDF is the more widely used format for scientific documents. 
 
-\item \textbf{Knowledge extraction pipeline.} The document elements are consumed by a knowledge extraction pipeline, which decomposes texts into atomic findings, filters them through a NLI grounding gate, normalizes and groups them, produces canonical rule candidates, classifies pairwise relations between rules, and scores final rules. 
+\item \textbf{Document extraction pipeline.} Each of the downloaded papers is parsed by a PDF document extraction pipeline. A Docling-backed hybrid table detector and a two-pass invisible-text guard are used to improve text extraction quality. The resulting output is a set of provenance-preserving document elements (text, figures, tables, captions, and cross-references). These results are written into a PostgreSQL relational database.
 
-The first stage of the knowledge extraction pipeline, MAP, is the core of this pipeline: an \textit{Agreement-Based Cascade system} of three voter tiers calculate per-chunk agreement scores, in order to decide between escalating to a higher tier with better and more expensive models, accepting the cheap-tier output, or rejecting the chunk output altogether.
+\item \textbf{Knowledge extraction pipeline.} The document elements are consumed by a knowledge extraction pipeline, which decomposes texts into atomic findings, filters them through an NLI grounding gate, normalizes and groups them, produces canonical rule candidates, classifies pairwise relations between rules, and scores final rules. 
+
+The first stage of the knowledge extraction pipeline, MAP, is the core of this pipeline: a three-tier agreement-based cascade system calculates per-chunk agreement scores, in order to decide between escalating to a higher tier with better and more expensive models, accepting the cheap-tier output, or rejecting the chunk output altogether.
 
 \begin{figure}[htbp]
     \centering
@@ -18,12 +19,9 @@ The first stage of the knowledge extraction pipeline, MAP, is the core of this p
     \label{fig:system-architecture}
 \end{figure}
 
-% Selected PubMed Central Open Access papers are processed in a document extraction pipeline and written into a PostgreSQL database; the knowledge extraction pipeline reads the structured documents from the database, applies agreement-based cascading, and generates rule candidates that can be sourced back to the original evidence.
-
 \item \textbf{Final outputs and evaluation.} The system emits scored rules with full provenance, where the source evidence for each rule can be tracked and retrieved from the database. The experiments and evaluation scripts read the persisted artifacts offline, then measure and report the behavior of each subsystem. 
 
 \end{enumerate}
 
-The system architecture separates what is extracted from documents, from what claims are extracted from them. This enables easier debugging and further development, as components are modular. In the end, the system generates traceable rule candidates for later expert review and validation; it does not aim to produce clinically valid rules autonomously.
-
-
+The system separates document extraction from claim extraction, 
+keeping the architecture modular and enabling easier debugging and development. In the end, the system generates traceable rule candidates for later expert review and validation; it does not aim to produce clinically valid rules autonomously.

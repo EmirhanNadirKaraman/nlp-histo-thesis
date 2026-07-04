@@ -6,12 +6,12 @@ The provenance chain has four links:
 
 \begin{itemize}
     \item \textbf{Final rule $\rightarrow$ canonical rule.} Each final rule stores the canonical rule it was scored from.
-    \item \textbf{Canonical rule $\rightarrow$ grouped / normalized MAP findings.} Each canonical rule retains references to the normal findings that constitute its group bin. These normal findings retain references to the MAP findings, from which they were produced.
-    \item \textbf{MAP findings $\rightarrow$ source text element.} Each MAP finding stores a reference to the source text element it was inferred from. 
+    \item \textbf{Canonical rule $\rightarrow$ normalized MAP findings.} Each canonical rule retains references to the normal findings that constitute its group bin, and each normal finding retains references to the MAP findings it was produced from.
+    \item \textbf{MAP finding $\rightarrow$ source text element.} Each MAP finding stores a reference to the source text element it was inferred from. 
     \item \textbf{Text element $\rightarrow$ source document.} Each text element points to the document it is taken from. 
 \end{itemize}
 
-This provenance chain is enforced through typed intermediate objects and back-pointers between stages. Upstream stages populate provenance fields when they produce their outputs, and downstream stages preserve these references. This means that later stages in the pipeline, e.g. normalization, grouping or scoring findings, can still be traced back to the original evidence in the papers. This design makes the system fully auditable. A reviewer can inspect a final rule, trace it back to the source, and compare the extracted final rule against the source sentence. 
+This provenance chain is enforced through typed intermediate objects and back-pointers between stages. Upstream stages populate provenance fields when they produce their outputs, and downstream stages preserve these references. As a result, the output of every later stage --- normalization, grouping, and scoring --- can be followed back to the original evidence, so a reviewer can inspect a final rule, trace it back to its source sentence, and compare the two.
 
 Creating and saving typed intermediate objects enable fine-grained error analysis: if a final rule is wrong, the error can be attributed to a certain stage of the pipeline, e.g. normalization, grouping, relation classification (SUPPORT/CONTRADICT), etc., and a specific subsystem can be modified or improved without affecting the other subsystems. 
 

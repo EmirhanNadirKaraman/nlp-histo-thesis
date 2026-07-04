@@ -4,13 +4,16 @@ Agreement-based cascading operates at the MAP stage. It does not filter individu
 
 \begin{itemize}
     \item \textbf{GROUNDING} (Subsection~\ref{subsec:knowledge-grounding}) drops findings whose verbatim source text does not entail the claim that is made.
-    \item \textbf{NORMALIZE} and \textbf{GROUP}. (Subsection~\ref{subsec:knowledge-normalize-and-group}) reduce surface-form variation in subject and outcome entity strings before grouping, so that trivial variants of the same entities do not leak into separate \texttt{CanonicalRule} objects. 
-    \item \textbf{CANONICALIZE.} (Subsection~\ref{subsec:knowledge-canonicalize}) creates one \texttt{CanonicalRule} per direction bin, and flags groups with polarity conflicts.
-    \item \textbf{RELATE} and \textbf{RESOLVE} (Subsections~\ref{subsec:knowledge-relate} --~\ref{subsec:knowledge-resolve}) operate on canonical rules, comparable canonical rules are compared to each other and their confidence scores are calculated based on the rules that support or contradict, and then ranked based on this scoring. This is a different type of quality-control compared to the previous stages: rather than dropping untrustworthy voter outputs, quality-control at these stages is done by only scoring and ranking rules, not by dropping them.
-\end{itemize}
+    
+    \item \textbf{NORMALIZE} and \textbf{GROUP} (Subsection~\ref{subsec:knowledge-normalize-and-group}) reduce surface-form variation in subject and outcome entity strings before grouping, so that trivial variants of the same entities do not leak into separate \texttt{CanonicalRule} objects. 
+    
+    \item \textbf{CANONICALIZE} (Subsection~\ref{subsec:knowledge-canonicalize}) creates one \texttt{CanonicalRule} per direction bin, and flags groups with polarity conflicts.
 
-\pinktodo{Trim the last bullet point a little bit.}
+    \item \textbf{RELATE} and \textbf{RESOLVE} (Subsections~\ref{subsec:knowledge-relate}--\ref{subsec:knowledge-resolve}) operate on comparable canonical rules. The former identifies supporting and contradicting relations between rules, and the latter scores and ranks these rules based on the relations. In contrast to the preceding stages, they provide quality control by scoring and ranking, rather than by dropping.
+\end{itemize}
 
 ABC's contribution to the quality of the pipeline output is bounded by what MAP voters can produce: even the output of an optimal cascade is still filtered through GROUNDING and re-scored in the RESOLVE stage. The cascade reduces the reliance on expensive MAP calls where there is a strong agreement between voters, and the later stages provide additional safeguards and filters against unsupported, conflicting, duplicated, or weakly scored claims. 
 
-All in all, ABC should be understood as one quality control stage within a larger system with a layered quality-control design. It is not the only quality control stage, nor does it replace grounding, normalization, grouping, canonicalization, relation classification, or final scoring.
+ABC is therefore one component within a layered quality-control design; it does not replace the grounding, normalization, 
+grouping, canonicalization, relation, and scoring stages that 
+follow it.

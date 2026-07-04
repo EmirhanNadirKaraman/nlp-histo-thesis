@@ -1,11 +1,17 @@
 \subsection{Purpose and design goals}\label{subsec:knowledge-pipeline-purpose}
 
-The knowledge-extraction pipeline converts the paragraph-level text produced by the document-extraction pipeline in Section~\ref{section:Document_Extraction}, separated from figures, tables, and captions, into structured biomedical claims that a downstream consumer can inspect, audit, and aggregate. 
+The knowledge-extraction pipeline converts the paragraph-level text produced by the document-extraction pipeline in Section~\ref{section:Document_Extraction} --- separated from figures, tables, and captions --- into structured biomedical claims that a downstream consumer can inspect, audit, and aggregate. 
 
 The pipeline has four design goals: 
+
 \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
-    \item \textbf{Atomic claims.} The outputs of the pipeline are subject-relation-outcome assertions, rather than paragraph summaries. Atomicity makes the downstream comparison, grouping, contradiction detection stages, as well as provenance attribution more precise.
-    \item \textbf{Source-grounded evidence.} The output of the pipeline is a list of structured claims. Each finding references the evidence from which it was extracted, and these references are preserved through every stage to preserve provenance.
-    \item \textbf{Bounded LLM stochasticity.} API calls to generative large-language models are confined to the MAP stage described in Subsection~\ref{subsec:knowledge-map}. The later stages are deterministic. Grounding and relation classification run a fixed natural language inference (NLI) model, entity normalization runs a fixed linker, and grouping, canonicalization, and scoring are rule-based. This design concentrates the pipeline's stochastic behavior into a single controlled stage, rather than spreading it across the full pipeline.
+
+    \item \textbf{Atomic claims.} The outputs of the pipeline are subject-relation-outcome assertions, rather than paragraph summaries. Atomicity makes the downstream comparison, grouping, and contradiction-detection stages, as well as provenance attribution, more precise.
+    
+    \item \textbf{Source-grounded evidence.} Each finding references the evidence from which it was extracted, and these references are preserved through every stage to maintain provenance.
+    
+    \item \textbf{Bounded LLM stochasticity.} API calls to generative large language models are confined to the MAP stage described in Subsection~\ref{subsec:knowledge-map}. The later stages are deterministic. Grounding and relation classification run a fixed natural language inference (NLI) model, entity normalization runs a fixed linker, and grouping, canonicalization, and scoring are rule-based. This design concentrates the pipeline's stochastic behavior into a single controlled stage, rather than spreading it across the full pipeline.
+    
     \item \textbf{Auditability, not autonomous decision-making.} The pipeline is built to let a human reviewer check and validate the extracted claims, not to make clinical decisions on its own. Final rules are ranked by an internal confidence signal, as described in Subsection~\ref{subsec:knowledge-resolve}, but these confidence scores are not clinical probabilities, and are not intended to be treated as such. 
+    
 \end{itemize}

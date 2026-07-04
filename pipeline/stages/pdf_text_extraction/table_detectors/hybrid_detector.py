@@ -3,7 +3,9 @@ HybridTableDetector
 
 Combines results from multiple TableDetector implementations — by default
 DoclingTableDetector and TATRTableDetector — and merges overlapping bounding
-boxes using iterative IoU-based union (parsers/layout_utils.merge_rects).
+boxes using iterative boolean-overlap union (parsers/layout_utils.merge_rects).
+The merge is by any non-zero rectangle intersection (``Rect.intersects``), NOT
+an IoU threshold — see ``merge_rects`` for the exact rule (B-087).
 
 The merged regions come from the union of all source detectors, deduplicated by
 page-level rectangle intersection.  Each merged region is tagged
@@ -60,7 +62,7 @@ class HybridTableDetector:
             pdf_path: Path to the PDF to analyse.
 
         Returns:
-            TableDetectionResult with IoU-merged regions tagged ``source='hybrid'``.
+            TableDetectionResult with overlap-merged regions tagged ``source='hybrid'``.
         """
         all_results = [d.detect(pdf_path) for d in self._detectors]
         return self._merge(all_results, pdf_path)

@@ -2,9 +2,9 @@
 
 The limitations of the evaluation design are listed in Subsection~\ref{subsec:eval-limitations}. This section does not repeat that list; instead, it explains which limitations threaten the validity of the conclusions in this thesis, and discusses the threats that become apparent only after interpreting the results.
 
-The main threat is that every strict-F1 score reported in the thesis measures agreement with Claude Opus, rather than agreement with human-annotated gold labels. As a result, all reported numbers are bounded by the silver labeler Opus' biases; no experiments in the evaluation design can lift that upper bound.
+The main threat is that every strict-F1 score reported in the thesis measures agreement with Claude Opus, rather than agreement with human-annotated gold labels. As a result, all reported numbers are bounded by the biases of the silver labeler Opus; no experiments in the evaluation design can lift that upper bound.
 
-Several other threats are discussed where they are most relevant, and are not restated here: the Opus/Sonnet issue caused by sharing a model family, and that changes in model pricing possibly affecting the cost-quality verdict, are both discussed in Section~\ref{section:disc-agreement-based-cascading}. The optimistic scores on the synthetic dataset for the relation-classification, due to its relatively clean nature, are discussed in Section~\ref{section:disc-nli-as-shared-backbone}.
+Several other threats are discussed where they are most relevant: the Opus/Sonnet issue caused by sharing a model family, and the possibility that changes in model pricing affect the cost-quality verdict, are both discussed in Section~\ref{section:disc-agreement-based-cascading}. The optimistic scores on the synthetic dataset for the relation-classification, due to its relatively clean nature, are discussed in Section~\ref{section:disc-nli-as-shared-backbone}.
 
 The remaining threats are specific to this level of interpretation:
 
@@ -13,5 +13,6 @@ The remaining threats are specific to this level of interpretation:
 
     \item \textbf{The strict-F1 metric depends on the matcher.} Strict-F1 scores are calculated by matching pipeline findings against silver (Subsection~\ref{subsec:eval-knowledge-extraction}). The exact numbers change when different similarity thresholds or matchers are used. All reported scores use the optimal (Hungarian) matcher. The greedy matcher is kept for diagnostics, and does not drive model or configuration selection; therefore, the comparisons within the thesis remain internally consistent, even though the exact scores that were obtained are matcher-dependent.
 
-    \item \textbf{The held-out test addresses overfitting, not generalization to the complete domain.} The generalization test (RQ5, Section~\ref{section:disc-knowledge-extraction-quality-and-stability}) is out-of-sample, but the evaluation set the test was run on (\texttt{heldout15}) is still drawn from the same English-language PubMed Central histopathology corpus. Therefore, it can only be concluded that the configuration does not overfit the calibration set (\texttt{related15}); we do not claim that the configuration generalizes to other biomedical domains, non-PMC papers, or non-English literature.
+    \item \textbf{The held-out test addresses overfitting, not generalization to the complete domain.} The generalization test (RQ5, Section~\ref{section:disc-knowledge-extraction-quality-and-stability}) is out-of-sample, but the evaluation set the test was run on (\texttt{heldout15}) is still drawn from the same English-language PubMed Central histopathology corpus. Therefore, it can only be concluded that the configuration does not overfit the calibration set (\texttt{related15}); it cannot be claimed that the configuration generalizes to other biomedical domains, non-PMC papers, or non-English literature.
+    
 \end{itemize}

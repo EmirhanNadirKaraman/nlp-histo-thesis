@@ -4,21 +4,19 @@ The results are mixed. The system succeeds on document extraction, provenance, g
 
 \medskip{}
 
-\textbf{RQ1 -- Document extraction.} On the 27-PDF rubric set, the post-processing steps in this stage substantially raise strict-table F1 from $0.400$ to $0.838$; the main driver of this improvement is footnote expansion, increasing footnote precision from $43.8\%$ to $91.4\%$. The strict-figure F1 scores are also lifted from $0.447$ to $0.840$, mainly because of decorative icon filtering, sub-figure merging, and improved caption matching. Therefore, the document-extraction pipeline reaches its targets.
+\textbf{RQ1 -- Document extraction.} On the 27-PDF rubric set, the post-processing steps in this stage substantially raise table strict-F1 from $0.400$ (Docling baseline) to $0.838$; the main driver of this improvement is footnote expansion, increasing footnote precision from $43.8\%$ to $91.4\%$. The figure strict-F1 is also lifted from $0.447$ (off-the-shelf Docling) to $0.840$, mainly because of decorative icon filtering, sub-figure merging, and improved caption matching. Therefore, the document-extraction pipeline reaches its targets.
 
 \medskip{}
 
-\textbf{RQ2 -- Knowledge extraction and provenance.} Against silver labels, the MAP stage achieves a strict-F1 of $0.7160$. The extracted findings are mostly atomic and distinct, so the consolidation stages do not change the volume much before canonical rules are produced. Provenance is fully preserved: every text has its source span, every table carries its caption, and every extracted figure and table retain their crops and bounding boxes ($100\%$). This supports the design claim that provenance is structurally preserved and guaranteed.
+\textbf{RQ2 -- Knowledge extraction and provenance.} Against silver labels, the MAP stage achieves a strict-F1 of $0.7160$. The extracted findings are mostly atomic and distinct, so the consolidation stages do not change the volume much before canonical rules are produced. Provenance is fully preserved: every text element has its source span, every table carries its caption, and every extracted figure and table retains its crop and bounding box ($100\%$). This supports the design claim that provenance is structurally guaranteed.
 
 \medskip{}
 
-\pinktodo{Give a reference to the cascade selection section.}
-
-\textbf{RQ3 -- Cost-quality trade-off.} This is the central negative result. The calibrated five-voter cascade, which is the optimal voter subset after analysis in Section~\ref{}, reaches a strict-F1 score of $0.7160$, versus the strong single-model baseline's $0.7129$ (Sonnet). This difference is within noise and is not statistically significant, and the single-Sonnet achieves the statistically equivalent strict-F1, while being 24\% cheaper. The cascade decisively beats every other single model, but it is not cost-justified against single-Sonnet under the silver cost-quality criterion. Therefore, the defensible value of the cascade is not the accuracy, but provider-independence.
+\textbf{RQ3 -- Cost-quality trade-off.} This is the central negative result. The calibrated five-voter cascade, which is the optimal voter subset after analysis in Section~\ref{section:results-abc-calibration}, reaches a strict-F1 score of $0.7160$, versus the strong single-model baseline's $0.7129$ (Sonnet). This difference is not statistically significant; single-Sonnet achieves an equivalent strict-F1 while being 24\% cheaper. The cascade decisively beats every other single model, but it is not cost-justified against single-Sonnet under the silver cost-quality criterion. Therefore, the defensible value of the cascade is not the accuracy, but provider-independence.
 
 \medskip{}
 
-\textbf{RQ4 -- Grounding and relation classification.} The NLI components behave as designed. The grounding filter enforces source-faithfulness, and accepts a six-point decrease in strict-F1 at the pinned threshold, lowering the score from $0.7160$ to $0.652$. The relation classifier reaches about $93\%$ accuracy on a class-balanced synthetic dataset. This is an optimistic result, considering that the synthetically generated claim pairs might be cleaner than the hardest corpus cases. 
+\textbf{RQ4 -- Grounding and relation classification.} The NLI components behave as designed. The grounding filter enforces source-faithfulness, and trades away six points in strict-F1 at the pinned threshold, lowering the score from $0.7160$ to $0.652$. The relation classifier reaches about $93\%$ accuracy on a class-balanced synthetic dataset. This is an optimistic result, considering that the synthetically generated claim pairs might be cleaner than the hardest corpus cases. 
 
 \medskip{}
 
@@ -26,5 +24,5 @@ The results are mixed. The system succeeds on document extraction, provenance, g
 
 \medskip{}
 
-The results show three things: first, the document-extraction and provenance stages are effective. Second, the agreement-based cascade reaches strong-single-model quality and beats every cheaper single-model baseline significantly, but is not cost-justified against the strongest single model; the value of the cascade therefore lies in the provider-independence it provides, rather than the accuracy it reaches. Third, and finally, the NLI gates and the frozen configuration behave as intended. 
+Taken together, document extraction, NLI components, and safety gates behave as intended; the cascade's only shortfall is cost-justification, so its value lies in provider-independence rather than accuracy.
 

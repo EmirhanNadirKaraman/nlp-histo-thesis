@@ -1,20 +1,17 @@
 \subsection{Provenance model}\label{subsec:knowledge-provenance-model}
 
-The provenance chain is preserved for each \texttt{FinalRule} the RELATE stage emits, allowing a downstream reader to re-derive it from the source text. The chain has four links: 
+The provenance chain is preserved for each \texttt{FinalRule} the RESOLVE stage emits, allowing a downstream reader to re-derive it from the source text. The chain has four links: 
 
 \begin{itemize}
-    \item \textbf{FinalRule $\to$ CanonicalRule.} Each \texttt{FinalRule} records the \texttt{canonical\_id} of the \texttt{CanonicalRule} it was scored from. The \texttt{CanonicalRule} stores the representative predicate; and is associated with its best-grounded member selected during CANONICALIZE, described in Subsection~\ref{subsec:knowledge-canonicalize}. When needed, the verbatim text and the identifier of the paragraph it came from can be recovered on demand from the relational database.
+    \item \textbf{FinalRule $\to$ CanonicalRule.} Each \texttt{FinalRule} records the \texttt{canonical\_id} of the \texttt{CanonicalRule} it was scored from. The \texttt{CanonicalRule} stores the representative predicate and is associated with its best-grounded member selected during CANONICALIZE, described in Subsection~\ref{subsec:knowledge-canonicalize}. When needed, the verbatim text and the identifier of the paragraph it came from can be recovered on demand from the relational database.
     
     \item \textbf{CanonicalRule $\to$ NormalFinding.} Each \texttt{CanonicalRule} lists the \texttt{normal\_id}s of the \texttt{NormalFinding} records in its direction bin. Each \texttt{NormalFinding} records the MAP finding identifiers it was merged from, and its deduplicated source spans that connect the \texttt{NormalFinding} back to source text.
     
-    \item \textbf{NormalFinding $\to$ source paragraph.} Each source span carries a citation identifier of the form  \texttt{$S_\textit{i}$|PMCID|te\_id}, where \texttt{te\_id} is the primary key of the text element the finding was derived from. The source texts lives in the relational database, and can be fetched on demand.
+    \item \textbf{NormalFinding $\to$ source paragraph.} Each source span carries a citation identifier of the form \texttt{$S_\textit{i}$|PMCID|te\_id}, where \texttt{te\_id} is the primary key of the text element the finding was derived from. The source text lives in the relational database, and can be fetched on demand.
     
     \item \textbf{Source paragraph $\to$ source document.} Each paragraph row has a foreign key to its document row, which carries the paper's PMCID and document-level metadata.
 \end{itemize}
 
-\pinktodo{Write about the provenance chain.}
+The provenance chain supports downstream validation: any final rule can be opened, followed back to the \texttt{CanonicalRule} and the \texttt{NormalFinding} records behind it, and the source paragraph, from which the findings were extracted. Then, the rule can be checked by a human reviewer against the source text, making the system auditable. However, provenance does not guarantee the correctness of the rule: a final rule might have a full provenance chain and still encode an interpretation that a domain expert would reject. It establishes traceability, not clinical correctness; Chapter~\ref{chapter:Discussion} discusses this distinction further.
 
-\pinktodo{Check if the empirical carry-rate of the pipeline is 100\%: we should empirically check if every final rule can be traced back to its source paragraph.}
-
-The provenance chain supports downstream validation: any final rule can be opened, followed back to the \texttt{CanonicalRule} and the \texttt{NormalRule} records behind it, and the source paragraph, from which the findings were extracted. Then, the rule can be checked by a human reviewer against the source text, making the system auditable. However, provenance does not guarantee the correctness of the rule: a final rule might have a full provenance chain, and still encode an interpretation that a domain expert would reject. Chapter~\ref{chapter:Discussion} discusses this distinction further. All in all, the final claim this thesis makes is this: the provenance chain establishes traceability, not clinical correctness.
-
+Section~\ref{section:results-ke-pipeline-output-and-provenance} verifies that the chain is complete in practice: every emitted final rule resolves to at least one source paragraph from its own paper. 

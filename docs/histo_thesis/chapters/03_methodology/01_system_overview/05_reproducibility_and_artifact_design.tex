@@ -1,8 +1,5 @@
 \subsection{Reproducibility and artifact design}\label{subsec:overview-reproducibility-and-artifact-design}
 
-The system persists intermediate objects and execution artifacts into disk. These artifacts include the document database, the MAP voter cache, JSON summaries per paper, embedding caches used by the matcher and agreement scorer, and per-chunk cascade-decision and escalation logs. 
+The system persists intermediate objects and execution artifacts to disk. These artifacts include the document database, the offline voter cache, the per-paper result JSON, the embedding caches used by the matcher and the agreement scorer, and the per-chunk cascade-decision and escalation logs. 
 
-This design supports an \textbf{offline replay} of the evaluation; every numerical result for ablations and threshold calibrations is produced by a single driver that reads from the artifacts persisted in upstream stages, and re-derives the relevant metrics without invoking external models again, which saves API costs, while also eliminating potential non-deterministic behavior that would be caused by changing API outputs. Calibration sweeps over thresholds, scorer and agreement weights, and router policies run over the same artifacts. 
-
-
-
+This design supports the offline replay of the evaluation; every numerical result for the cascade ablations and threshold calibrations is produced by a shared replay engine that reads the per-voter outputs cached during the priming run, and re-computes the relevant metrics without re-invoking the LLM voters, saving API costs and eliminating potential non-deterministic behavior that changing API outputs would cause. Calibration sweeps over thresholds, scorer and agreement weights, and escalation-gate policies all run over these cached artifacts. 

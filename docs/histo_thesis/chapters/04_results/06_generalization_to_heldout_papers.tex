@@ -1,8 +1,8 @@
 \section{Generalization to held-out papers}\label{section:results-generalization-to-heldout-papers}
 
-The calibration of Section~\ref{section:results-abc-calibration} and the cost-quality results of Section~\ref{section:results-cost-quality-comparison} are measured in-sample on \texttt{related15}, the same set of papers the configuration was tuned on. This section addresses \textbf{RQ5}, answering whether the frozen configuration generalizes to papers that it was not tuned on.
+The calibration of Section~\ref{section:results-abc-calibration} and the cost-quality results of Section~\ref{section:results-cost-quality-comparison} are measured in-sample on \texttt{related15}, the same set of papers the configuration was tuned on. This section addresses RQ5, answering whether the frozen configuration generalizes to papers that it was not tuned on.
 
-The test set used for evaluation is \texttt{heldout15}. It is a 15-paper cluster, completely disjoint from the calibration set, drawn by a random seed. It has zero paper-level overlap with \texttt{related15} and the document-extraction evaluation set. The frozen five-voter configuration selected in Section~\ref{section:results-abc-calibration} is replayed and scored on the \texttt{heldout15} set. The held-out primer was run once, and replayed offline. The calibration was done on the \texttt{related15} set; \texttt{heldout15} was only used for the evaluation, not for re-tuning.
+The test set used for evaluation is \texttt{heldout15}. It is a 15-paper cluster drawn by a random seed, with zero paper-level overlap with the calibration set (\texttt{related15}) or the document-extraction evaluation set. The frozen five-voter configuration selected in Section~\ref{section:results-abc-calibration} is replayed and scored on \texttt{heldout15}: the held-out primer was run once and replayed offline, with no re-tuning.
 
 \medskip{}
 
@@ -24,7 +24,9 @@ The test set used for evaluation is \texttt{heldout15}. It is a 15-paper cluster
 
 The held-out test shows a slightly higher escalation rate but no meaningful difference in precision, recall, or F1 values. The held-out strict-F1 is 0.7128, and sits 0.0032 below the calibration value, which is well within the bootstrap noise band reported in Section~\ref{section:results-cost-quality-comparison}: this result shows that the configuration generalizes, and that there is no meaningful overfitting to the calibration cluster. 
 
-Two observations made on the calibration set carry over to the evaluation set as well. First, the escalation rate in held-out set is 0.990, meaning that almost every chunk escalates to Sonnet, as it did on the calibration set. This reproduces the RQ3 finding that the selected cascade behaves similarly to a single-Sonnet system at the quality operating point. Second, a descriptive $\theta$ sweep was run on \texttt{heldout15}, and the results are reported in Figure~\ref{fig:results-heldout-theta}. Like the calibration set's $\theta$ sweep, held-out set's sweep results in a monotonically increasing strict-F1 curve as theta increases, with diminishing returns. This sweep on the evaluation set is descriptive only: the configuration is fixed on the calibration set, and only evaluated on the held-out set to keep results unbiased. 
+Two observations made on the calibration set carry over to the evaluation set as well. First, the escalation rate in the held-out set is 0.990, meaning that almost every chunk escalates to Sonnet, as it did on the calibration set. This reproduces the RQ3 finding that the selected cascade behaves similarly to a single-Sonnet system at the quality operating point. 
+
+Second, a $\theta$ sweep on \texttt{heldout15} (Figure~\ref{fig:results-heldout-theta}) mirrors the pattern observed on the calibration set: strict-F1 increases monotonically, but with diminishing returns. It is descriptive only; $\theta$ remains fixed at its calibrated value.
 
 \begin{figure}[htpb]
 \centering
@@ -59,9 +61,9 @@ The strict-F1 scores evaluate the MAP stage. The downstream stages in the pipeli
 \end{tabular}
 \end{table}
 
-The downstream funnel on the held-out set preserves the shape of the calibration's downstream funnel. The consolidation ratio -- canonical rules per normalized finding -- is near-identical, with a difference of only 1\% between the calibration and held-out evaluation sets. 
+The downstream funnel on the held-out set preserves the shape of the calibration's downstream funnel. The consolidation ratio -- canonical rules per normalized finding -- is near-identical, with a difference of only 1\% between the calibration and held-out evaluation sets. Provenance generalizes as well: each of the 1\,273 final rules produced on the held-out papers resolves to a source paragraph in its own paper, resulting in a 100\% rule-level carry-rate. This matches the calibration result reported in Section~\ref{section:results-ke-pipeline-output-and-provenance}.
 
-The held-out run produces 4 intra-paper relations, no cross-paper relations, and no contradictions. The held-out set was put together by randomly sampling papers from the corpus (while keeping it disjoint from the other sets), so fewer relations were observed as expected. This sparsity of relations was the motivating factor behind evaluating the relation-classifier on a synthetic set (Section~\ref{section:results-nli-in-grounding-and-relation-classification}), rather than on the corpus. The funnel shows that the calibrated configuration also generalizes for the stages that come after MAP, answering \textbf{RQ5}.
+The held-out run produces 4 intra-paper relations, no cross-paper relations, and no contradictions. Because the held-out set was sampled randomly, fewer relations were observed, as expected. This sparsity of relations was the motivating factor behind evaluating the relation-classifier on a synthetic set (Section~\ref{section:results-nli-in-grounding-and-relation-classification}), rather than on the corpus. The funnel shows that the calibrated configuration also generalizes for the stages that come after MAP, answering RQ5.
 
 This section closes the empirical chapter. 
 Document-extraction (Section~\ref{section:results-doc-extraction-performance}) and provenance (Section~\ref{section:results-ke-pipeline-output-and-provenance}) meet their targets; the agreement-based cascade is calibrated (Section~\ref{section:results-abc-calibration}) and reaches Sonnet quality but is not cost-justified against the single-Sonnet baseline (Section~\ref{section:results-cost-quality-comparison}); the NLI components behave as designed (Section~\ref{section:results-nli-in-grounding-and-relation-classification}); and the frozen configuration generalizes to a disjoint held-out set.

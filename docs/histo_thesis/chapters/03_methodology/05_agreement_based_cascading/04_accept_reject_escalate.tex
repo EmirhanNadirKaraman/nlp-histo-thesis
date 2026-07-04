@@ -3,12 +3,14 @@
 At each tier, the cascade uses the deferral score $s$ to decide between three actions: accept, reject, or escalate. This decision is controlled by two thresholds: the accept threshold $\theta$, and the reject threshold $\theta_{\mathrm{reject}}$, with $\theta_{\mathrm{reject}} < \theta$. 
 
 \begin{itemize}
-    \item \textbf{Accept.} If $s \geq \theta$, the cascade accepts most central voter's output, and does not escalate.
+    \item \textbf{Accept.} If $s \geq \theta$, the cascade accepts the most central voter's output, and does not escalate.
+    
     \item \textbf{Reject}. If $s \leq \theta_{\mathrm{reject}}$, the cascade rejects the chunk, no findings are emitted from the voter, and escalation does not occur. This behavior is conservative: it is reserved for cases where voter agreement is too weak to trust.
-    \item \textbf{Escalate}. Otherwise, in case ($\theta_{\mathrm{reject}} < s < \theta$), the cascade escalates to the next tier. A chunk that reaches the last level is accepted there; the cascade has no better model tier to escalate.
+    
+    \item \textbf{Escalate}. Otherwise (when $\theta_{\mathrm{reject}} < s < \theta$), the cascade escalates to the next tier. A chunk that reaches the last level is accepted there; the cascade has no better model tier to escalate to.
 \end{itemize}
 
-The reject threshold can also be the toggle for enabling or disabling dropping behavior. Deferral scores lie in $[0,1]$, so setting $\theta_{\mathrm{reject}} = 0$ makes the reject branch unreachable for non-degenerate chunks. In that configuration, every chunk with a deferral score below $\theta$ is escalated at L1 and L2; L3 has a single model that does not have any other model to disagree with, so it is the fallback that always accepts. 
+The reject threshold can also be the toggle for enabling or disabling dropping behavior. Deferral scores lie in $[0,1]$, so setting $\theta_{\mathrm{reject}} = 0$ makes the reject branch unreachable for non-degenerate chunks. In that configuration, every chunk scoring below $\theta$ is escalated through L1 and L2, and then accepted at L3 (the single-model fallback described above).
 
 The threshold pair $(\theta, \theta_{\mathrm{reject}})$ is a calibration parameter, selected by the offline calibration protocol explained in Subsection~\ref{subsec:abc-calibration-and-replay}, and evaluated in Chapter~\ref{chapter:Results}. 
 

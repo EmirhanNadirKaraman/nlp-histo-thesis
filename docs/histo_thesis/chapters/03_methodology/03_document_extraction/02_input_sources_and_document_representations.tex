@@ -1,8 +1,7 @@
 \subsection{Input sources and document representations}\label{subsec:doc-input-sources}
 
-The pipeline operates on PubMed Central Open Access subset (U.S National Library of Medicine 2024). \pinktodo{Add citation here.} Each ingested paper is available in both PDF and XML representation. This thesis only uses the PDF as the document-extraction input.
+The pipeline operates on the PubMed Central Open Access subset~\parencite{nlm_pmc_open_access}. Each ingested paper is available in both PDF and XML representation; this thesis only uses the PDF as the document-extraction input.
 
 The PDF representation preserves the published layout of the article: page-level positions, fonts, tables, figures, sections, captions, and footnotes. XML representations are more structured compared to PDFs, as they encode the paper structure directly with section nesting, paragraph-level content, table semantics and figure references.
 
-All ingested papers have both representations available. Nevertheless, XML files were not used in the document extraction pipeline. PDFs are the universal representation for scientific literature \pinktodo{Cite?}, and XML files might not always be available in general scientific literature; therefore only the PDF representations were used as the input to the structural parser in this thesis. The limitation of this choice is that structure of the papers is not directly available: paragraph boundaries, table cells, figures, captions, section headings, and document elements must be recovered from the visual layout instead of an XML file. This recovery process is the focus of the remainder of this section.
-
+The PDF is chosen as the input to the structural parser, because it is the most consistently available representation of published articles, whereas structured XML is often unavailable in scientific literature. The limitation of this choice is that the structure of the papers is not directly available: paragraph boundaries, table cells, figures, captions, and section headings must be recovered from the visual layout rather than read from an XML file. This recovery process is the focus of the remainder of this section.
