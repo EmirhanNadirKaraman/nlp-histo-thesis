@@ -2,7 +2,7 @@
 
 Provenance is one of the primary goals of this thesis. The system was designed not only to produce final biomedical rules, but more importantly, to make each of these final rules traceable back to the source. 
 
-Using the back-pointers introduced in Subsection~\ref{subsec:data-flow-and-intermediate-objects}, each intermediate object can be traced back to its source through the provenance chain (Final rule $\rightarrow$ Canonical rule $\rightarrow$ Normal finding $\rightarrow$ MAP finding $\rightarrow$ Text element $\rightarrow$ Document).
+Using the back-pointers introduced in Subsection~\ref{subsec:data-flow-and-intermediate-objects}, each intermediate object can be traced back to its source through the provenance chain (Final rule $\rightarrow$ Canonical rule $\rightarrow$ Normal finding $\rightarrow$ MAP finding $\rightarrow$ Text element $\rightarrow$ Document); Subsection~\ref{subsec:knowledge-provenance-model} enumerates these links in detail.
 
 This provenance chain is enforced through typed intermediate objects and back-pointers between stages. Upstream stages populate provenance fields when they produce their outputs, and downstream stages preserve these references. As a result, the output of every later stage --- normalization, grouping, and scoring --- can be followed back to the original evidence, so a reviewer can inspect a final rule, trace it back to its source text element, and compare the two.
 

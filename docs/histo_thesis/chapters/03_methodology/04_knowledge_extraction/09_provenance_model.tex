@@ -1,6 +1,6 @@
 \subsection{Provenance model}\label{subsec:knowledge-provenance-model}
 
-The provenance chain is preserved for each \texttt{FinalRule} the RESOLVE stage emits, allowing a downstream reader to re-derive it from the source text. The chain has four links: 
+The provenance chain is preserved for each \texttt{FinalRule} the RESOLVE stage emits, allowing a downstream reader to re-derive it from the source text. The chain runs through the following links: 
 
 \begin{itemize}
     \item \textbf{FinalRule $\to$ CanonicalRule.} Each \texttt{FinalRule} records the \texttt{canonical\_id} of the \texttt{CanonicalRule} it was scored from. The \texttt{CanonicalRule} stores the representative predicate and is associated with its best-grounded member selected during CANONICALIZE, described in Subsection~\ref{subsec:knowledge-canonicalize}. When needed, the verbatim text and the identifier of the paragraph it came from can be recovered on demand from the relational database.
@@ -12,6 +12,6 @@ The provenance chain is preserved for each \texttt{FinalRule} the RESOLVE stage 
     \item \textbf{Source paragraph $\to$ source document.} Each paragraph row has a foreign key to its document row, which carries the paper's PMCID and document-level metadata.
 \end{itemize}
 
-The provenance chain supports downstream validation: any final rule can be opened, followed back to the \texttt{CanonicalRule} and the \texttt{NormalFinding} records behind it, and the source paragraph, from which the findings were extracted. Then, the rule can be checked by a human reviewer against the source text, making the system auditable. However, provenance does not guarantee the correctness of the rule: a final rule might have a full provenance chain and still encode an interpretation that a domain expert would reject. It establishes traceability, not clinical correctness; Chapter~\ref{chapter:Discussion} discusses this distinction further.
+The provenance chain supports downstream validation: any final rule can be opened, followed back to the \texttt{CanonicalRule} and the \texttt{NormalFinding} records behind it, and the source paragraph, from which the findings were extracted. Then, the rule can be checked by a human reviewer against the source text, making the system auditable. As established in Subsection~\ref{subsec:provenance}, this traceability supports auditability, but is not a proof of clinical correctness.
 
 Section~\ref{section:results-ke-pipeline-output-and-provenance} verifies that the chain is complete in practice: every emitted final rule resolves to at least one source paragraph from its own paper. 
