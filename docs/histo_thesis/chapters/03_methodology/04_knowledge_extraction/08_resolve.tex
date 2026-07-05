@@ -1,6 +1,6 @@
 \subsection{RESOLVE: final rule scoring and selection}\label{subsec:knowledge-resolve}
 
-The RESOLVE stage takes a paper's \texttt{CanonicalRule} records, their associated relation records, and produces the final scored rules. The scoring is rule-based and deterministic. 
+The RESOLVE stage takes a paper's \texttt{CanonicalRule} records, their associated relation records, and produces the final scored \texttt{FinalRule} records. The scoring is rule-based and deterministic. 
 
 Each final score combines four signals. The first is the rule's mean grounding score, which is computed from the NLI entailment scores of the findings that support the rule. The second signal is an evidence-count bonus, which increases as the number of member findings increases, but this bonus saturates at a certain cap. The third signal is relation-derived: there is a capped bonus for supporting relations involving the rule, and a capped penalty for contradicting ones. The fourth signal is a penalty for evidence that comes from a single paper, rather than from multiple papers. These signals are weighted, summed, and then clamped to the [0,1] interval.
 

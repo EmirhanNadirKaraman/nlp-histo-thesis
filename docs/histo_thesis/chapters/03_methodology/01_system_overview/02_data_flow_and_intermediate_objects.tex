@@ -9,7 +9,7 @@ While data passes through the pipeline, it is converted to different typed inter
     
     \item \textbf{Figures and tables.} Cropped images of figures and tables identified in papers. Each of these figures and tables carries its caption and bounding box information, as well as cross-references where it is mentioned.
 
-    \item \textbf{MAP findings.} The MAP stage generates an auditable summary of atomic biomedical claims for each chunk. Each MAP finding has a subject entity, outcome entity, relation, direction and more, as well as an evidence pointer, pointing back to the text element it was inferred from.
+    \item \textbf{MAP findings.} The MAP stage generates an auditable summary of atomic biomedical claims for each chunk (a text element, or a window over consecutive text elements). Each MAP finding has a subject entity, outcome entity, relation type, direction and more, as well as an evidence pointer, pointing back to the text element it was inferred from.
 
     \item \textbf{Normal findings.} The subject and outcome entities are resolved to their canonical names with a curated synonym dictionary and the UMLS linker, and then deduplicated. Normal findings retain the source spans, including the sentences and text elements of every finding merged into them, to keep normalization reversible and the system traceable to its source text. 
 

@@ -24,7 +24,7 @@ The initial cascade uses three Level-1 and three Level-2 voters, and escalates t
 
 A single-voter-drop experiment is run at this stage over the full $\theta$ grid; the experiment results show that dropping \texttt{claude-haiku-4.5} reaches strict-F1 0.7147, compared with 0.7131 for the full ensemble: a difference that lies inside the bootstrap confidence interval of Section~\ref{section:results-cost-quality-comparison}, while costing 18\% less per chunk.
 
-The 5-voter cascade is selected at this stage for two reasons: first, as shown above, it is strict-F1-equivalent on the calibration set while costing 18\% less per chunk; second, and more importantly, the L2-voter Claude Haiku is from the same provider family as the silver labeler Opus, where both models are from Anthropic. Dropping it makes the L1-L2 voter ensemble completely independent of the evaluator, so the cascade's agreement with silver is no longer biased by voters belonging to the same provider. The Level-3 fallback model remains Sonnet, so this provider-independence only applies to the voter escalation signals, not to the entire cascade for the chunks that escalate to Level-3 Claude Sonnet. 
+The 5-voter cascade is selected at this stage for two reasons: first, as shown above, it is strict-F1-equivalent on the calibration set; second, and more importantly, the L2-voter Claude Haiku is from the same provider family as the silver labeler Opus, where both models are from Anthropic. Dropping it makes the L1-L2 voter ensemble completely independent of the evaluator, so the cascade's agreement with silver is no longer biased by voters belonging to the same provider. The Level-3 fallback model remains Sonnet, so this provider-independence only applies to the voter escalation signals, not to the entire cascade for the chunks that escalate to Level-3 Claude Sonnet. 
 
 The decision of removing Claude Haiku from the cascade is made entirely on the calibration set; the generalization test of Section~\ref{section:results-generalization-to-heldout-papers} reports the results of the 5-voter cascade on a separate, held-out set of papers.
 
@@ -54,7 +54,7 @@ At this stage, the optimal $\theta$ value is pinned, and the two routing gates -
 After deciding on the optimum gate combination, where \texttt{escalate} was selected as the single-voter policy, the shipped configuration's $\theta$-curve is regenerated. The regeneration confirms that the shipped gate does not move the $\theta$ pin at $0.9$. 
 
 \begin{table}[htpb]
-\caption[Pinned agreement-cascade configuration]{The pinned agreement-cascade configuration selected on the calibration set.}
+\caption[Pinned agreement-cascade configuration]{The pinned agreement-cascade configuration selected on the calibration set. The reported headline strict-F1 is computed at the MAP stage before grounding. Applying a grounding threshold of 0.5 lowers strict-F1 to $0.652$ in exchange for source-faithfulness (Section~\ref{section:results-nli-in-grounding-and-relation-classification}).}
 \label{tab:abc-configuration-of-record}
 \centering
 \begin{tabular}{p{0.28\linewidth} p{0.48\linewidth} p{0.16\linewidth}}
@@ -83,7 +83,7 @@ After deciding on the optimum gate combination, where \texttt{escalate} was sele
     & 0.5
     & E03 \\
     Headline operating point
-    & \textbf{strict-F1 0.7160 at 95.6\% escalation}
+    & \textbf{strict-F1 0.7160 at 95.6\% escalation} (before grounding)
     & E08/E08b \\
     \bottomrule
 \end{tabular}

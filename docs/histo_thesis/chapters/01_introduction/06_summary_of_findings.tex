@@ -4,7 +4,7 @@ The results are mixed. The system succeeds on document extraction, provenance, g
 
 \medskip{}
 
-\textbf{RQ1 -- Document extraction.} On the 27-PDF rubric set, the post-processing steps in this stage substantially raise table strict-F1 from $0.400$ (Docling baseline) to $0.838$; the main driver of this improvement is footnote expansion, increasing footnote precision from $43.8\%$ to $91.4\%$. The figure strict-F1 is also lifted from $0.447$ (off-the-shelf Docling) to $0.840$, mainly because of decorative icon filtering, sub-figure merging, and improved caption matching. Therefore, the document-extraction pipeline reaches its targets.
+\textbf{RQ1 -- Document extraction.} On the 27-PDF rubric set, the post-processing steps in this stage substantially raise table strict-F1 from $0.366$ (off-the-shelf Docling) to $0.838$; the main driver of this improvement is footnote expansion, increasing footnote precision from $43.8\%$ to $91.4\%$. The figure strict-F1 is also lifted from $0.447$ (off-the-shelf Docling) to $0.840$, mainly because of decorative icon filtering, sub-figure merging, and improved caption matching. Therefore, the document-extraction pipeline reaches its targets.
 
 \medskip{}
 
@@ -24,5 +24,4 @@ The results are mixed. The system succeeds on document extraction, provenance, g
 
 \medskip{}
 
-Taken together, document extraction, NLI components, and safety gates behave as intended; the cascade's only shortfall is cost-justification, so its value lies in provider-independence rather than accuracy.
-
+These results, together with the overall cascade outcome, are interpreted in Chapter~\ref{chapter:Discussion}.
