@@ -1,11 +1,11 @@
 \subsection{Pipeline overview}\label{subsec:knowledge-pipeline-overview}
 
-The pipeline consists of seven stages, where each stage consumes the typed object the previous stage produced. The flow is mostly linear, except at the end: the RELATE stage computes the pairwise relations of the canonical rules, making RESOLVE the only stage that consumes two inputs --- the canonical rules from CANONICALIZE and the relations from RELATE, which it uses to score each rule. Figure~\ref{fig:ke-pipeline} shows these stages with their per-stage input and output types. 
+The pipeline consists of seven stages, each of which consumes the typed object produced by the previous stage. The flow is mostly linear, except at the end: the RELATE stage computes the pairwise relations of the canonical rules, making RESOLVE the only stage that consumes two inputs --- the canonical rules from CANONICALIZE and the relations from RELATE, which it uses to score each rule. Figure~\ref{fig:ke-pipeline} shows these stages with their per-stage input and output types. 
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{figures/03_methodology/04_knowledge_extraction/01_knowledge_pipeline.pdf}
-    \caption[Knowledge-extraction pipeline.]{Knowledge-extraction pipeline, with each arrow labeled by the typed object it emits. GROUNDING is a filter, so it preserves the type; RESOLVE takes multiple inputs.}
+    \caption[Knowledge-extraction pipeline.]{Knowledge-extraction pipeline, with each arrow labeled by the typed object it emits. GROUNDING is a filter, so it preserves the type; RESOLVE takes two inputs.}
     \label{fig:ke-pipeline}
 \end{figure}
 

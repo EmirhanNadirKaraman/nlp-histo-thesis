@@ -1,6 +1,6 @@
 \subsection{Relationship to the rest of the pipeline}\label{subsec:abc-relationship-to-pipeline}
 
-Agreement-based cascading operates at the MAP stage. It does not filter individual findings, it only chooses which voter's output should be consumed by downstream stages for each chunk. ABC is not the only quality-control mechanism in the knowledge-extraction pipeline of Section~\ref{section:Knowledge_Extraction}: the downstream pipeline after the MAP stage has its own quality-control filters and checks on the MAP output: 
+Agreement-based cascading operates at the MAP stage. It does not filter individual findings; it only chooses which voter's output should be consumed by downstream stages for each chunk. ABC is not the only quality-control mechanism in the knowledge-extraction pipeline of Section~\ref{section:Knowledge_Extraction}: the downstream pipeline after the MAP stage has its own quality-control filters and checks on the MAP output: 
 
 \begin{itemize}
     \item \textbf{GROUNDING} (Subsection~\ref{subsec:knowledge-grounding}) drops findings whose verbatim source text does not entail the claim that is made.
@@ -9,9 +9,9 @@ Agreement-based cascading operates at the MAP stage. It does not filter individu
     
     \item \textbf{CANONICALIZE} (Subsection~\ref{subsec:knowledge-canonicalize}) creates one \texttt{CanonicalRule} per direction bin, and flags groups with polarity conflicts.
 
-    \item \textbf{RELATE} and \textbf{RESOLVE} (Subsections~\ref{subsec:knowledge-relate}--\ref{subsec:knowledge-resolve}) operate on comparable canonical rules. The former identifies supporting and contradicting relations between rules, and the latter scores and ranks these rules based on the relations. In contrast to the preceding stages, they provide quality control by scoring and ranking, rather than by dropping.
+    \item \textbf{RELATE} and \textbf{RESOLVE} (Subsections~\ref{subsec:knowledge-relate}--\ref{subsec:knowledge-resolve}) operate on comparable canonical rules. The former identifies supporting and contradictory relations among rules, and the latter scores and ranks these rules based on these relations. In contrast to the preceding stages, they provide quality control through scoring and ranking rather than through dropping.
 \end{itemize}
 
-ABC's contribution to the quality of the pipeline output is bounded by what MAP voters can produce: even the output of an optimal cascade is still filtered through GROUNDING and re-scored in the RESOLVE stage. The cascade reduces the reliance on expensive MAP calls where there is a strong agreement between voters, and the later stages provide additional safeguards and filters against unsupported, conflicting, duplicated, or weakly scored claims. 
+ABC's contribution to the quality of the pipeline output is bounded by what MAP voters can produce: even the output of an optimal cascade is still filtered through GROUNDING and re-scored in the RESOLVE stage. The cascade reduces reliance on expensive MAP calls when there is strong agreement among voters, and the later stages provide additional safeguards and filters against unsupported, conflicting, duplicated, or weakly scored claims. 
 
 ABC is therefore one component within a layered quality-control design; it does not replace the downstream stages listed above.

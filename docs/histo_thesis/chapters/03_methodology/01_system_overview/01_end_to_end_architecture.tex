@@ -1,16 +1,16 @@
 \subsection{End-to-end architecture}\label{subsec:end-to-end-architecture}
 
-The system takes histopathology papers from the PubMed Central Open Access Subset, parses them into a structured format suitable for a relational database, and produces scored biomedical rules whose every field can be traced back to its source. The end-to-end flow consists of four stages, shown in Figure~\ref{fig:system-architecture}.
+The system filters and downloads histopathology papers from the PubMed Central Open Access Subset, parses them into a structured format suitable for a relational database, and produces scored biomedical rules whose fields can be traced back to their sources. The end-to-end flow consists of four stages, shown in Figure~\ref{fig:system-architecture}.
 
 \begin{enumerate} 
 
-\item \textbf{Paper selection and filtering.} Papers are selected by keyword filtering (e.g. histopathology, histology, immunohistochemistry, H\&E, biopsy, whole-slide image) in the article title/citation, while excluding other imaging modalities (MRI, CT, ultrasound) and non-human studies (mouse, rat, veterinary). These keywords were suggested by an LLM. The selected papers are then downloaded; all downloaded papers are available as both PDF and JATS-XML, but only the PDF files were used, since the pipeline is designed not to depend on XML representations, which is not consistently available across the scientific literature (Subsection~\ref{subsec:doc-input-sources}). 
+\item \textbf{Paper selection and filtering.} Papers are selected by keyword filtering (e.g., histopathology, histology, immunohistochemistry, H\&E, biopsy, whole-slide image) in the article title/citation, while excluding other imaging modalities (MRI, CT, ultrasound) and non-human studies (mouse, rat, veterinary). These keywords were suggested by an LLM. The selected papers are then downloaded; all downloaded papers are available in both PDF and JATS-XML formats, but only the PDF files were used, since the pipeline is designed not to depend on XML representations, which are not consistently available across the scientific literature (Subsection~\ref{subsec:doc-input-sources}). 
 
 \item \textbf{Document extraction pipeline.} Each of the downloaded papers is parsed by a PDF document extraction pipeline. A Docling-backed hybrid table detector and a two-pass invisible-text guard are used to improve text extraction quality. The resulting output is a set of provenance-preserving document elements (text, figures, tables, captions, and cross-references). These results are written into a PostgreSQL relational database.
 
 \item \textbf{Knowledge extraction pipeline.} The document elements are consumed by a knowledge extraction pipeline, which decomposes texts into atomic findings, filters them through an NLI grounding gate, normalizes and groups them, produces canonical rule candidates, classifies pairwise relations between rules, and scores final rules. 
 
-The first stage of the knowledge extraction pipeline, MAP, is the core of this pipeline: a three-tier agreement-based cascade system calculates per-chunk agreement scores, in order to decide between escalating to a higher tier with better and more expensive models, accepting the cheap-tier output, or rejecting the chunk output altogether.
+The first stage of the knowledge extraction pipeline, MAP, is the core of this pipeline: a three-tier agreement-based cascade system calculates per-chunk agreement scores in order to decide between escalating to a higher tier with better and more expensive models, accepting the cheap-tier output, or rejecting the chunk output altogether.
 
 \begin{figure}[htbp]
     \centering
@@ -19,6 +19,6 @@ The first stage of the knowledge extraction pipeline, MAP, is the core of this p
     \label{fig:system-architecture}
 \end{figure}
 
-\item \textbf{Final outputs and evaluation.} The system emits scored rules with full provenance, where the source evidence for each rule can be tracked and retrieved from the database. The experiments and evaluation scripts read the persisted artifacts offline (Subsection~\ref{subsec:overview-reproducibility-and-artifact-design}), to measure and report the behavior of each subsystem. 
+\item \textbf{Final outputs and evaluation.} The system emits scored rules with full provenance, where the source evidence for each rule can be tracked and retrieved from the database. The experiments and evaluation scripts read the persisted artifacts offline (Subsection~\ref{subsec:overview-reproducibility-and-artifact-design}) to measure and report the behavior of each subsystem. 
 
 \end{enumerate}

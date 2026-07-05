@@ -5,21 +5,21 @@ While data passes through the pipeline, it is converted to different typed inter
 \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
     \item \textbf{Documents.} One row per ingested paper, with its PMC ID saved as a unique key in the database -- the root of the provenance chain that every later object points back to.
 
-    \item \textbf{Text elements.} Paragraphs and headings, each with its unique path, content, depth and position within section. A text element points back to its document, and is the unit that the knowledge extraction pipeline consumes.
+    \item \textbf{Text elements.} Paragraphs and headings, each with its unique path, content, depth, and position within the section. A text element points back to its document and is the unit consumed by the knowledge extraction pipeline.
     
-    \item \textbf{Figures and tables.} Cropped images of figures and tables identified in papers. Each of these figures and tables carries its caption and bounding box information, as well as cross-references where it is mentioned.
+    \item \textbf{Figures and tables.} Cropped images of figures and tables identified in papers. Each figure and table includes its caption and bounding box information, as well as cross-references when it is mentioned.
 
-    \item \textbf{MAP findings.} The MAP stage generates an auditable summary of atomic biomedical claims for each chunk (a text element, or a window over consecutive text elements). Each MAP finding has a subject entity, outcome entity, relation type, direction and more, as well as an evidence pointer, pointing back to the text element it was inferred from.
+    \item \textbf{MAP findings.} The MAP stage generates an auditable summary of atomic biomedical claims for each chunk (a text element, or a window over consecutive text elements). Each MAP finding has a subject entity, outcome entity, relation type, direction, and more, as well as an evidence pointer, pointing back to the text element it was inferred from.
 
-    \item \textbf{Normal findings.} The subject and outcome entities are resolved to their canonical names with a curated synonym dictionary and the UMLS linker, and then deduplicated. Normal findings retain the source spans, including the sentences and text elements of every finding merged into them, to keep normalization reversible and the system traceable to its source text. 
+    \item \textbf{Normal findings.} The subject and outcome entities are resolved to their canonical names with a curated synonym dictionary and the UMLS linker, and then deduplicated. Normal findings retain the source spans, including the sentences and text elements of each finding merged into them, to keep normalization reversible and the system traceable to its source text. 
 
-    \item \textbf{Finding groups.} Normal findings are grouped by their subject, outcome, relation type and category. A finding group lists the normal findings it contains.
+    \item \textbf{Finding groups.} Normal findings are grouped by their subject, outcome, relation type, and category. A finding group lists the normal findings it contains.
 
     \item \textbf{Canonical rules.} Finding groups are separated into different bins based on their directions. Per direction bin per finding group, a representative claim with the best grounding score is selected. The canonical rule keeps pointers to its group and to the normal findings it summarizes.
 
-    \item \textbf{Relations.} Pairwise edges between canonical rules, each labeled SUPPORT, CONTRADICT or UNRELATED by an NLI cross-encoder. Only the supporting and contradicting pairs are kept. Each relation has the two canonical rules it connects, alongside the SUPPORT/CONTRADICT label, and the directional NLI scores.
+    \item \textbf{Relations.} Pairwise edges between canonical rules, each labeled SUPPORT, CONTRADICT, or UNRELATED by an NLI cross-encoder. Only the supporting and contradicting pairs are kept. Each relation has the two canonical rules it connects, alongside the SUPPORT/CONTRADICT label, and the directional NLI scores.
 
-    \item \textbf{Final rules.} Canonical rules are augmented with scores to generate final rules. A canonical rule is given a score between 0--1, combining its grounding score, the number of findings behind it, and the support and contradiction relations that touch it. The generated final rule keeps a pointer back to its canonical rule.
+    \item \textbf{Final rules.} Canonical rules are augmented with scores to generate final rules. A canonical rule is given a score between 0 and 1, combining its grounding score, the number of findings behind it, and the support and contradiction relations that touch it. The generated final rule keeps a pointer back to its canonical rule.
 \end{itemize}
 
 The detailed shape of each object is defined in Sections~\ref{section:Document_Extraction} and~\ref{section:Knowledge_Extraction}.

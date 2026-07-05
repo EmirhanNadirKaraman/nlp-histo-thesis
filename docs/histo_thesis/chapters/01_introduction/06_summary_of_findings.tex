@@ -1,6 +1,6 @@
 \section{Summary of findings}\label{section:intro-summary-of-findings}
 
-The results are mixed. The system succeeds on document extraction, provenance, grounding, and held-out generalization; the one negative result is about the agreement-based cascade, and is discussed under RQ3 below. All results are reported in detail in Chapter~\ref{chapter:Results}. 
+The results are mixed. The system excels at document extraction, provenance, grounding, and held-out generalization; the only negative result concerns the agreement-based cascade and is discussed under RQ3 below. All results are reported in detail in Chapter~\ref{chapter:Results}. 
 
 \medskip{}
 
@@ -12,11 +12,11 @@ The results are mixed. The system succeeds on document extraction, provenance, g
 
 \medskip{}
 
-\textbf{RQ3 -- Cost-quality trade-off.} This is the central negative result. The calibrated five-voter cascade, which is the optimal voter subset after analysis in Section~\ref{section:results-abc-calibration}, reaches a strict-F1 score of $0.7160$, versus the strong single-model baseline's $0.7129$ (Sonnet). This difference is not statistically significant; single-Sonnet achieves an equivalent strict-F1 while being 24\% cheaper. The cascade decisively beats every other single model, but it is not cost-justified against single-Sonnet under the silver cost-quality criterion. Therefore, the defensible value of the cascade is not the accuracy, but provider-independence.
+\textbf{RQ3 -- Cost-quality trade-off.} This is the central negative result. The calibrated five-voter cascade, which is the optimal voter subset after analysis in Section~\ref{section:results-abc-calibration}, reaches a strict-F1 score of $0.7160$, versus the strong single-model baseline's $0.7129$ (Sonnet). This difference is not statistically significant; single-Sonnet achieves an equivalent strict-F1 while being 24\% cheaper. The cascade decisively beats every other single model, but it is not cost-justified against single-Sonnet under the silver cost-quality criterion. Therefore, the defensible value of the cascade is not the accuracy, but provider independence.
 
 \medskip{}
 
-\textbf{RQ4 -- Grounding and relation classification.} The NLI components behave as designed. The grounding filter enforces source-faithfulness, and trades away six points in strict-F1 at the pinned threshold, lowering the score from $0.7160$ to $0.652$. The relation classifier reaches about $93\%$ accuracy on a class-balanced synthetic dataset. This is an optimistic result, considering that the synthetically generated claim pairs might be cleaner than the hardest corpus cases. 
+\textbf{RQ4 -- Grounding and relation classification.} The NLI components behave as designed. The grounding filter enforces source-faithfulness and trades off 6 points in strict-F1 at the pinned threshold, lowering the score from $0.7160$ to $0.652$. The relation classifier reaches about $93\%$ accuracy on a class-balanced synthetic dataset. This is an optimistic result, considering that the synthetically generated claim pairs might be cleaner than the hardest corpus cases. 
 
 \medskip{}
 

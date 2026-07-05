@@ -1,12 +1,12 @@
 \subsection{Known limitations}\label{subsec:doc-extraction-known-limitations}
 
-The document-extraction pipeline has several failure modes that were identified, listed here as part of the methodological scope. Chapter~\ref{chapter:Results} reports the rubric-scored incidence of the figure, table, and caption-matching failure modes. The body-text errors listed below are not captured by the rubric, and are therefore marked here separately. Chapter~\ref{chapter:Discussion} discusses how these limitations affect the interpretation of the downstream results. 
+The document-extraction pipeline has several failure modes that were identified, listed here as part of the methodological scope. Chapter~\ref{chapter:Results} reports the rubric-scored incidence of the figure, table, and caption-matching failure modes. The body-text errors listed below are not captured by the rubric and are therefore marked here separately. Chapter~\ref{chapter:Discussion} discusses how these limitations affect the interpretation of the downstream results. 
 
 \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
 
-    \item \textbf{Caption-attachment failures.} The caption-linking procedure discussed in Subsection~\ref{subsec:doc-table-and-figure-handling} relies on a geometric nearest-caption heuristic. This heuristic fails on rotated tables, continuation captions like "Table 1. Continued", table captions attached to the sides or corners of the artifact, and captions placed on a different page than their table.
+    \item \textbf{Caption-attachment failures.} The caption-linking procedure discussed in Subsection~\ref{subsec:doc-table-and-figure-handling} relies on a geometric nearest-caption heuristic. This heuristic fails for rotated tables, continuation captions such as "Table 1. Continued", table captions attached to the sides or corners of the artifact, and captions placed on a different page than their table.
     
-    \item \textbf{Complex tables.} Multi-page or rotated tables reduce the precision of the table detection. The hybrid table detector operates on one page at a time, so a multi-page table is detected as separate regions. Some tables are also missed entirely, reducing recall; others are cropped too tightly or too loosely because the detected region cannot match the true table boundaries.
+    \item \textbf{Complex tables.} Multi-page or rotated tables reduce the precision of the table detection. The hybrid table detector operates on a page-by-page basis, so a multi-page table is detected as separate regions. Some tables are also entirely missed, reducing recall; others are cropped too tightly or too loosely because the detected region does not match the true table boundaries.
 
     \item \textbf{Decorative figures.} The size filter of Subsection~\ref{subsec:doc-table-and-figure-handling} cannot remove moderately-sized publisher logos and inline icons, so they survive as figure false positives, reducing figure-output precision; body text quality is unaffected, since their regions are still masked.
     

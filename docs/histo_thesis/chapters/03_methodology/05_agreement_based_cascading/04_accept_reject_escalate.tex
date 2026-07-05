@@ -10,8 +10,8 @@ At each tier, the cascade uses the deferral score $s$ to decide between three ac
     \item \textbf{Escalate}. Otherwise (when $\theta_{\mathrm{reject}} < s < \theta$), the cascade escalates to the next tier. A chunk that reaches the last level is accepted there; the cascade has no better model tier to escalate to.
 \end{itemize}
 
-The reject threshold can also be the toggle for enabling or disabling dropping behavior. Deferral scores lie in $[0,1]$, so setting $\theta_{\mathrm{reject}} = 0$ makes the reject branch unreachable for non-degenerate chunks. In that configuration, every chunk scoring below $\theta$ is escalated through L1 and L2, and then accepted at L3 (the single-model fallback described above).
+The reject threshold can also serve as a toggle for enabling or disabling dropping behavior. Deferral scores lie in $[0,1]$, so setting $\theta_{\mathrm{reject}} = 0$ makes the reject branch unreachable for non-degenerate chunks. In that configuration, every chunk scoring below $\theta$ is escalated through L1 and L2, and then accepted at L3 (the single-model fallback described above).
 
 The threshold pair $(\theta, \theta_{\mathrm{reject}})$ is a calibration parameter, selected by the offline calibration protocol explained in Subsection~\ref{subsec:abc-calibration-and-replay}, and evaluated in Chapter~\ref{chapter:Results}. 
 
-Escalation is the main cost control mechanism of the agreement-based cascade; the resulting cost-quality trade-off is analyzed in Subsection~\ref{subsec:abc-cost-quality}.
+Escalation is the primary cost-control mechanism in the agreement-based cascade; the resulting cost-quality trade-off is analyzed in Subsection~\ref{subsec:abc-cost-quality}.

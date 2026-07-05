@@ -1,6 +1,6 @@
 \subsection{MAP: atomic finding extraction}\label{subsec:knowledge-map}
 
-The MAP stage takes a sentence chunk, and produces zero or more atomic findings. Each finding is a typed Pydantic record, with the following fields: 
+The MAP stage takes a sentence chunk and produces zero or more atomic findings. Each finding is a typed Pydantic record, with the following fields: 
 
 \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
 
@@ -12,7 +12,7 @@ The MAP stage takes a sentence chunk, and produces zero or more atomic findings.
     
     \item \textbf{Direction.} A polarity label that indicates the direction of a relation. The allowed values are: \texttt{positive}, \texttt{negative}, \texttt{absent}, \texttt{partial}, \texttt{unclear}, or \texttt{no\_direction}.
     
-    \item \textbf{Category.} The histopathology domain class the finding is related to. Possible values are: \texttt{morphology}, \texttt{IHC (immunohistochemistry)}, \texttt{molecular\_genetics}, \texttt{staging}, \texttt{treatment}, \texttt{prognosis}, or \texttt{demographic}.
+    \item \textbf{Category.} The histopathology domain class to which the finding is related. Possible values are: \texttt{morphology}, \texttt{IHC (immunohistochemistry)}, \texttt{molecular\_genetics}, \texttt{staging}, \texttt{treatment}, \texttt{prognosis}, or \texttt{demographic}.
     
     \item \textbf{Scope.} A set of contextual qualifiers, including disease subtype, tissue site, assay method, treatment context, cohort size, study design, biomarker cutoff, and clinical endpoint. Each field is nullable, where the sentence does not contain the specific contextual qualifier. 
     
