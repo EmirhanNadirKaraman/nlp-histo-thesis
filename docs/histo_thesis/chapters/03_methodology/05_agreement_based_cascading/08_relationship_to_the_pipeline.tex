@@ -2,7 +2,7 @@
 
 Agreement-based cascading operates at the MAP stage. It does not filter individual findings; it only chooses which voter's output should be consumed by downstream stages for each chunk. ABC is not the only quality-control mechanism in the knowledge-extraction pipeline of Section~\ref{section:Knowledge_Extraction}: the downstream pipeline after the MAP stage has its own quality-control filters and checks on the MAP output: 
 
-\begin{itemize}
+\begin{itemize}[label={},leftmargin=1.5em]
     \item \textbf{GROUNDING} (Subsection~\ref{subsec:knowledge-grounding}) drops findings whose verbatim source text does not entail the claim that is made.
     
     \item \textbf{NORMALIZE} and \textbf{GROUP} (Subsection~\ref{subsec:knowledge-normalize-and-group}) reduce surface-form variation in subject and outcome entity strings before grouping, so that trivial variants of the same entities do not leak into separate \texttt{CanonicalRule} objects. 

@@ -2,7 +2,7 @@
 
 The evaluation methodology has several limitations. These limitations are listed here to bound the interpretations of the numerical outputs of the pipeline and the experiments, reported in Chapter~\ref{chapter:Results}; their implications are discussed in Chapter~\ref{chapter:Discussion}. 
 
-\begin{itemize}
+\begin{itemize}[label={},leftmargin=1.5em]
     \item \textbf{The document-extraction rubric set is small.} The document-extraction rubric set consists of 27 papers, manually selected from the ingested corpus, and frozen for reproducibility. Since the paper set is small, the coverage of different figure-table extraction failure modes might be limited.
     
     \item \textbf{The synthetic relation-classification dataset is easy-skewed.} The relation-classification dataset is synthetically generated, due to the sparsity of the label classes emitted by the knowledge-extraction pipeline. The generated set of claim pairs might include examples that are too closely related, obviously contradictory, or totally unrelated, which the NLI model can easily label correctly. The reported accuracy for relation classification, therefore, is an optimistic ceiling, not a corpus-representative estimate.

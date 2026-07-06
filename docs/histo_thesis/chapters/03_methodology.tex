@@ -3,8 +3,6 @@
 
 \chapter{Methodology}\label{chapter:Methodology}
 
-\pinktodo{Remove anything that refers to Chapters 4 or 5 (Results and Discussion), and add the section/subsection number instead, to be more precise.}
-
 This chapter describes how the system processes a corpus of histopathology papers and converts them into a set of structured biomedical claims, each traceable to the paper and paragraph from which it was derived. The system consists of two pipelines, connected by a relational database: a document-extraction pipeline, which parses each PDF into text elements, figures, tables, and the cross-references between them, while preserving provenance; and a knowledge-extraction pipeline, which decomposes the extracted text into atomic findings, and refines them through grounding, normalization, grouping, canonicalization, relation classification, and scoring stages. 
 
 At the core of the knowledge-extraction pipeline is the MAP stage, made cost-aware by agreement-based cascading: independent voters at a cheap tier are run first, and the chunk is escalated to a more capable (but expensive) tier only when they disagree (Section~\ref{section:Agreement_Based_Cascading}). The system is designed to surface traceable rule candidates for expert review; it does not aim to produce clinical rules autonomously.

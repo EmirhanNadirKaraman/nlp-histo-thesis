@@ -17,7 +17,7 @@ While data passes through the pipeline, it is converted to different typed inter
 
     \item \textbf{Canonical rules.} Finding groups are separated into different bins based on their directions. Per direction bin per finding group, a representative claim with the best grounding score is selected. The canonical rule keeps pointers to its group and to the normal findings it summarizes.
 
-    \item \textbf{Relations.} Pairwise edges between canonical rules, each labeled SUPPORT, CONTRADICT, or UNRELATED by an NLI cross-encoder. Only the supporting and contradicting pairs are kept. Each relation has the two canonical rules it connects, alongside the SUPPORT/CONTRADICT label, and the directional NLI scores.
+    \item \textbf{Relations.} Pairwise edges between canonical rules, each labeled \texttt{SUPPORT}, \texttt{CONTRADICT}, or \texttt{UNRELATED} by an NLI cross-encoder. Only the supporting and contradicting pairs are kept. Each relation has the two canonical rules it connects, alongside its \texttt{SUPPORT}/\texttt{CONTRADICT} label and the directional NLI scores.
 
     \item \textbf{Final rules.} Canonical rules are augmented with scores to generate final rules. A canonical rule is given a score between 0 and 1, combining its grounding score, the number of findings behind it, and the support and contradiction relations that touch it. The generated final rule keeps a pointer back to its canonical rule.
 \end{itemize}

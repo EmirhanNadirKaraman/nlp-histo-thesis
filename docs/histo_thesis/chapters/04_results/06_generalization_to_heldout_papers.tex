@@ -4,69 +4,63 @@ The calibration of Section~\ref{section:results-abc-calibration} and the cost-qu
 
 The test set used for evaluation is \texttt{heldout15}. It is a 15-paper cluster drawn by a random seed, with zero paper-level overlap with the calibration set (\texttt{related15}) or the document-extraction evaluation set. The frozen five-voter configuration selected in Section~\ref{section:results-abc-calibration} is replayed and scored on \texttt{heldout15}: the held-out primer was run once and replayed offline, with no re-tuning.
 
-\medskip{}
+\begin{itemize}[label={},leftmargin=1.5em]
 
-\textbf{MAP-level generalization.} Table~\ref{tab:results-heldout-map-generalization} compares the calibrated configuration on the calibration and held-out sets.
+    \item \textbf{MAP-level generalization.} Table~\ref{tab:results-heldout-map-generalization} compares the calibrated configuration on the calibration and held-out sets.
 
-\begin{table}[htpb]
-    \caption[Held-out MAP-stage generalization]{MAP-stage generalization of the frozen five-voter cascade from \texttt{related15} to \texttt{heldout15}.}
-    \label{tab:results-heldout-map-generalization}
+    \begin{table}[htpb]
+        \caption[Held-out MAP-stage generalization]{MAP-stage generalization of the frozen five-voter cascade from \texttt{related15} to \texttt{heldout15}.}
+        \label{tab:results-heldout-map-generalization}
+        \centering
+        \begin{tabular}{l r r r r r}
+        \toprule
+        Set & Strict F1 & Loose F1 & Precision & Recall & Escalation \\
+        \midrule
+        \texttt{related15} calibration & 0.7160 & 0.886  & 0.872 & 0.900 & 0.956 \\
+        \texttt{heldout15} test & 0.7128 & 0.884 & 0.880 & 0.888 & 0.990 \\
+        \bottomrule
+    \end{tabular}
+    \end{table}
+
+    The held-out test shows a slightly higher escalation rate, but no meaningful differences in precision, recall, or F1 scores. The held-out strict-F1 is 0.7128, and sits 0.0032 below the calibration value, which is well within the bootstrap noise band reported in Section~\ref{section:results-cost-quality-comparison}: this result shows that the configuration generalizes, and that there is no meaningful overfitting to the calibration cluster. 
+
+    Two observations made on the calibration set carry over to the evaluation set as well. First, the escalation rate in the held-out set is 0.990, meaning that almost every chunk escalates to Sonnet, as it did on the calibration set. This reproduces the RQ3 finding that the selected cascade behaves similarly to a single-Sonnet system at the quality operating point. 
+
+    Second, a $\theta$ sweep on \texttt{heldout15} (Figure~\ref{fig:results-heldout-theta}) mirrors the pattern observed on the calibration set: strict-F1 increases monotonically, but with diminishing returns. It is descriptive only; $\theta$ remains fixed at its calibrated value.
+
+    \begin{figure}[htpb]
     \centering
-    \begin{tabular}{l r r r r r}
-    \toprule
-    Set & Strict F1 & Loose F1 & Precision & Recall & Escalation \\
-    \midrule
-    \texttt{related15} calibration & 0.7160 & 0.886  & 0.872 & 0.900 & 0.956 \\
-    \texttt{heldout15} test & 0.7128 & 0.884 & 0.880 & 0.888 & 0.990 \\
-    \bottomrule
-\end{tabular}
-\end{table}
+    \includegraphics[width=0.62\linewidth]{figures/04_results/06_generalization_to_heldout_papers/01_theta_sweep_heldout.pdf}
+    \caption[Held-out $\theta$-sweep vs calibration]{The effect of $\theta$ on strict-F1 under the optimal matcher, on the held-out evaluation set.  $\theta_{\mathrm{reject}}=0.2$, and the \texttt{escalate} gate is fixed. The calibration curve is overlaid for comparison. Both curves monotonically rise as $\theta$ increases, and flatten above $\theta=0.8$. A diminishing-returns pattern is observed for both sets. The held-out sweep is descriptive only; $\theta$ is fixed after calibration.}
+    \label{fig:results-heldout-theta}
+    \end{figure}
 
-The held-out test shows a slightly higher escalation rate, but no meaningful differences in precision, recall, or F1 scores. The held-out strict-F1 is 0.7128, and sits 0.0032 below the calibration value, which is well within the bootstrap noise band reported in Section~\ref{section:results-cost-quality-comparison}: this result shows that the configuration generalizes, and that there is no meaningful overfitting to the calibration cluster. 
+    \item \textbf{Downstream funnel generalization.} The strict-F1 scores evaluate the MAP stage. The downstream stages in the pipeline are run using the cached MAP output from \texttt{heldout15}, mirroring the funnel in Section~\ref{section:results-ke-pipeline-output-and-provenance}, to test whether generalization holds in the stages after MAP. Table~\ref{tab:results-heldout-ke-funnel} compares the funnels on the calibration and evaluation sets.
 
-Two observations made on the calibration set carry over to the evaluation set as well. First, the escalation rate in the held-out set is 0.990, meaning that almost every chunk escalates to Sonnet, as it did on the calibration set. This reproduces the RQ3 finding that the selected cascade behaves similarly to a single-Sonnet system at the quality operating point. 
+    \begin{table}[htpb]
+    \caption[Held-out knowledge-extraction funnel]{Knowledge-extraction funnel comparison between the calibration and held-out sets. Both sets contain 15 papers.}
+    \label{tab:results-heldout-ke-funnel}
+    \centering
+    \begin{tabular}{l r r}
+        \toprule
+        Stage & \texttt{related15} calibration & \texttt{heldout15} test \\
+        \midrule
+        MAP findings & 2\,294 & 1\,672 \\
+        Grounded findings at threshold 0.5 & 1\,923 (83.8\%) & 1\,379 (82.5\%) \\
+        Normalized findings after deduplication & 1\,860 ($-3.3\%$) & 1\,342 ($-2.7\%$) \\
+        Groupable findings & 1\,820 & 1\,314 \\
+        Canonical rules & 1\,747 & 1\,273 \\
+        Canonical rules per normalized finding & 0.939 & 0.949 \\
+        Relations, intra + cross & 25 (13 + 12) & 4 (4 + 0) \\
+        Final rules per paper & 116.5 & 84.9 \\
+        \bottomrule
+    \end{tabular}
+    \end{table}
 
-Second, a $\theta$ sweep on \texttt{heldout15} (Figure~\ref{fig:results-heldout-theta}) mirrors the pattern observed on the calibration set: strict-F1 increases monotonically, but with diminishing returns. It is descriptive only; $\theta$ remains fixed at its calibrated value.
+    The downstream funnel on the held-out set preserves the shape of the calibration's downstream funnel. The consolidation ratio -- the number of canonical rules per normalized finding -- is nearly identical, with a difference of only 1\% between the calibration and held-out evaluation sets. Provenance generalizes as well: each of the 1\,273 final rules produced on the held-out papers resolves to a source paragraph in its own paper, resulting in a 100\% rule-level carry-rate. This matches the calibration result reported in Section~\ref{section:results-ke-pipeline-output-and-provenance}.
+    
+    The held-out run produces 4 intra-paper relations, no cross-paper relations, and no contradictions. Because the held-out set was sampled randomly, fewer relations were observed, as expected. This sparsity of relations was the motivating factor behind evaluating the relation-classifier on a synthetic set (Section~\ref{section:results-nli-in-grounding-and-relation-classification}), rather than on the corpus. The funnel shows that the calibrated configuration also generalizes to the stages that follow MAP, answering RQ5. 
 
-\begin{figure}[htpb]
-\centering
-\includegraphics[width=0.62\linewidth]{figures/04_results/06_generalization_to_heldout_papers/01_theta_sweep_heldout.pdf}
-\caption[Held-out $\theta$-sweep vs calibration]{The effect of $\theta$ on strict-F1 under the optimal matcher, on the held-out evaluation set.  $\theta_{\mathrm{reject}}=0.2$, and the \texttt{escalate} gate is fixed. The calibration curve is overlaid for comparison. Both curves monotonically rise as $\theta$ increases, and flatten above $\theta=0.8$. A diminishing-returns pattern is observed for both sets. The held-out sweep is descriptive only; $\theta$ is fixed after calibration.}
-\label{fig:results-heldout-theta}
-\end{figure}
-
-\medskip{}
-
-\textbf{Downstream funnel generalization.}
-
-The strict-F1 scores evaluate the MAP stage. The downstream stages in the pipeline are run using the cached MAP output from \texttt{heldout15}, mirroring the funnel in Section~\ref{section:results-ke-pipeline-output-and-provenance}, to test whether generalization holds in the stages after MAP. Table~\ref{tab:results-heldout-ke-funnel} compares the funnels on the calibration and evaluation sets.
-
-\begin{table}[htpb]
-\caption[Held-out knowledge-extraction funnel]{Knowledge-extraction funnel comparison between the calibration and held-out sets. Both sets contain 15 papers.}
-\label{tab:results-heldout-ke-funnel}
-\centering
-\begin{tabular}{l r r}
-    \toprule
-    Stage & \texttt{related15} calibration & \texttt{heldout15} test \\
-    \midrule
-    MAP findings & 2\,294 & 1\,672 \\
-    Grounded findings at threshold 0.5 & 1\,923 (83.8\%) & 1\,379 (82.5\%) \\
-    Normalized findings after deduplication & 1\,860 ($-3.3\%$) & 1\,342 ($-2.7\%$) \\
-    Groupable findings & 1\,820 & 1\,314 \\
-    Canonical rules & 1\,747 & 1\,273 \\
-    Canonical rules per normalized finding & 0.939 & 0.949 \\
-    Relations, intra + cross & 25 (13 + 12) & 4 (4 + 0) \\
-    Final rules per paper & 116.5 & 84.9 \\
-    \bottomrule
-\end{tabular}
-\end{table}
-
-The downstream funnel on the held-out set preserves the shape of the calibration's downstream funnel. The consolidation ratio -- the number of canonical rules per normalized finding -- is nearly identical, with a difference of only 1\% between the calibration and held-out evaluation sets. Provenance generalizes as well: each of the 1\,273 final rules produced on the held-out papers resolves to a source paragraph in its own paper, resulting in a 100\% rule-level carry-rate. This matches the calibration result reported in Section~\ref{section:results-ke-pipeline-output-and-provenance}.
-
-The held-out run produces 4 intra-paper relations, no cross-paper relations, and no contradictions. Because the held-out set was sampled randomly, fewer relations were observed, as expected. This sparsity of relations was the motivating factor behind evaluating the relation-classifier on a synthetic set (Section~\ref{section:results-nli-in-grounding-and-relation-classification}), rather than on the corpus. The funnel shows that the calibrated configuration also generalizes to the stages that follow MAP, answering RQ5. 
+\end{itemize}liefer
 
 This section closes the empirical chapter; Chapter~\ref{chapter:Discussion} interprets these empirical results.
-
-% This section closes the empirical chapter. 
-% Document-extraction (Section~\ref{section:results-doc-extraction-performance}) and provenance (Section~\ref{section:results-ke-pipeline-output-and-provenance}) meet their targets; the agreement-based cascade is calibrated (Section~\ref{section:results-abc-calibration}) and reaches Sonnet quality but is not cost-justified against the single-Sonnet baseline (Section~\ref{section:results-cost-quality-comparison}); the NLI components behave as designed (Section~\ref{section:results-nli-in-grounding-and-relation-classification}); and the frozen configuration generalizes to a disjoint held-out set.
-

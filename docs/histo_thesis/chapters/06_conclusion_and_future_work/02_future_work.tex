@@ -2,7 +2,7 @@
 
 The limitations and threats to validity, discussed in Subsection~\ref{subsec:eval-limitations} and Section~\ref{section:disc-threats-to-validity}, suggest several directions for future work. 
 
-\begin{itemize}
+\begin{itemize}[label={},leftmargin=1.5em]
     \item \textbf{Human-annotated labels for evaluation.} The results all report agreement with an LLM-generated silver standard. Expert annotation is necessary to resolve RQ3 more cleanly, as it would remove the family-resemblance advantage Sonnet receives from the Opus silver labels. 
 
     \item \textbf{Generalization tests beyond the corpus.} The generalization test conducted on the held-out evaluation cluster shows that the frozen configuration does not overfit to the calibration set. However, both the calibration and held-out sets are drawn from the same English-language PMC Open Access histopathology corpus. Therefore, a separate evaluation on other biomedical subfields, non-PMC sources, and non-English literature would test transfer.
@@ -11,7 +11,7 @@ The limitations and threats to validity, discussed in Subsection~\ref{subsec:eva
 
     \item \textbf{Richer extraction context.} The MAP stage of knowledge extraction only reads the extracted body text. Incorporating tables, figures, or the surrounding section text into the MAP stage might help disambiguate unclear cases and increase the number of extracted claims. 
 
-    \item \textbf{A larger rubric set, labeled by multiple annotators.} The document-extraction rubric set of 27 PDFs was labeled by a single annotator, so the agreement between annotators was not measured. A larger rubric set would broaden coverage of table/figure failure modes; multiple annotators would improve the reliability of the RQ1 estimates and allow inter-annotator agreement to be measured. 
+    \item \textbf{A larger rubric set, labeled by multiple annotators.} The document-extraction rubric set of 27 PDFs was labeled by a single annotator, so the agreement between annotators was not measured. A larger rubric set would broaden coverage of table/figure failure modes; multiple annotators would improve the reliability of the RQ1 estimates and enable measurement of inter-annotator agreement. 
 
     \item \textbf{Targeting the remaining document-extraction errors.} Two general failure modes were named for document-extraction: decorative-icon false positives for figures, and caption-attachment and cropping-geometry errors for tables. Addressing these failure modes directly is a clear path to achieving higher rubric scores. 
 \end{itemize}

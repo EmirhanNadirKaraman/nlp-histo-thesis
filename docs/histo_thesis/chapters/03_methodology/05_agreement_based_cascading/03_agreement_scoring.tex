@@ -10,6 +10,6 @@ Each finding's claim is embedded with a text-embedding model. Using cosine simil
 
 The alternative configuration is a hybrid strategy. It combines four signals over the same voter outputs using weights that sum to one: claim-embedding alignment, Jaccard overlap of finding categories, Jaccard overlap of biomedical entities in claims, and Jaccard overlap of cited text-element identifiers. The embedding-only strategy is a special case of the hybrid strategy, with a weight of 1 for the claim embeddings. Other weight configurations of the hybrid strategy test whether structured Jaccard overlaps add useful routing information beyond pure embedding similarity.
 
-The scorer strategies and weights within are calibration parameters; their best settings on the calibration set and the obtained results are reported in Chapter~\ref{chapter:Results}.
+The scorer strategies and weights within are calibration parameters; their best settings on the calibration set, along with the obtained results, are reported in Section~\ref{section:results-abc-calibration}.
 
-The agreement score is an agreement signal, not a correctness signal: a high agreement score indicates that voters returned similar claim sets; it does not imply that the consensus is correct. Agreement-based routing is implemented under the assumption that consensus outputs are typically more reliable than disagreement outputs.
+The agreement score is an agreement signal, not a correctness signal: a high agreement score indicates that voters returned similar claim sets; it does not imply that the consensus is correct. Agreement-based routing assumes that consensus outputs are typically more reliable than disagreement outputs.

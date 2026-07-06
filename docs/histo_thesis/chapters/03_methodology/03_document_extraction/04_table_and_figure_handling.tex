@@ -12,4 +12,4 @@ After tables and figures on a page are located, their regions are masked before 
 
 Each detected region is finally cropped to a standalone image. Table crops are extended downward to include footnotes detected nearby, so that table notes are not absorbed into the extracted text. The resulting crops are then matched to a caption using geometry-based heuristics -- the vertical gap between the artifact and caption bounding box edges. The figure or table number is then parsed from the matched caption text. 
 
-Caption linking is purely geometric, and is the least reliable part of the table-and-figure handling stage; its failure cases are enumerated in Subsection~\ref{subsec:doc-extraction-known-limitations}, and their effect on the precision and recall measurements are reported in Chapter~\ref{chapter:Results}.
+Caption linking is purely geometric, and is the least reliable part of the table-and-figure handling stage; its failure cases are enumerated in Subsection~\ref{subsec:doc-extraction-known-limitations}, and their effect on the precision and recall measurements are reported in Section~\ref{section:results-doc-extraction-performance}.

@@ -2,7 +2,7 @@
 
 The provenance chain is preserved for each \texttt{FinalRule} the RESOLVE stage emits, allowing a downstream reader to re-derive it from the source text. The chain runs through the following links: 
 
-\begin{itemize}
+\begin{itemize}[label={},leftmargin=1.5em]
     \item \textbf{FinalRule $\to$ CanonicalRule.} Each \texttt{FinalRule} records the \texttt{canonical\_id} of the \texttt{CanonicalRule} it was scored from. The \texttt{CanonicalRule} stores the representative predicate and is associated with its best-grounded member selected during CANONICALIZE, described in Subsection~\ref{subsec:knowledge-canonicalize}. When needed, the verbatim text and the paragraph identifier it came from can be recovered from the relational database.
     
     \item \textbf{CanonicalRule $\to$ NormalFinding.} Each \texttt{CanonicalRule} lists the \texttt{normal\_id}s of the \texttt{NormalFinding} records in its direction bin. Each \texttt{NormalFinding} records the MAP finding identifiers it was merged from, and its deduplicated source spans that connect the \texttt{NormalFinding} back to source text.

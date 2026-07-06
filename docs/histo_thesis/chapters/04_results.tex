@@ -9,7 +9,7 @@ Each reported number is tied to its corresponding metric definition in Section~\
 
 The overall result is mixed. Document-extraction (Section~\ref{section:results-doc-extraction-performance}) and provenance preservation (Section~\ref{section:results-ke-pipeline-output-and-provenance}) meet their intended targets. The agreement cascade matches the quality of the strong single-model baseline (Sonnet 4.6) and significantly outperforms each cheaper model, but shows no statistically significant improvement in strict-F1 over that baseline.
 
-Section~\ref{section:results-cost-quality-comparison} reports the RQ3 results directly, while Chapter~\ref{chapter:Discussion} argues that the cascade's value lies in the reusable framework it provides. The NLI components of Section~\ref{section:results-nli-in-grounding-and-relation-classification} behave as designed, and the calibrated configuration of the system generalizes cleanly to the held-out evaluation set, as reported in Section~\ref{section:results-generalization-to-heldout-papers}.
+Section~\ref{section:results-cost-quality-comparison} reports the RQ3 results directly, while Section~\ref{section:disc-agreement-based-cascading} argues that the cascade's value lies in the reusable framework it provides. The NLI components of Section~\ref{section:results-nli-in-grounding-and-relation-classification} behave as designed, and the calibrated configuration of the system generalizes cleanly to the held-out evaluation set, as reported in Section~\ref{section:results-generalization-to-heldout-papers}.
 
 \input{chapters/04_results/01_document_extraction_performance}
 \input{chapters/04_results/02_knowledge_extraction_pipeline_output_and_provenance}
