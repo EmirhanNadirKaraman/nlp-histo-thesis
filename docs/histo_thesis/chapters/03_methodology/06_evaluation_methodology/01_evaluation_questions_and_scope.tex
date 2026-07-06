@@ -1,26 +1,24 @@
 \subsection{Evaluation questions and scope}\label{subsec:eval-questions-and-scope}
 
-Each of the five research questions maps to a different measurement procedure. Table~\ref{tab:research-questions} summarizes this mapping; each row is detailed in the section it points to.
+Each of the five research questions maps to a different measurement procedure. Table~\ref{tab:research-questions} summarizes this mapping; each row is detailed in the section it points to. This section does not report empirical findings; its purpose is to define the evaluation design so the results in Chapter~\ref{chapter:Results} are interpretable: what is measured, the metrics that were used for scoring, how the datasets and the cases were sampled, and the offline-replay protocol used for cascade calibration and evaluation. 
 
 \begin{table}[h]
 \centering
-    \begin{tabular}{@{}lll@{}}
+    \begin{tabular}{@{}llc@{}}
         \toprule
         \textbf{RQ} & \textbf{Object measured} & \textbf{Defining section} \\
         \midrule
         RQ1 & Rubric-scored document-extraction faithfulness
-        & Subsection~\ref{subsec:eval-doc-extraction} \\
-        RQ2 & Knowledge-extraction strict F1 and provenance carry-rate
-        & Subsection~\ref{subsec:eval-knowledge-extraction} \\
+        & §\ref{subsec:eval-doc-extraction} \\
+        RQ2 & Knowledge-extraction strict-F1 and provenance carry-rate
+        & §\ref{subsec:eval-knowledge-extraction} \\
         RQ3 & Cascade cost-quality trade-off
-        & Subsection~\ref{subsec:eval-abc} \\
+        & §\ref{subsec:eval-abc} \\
         RQ4 & NLI behavior in grounding and relation classification
-        & Subsection~\ref{subsec:eval-grounding-and-relation-classification} \\
-        RQ5 & Generalization of the calibrated configuration to a held-out set & Subsection~\ref{subsec:eval-heldout-generalization} \\
+        & §\ref{subsec:eval-grounding-and-relation-classification} \\
+        RQ5 & Generalization of the calibrated configuration to a held-out set & §\ref{subsec:eval-heldout-generalization} \\
         \bottomrule
     \end{tabular}
     \caption{Research questions and their measurement procedures.}
     \label{tab:research-questions}
 \end{table}
-
-This section does not report empirical findings; its purpose is to define the evaluation design so the results in Chapter~\ref{chapter:Results} are interpretable: what is measured, the metrics that were used for scoring, how the datasets and the cases were sampled, and the offline-replay protocol used for cascade calibration and evaluation. 

@@ -21,7 +21,7 @@ Natural language inference (NLI) is used in two downstream components, and both 
         \label{fig:results-grounding}
     \end{figure}
 
-    The sweep shows that grounding and silver agreement are largely independent. The highest strict-F1 ($0.7160$) is reached with the grounding filter turned off (Section~\ref{section:results-cost-quality-comparison}). Raising the threshold barely changes precision (filter-off $0.872$ vs $0.875$) but reduces recall. Therefore, the filter functions as a source-faithfulness guard rather than a strict-F1 optimizer. This is clearest at the pinned $0.5$ threshold: among the roughly $16\%$ of findings the filter removes ($371$ of $2294$), about $86\%$ agree with the Opus-silver. In other words, a finding can match the Opus silver, while its claim fails to be entailed by its evidence paragraph.
+    The sweep shows that grounding and silver agreement are largely independent. The highest strict-F1 ($0.7160$) is reached with the grounding filter turned off (§\ref{section:results-cost-quality-comparison}). Raising the threshold barely changes precision (filter-off $0.872$ vs $0.875$) but reduces recall. Therefore, the filter functions as a source-faithfulness guard rather than a strict-F1 optimizer. This is clearest at the pinned $0.5$ threshold: among the roughly $16\%$ of findings the filter removes ($371$ of $2294$), about $86\%$ agree with the Opus-silver. In other words, a finding can match the Opus silver, while its claim fails to be entailed by its evidence paragraph.
     
     Because strict-F1 measures agreement with the Opus labeler rather than source-faithfulness, the pipeline accepts a 6-point decrease in strict-F1 ($0.716 \rightarrow 0.652$) to ensure that every retained claim is supported by the evidence it cites. This trade is deliberately chosen for the clinical knowledge base.
 
@@ -43,11 +43,11 @@ Natural language inference (NLI) is used in two downstream components, and both 
         \cmidrule(lr){2-4} \cmidrule(lr){5-7}
         Class & P & R & F1 & P & R & F1 \\
         \midrule
-        SUPPORT    & 1.000 & 0.920 & 0.958 & 1.000 & 0.910 & 0.953
+        \texttt{SUPPORT}    & 1.000 & 0.920 & 0.958 & 1.000 & 0.910 & 0.953
         \\
-        CONTRADICT & 0.904 & 0.940 & 0.922 & 0.896 & 0.950 & 0.922
+        \texttt{CONTRADICT} & 0.904 & 0.940 & 0.922 & 0.896 & 0.950 & 0.922
         \\
-        UNRELATED     & 0.885 & 0.920 & 0.902 & 0.883 & 0.910 & 0.897
+        \texttt{UNRELATED}     & 0.885 & 0.920 & 0.902 & 0.883 & 0.910 & 0.897
         \\
         \midrule  
         Macro average & 0.930 & 0.927 & 0.927 & 0.926 & 0.923 & 0.924

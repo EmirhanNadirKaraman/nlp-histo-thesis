@@ -9,11 +9,11 @@ The main separation of concerns is as follows:
 
     \item \textbf{Knowledge extraction} consumes text elements and emits atomic biomedical claims; it does not parse PDFs.
 
-    \item \textbf{Cascade and routing} decide which model outputs will be accepted, escalated, or rejected (Subsection~\ref{subsec:end-to-end-architecture}). This stage does not redefine the schema of the MAP outputs; it only selects which model outputs are passed to the downstream pipeline.
+    \item \textbf{Cascade and routing} decide which model outputs will be accepted, escalated, or rejected (§\ref{subsec:end-to-end-architecture}). This stage does not redefine the schema of the MAP outputs; it only selects which model outputs are passed to the downstream pipeline.
 
     \item \textbf{Grounding and relation classification} filter and relate the claims that are already extracted by the MAP stage. Grounding checks whether a claim is supported by its source text, while relation classification identifies whether two claims support or contradict each other. These stages do not re-extract and generate biomedical claims themselves.
 
     \item \textbf{Evaluation and replay} read from the generated artifacts, and compute metrics, comparisons, and ablations with different configurations of the pipeline stages. They do not modify pipeline outputs; instead, they are designed to inspect and evaluate pipeline behavior.
 \end{itemize}
 
-This separation is important for both engineering and evaluation. Document extraction and knowledge extraction can be evaluated independently, components are swappable, and cascade experiments can be compared offline over cached artifacts (Subsection~\ref{subsec:overview-reproducibility-and-artifact-design}). It also supports the provenance design: a fully inspectable chain of provenance where each link is owned by a single subsystem. 
+This separation is important for both engineering and evaluation. Document extraction and knowledge extraction can be evaluated independently, components are swappable, and cascade experiments can be compared offline over cached artifacts (§\ref{subsec:overview-reproducibility-and-artifact-design}). It also supports the provenance design: a fully inspectable chain of provenance where each link is owned by a single subsystem. 

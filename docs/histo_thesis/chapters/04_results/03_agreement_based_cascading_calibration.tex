@@ -13,10 +13,11 @@ All calibration results reported in this section are produced by offline replay.
     \item \textbf{Structure and weights (E05, E06).} 
     All twelve combinations of embedder, scorer, and alignment strategy are evaluated in the structure screen at default weights, over a coarse $\theta$ grid. The strict-F1 and cost criteria are used to select the candidate structures. The structured-similarity scorer, referred to as the hybrid scorer, beats plain embedding similarity on every embedder. This shows that the additional category, entity, and evidence-overlap signals are useful. 
     
-    The finalist structures are refined over their applicable weights and a full theta-grid sweep. The strongest combination is the Gemini embedder with the hybrid scorer under a greedy alignment strategy, using an entity-heavy blend (category/embedding/entity/evidence = 0.15 / 0.30 / 0.50 / 0.05). This structure and weight vector are fixed for the later calibration stages.
+    The finalist structures are refined over their applicable weights and a full theta-grid sweep. The strongest combination is the Gemini embedder with the \texttt{hybrid} scorer under a \texttt{greedy} alignment strategy, using an entity-heavy blend (category/embedding/entity/evidence = 0.15 / 0.30 / 0.50 / 0.05). This structure and weight vector are fixed for the later calibration stages.
     
     \item \textbf{Voter-set selection (E06b, E06c).}
-    The initial cascade uses three Level-1 and three Level-2 voters, and escalates the unresolved cases to the Level-3 model, Claude Sonnet. The Level-1 voters are Gemini Flash-Lite, GPT-4o mini, and GPT-4.1 nano; the Level-2 voters are Gemini Flash, GPT-4.1 mini, and Claude Haiku 4.5.
+    The initial cascade uses three Level-1 and three Level-2 voters, and escalates the unresolved cases to the Level-3 model, Claude Sonnet. The 
+    Level-1 voters are Gemini Flash-Lite, GPT-4o mini, and GPT-4.1 nano; the Level-2 voters are Gemini Flash, GPT-4.1 mini, and Claude Haiku 4.5.
     
     A single-voter-drop experiment is run at this stage over the full $\theta$ grid; the experiment results show that dropping Claude Haiku 4.5 reaches strict-F1 $0.7147$, compared with $0.7131$ for the full ensemble: a difference that lies inside the bootstrap confidence interval of Section~\ref{section:results-cost-quality-comparison}, while costing 18\% less per chunk.
     
@@ -33,7 +34,7 @@ All calibration results reported in this section are produced by offline replay.
       \centering
       \includegraphics[width=0.72\linewidth]{figures/04_results/03_agreement_based_cascading_calibration/01_theta_strict_f1.pdf}
       \caption[Strict-F1 versus agreement threshold]{Strict-F1 (optimal matcher,
-      against Opus silver) versus the agreement threshold $\theta$ for the 5-voter cascade at $\theta_{\mathrm{reject}}=0.2$, under the keep (default) and escalate (shipped) single-voter gates.}
+      against Opus silver) versus the agreement threshold $\theta$ for the 5-voter cascade at $\theta_{\mathrm{reject}}=0.2$, under the \texttt{keep} (default) and \texttt{escalate} (shipped) single-voter gates.}
       \label{fig:theta-strict-f1}
     \end{figure}
     
@@ -41,14 +42,14 @@ All calibration results reported in this section are produced by offline replay.
     At this stage, the optimal $\theta$ value is pinned, and the two routing gates -- the single-voter policy ($\texttt{keep}$ vs $\texttt{escalate}$) and the polarity hard-fail -- are ablated on it.  After dropping Claude Haiku,  only two Level-2 voters remain, making the single-voter case at that tier more common, and \texttt{escalate} gives the maximum strict-F1 score 0.7160, compared to that of \texttt{keep} at 0.7147. Therefore, the single-voter policy of \texttt{escalate}, which sends a lone voter to Sonnet rather than trust the output, is chosen. The strict-F1 gain over \texttt{keep} is within noise, so this gate was chosen as a design decision backed by calibration, rather than as a statistically meaningful improvement. The polarity hard-fail, which escalates to the more expensive tier when voters emit different polarity information, had no measurable effect.
     
     \item \textbf{Final configuration selection (E08b).}
-    After selecting the optimal gate combination with \texttt{escalate} as the single-voter policy, the shipped configuration's $\theta$-curve is regenerated. The regeneration confirms that the shipped gate does not move the $\theta$ pin at $0.9$. 
+    After selecting the optimal gate combination with \texttt{escalate} as the single-voter policy, the $\theta$-curve for the shipped configuration is regenerated. The regeneration confirms that the shipped gate does not move the $\theta$ pin at $0.9$. 
 
 \end{itemize}
 
 The calibration stage pins the production cascade, shown in Table~\ref{tab:abc-configuration-of-record}, and every downstream result in the thesis uses the configuration. Whether this escalation-heavy configuration is cost-effective, or whether the same quality can be obtained by running the strong model directly instead of running the 5-voter cascade, is evaluated in Section~\ref{section:results-cost-quality-comparison}.
 
 \begin{table}[htpb]
-\caption[Pinned agreement-cascade configuration]{The pinned agreement-cascade configuration selected on the calibration set. The reported headline strict-F1 is computed at the MAP stage before grounding. Applying a grounding threshold of 0.5 lowers strict-F1 to $0.652$ in exchange for source-faithfulness (Section~\ref{section:results-nli-in-grounding-and-relation-classification}).}
+\caption[Pinned agreement-cascade configuration]{The pinned agreement-cascade configuration selected on the calibration set. The reported headline strict-F1 is computed at the MAP stage before grounding. Applying a grounding threshold of 0.5 lowers strict-F1 to $0.652$ in exchange for source-faithfulness (§\ref{section:results-nli-in-grounding-and-relation-classification}).}
 \label{tab:abc-configuration-of-record}
 \centering
 \begin{tabular}{p{0.28\linewidth} p{0.48\linewidth} p{0.16\linewidth}}

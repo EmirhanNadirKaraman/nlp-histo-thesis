@@ -3,7 +3,7 @@
 At each tier, the cascade uses the deferral score $s$ to decide between three actions: accept, reject, or escalate. This decision is controlled by two thresholds: the accept threshold $\theta$, and the reject threshold $\theta_{\mathrm{reject}}$, with $\theta_{\mathrm{reject}} < \theta$. 
 
 \begin{itemize}[label={},leftmargin=1.5em]
-    \item \textbf{Accept.} If $s \geq \theta$, the cascade accepts the output of the most consensus-aligned voter (Subsection~\ref{subsec:abc-agreement-scoring}) and does not escalate.
+    \item \textbf{Accept.} If $s \geq \theta$, the cascade accepts the output of the most consensus-aligned voter (§\ref{subsec:abc-agreement-scoring}) and does not escalate.
 
     \item \textbf{Reject.} If $s \leq \theta_{\mathrm{reject}}$, the cascade rejects the chunk, no findings are emitted from the voter, and escalation does not occur. This behavior is conservative: it is reserved for cases where voter agreement is too weak to trust.
     

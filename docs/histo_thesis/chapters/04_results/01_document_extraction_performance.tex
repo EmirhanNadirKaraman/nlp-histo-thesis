@@ -2,9 +2,7 @@
 
 The document-extraction pipeline is evaluated on the 27-PDF rubric set, described in Subsection~\ref{subsec:eval-datasets}. The evaluation uses the four rubric dimensions and reports the strict-F1 performance, where an extracted element is counted as a true positive only if it scores the top label for each rubric dimension. Then, the production configuration for document extraction was selected by the staged configuration sweep. Rubric dimensions, strict-F1 definitions, and the staged sweep are explained in detail in Subsection~\ref{subsec:eval-doc-extraction}. 
 
-The best configuration for table extraction was a hybrid approach, combining Docling and Microsoft TATR table detector to extract artifacts. The achieved table-extraction metrics for the most important variants, as well as the figure-extraction metrics across all variants, are shown in Tables~\ref{tab:table-emission-metrics} and~\ref{tab:figure-emission-metrics}.
-
-The v01 baseline in Table~\ref{tab:table-emission-metrics} is not the off-the-shelf Docling: it is the full document-extraction pipeline, including masking, caption matching, icon and size filtering, and cropping. This variant runs the entire document-extraction pipeline, with Docling-only table detection and table-handling options disabled. Docling's figure and table detection is used as is, but the surrounding structure supporting the Docling output is applied to all variants except the off-the-shelf Docling. The off-the-shelf Docling variant strips away the scaffolding, so its results can be compared to those of the other variants and the effect of the scaffolding around it can be shown.
+The best configuration for table extraction was a hybrid approach that combined Docling and Microsoft TATR's table detector to extract artifacts. The achieved table-extraction metrics for the most important variants, as well as the figure-extraction metrics across all variants, are shown in Tables~\ref{tab:table-emission-metrics} and~\ref{tab:figure-emission-metrics}.
 
 \begin{table}[htpb]
     \caption[Per-dimension table-emission metrics]{Per-dimension table-emission metrics across off-the-shelf Docling and the key sweep configurations, evaluated on the 27-PDF rubric set.}
@@ -94,6 +92,8 @@ The v01 baseline in Table~\ref{tab:table-emission-metrics} is not the off-the-sh
           \bottomrule
       \end{tabular}
 \end{table}
+
+The v01 baseline in Table~\ref{tab:table-emission-metrics} is not the off-the-shelf Docling: it is the full document-extraction pipeline, including masking, caption matching, icon and size filtering, and cropping. This variant runs the entire document-extraction pipeline, with Docling-only table detection and table-handling options disabled. Docling's figure and table detection is used as is, but the surrounding structure supporting the Docling output is applied to all variants except the off-the-shelf Docling. The off-the-shelf Docling variant strips away the scaffolding, so its results can be compared to those of the other variants, and the effect of the scaffolding around it can be shown.
 
 The main improvement is observed for table extraction. Compared with off-the-shelf Docling, strict table-F1 rises from $36.6\%$ to $83.8\%$ in the hybrid variant with footnote expand multiplier set to $\times1.2$ (most of it over the v01 pipeline baseline, which already reaches $40.0\%$). Docling does not detect table footnotes at all: Docling's footnote precision result of $43.8\%$ comes from tables that do not have footnotes, and are labeled as correct by the rubric. The strict-F1 improvement was driven mainly by footnote expansion, with an increase in footnote precision from $43.8\%$ to $91.4\%$.
 

@@ -1,14 +1,14 @@
 \subsection{Limitations of the data}\label{subsec:corpus-limitations-of-data}
 
-The data design in this thesis has several limitations, which are stated explicitly below. They bound how the results reported in Chapter~\ref{chapter:Results} should be interpreted; Chapter~\ref{chapter:Discussion} discusses their implications on the validity of those results.
+The data design in this thesis has several limitations, which are stated explicitly below. They bound how the results reported in Chapter~\ref{chapter:Results} should be interpreted; Section~\ref{section:disc-threats-to-validity} discusses their implications on the validity of those results.
 
 \begin{itemize}[label={},leftmargin=1.5em]
     \item \textbf{Histopathology focus.} This corpus is filtered to contain only histopathology papers. Therefore, no claims can be made that the results are representative of the biomedical literature as a whole or of other biomedical subfields.
     
-    \item \textbf{English-language only.} The ingested corpus is effectively English-only (Subsection~\ref{subsec:corpus-source-and-scope}); this thesis therefore does not evaluate whether the document- and knowledge-extraction pipeline results transfer to non-English histopathology literature.
+    \item \textbf{English-language only.} The ingested corpus is effectively English-only (§\ref{subsec:corpus-source-and-scope}); this thesis therefore does not evaluate whether the document- and knowledge-extraction pipeline results transfer to non-English histopathology literature.
     
     \item \textbf{PMC Open Access bias.} The corpus is drawn from the PMC Open Access papers, which might not represent the full histopathology literature. Consequently, the figure conventions, table structures, layout patterns, and caption styles reflect the article types in that subset. 
     
-    \item \textbf{Silver-label limits.} The knowledge-extraction reference labels are LLM-generated rather than expert-annotated, so these labels inherit biases of the silver-label generators (Subsection~\ref{subsec:silver-labels-and-annotation-status}). Furthermore, the voter-agreement system (Section~\ref{section:Agreement_Based_Cascading}) scores voters based on cosine similarity between embeddings, potentially inheriting biases from the embedding models used.
+    \item \textbf{Silver-label limits.} The knowledge-extraction reference labels are LLM-generated rather than expert-annotated, so these labels inherit biases of the silver-label generators (§\ref{subsec:silver-labels-and-annotation-status}). Furthermore, the voter-agreement system (§\ref{section:Agreement_Based_Cascading}) scores voters based on cosine similarity between embeddings, potentially inheriting biases from the embedding models used.
     
 \end{itemize}

@@ -8,7 +8,7 @@ In the first pass, Docling extracts the page layout, and each text element is ch
 
 The elements that survive scoring are the real, visible text of the page. From these elements, the extractor finds the top-most paragraph on each page and treats everything above it as the page header. Similarly, anything below the bottom-most paragraph is treated as the page footer, and blocks in the page margins are treated as sidebars. The header, footer, and sidebar bands, figures, tables, captions, and individual rejected text elements are all redacted from the PDF. Redaction removes the underlying text elements from the page rather than merely drawing a white rectangle on top, which would leave the underlying text extractable and thus recoverable by the second pass.
 
-The second pass runs Docling again on the redacted PDF. This pass returns primarily legitimate body text and headings, which is what the text assembly stage (Subsection~\ref{subsec:doc-text-assembly}) consumes. Re-extraction, rather than deleting the rejected elements from the first-pass Docling output, allows Docling to re-segment the clean page into cleaner paragraphs. 
+The second pass runs Docling again on the redacted PDF. This pass returns primarily legitimate body text and headings, which is what the text assembly stage (§\ref{subsec:doc-text-assembly}) consumes. Re-extraction, rather than deleting the rejected elements from the first-pass Docling output, allows Docling to re-segment the clean page into cleaner paragraphs. 
 
 Two-pass extraction is the production default. Its purpose is not to handle figures or tables, but to clean up the body text passed downstream. 
 
