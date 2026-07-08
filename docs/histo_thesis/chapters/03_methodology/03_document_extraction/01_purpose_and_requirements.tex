@@ -2,7 +2,7 @@
 
 The document extraction pipeline sits between the raw paper corpus, filtered and downloaded from the PMC Open Access Subset~\parencite{nlm_pmc_open_access}, and the LLM-based knowledge-extraction pipeline, explained in Section~\ref{section:Knowledge_Extraction}.
 
-Its purpose is to transform the source files into structured document elements that can be stored and reused in the downstream stages. This pipeline is necessary because PDFs are unstructured~\parencite{}. Downstream reuse of these elements requires each element to have a structure and a stable identity, and to be re-derivable from its source. Since the pipeline must process the full corpus of 977 papers, each paper is extracted independently and dispatched through a thread-pool batch runner.
+Its purpose is to transform the source files into structured document elements that can be stored and reused in the downstream stages. This pipeline is necessary because PDFs are unstructured~\parencite{ramakrishnan2012layoutawaretextextraction, tiedemann2014improvedtextextraction, hansen2019datadrivenrecognitionextraction}. Downstream reuse of these elements requires each element to have a structure and a stable identity, and to be re-derivable from its source. Since the pipeline must process the full corpus of 977 papers, each paper is extracted independently and dispatched through a thread-pool batch runner.
 
 For each paper, the pipeline produces: 
 

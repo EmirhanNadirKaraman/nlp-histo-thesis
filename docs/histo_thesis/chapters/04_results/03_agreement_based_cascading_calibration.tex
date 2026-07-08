@@ -11,7 +11,7 @@ All calibration results reported in this section are produced by offline replay.
     The structural block of (embedder, scorer, alignment strategy) is decided with a joint sweep at default weights (E05); the weights are tuned for the surviving finalist structures (E06); the best voter subset is selected by a single-voter-drop sweep at the tuned weights of the chosen finalist structure (E06b, E06c); the full-theta grid is swept to find the best tuning for the best performing voter subset (E07); then the routing gates are ablated on the theta-calibrated best voter subset (E08); and finally, the shipped configuration's final theta curve is regenerated using the selected gate combination for the cost-quality analysis (E08b). At each stage, the earlier decisions are fixed, and the later knobs are kept at their defaults. 
     
     \item \textbf{Structure and weights (E05, E06).} 
-    All twelve combinations of embedder, scorer, and alignment strategy are evaluated in the structure screen at default weights, over a coarse $\theta$ grid. The strict-F1 and cost criteria are used to select the candidate structures. The structured-similarity scorer, referred to as the hybrid scorer, beats plain embedding similarity on every embedder. This shows that the additional category, entity, and evidence-overlap signals are useful. 
+    All twelve combinations of embedder, scorer, and alignment strategy are evaluated in the structure screen at default weights, over a coarse $\theta$ grid. The strict-F1 and cost criteria are used to select the candidate structures. The structured-similarity scorer, referred to as the \texttt{hybrid} scorer, beats plain embedding similarity on every embedder. This shows that the additional category, entity, and evidence-overlap signals are useful. 
     
     The finalist structures are refined over their applicable weights and a full theta-grid sweep. The strongest combination is the Gemini embedder with the \texttt{hybrid} scorer under a \texttt{greedy} alignment strategy, using an entity-heavy blend (category/embedding/entity/evidence = 0.15 / 0.30 / 0.50 / 0.05). This structure and weight vector are fixed for the later calibration stages.
     
@@ -39,7 +39,7 @@ All calibration results reported in this section are produced by offline replay.
     \end{figure}
     
     \item \textbf{Routing gates (E08).}
-    At this stage, the optimal $\theta$ value is pinned, and the two routing gates -- the single-voter policy ($\texttt{keep}$ vs $\texttt{escalate}$) and the polarity hard-fail -- are ablated on it.  After dropping Claude Haiku,  only two Level-2 voters remain, making the single-voter case at that tier more common, and \texttt{escalate} gives the maximum strict-F1 score 0.7160, compared to that of \texttt{keep} at 0.7147. Therefore, the single-voter policy of \texttt{escalate}, which sends a lone voter to Sonnet rather than trust the output, is chosen. The strict-F1 gain over \texttt{keep} is within noise, so this gate was chosen as a design decision backed by calibration, rather than as a statistically meaningful improvement. The polarity hard-fail, which escalates to the more expensive tier when voters emit different polarity information, had no measurable effect.
+    At this stage, the optimal $\theta$ value is pinned, and the two routing gates -- the single-voter policy ($\texttt{keep}$ vs $\texttt{escalate}$) and the polarity hard-fail -- are ablated on it. After dropping Claude Haiku, only two Level-2 voters remain, making the single-voter case at that tier more common, and \texttt{escalate} gives the maximum strict-F1 score 0.7160, compared to that of \texttt{keep} at 0.7147. Therefore, the single-voter policy of \texttt{escalate}, which sends a lone voter to Sonnet rather than trust the output, is chosen. The strict-F1 gain over \texttt{keep} is within noise, so this gate was chosen as a design decision backed by calibration, rather than as a statistically meaningful improvement. The polarity hard-fail, which escalates to the more expensive tier when voters emit different polarity information, had no measurable effect.
     
     \item \textbf{Final configuration selection (E08b).}
     After selecting the optimal gate combination with \texttt{escalate} as the single-voter policy, the $\theta$-curve for the shipped configuration is regenerated. The regeneration confirms that the shipped gate does not move the $\theta$ pin at $0.9$. 
@@ -78,7 +78,7 @@ The calibration stage pins the production cascade, shown in Table~\ref{tab:abc-c
     & 0.5
     & E03 \\
     Headline operating point
-    & \textbf{strict-F1 0.7160 at 95.6\% escalation} (before grounding)
+    & \textbf{strict-F1 0.7160 at 95.6\% escalation (before grounding)}
     & E08/E08b \\
     \bottomrule
 \end{tabular}
