@@ -1,6 +1,6 @@
 \section{NLI as a shared backbone}\label{section:disc-nli-as-shared-backbone}
 
-The grounding filter and the relation classifier share a single NLI model, \texttt{PubMedBERT-MNLI-MedNLI}, without additional training. They differ only in their inputs: grounding uses a claim's text and its cited evidence, whereas the relation classifier compares two claims and labels them as \texttt{SUPPORT} / \texttt{CONTRADICT} / \texttt{UNRELATED} (§\ref{section:results-nli-in-grounding-and-relation-classification}). The NLI model in both roles applies fixed $0.5$ thresholds (not tuned per task), which perform acceptably across the two tasks, justifying the use of a single model.
+The grounding filter and the relation classifier share a single NLI model, \texttt{PubMedBERT-MNLI-MedNLI}, without additional training~\parencite{deka2023pubmedbertextended}. They differ only in their inputs: grounding uses a claim's text and its cited evidence, whereas the relation classifier compares two claims and labels them as \texttt{SUPPORT} / \texttt{CONTRADICT} / \texttt{UNRELATED} (§\ref{section:results-nli-in-grounding-and-relation-classification}). The NLI model in both roles applies fixed $0.5$ thresholds (not tuned per task), which perform acceptably across the two tasks, justifying the use of a single model.
 
 \begin{itemize}[label={},leftmargin=1.5em]
 
