@@ -18,9 +18,6 @@ docs/bibliography_verification_report.md
 docs/bibliography_editorial_pass_report.md
 docs/bibliography.before_editorial_pass.bib
 
-# Live thesis bibliography (kept local, not published)
-docs/histo_thesis/bibliography.bib
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
