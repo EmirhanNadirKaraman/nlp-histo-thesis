@@ -20,7 +20,7 @@ import logging
 from typing import TYPE_CHECKING, Iterable
 
 if TYPE_CHECKING:
-    from ..models import CanonicalRule
+    from pipeline.stages.knowledge_extraction.models import CanonicalRule
 
 logger = logging.getLogger(__name__)
 
