@@ -125,7 +125,7 @@ from eval.silver.map_theta_sweep import (  # reused engine + helpers
 )
 from eval.silver.matcher import SIMILARITY_THRESHOLD
 from eval.silver.map_context import _load_map_context  # reused loader
-from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
+from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Pin-as-you-go winners. Edit after each stage. Current values = the E06 family_refine

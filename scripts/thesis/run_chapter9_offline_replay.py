@@ -924,7 +924,7 @@ def analyse_exp_f_test_split() -> AnalysisResult:
     try:
         from eval.silver.map_theta_sweep import run_sweep, ScorerSpec
         from eval.silver.map_context import _load_map_context
-        from pipeline.stages.summarization.config import (
+        from pipeline.stages.knowledge_extraction.config import (
             AgreementConfig, HybridConfig,
         )
     except Exception as exc:
@@ -1348,7 +1348,7 @@ def _build_cascade_outputs(voter_cache, agreement_embed_fn, dev_filter):
       legacy_single_voter_policy = "keep".
     """
     from eval.silver.map_theta_sweep import _replay, ScorerSpec, _build_scorer
-    from pipeline.stages.summarization.config import (
+    from pipeline.stages.knowledge_extraction.config import (
         AgreementConfig, HybridConfig,
     )
     hybrid_cfg = HybridConfig(
@@ -1590,7 +1590,7 @@ def _regenerate_corpus_relations(mode_name: str, *,
     corpus_relations JSON to ``output_path``. Reuses the existing
     canonical_rules cached in ``summaries_dir/*.json`` — no MAP re-run.
     """
-    from pipeline.stages.summarization.helpers.corpus_relate import (
+    from pipeline.stages.knowledge_extraction.helpers.corpus_relate import (
         CorpusRelateStage,
     )
     stage = CorpusRelateStage(
@@ -1781,7 +1781,7 @@ def _build_real_profile_findings_per_chunk(voter_cache, dev_filter,
     accepted_findings, accept_level).
     """
     from eval.silver.map_theta_sweep import ScorerSpec, _build_scorer
-    from pipeline.stages.summarization.config import (
+    from pipeline.stages.knowledge_extraction.config import (
         AgreementConfig, HybridConfig,
     )
     hybrid_cfg = HybridConfig(
@@ -1801,9 +1801,9 @@ def _build_real_profile_findings_per_chunk(voter_cache, dev_filter,
     # GROUNDING re-run we need per-chunk findings. Re-implement the
     # per-chunk loop locally so we can capture the accept_level + source
     # text for each chunk.
-    from pipeline.stages.summarization.agreement import AgreementChecker
-    from pipeline.stages.summarization.interfaces.scoring import ChunkDecision
-    from pipeline.stages.summarization.models import AuditableSummary
+    from pipeline.stages.knowledge_extraction.agreement import AgreementChecker
+    from pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision
+    from pipeline.stages.knowledge_extraction.models import AuditableSummary
     checker = AgreementChecker(
         scorer, theta=0.9, reject_theta=0.2,
         single_voter_policy="keep",
@@ -1880,10 +1880,10 @@ def analyse_real_profile_grounding_polarity() -> AnalysisResult:
     try:
         from eval.silver.split import assign_split
         from eval.silver.map_context import _load_map_context
-        from pipeline.stages.summarization.models import (
+        from pipeline.stages.knowledge_extraction.models import (
             AuditableSummary,
         )
-        from pipeline.stages.summarization.helpers.grounding_filter import (
+        from pipeline.stages.knowledge_extraction.helpers.grounding_filter import (
             GroundingFilter,
         )
     except Exception as exc:

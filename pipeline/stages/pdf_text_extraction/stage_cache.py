@@ -86,7 +86,7 @@ _LOADER_EXPECTED_ERRORS = (
 
 # ── Inline atomic write helpers ───────────────────────────────────────────────
 # Inlined deliberately rather than extracted from
-# `summarization.persistence.write_json` — see B-027 plan "implementation
+# `knowledge_extraction.persistence.write_json` — see B-027 plan "implementation
 # contingency". The summarisation helper has many branches (Pydantic,
 # datetime, Path, …) tied to telemetry concerns; keeping a local 15-line
 # copy here lets B-027 land without destabilising summarisation output
@@ -96,7 +96,7 @@ def _atomic_write_json(path: Path, payload: Any) -> None:
     """Write `payload` to `path` atomically (temp-fd + rename).
 
     Creates parent directories if needed. Uses `indent=2`, `ensure_ascii=False`,
-    `default=str` — same defaults as `summarization.persistence.write_json`
+    `default=str` — same defaults as `knowledge_extraction.persistence.write_json`
     so cached files are diffable / human-inspectable.
     """
     path.parent.mkdir(parents=True, exist_ok=True)

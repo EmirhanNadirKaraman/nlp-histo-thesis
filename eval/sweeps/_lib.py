@@ -2,7 +2,7 @@
 
 Strict invariant: this module never imports NLI / LLM / embedding /
 transformers / torch libraries, nor any code from
-``pipeline.stages.summarization.llm_providers``. Layer A sweeps are
+``pipeline.stages.knowledge_extraction.llm_providers``. Layer A sweeps are
 pure-filesystem analyses of frozen summarisation artifacts.
 
 The module exposes:

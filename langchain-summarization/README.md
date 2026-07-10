@@ -46,7 +46,7 @@ cp .env.example .env
 
 ```bash
 # From project root, run the NER pipeline notebook first
-cd /Users/emir/Documents/GitHub/nlp-histo/langchain-summarization
+cd /Users/emir/Documents/GitHub/nlp-histo/langchain-knowledge_extraction
 jupyter notebook test_pipeline_50_docs.ipynb
 ```
 

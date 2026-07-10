@@ -15,15 +15,15 @@ from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
-from pipeline.stages.summarization import SummarizationRunner  # noqa: E402
+from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner  # noqa: E402
 
 PMCID = sys.argv[1] if len(sys.argv) > 1 else "PMC10047158"
 
 print(f"Loading {PMCID} from database...")
-file_data = SummarizationRunner.load_paper_from_db(PMCID)
+file_data = KnowledgeExtractionRunner.load_paper_from_db(PMCID)
 print(f"  {len(file_data['sentences_with_provenance'])} sentences\n")
 
-runner = SummarizationRunner(
+runner = KnowledgeExtractionRunner(
     voter_llms=[
         ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
         ChatOpenAI(model="gpt-4o-mini", temperature=0.0),

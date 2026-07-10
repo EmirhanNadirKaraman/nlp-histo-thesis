@@ -129,7 +129,7 @@ To verify it works:
 
 ```bash
 # 1. Create a .env file (copy from .env.example at the repo root, which also
-#    carries the summarization API keys OPENAI_API_KEY / GOOGLE_API_KEY /
+#    carries the knowledge_extraction API keys OPENAI_API_KEY / GOOGLE_API_KEY /
 #    ANTHROPIC_API_KEY — only the DB_* vars are needed for the database layer)
 cat > .env << EOF
 DB_HOST=localhost

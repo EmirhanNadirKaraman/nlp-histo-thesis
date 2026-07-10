@@ -143,7 +143,7 @@ def test_corpus_relate_tuple_unpack_does_not_crash():
     len(raw_relations) == 3 and _enrich() to iterate over (list, list, list)
     instead of list[Relation], producing silent garbage or a TypeError.
     """
-    from pipeline.stages.summarization.helpers.corpus_relate import CorpusRelateStage
+    from pipeline.stages.knowledge_extraction.helpers.corpus_relate import CorpusRelateStage
 
     stage = CorpusRelateStage()
 

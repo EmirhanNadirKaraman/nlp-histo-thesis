@@ -113,10 +113,10 @@ def main() -> None:
     pmcid = args.pmcid
     max_chunks = args.chunks
 
-    from pipeline.stages.summarization.cache import PipelineCache
-    from pipeline.stages.summarization.grounding_filter import GroundingFilter, score_findings
-    from pipeline.stages.summarization.map_stage import MapStage
-    from pipeline.stages.summarization.normalize_stage import NormalizeStage
+    from pipeline.stages.knowledge_extraction.cache import PipelineCache
+    from pipeline.stages.knowledge_extraction.grounding_filter import GroundingFilter, score_findings
+    from pipeline.stages.knowledge_extraction.map_stage import MapStage
+    from pipeline.stages.knowledge_extraction.normalize_stage import NormalizeStage
 
     llm = build_llm()
     chunk_size = 10

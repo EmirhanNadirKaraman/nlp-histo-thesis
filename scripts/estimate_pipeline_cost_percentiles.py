@@ -1,5 +1,5 @@
 """
-Estimate end-to-end summarization-pipeline cost for P80/P90 papers
+Estimate end-to-end knowledge_extraction-pipeline cost for P80/P90 papers
 ordered by text-element count.
 
 Outputs a markdown report to stdout (and to ``out/cost_percentile_report.md``).
@@ -44,9 +44,9 @@ from sqlalchemy import func, distinct
 
 from database import get_db_connection
 from database.models import Document, TextElement, Figure, Table
-from pipeline.stages.summarization.config import MapConfig
-from pipeline.stages.summarization.costing import PriceBook
-from pipeline.stages.summarization.batch.voter_configs import (
+from pipeline.stages.knowledge_extraction.config import MapConfig
+from pipeline.stages.knowledge_extraction.costing import PriceBook
+from pipeline.stages.knowledge_extraction.batch.voter_configs import (
     CascadeProfile, get_profile, list_profiles,
 )
 
@@ -76,7 +76,7 @@ STRIDE = CHUNK_SIZE - CHUNK_OVERLAP
 # Profile model lists are pulled from voter_configs at runtime — no local
 # copy. `cheap` is structurally a 2-tier cascade (L3 mirrors L2); `real` is
 # the production 3-tier cascade. See
-# pipeline/stages/summarization/batch/voter_configs.py for the source of truth.
+# pipeline/stages/knowledge_extraction/batch/voter_configs.py for the source of truth.
 def _profile_models(p: CascadeProfile) -> dict[str, list[str] | str]:
     return {
         "l1": [v.model for v in p.l1_voters],
@@ -572,7 +572,7 @@ def main() -> None:
         ),
         "",
         "Profiles imported live from "
-        "`pipeline/stages/summarization/batch/voter_configs.py`:",
+        "`pipeline/stages/knowledge_extraction/batch/voter_configs.py`:",
         "",
     ]
     for pname in PROFILES:

@@ -6,7 +6,7 @@ Why this script exists
 ----------------------
 ``run_paper.py`` re-uses the cached final JSON at ``out/summaries/summaries/
 <pmcid>.json`` via ``pipeline_config_hash``. Adding a new field to any
-``SummarizationConfig`` sub-config (even one whose default preserves prior
+``KnowledgeExtractionConfig`` sub-config (even one whose default preserves prior
 behaviour) flips that hash and forces a full pipeline re-run — including
 paid L1/L2/L3 batch submissions.
 
@@ -149,7 +149,7 @@ def _build_handle_from_cached_json(
     no-op when this id is None — without it the DB tables stay empty even
     when ``finalize()`` finishes cleanly and writes the JSON.
     """
-    from pipeline.stages.summarization.batch.models import (  # noqa: PLC0415
+    from pipeline.stages.knowledge_extraction.batch.models import (  # noqa: PLC0415
         BatchHandle, BatchPhase,
     )
 

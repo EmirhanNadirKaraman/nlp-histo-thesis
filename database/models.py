@@ -1,7 +1,7 @@
 """
 SQLAlchemy ORM models for the NLP-histo PostgreSQL database: the source paper
 (Document), its hierarchical text (TextElement), extracted media (Figure,
-Table), NER entities (Entity), and the summarization-pipeline persistence
+Table), NER entities (Entity), and the knowledge-extraction-pipeline persistence
 tables further down the file.
 """
 
@@ -318,7 +318,7 @@ class Entity(Base):
 
 class PipelineRun(Base):
     """
-    Tracks one execution of SummarizationRunner.process() for a single paper.
+    Tracks one execution of KnowledgeExtractionRunner.process() for a single paper.
 
     Every stage-level persistence table (added in later phases) will FK here,
     making this the root of all lineage tracing.
@@ -343,7 +343,7 @@ class PipelineRun(Base):
     # running / success / failed
     status = Column(String(20), nullable=False, default="running")
 
-    # Snapshot of SummarizationRunner config (models, thresholds, etc.)
+    # Snapshot of KnowledgeExtractionRunner config (models, thresholds, etc.)
     config_snapshot = Column(JSON, nullable=True)
 
     # Set on failure

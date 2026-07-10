@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Regenerate the summarization pipeline cost report from a saved usage JSONL.
+Regenerate the knowledge_extraction pipeline cost report from a saved usage JSONL.
 
 Inputs
 ------
@@ -38,7 +38,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from pipeline.stages.summarization.costing import (  # noqa: E402
+from pipeline.stages.knowledge_extraction.costing import (  # noqa: E402
     PriceBook, load_records, write_cost_reports,
 )
 

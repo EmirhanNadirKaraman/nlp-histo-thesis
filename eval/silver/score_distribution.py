@@ -59,7 +59,7 @@ def _replay_scores(voter_cache: dict, checker) -> dict:
     cached L2 voters (i.e. escalated during priming) — a θ-dependent subset, so
     L1 is the clean θ-independent headline; L2 is supplementary.
     """
-    from pipeline.stages.summarization.models import AuditableSummary
+    from pipeline.stages.knowledge_extraction.models import AuditableSummary
 
     out = {"l1": [], "l2": [], "n_chunks": 0, "empty": 0, "single": 0, "polarity": 0}
     for entry in voter_cache.values():
@@ -146,7 +146,7 @@ def main(argv: list[str] | None = None) -> int:
     for emb, sk, al in structures:
         by_emb[emb].append((sk, al))
 
-    from pipeline.stages.summarization.agreement import AgreementChecker
+    from pipeline.stages.knowledge_extraction.agreement import AgreementChecker
 
     subs = args.variant_filter.split(",") if args.variant_filter else None
     per_struct: dict[str, dict] = {}

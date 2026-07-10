@@ -39,11 +39,11 @@ from eval.silver.relation_pairs.validate_and_merge import (
     validate_full,
     validate_record,
 )
-from pipeline.stages.summarization.stages.relate_stage import (
+from pipeline.stages.knowledge_extraction.stages.relate_stage import (
     _build_nli_text,
     _classify_pair,
 )
-from pipeline.stages.summarization.models import DirectionEnum, RelationTypeLabel
+from pipeline.stages.knowledge_extraction.models import DirectionEnum, RelationTypeLabel
 
 
 # ── prompt batch arithmetic ──────────────────────────────────────────────────

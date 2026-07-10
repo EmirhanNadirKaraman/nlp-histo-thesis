@@ -80,14 +80,14 @@ RELATE_CON_THRESHOLDS = [0.40, 0.50, 0.60, 0.70]
 # ── LLM / runner factory (mirrors run_paper_single_model.py) ──────────────────
 
 def _build_llm():
-    from pipeline.stages.summarization.llm_providers import gemini_direct_chat
+    from pipeline.stages.knowledge_extraction.llm_providers import gemini_direct_chat
     return gemini_direct_chat("gemini-2.5-flash-lite", max_tokens=16384, request_timeout=60)
 
 
 def _build_runner(config, output_dir: Path, force_rerun: bool = False):
-    from pipeline.stages.summarization import SummarizationRunner
+    from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
     llm = _build_llm()
-    return SummarizationRunner(
+    return KnowledgeExtractionRunner(
         voter_llms=[llm],
         level2_voter_llms=[llm],
         escalation_llm=llm,
@@ -280,15 +280,15 @@ def run_prime(cases: list[SourceCase], prime_dir: Path,
     Uses grounding.threshold=0.0 so every finding is scored but nothing dropped.
     MAP LLM calls are cached under prime_dir/llm_cache/.
     """
-    from pipeline.stages.summarization.config import (
-        SummarizationConfig, MapConfig, GroundingConfig,
+    from pipeline.stages.knowledge_extraction.config import (
+        KnowledgeExtractionConfig, MapConfig, GroundingConfig,
     )
 
     prime_dir.mkdir(parents=True, exist_ok=True)
     llm_cache_dir = prime_dir / "llm_cache"
     llm_cache_dir.mkdir(parents=True, exist_ok=True)
 
-    prime_config = SummarizationConfig(
+    prime_config = KnowledgeExtractionConfig(
         map=MapConfig(theta=0.0, reject_theta=-1.0),
         grounding=GroundingConfig(threshold=0.0),  # score all, drop nothing
         contradiction_similarity_threshold=None,
@@ -429,9 +429,9 @@ def _build_corpus_nli_pairs(
         logger.info("Loaded %d cached corpus NLI pairs from %s", len(pairs), cache_path)
         return pairs
 
-    from pipeline.stages.summarization.models import CanonicalRule
-    from pipeline.stages.summarization.stages.relate_stage import RelateStage
-    from pipeline.stages.summarization.helpers.corpus_relate import _should_compare_cross_paper
+    from pipeline.stages.knowledge_extraction.models import CanonicalRule
+    from pipeline.stages.knowledge_extraction.stages.relate_stage import RelateStage
+    from pipeline.stages.knowledge_extraction.helpers.corpus_relate import _should_compare_cross_paper
 
     all_rules: list[CanonicalRule] = []
     id_to_pmcid: dict[str, str] = {}

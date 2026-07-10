@@ -50,7 +50,7 @@ def load_findings_from_db(pmcid: str) -> list:
     """
     import spacy
     from database import get_db_connection, Document, TextElement
-    from pipeline.stages.summarization.models import Finding, FindingScope
+    from pipeline.stages.knowledge_extraction.models import Finding, FindingScope
 
     nlp = spacy.load("en_core_sci_sm")
     db = get_db_connection()
@@ -109,8 +109,8 @@ def main() -> None:
 
     pmcid = args.pmcid
 
-    from pipeline.stages.summarization.normalize_stage import NormalizeStage
-    from pipeline.stages.summarization.group_stage import GroupStage
+    from pipeline.stages.knowledge_extraction.normalize_stage import NormalizeStage
+    from pipeline.stages.knowledge_extraction.group_stage import GroupStage
 
     findings = load_findings_from_db(pmcid)
 

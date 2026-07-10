@@ -68,7 +68,7 @@ from eval.silver.split import assign_split
 
 
 # ── Voter spec: position in voter_cache list → (model, family) ──────────────
-# Matches `pipeline.stages.summarization.batch.voter_configs.make_l*_voters`
+# Matches `pipeline.stages.knowledge_extraction.batch.voter_configs.make_l*_voters`
 # at the time of this script. If the production profile changes, update here.
 VOTER_SPECS = [
     ("l1", 0, "gemini-2.5-flash-lite",        "Gemini"),

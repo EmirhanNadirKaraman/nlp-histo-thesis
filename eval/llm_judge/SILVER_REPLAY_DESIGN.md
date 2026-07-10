@@ -56,7 +56,7 @@ Both run on the same 15-paper selection. Both feed the final report.
 - `eval/silver/matcher.py` — embedding-based alignment with cache + `compute_metrics` for P/R/F1, used today for MAP-only comparison. Reusable for every downstream stage.
 - `eval/silver/embedders.py` — OpenAI / Gemini embedders with disk cache.
 - `eval/silver/evaluate.py` — existing CLI that does MAP-level silver eval. The new replay extends the *same metric framework* to later stages.
-- `pipeline/stages/summarization/current_stages/{normalize,group,canonicalize,relate,resolve}_stage.py` — the deterministic stages, callable independently of `SummarizationRunner`.
+- `pipeline/stages/summarization/current_stages/{normalize,group,canonicalize,relate,resolve}_stage.py` — the deterministic stages, callable independently of `KnowledgeExtractionRunner`.
 
 ## §3. Architecture
 
@@ -75,7 +75,7 @@ The orchestrator entrypoint:
 
 ```bash
 python -m eval.silver.replay \
-  --pipeline-run-id <int>                 # the SummarizationRunner run to evaluate
+  --pipeline-run-id <int>                 # the KnowledgeExtractionRunner run to evaluate
   --silver-run <path>                     # silver MAP output dir (from eval/silver/generator.py)
   --output eval/reports/replay_<date>     # where to write per-stage CSVs + alignments
 ```
@@ -117,7 +117,7 @@ If a silver finding spans multiple paragraphs (cross-paragraph aggregate finding
 
 ### 3.3 SilverReplayRunner (`runner.py`)
 
-Wraps the post-MAP stages exactly as `SummarizationRunner` does, but starts from a `list[Finding]` (silver-adapted) and writes to a separate artifact root.
+Wraps the post-MAP stages exactly as `KnowledgeExtractionRunner` does, but starts from a `list[Finding]` (silver-adapted) and writes to a separate artifact root.
 
 ```python
 class SilverReplayRunner:

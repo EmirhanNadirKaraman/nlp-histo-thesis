@@ -118,11 +118,11 @@ def main() -> None:
     chunk_size = 10
     max_sentences = args.chunks * chunk_size
 
-    from pipeline.stages.summarization.cache import PipelineCache
-    from pipeline.stages.summarization.grounding_filter import GroundingFilter, score_findings
-    from pipeline.stages.summarization.group_stage import GroupStage, is_groupable
-    from pipeline.stages.summarization.map_stage import MapStage
-    from pipeline.stages.summarization.normalize_stage import NormalizeStage
+    from pipeline.stages.knowledge_extraction.cache import PipelineCache
+    from pipeline.stages.knowledge_extraction.grounding_filter import GroundingFilter, score_findings
+    from pipeline.stages.knowledge_extraction.group_stage import GroupStage, is_groupable
+    from pipeline.stages.knowledge_extraction.map_stage import MapStage
+    from pipeline.stages.knowledge_extraction.normalize_stage import NormalizeStage
 
     llm = build_llm()
     map_stage = MapStage(

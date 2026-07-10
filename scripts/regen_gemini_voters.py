@@ -35,14 +35,14 @@ if str(_REPO) not in sys.path:
 from dotenv import load_dotenv
 load_dotenv(str(_REPO / ".env"))
 
-from pipeline.stages.summarization.batch.dispatch import (
+from pipeline.stages.knowledge_extraction.batch.dispatch import (
     OPENAI_MAP_TOOL,
     build_providers,
     build_requests,
     parse_result,
 )
-from pipeline.stages.summarization.batch.models import BatchResult, ProviderJob
-from pipeline.stages.summarization.batch.voter_configs import (
+from pipeline.stages.knowledge_extraction.batch.models import BatchResult, ProviderJob
+from pipeline.stages.knowledge_extraction.batch.voter_configs import (
     make_l1_voters,
     make_l2_voters,
 )

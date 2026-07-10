@@ -1,10 +1,10 @@
 # Unified pipeline configuration.
 #
 # Two top-level keys map onto PipelineConfig (PDF extraction) and
-# SummarizationConfig (summarisation). Any field omitted here falls back
+# KnowledgeExtractionConfig. Any field omitted here falls back
 # to the dataclass default in:
 #   - pipeline/stages/pdf_text_extraction/config.py
-#   - pipeline/stages/summarization/config.py
+#   - pipeline/stages/knowledge_extraction/config.py
 #
 # Load with:
 #   from pipeline.config_loader import load_config

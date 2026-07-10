@@ -624,7 +624,7 @@ This is the executable plan. Three questions, all already implemented (in `eval/
 
 ### 10.4 What "no adapter needed for MVP" means concretely
 
-MVP judges consume Postgres rows written by the same `SummarizationRunner` invocation that wrote the new JSONL artifacts. Running
+MVP judges consume Postgres rows written by the same `KnowledgeExtractionRunner` invocation that wrote the new JSONL artifacts. Running
 
 ```bash
 python -m eval.llm_judge --mode sync --tests q1,q2,q3 --n 2 \
@@ -647,7 +647,7 @@ Both are required before the Sonnet pass (item 15 of the eval-speedrun plan). Ne
 ### 11.1 Implementation order
 
 1. Verify smoke prerequisites:
-   - `SummarizationRunner` completed for ≥ 2 of the 5 related papers.
+   - `KnowledgeExtractionRunner` completed for ≥ 2 of the 5 related papers.
    - `manifest.json["extra"]["pipeline_config_hash"]` is set.
    - `relate/{pmcid}/skipped_pairs.jsonl` non-empty for at least one paper.
    - DB writes succeeded — `SELECT COUNT(*) FROM sum_map_findings WHERE pipeline_run_id = …` > 0.

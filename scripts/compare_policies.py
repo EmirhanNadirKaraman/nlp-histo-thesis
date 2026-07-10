@@ -36,7 +36,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from pipeline.stages.summarization.routing.routing_dataset import (  # noqa: E402
+from pipeline.stages.knowledge_extraction.routing.routing_dataset import (  # noqa: E402
     RoutingDataset,
     RoutingRecord,
 )

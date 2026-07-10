@@ -37,7 +37,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from pipeline.stages.summarization.routing.routing_dataset import (
+from pipeline.stages.knowledge_extraction.routing.routing_dataset import (
     RoutingDataset,
     RoutingRecord,
 )

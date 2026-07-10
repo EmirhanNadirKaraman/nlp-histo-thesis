@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import func
 from database import get_db_connection, TextElement, Document, Entity
-from pipeline.stages.summarization import umls_resources
+from pipeline.stages.knowledge_extraction import umls_resources
 
 
 def load_ner_model():

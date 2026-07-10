@@ -95,7 +95,7 @@ from pipeline.stages.pdf_text_extraction.stage_cache import (
     load_layout_elements,
     load_table_detection,
 )
-from pipeline.stages.summarization.persistence import compute_pipeline_config_hash
+from pipeline.stages.knowledge_extraction.persistence import compute_pipeline_config_hash
 
 logger = logging.getLogger(__name__)
 
@@ -485,11 +485,11 @@ class PipelineRunner:
         )
         if self._nlp is None and needs_nlp:
             # B-029 fix: route through the process-wide small-model singleton
-            # in summarization/umls_resources rather than calling spacy.load
+            # in knowledge_extraction/umls_resources rather than calling spacy.load
             # directly. Prevents double-loading when this pipeline runs in the
             # same process as the summarisation pipeline.
             try:
-                from pipeline.stages.summarization.umls_resources import get_small_nlp
+                from pipeline.stages.knowledge_extraction.umls_resources import get_small_nlp
                 self._nlp = get_small_nlp("en_core_sci_sm")
                 if self._nlp is None:
                     logger.warning("scispaCy not available — NER features disabled")

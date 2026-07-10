@@ -281,7 +281,7 @@ BANNED_MODULE_PREFIXES: tuple[str, ...] = (
     "google.generativeai",
     "vertexai",
     "sentence_transformers",
-    "pipeline.stages.summarization.llm_providers",
+    "pipeline.stages.knowledge_extraction.llm_providers",
 )
 
 

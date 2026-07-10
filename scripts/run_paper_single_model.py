@@ -1,5 +1,5 @@
 """
-Run the full summarization pipeline on one or more papers using a single LLM.
+Run the full knowledge_extraction pipeline on one or more papers using a single LLM.
 
 Bypasses ABC multi-model cascading by wiring the same model into all three
 voter slots and setting theta=0.0, so Level-1 always "agrees" and escalation
@@ -112,21 +112,21 @@ def build_batch_runners(
     """
     Return (batch_runner, sync_runner).
 
-    batch_runner  — BatchSummarizationRunner using Claude Haiku 4.5 via the
+    batch_runner  — BatchKnowledgeExtractionRunner using Claude Haiku 4.5 via the
                     Anthropic batch API (no Vertex rate limits, 50 % cheaper).
                     Handles the MAP phase for all papers simultaneously.
 
-    sync_runner   — Standard SummarizationRunner using Gemini Flash Lite for
+    sync_runner   — Standard KnowledgeExtractionRunner using Gemini Flash Lite for
                     NORMALIZE → CANONICALIZE (a handful of LLM calls per paper,
                     not subject to the per-minute rate limits that hurt MAP).
                     Its MAP cache is pre-populated with the batch results so MAP
                     is skipped entirely when process() is called.
     """
-    from pipeline.stages.summarization.batch.runner import BatchSummarizationRunner
-    from pipeline.stages.summarization.batch.models import VoterBatchConfig
-    from pipeline.stages.summarization import SummarizationRunner
-    from pipeline.stages.summarization.config import (
-        SummarizationConfig, MapConfig, GroundingConfig,
+    from pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
+    from pipeline.stages.knowledge_extraction.batch.models import VoterBatchConfig
+    from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
+    from pipeline.stages.knowledge_extraction.config import (
+        KnowledgeExtractionConfig, MapConfig, GroundingConfig,
     )
     from database import get_db_connection
 
@@ -135,13 +135,13 @@ def build_batch_runners(
     sync_llm = build_llm()  # Gemini Flash Lite — used for NORMALIZE/CANONICALIZE/REDUCE
 
     # Single voter → always KEEP, no escalation. Disable contradiction detector.
-    cfg = SummarizationConfig(
+    cfg = KnowledgeExtractionConfig(
         map=MapConfig(theta=0.0, reject_theta=-1.0),
         grounding=GroundingConfig(threshold=None if skip_nli else 0.3),
         contradiction_similarity_threshold=None,
     )
 
-    batch_runner = BatchSummarizationRunner(
+    batch_runner = BatchKnowledgeExtractionRunner(
         l1_voters=[haiku],
         l2_voters=[haiku],
         l3_model=sonnet,
@@ -151,7 +151,7 @@ def build_batch_runners(
         db=get_db_connection(),
         run_ner=not skip_ner,
     )
-    sync_runner = SummarizationRunner(
+    sync_runner = KnowledgeExtractionRunner(
         voter_llms=[sync_llm],
         level2_voter_llms=[sync_llm],
         escalation_llm=sync_llm,
@@ -170,10 +170,10 @@ def build_runner(
     force_rerun: bool = False,
     skip_ner: bool = False,
     model: str = "gemini",
-) -> "SummarizationRunner":
-    from pipeline.stages.summarization import SummarizationRunner
-    from pipeline.stages.summarization.config import (
-        SummarizationConfig, MapConfig, GroundingConfig,
+) -> "KnowledgeExtractionRunner":
+    from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
+    from pipeline.stages.knowledge_extraction.config import (
+        KnowledgeExtractionConfig, MapConfig, GroundingConfig,
     )
     from database import get_db_connection
 
@@ -182,12 +182,12 @@ def build_runner(
     # theta=0.0 → first voter always "agrees" with itself; no cascade fires.
     # reject_theta=-1.0 ensures nothing is hard-rejected.
     # All three LLM slots receive the same model instance.
-    cfg = SummarizationConfig(
+    cfg = KnowledgeExtractionConfig(
         map=MapConfig(theta=0.0, reject_theta=-1.0),
         grounding=GroundingConfig(threshold=0.3 if not skip_nli else None),
         contradiction_similarity_threshold=None,   # skip pairwise contradiction detection
     )
-    return SummarizationRunner(
+    return KnowledgeExtractionRunner(
         voter_llms=[llm],
         level2_voter_llms=[llm],
         escalation_llm=llm,
@@ -264,8 +264,8 @@ def run_batch_mode(
     and the script picks up from where it left off.
     """
     import time
-    from pipeline.stages.summarization.batch.models import BatchPhase
-    from pipeline.stages.summarization.models import AuditableSummary
+    from pipeline.stages.knowledge_extraction.batch.models import BatchPhase
+    from pipeline.stages.knowledge_extraction.models import AuditableSummary
 
     logger.info("Building batch runners (Claude Haiku 4.5 + Gemini Flash Lite)…")
     batch_runner, sync_runner = build_batch_runners(
@@ -531,7 +531,7 @@ def main() -> None:
     if not args.no_corpus and not args.skip_nli and n_ok >= 2:
         logger.info("Running corpus-level relation stage…")
         try:
-            from pipeline.stages.summarization.corpus_relate import CorpusRelateStage
+            from pipeline.stages.knowledge_extraction.corpus_relate import CorpusRelateStage
             CorpusRelateStage().relate_from_dir(summaries_dir, corpus_json)
             ran_corpus = True
         except Exception as exc:

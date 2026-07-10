@@ -667,7 +667,7 @@ def _lookup_paragraphs(rules: list[dict]) -> dict[str, str | None]:
 
 # ── NLI input reconstruction ──────────────────────────────────────────────────
 #
-# Mirrors ``pipeline/stages/summarization/stages/relate_stage.py::
+# Mirrors ``pipeline/stages/knowledge_extraction/stages/relate_stage.py::
 # _build_nli_text`` so the inspector can show the *exact text* that the
 # RELATE / corpus_relate NLI saw for each rule. The full pipeline records
 # ``predicate_text`` on the rule (always) plus the newer ``scope`` and

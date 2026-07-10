@@ -1,7 +1,7 @@
 """Versioned Opus prompts for silver-label generation.
 
 The silver ``SYSTEM_PROMPT`` is *derived* from the voter MAP prompt
-(``pipeline.stages.summarization.prompts._MAP_SYSTEM``) so silver labels are
+(``pipeline.stages.knowledge_extraction.prompts._MAP_SYSTEM``) so silver labels are
 extracted under the **same instructions** as the cascade voters — only the
 model tier differs. Two voter-only pieces are stripped, because silver inputs
 are raw paragraphs with no sentence IDs and the ``extract_findings`` tool has no
@@ -16,7 +16,7 @@ restructured so the two are resynced deliberately.
 """
 from __future__ import annotations
 
-from pipeline.stages.summarization.prompts import _MAP_SYSTEM
+from pipeline.stages.knowledge_extraction.prompts import _MAP_SYSTEM
 
 PROMPT_VERSION = "v4"
 

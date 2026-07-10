@@ -3,7 +3,7 @@
 
 RQ4 (thesis §9.5). Evaluates the RELATE NLI classifier directly against silver
 labels, using the EXACT production NLI logic from
-``pipeline/stages/summarization/stages/relate_stage.py`` (no
+``pipeline/stages/knowledge_extraction/stages/relate_stage.py`` (no
 reimplementation): ``_get_nli_pipe``, ``_nli_scores``, ``_build_nli_text``,
 ``_classify_pair``.
 
@@ -44,8 +44,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from pipeline.stages.summarization.config import RelateConfig  # noqa: E402
-from pipeline.stages.summarization.stages.relate_stage import (  # noqa: E402
+from pipeline.stages.knowledge_extraction.config import RelateConfig  # noqa: E402
+from pipeline.stages.knowledge_extraction.stages.relate_stage import (  # noqa: E402
     _build_nli_text,
     _classify_pair,
     _get_nli_pipe,

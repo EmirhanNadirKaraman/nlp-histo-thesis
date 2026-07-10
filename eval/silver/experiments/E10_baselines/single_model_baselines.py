@@ -48,8 +48,8 @@ from eval.silver.run_new_summarization_sweeps import (
     BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache, _subset_meta,
 )
 from eval.silver.schemas import PipelineCaseOutput
-from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
-from pipeline.stages.summarization.models import AuditableSummary
+from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+from pipeline.stages.knowledge_extraction.models import AuditableSummary
 
 THETA, REJECT = BEST_THETA, BEST_REJECT_THETA   # calibrated 5-voter operating point (E07: θ0.9 / reject0.2)
 _ANCHOR_CASCADE_STRICT_F1 = 0.7160  # 5-voter (drop_l2_2) related15, θ0.9/r0.2, single_voter_policy=escalate (E08)

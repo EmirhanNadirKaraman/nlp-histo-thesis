@@ -11,7 +11,7 @@ Both paths produce identical CSV/markdown/PNG output.
 
 Two report families:
 
-  1. FUNNEL / YIELD — per-paper attrition through the summarization cascade
+  1. FUNNEL / YIELD — per-paper attrition through the knowledge_extraction cascade
      (MAP pre-grounding → MAP post-grounding → NORMALIZE → GROUP → CANONICALIZE
      → RESOLVE), plus grounding / non-groupable rejection breakdowns, the
      dedup factor (raw findings collapsed per CanonicalRule) and the overall

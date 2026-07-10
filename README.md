@@ -1,6 +1,6 @@
 # NLP Histopathology: Auditable Knowledge Extraction from Medical Literature
 
-A complete pipeline for extracting **structured, traceable medical knowledge** from histopathology papers. The system downloads papers from PubMed Central, parses PDFs into a hierarchical database, performs named entity recognition with UMLS linking, and uses LLM-based summarization to generate clinical rules—all with full provenance tracking back to source sentences.
+A complete pipeline for extracting **structured, traceable medical knowledge** from histopathology papers. The system downloads papers from PubMed Central, parses PDFs into a hierarchical database, performs named entity recognition with UMLS linking, and uses LLM-based knowledge extraction to generate clinical rules—all with full provenance tracking back to source sentences.
 
 ## Key Innovation: Full Audit Trail
 
@@ -64,7 +64,7 @@ Citation format: `[S1|PMC123456|789]` where:
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│           LLM KNOWLEDGE-EXTRACTION PIPELINE (summarization stage)            │
+│           LLM KNOWLEDGE-EXTRACTION PIPELINE (knowledge extraction stage)            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  Production path = agreement-based cascading (ABC) over a multi-provider    │
@@ -81,7 +81,7 @@ Citation format: `[S1|PMC123456|789]` where:
 │                                                                             │
 │  Every FinalRule traces back: CanonicalRule → NormalFinding → source         │
 │  paragraph → source document (provenance recorded at generation time).      │
-│  Results persist to the sum_* Postgres tables via summarization/persistence. │
+│  Results persist to the sum_* Postgres tables via knowledge_extraction/persistence. │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │
@@ -107,8 +107,8 @@ nlp-histo/
 │   │   ├── components/                 #     layout extractor, masker, two-pass ghost-text, croppers…
 │   │   ├── table_detectors/            #     Docling / TATR / Hybrid
 │   │   └── outputs/                    #     text/DB writers, stats + run-manifest writers
-│   ├── stages/summarization/           #   Text → auditable clinical rules (3-tier ABC LLM cascade)
-│   │   ├── runner.py                   #     SummarizationRunner (MAP→…→RESOLVE)
+│   ├── stages/knowledge_extraction/    #   Text → auditable clinical rules (3-tier ABC LLM cascade)
+│   │   ├── runner.py                   #     KnowledgeExtractionRunner (MAP→…→RESOLVE)
 │   │   ├── stages/                     #     map / normalize / group / canonicalize / relate / resolve
 │   │   ├── agreement/ routing/ batch/  #     voter scorers, MAP router, async batch dispatch
 │   │   └── helpers/ costing/ observability/
@@ -148,7 +148,7 @@ nlp-histo/
 ```bash
 pip install -r requirements.txt
 # requirements.txt covers the production pipelines (PDF extraction +
-# the multi-provider summarization cascade, which uses direct provider APIs).
+# the multi-provider knowledge_extraction cascade, which uses direct provider APIs).
 # The langchain/* packages are only needed for the legacy
 # langchain-summarization/ prototype, which is no longer the production path.
 ```
@@ -199,16 +199,16 @@ python export_disease_entities.py
 python count_tokens.py
 ```
 
-### 5. Run Summarization Pipeline
+### 5. Run Knowledge Extraction Pipeline
 
-The production summariser is `pipeline/stages/summarization/`, driven via
+The production summariser is `pipeline/stages/knowledge_extraction/`, driven via
 `scripts/run_paper.py` (sync or async batch). It needs three direct-API keys in
 `.env`: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`. See
 [`docs/readmes/HOW_TO_RUN.md`](docs/readmes/HOW_TO_RUN.md) §3 for the full recipe.
 
 `run_paper.py` requires a mode (`--sync` or `--batch`), a `--profile NAME`, and
 `--health-check yes|no`. Valid profiles are `cheap`, `real`, `real_5`,
-`haiku_only` (defined in `pipeline/stages/summarization/batch/voter_configs.py`
+`haiku_only` (defined in `pipeline/stages/knowledge_extraction/batch/voter_configs.py`
 via `get_profile`); see HOW_TO_RUN.md §3.
 
 ```bash
@@ -311,12 +311,12 @@ text_element_table_references (junction)
 
 The schema above is the document-extraction core (7 tables). The full schema is
 **21 Alembic-managed tables** (`alembic upgrade head`): the 7 above, plus
-`pipeline_runs` and `llm_judge_cache`, plus 12 summarization-persistence tables
+`pipeline_runs` and `llm_judge_cache`, plus 12 knowledge-extraction-persistence tables
 (`sum_map_findings`, `sum_map_voter_outputs`, `sum_normal_findings`,
 `sum_normal_finding_spans`, `sum_finding_groups`, `sum_group_members`,
 `sum_canonical_rules`, `sum_relations`, `sum_final_rules`,
 `sum_rejection_summaries`, `sum_rejected_findings`, `sum_corpus_relations`)
-written via `pipeline/stages/summarization/persistence.py`. See
+written via `pipeline/stages/knowledge_extraction/persistence.py`. See
 `database/models.py` for the authoritative definitions.
 
 ## Key Features
@@ -333,7 +333,7 @@ written via `pipeline/stages/summarization/persistence.py`. See
 - **UMLS Linking**: Maps extracted entities to UMLS concepts (CUI)
 - **Persistent Cache**: on-disk entity-linking cache (`named_entity_recognition/entity_linking_cache.json`, ~30 MB) avoids redundant UMLS lookups
 - **Semantic Types**: Filters entities by UMLS semantic types (diseases, chemicals, etc.)
-- **Token Counting**: Estimates LLM costs before running summarization
+- **Token Counting**: Estimates LLM costs before running knowledge_extraction
 
 ### Auditable LLM Pipeline
 - **Structured Pydantic schemas** ensure consistent output format
@@ -353,7 +353,7 @@ DB_NAME=nlp_histo
 DB_USER=postgres
 DB_PASSWORD=your_password
 
-# Summarization cascade — direct provider APIs (see .env.example)
+# Knowledge_extraction cascade — direct provider APIs (see .env.example)
 OPENAI_API_KEY=your_key
 GOOGLE_API_KEY=your_key
 ANTHROPIC_API_KEY=your_key

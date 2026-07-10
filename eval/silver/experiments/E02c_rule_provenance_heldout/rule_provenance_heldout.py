@@ -2,7 +2,7 @@
 """E02c — final-rule provenance carry-rate on the HELD-OUT set (RQ5 / RQ2).
 
 Generalization counterpart to E02b (which measured the ``related15`` calibration
-cluster over the DB ``sum_*`` tables). The held-out summarization runs were never
+cluster over the DB ``sum_*`` tables). The held-out knowledge_extraction runs were never
 persisted to the DB (offline replay), so this experiment reads the on-disk
 pipeline summaries and resolves each rule's paragraph pointer against the DB.
 

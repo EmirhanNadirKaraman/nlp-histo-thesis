@@ -89,7 +89,7 @@ sim-threshold: {sim_threshold}</div>
 <div class="card" id="card-grounding">
   <h2>Grounding Threshold</h2>
   <div class="subtitle">NLI entailment score cutoff (GroundingConfig.threshold).
-    Set in pipeline/stages/summarization/config.py.</div>
+    Set in pipeline/stages/knowledge_extraction/config.py.</div>
   {grounding_best_box}
   <canvas id="chart-grounding"></canvas>
   {grounding_table}

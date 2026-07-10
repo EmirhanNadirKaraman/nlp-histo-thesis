@@ -1,5 +1,5 @@
 """
-Quick smoke-test for SummarizationRunner on a single paper from the database.
+Quick smoke-test for KnowledgeExtractionRunner on a single paper from the database.
 
 Usage:
     cd /Users/emir/Documents/GitHub/nlp-histo
@@ -15,7 +15,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
-from pipeline.stages.summarization import SummarizationRunner
+from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
 
 PMCID = "PMC10047158"
 
@@ -32,7 +32,7 @@ for noisy in ("httpx", "openai", "httpcore", "langchain", "urllib3"):
 # ── load input from DB ─────────────────────────────────────────────────────────
 load_dotenv()
 
-file_data = SummarizationRunner.load_paper_from_db(PMCID)
+file_data = KnowledgeExtractionRunner.load_paper_from_db(PMCID)
 
 print(f"\nPaper    : {file_data['pmcid']}")
 print(f"Sentences: {len(file_data['sentences_with_provenance'])}\n")
@@ -53,7 +53,7 @@ voter_llms = [
 ]
 escalation_llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
 
-runner = SummarizationRunner(
+runner = KnowledgeExtractionRunner(
     voter_llms=voter_llms,
     escalation_llm=escalation_llm,
     theta=0.6,

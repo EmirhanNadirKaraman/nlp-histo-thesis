@@ -29,8 +29,8 @@ sys.path.insert(0, str(_REPO))
 from dotenv import load_dotenv
 load_dotenv(str(_REPO / ".env"))
 
-from pipeline.stages.summarization.batch.gemini_batch import GeminiBatchProvider
-from pipeline.stages.summarization.batch.models import BatchRequest
+from pipeline.stages.knowledge_extraction.batch.gemini_batch import GeminiBatchProvider
+from pipeline.stages.knowledge_extraction.batch.models import BatchRequest
 
 MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash"]  # L1, L2
 N_PER_MODEL = 4
@@ -114,7 +114,7 @@ def _check_model(provider: GeminiBatchProvider, model: str) -> bool:
 
 def main():
     catcher = _WarnCatcher()
-    logging.getLogger("pipeline.stages.summarization.batch.gemini_batch").addHandler(catcher)
+    logging.getLogger("pipeline.stages.knowledge_extraction.batch.gemini_batch").addHandler(catcher)
 
     provider = GeminiBatchProvider()
     all_ok = all(_check_model(provider, m) for m in MODELS)

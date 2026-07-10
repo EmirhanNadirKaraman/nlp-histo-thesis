@@ -10,7 +10,7 @@ pass through unchanged.
 from __future__ import annotations
 
 from eval.silver.map_theta_sweep import _ev, _finding_to_pipeline
-from pipeline.stages.summarization.models import DirectionEnum, RelationTypeEnum
+from pipeline.stages.knowledge_extraction.models import DirectionEnum, RelationTypeEnum
 
 
 def test_ev_unwraps_enum_passes_through_str_and_none():

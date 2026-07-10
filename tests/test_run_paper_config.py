@@ -1,8 +1,8 @@
 """Tests for the ``--config`` wiring added to ``scripts/run_paper.py``.
 
 Confirms that:
-1. ``_load_summarization_config`` reads ``configs/run.yaml::summarization.*``
-   into a ``SummarizationConfig`` instance.
+1. ``_load_summarization_config`` reads ``configs/run.yaml::knowledge_extraction.*``
+   into a ``KnowledgeExtractionConfig`` instance.
 2. Passing an empty / missing path falls back to dataclass defaults.
 3. Different grounding thresholds produce different ``pipeline_config_hash``
    values — this is the load-bearing test for Run A vs Run B comparability.
@@ -45,7 +45,7 @@ pdf_extraction:
   database:
     enabled: false
 
-summarization:
+knowledge_extraction:
   map:
     theta: 0.8
     reject_theta: 0.2
@@ -110,9 +110,9 @@ def test_load_summarization_config_missing_file_falls_back(
     missing = tmp_path / "does_not_exist.yaml"
     cfg = run_paper_module._load_summarization_config(str(missing))
 
-    # Default SummarizationConfig grounding.threshold is None.
+    # Default KnowledgeExtractionConfig grounding.threshold is None.
     assert cfg.grounding.threshold is None
-    # Default map.theta = 0.8 per SummarizationConfig dataclass.
+    # Default map.theta = 0.8 per KnowledgeExtractionConfig dataclass.
     assert cfg.map.theta == 0.8
 
 
@@ -129,7 +129,7 @@ def test_grounding_threshold_changes_pipeline_config_hash(
     """Run A vs Run B parity: the per-paper pipeline_config_hash MUST diverge
     when grounding.threshold flips. Otherwise the cached result short-circuit
     would silently serve Run-A summaries to a Run-B invocation."""
-    from pipeline.stages.summarization.persistence import (
+    from pipeline.stages.knowledge_extraction.persistence import (
         compute_pipeline_config_hash,
     )
 

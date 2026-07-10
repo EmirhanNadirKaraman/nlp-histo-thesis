@@ -1,5 +1,5 @@
 """
-Process one or more histopathology papers through the summarization pipeline.
+Process one or more histopathology papers through the knowledge_extraction pipeline.
 
 Usage
 -----
@@ -114,25 +114,25 @@ DEFAULT_CONFIG_PATH = "configs/run.yaml"
 
 
 def _load_summarization_config(config_path: str | Path | None):
-    """Return a ``SummarizationConfig`` populated from ``config_path``.
+    """Return a ``KnowledgeExtractionConfig`` populated from ``config_path``.
 
-    Falls back to ``SummarizationConfig()`` defaults when ``config_path`` is
+    Falls back to ``KnowledgeExtractionConfig()`` defaults when ``config_path`` is
     ``None`` / empty / missing on disk, or when the YAML has no
-    ``summarization`` block. Logs which path was taken so callers can see
+    ``knowledge_extraction`` block. Logs which path was taken so callers can see
     whether the YAML override actually applied.
     """
-    from pipeline.stages.summarization.config import SummarizationConfig
+    from pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
 
     if not config_path:
         logger.info("Summarisation config: defaults (no --config path)")
-        return SummarizationConfig()
+        return KnowledgeExtractionConfig()
 
     path = Path(config_path)
     if not path.exists():
         logger.warning(
             "Summarisation config: %s not found — falling back to defaults", path,
         )
-        return SummarizationConfig()
+        return KnowledgeExtractionConfig()
 
     from pipeline.config_loader import load_config
 
@@ -154,7 +154,7 @@ def _make_embed_fn(embedder_name: str):
     through cfg.agreement.embedder so the map_theta_sweep --embedder winner can
     be pinned in configs/run.yaml.
     """
-    from pipeline.stages.summarization.agreement.providers import (
+    from pipeline.stages.knowledge_extraction.agreement.providers import (
         GeminiEmbedder,
         OpenAIEmbedder,
     )
@@ -180,17 +180,17 @@ def build_runner(
     """Return (runner, token_usage) where token_usage is {level: {model: {input, output}}}.
 
     The cascade is resolved entirely from
-    ``pipeline/stages/summarization/batch/voter_configs.py`` via
+    ``pipeline/stages/knowledge_extraction/batch/voter_configs.py`` via
     :func:`get_profile`. ``profile_name`` must be set (either directly or via
     ``$NLP_HISTO_PROFILE``); there is no implicit default — see
     :func:`get_profile`. ``artifact_root`` enables filesystem persistence
     (no-op when None). ``config_path`` selects the YAML used to override
-    ``SummarizationConfig`` defaults; pass ``None`` to skip YAML loading.
+    ``KnowledgeExtractionConfig`` defaults; pass ``None`` to skip YAML loading.
     """
-    from pipeline.stages.summarization import SummarizationRunner
-    from pipeline.stages.summarization.batch.voter_configs import get_profile
+    from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
+    from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
     from dataclasses import replace as _dc_replace
-    from pipeline.stages.summarization.llm_providers import (
+    from pipeline.stages.knowledge_extraction.llm_providers import (
         anthropic_direct_chat,
         gemini_direct_chat,
         openai_direct_chat,
@@ -239,7 +239,7 @@ def build_runner(
 
     db_conn = _open_db_connection("build_runner")
 
-    runner = SummarizationRunner(
+    runner = KnowledgeExtractionRunner(
         voter_llms=voter_llms,
         level2_voter_llms=level2_voter_llms,
         escalation_llm=escalation_llm,
@@ -277,9 +277,9 @@ def build_batch_runner(
     output_dir: Path = Path("out/summaries"),
 ):
     from dataclasses import replace as _dc_replace
-    from pipeline.stages.summarization.batch import BatchSummarizationRunner
-    from pipeline.stages.summarization.batch.voter_configs import get_profile
-    from pipeline.stages.summarization.llm_providers import (
+    from pipeline.stages.knowledge_extraction.batch import BatchKnowledgeExtractionRunner
+    from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
+    from pipeline.stages.knowledge_extraction.llm_providers import (
         anthropic_direct_chat,
     )
 
@@ -294,7 +294,7 @@ def build_batch_runner(
     # The L3 voter model in the active profile is used so smoke profiles stay cheap.
     escalation_llm = anthropic_direct_chat(profile.l3_voter.model, temperature=0.0)
 
-    return BatchSummarizationRunner(
+    return BatchKnowledgeExtractionRunner(
         l1_voters=profile.l1_voters,
         l2_voters=profile.l2_voters,
         l3_model=profile.l3_voter,
@@ -391,7 +391,7 @@ def _load_selection_yaml(path: Path) -> list[str]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run summarization pipeline on one or more papers.")
+    parser = argparse.ArgumentParser(description="Run knowledge_extraction pipeline on one or more papers.")
     parser.add_argument("pmcid",          nargs="?", default=None,
                         help="PubMed Central ID, e.g. PMC1234567. "
                              "Omit to auto-sample from eval/data/source_cases_related15.jsonl.")
@@ -460,7 +460,7 @@ def main():
         choices=["cheap", "real", "real_5", "haiku_only"],
         help="Cascade profile (required — no implicit default to prevent "
              "accidental spend). Registered in "
-             "pipeline/stages/summarization/batch/voter_configs.py:\n"
+             "pipeline/stages/knowledge_extraction/batch/voter_configs.py:\n"
              "  cheap      — Gemini + OpenAI only, no Claude. Smoke/dev runs.\n"
              "  real       — Gemini-Flash-Lite/GPT-4o-mini/GPT-4.1-nano at L1; "
              "Gemini-Flash + GPT-4.1-mini + Claude-Haiku at L2; Claude-Sonnet "
@@ -471,10 +471,10 @@ def main():
     )
     parser.add_argument(
         "--config", default=DEFAULT_CONFIG_PATH, metavar="PATH",
-        help=f"YAML used to populate SummarizationConfig (default: "
-             f"{DEFAULT_CONFIG_PATH}). The summarisation block ("
-             "summarization.map, summarization.grounding, "
-             "summarization.relate, summarization.resolve, …) is read via "
+        help=f"YAML used to populate KnowledgeExtractionConfig (default: "
+             f"{DEFAULT_CONFIG_PATH}). The knowledge_extraction block ("
+             "knowledge_extraction.map, knowledge_extraction.grounding, "
+             "knowledge_extraction.relate, knowledge_extraction.resolve, …) is read via "
              "pipeline.config_loader.load_config. Pass an empty string "
              "('--config \"\"') to skip YAML loading and use dataclass "
              "defaults — useful when scripting reproducible thesis runs.",
@@ -510,7 +510,7 @@ def main():
         # Run BEFORE any LLM call so operators see component-level health
         # before paying for a cascade. Default-on for safety; pass
         # `--health-check no` for fast single-paper dev iteration.
-        from pipeline.stages.summarization.health_checks import run_health_checks
+        from pipeline.stages.knowledge_extraction.health_checks import run_health_checks
         # DB probe needs a real connection; reuse the run-side helper.
         try:
             db_for_health = _open_db_connection("health_check") if "_open_db_connection" in globals() else None
@@ -541,7 +541,7 @@ def main():
         pmcids = [pmcid]
 
     if args.dry_run:
-        from pipeline.stages.summarization.batch.voter_configs import get_profile
+        from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
         profile = get_profile(args.profile)
         mode = "sync" if args.sync else "batch"
         print(f"PMCIDs:  {pmcids}")
@@ -684,7 +684,7 @@ def _baseline_cost(usage: dict) -> float | None:
     which would surface as misleading negative savings for profiles where
     every cascade level uses the same model (e.g. ``smoke_haiku``).
     """
-    from pipeline.stages.summarization.batch.voter_configs import make_l1_voters
+    from pipeline.stages.knowledge_extraction.batch.voter_configs import make_l1_voters
     n_l1_voters = len(make_l1_voters())
     if not usage.get("l1"):
         return None
@@ -774,7 +774,7 @@ def _escalation_stats_sync(pmcid: str, token_usage: dict, runner) -> dict:
         ``include_raw=True`` change), those records are preferred because
         ``with_structured_output(...)`` strips LangChain callbacks and the
         callback-derived ``token_usage`` comes back empty.
-    runner: SummarizationRunner — used to read last_map_escalation_counts
+    runner: KnowledgeExtractionRunner — used to read last_map_escalation_counts
         and last_map_invocation_usage_records.
     """
     ec = runner.last_map_escalation_counts
@@ -971,7 +971,7 @@ def _run_corpus_relate(
         return
 
     try:
-        from pipeline.stages.summarization.helpers.corpus_relate import (  # noqa: PLC0415
+        from pipeline.stages.knowledge_extraction.helpers.corpus_relate import (  # noqa: PLC0415
             CorpusRelateStage,
         )
         stage_kwargs: dict = {}
@@ -1004,7 +1004,7 @@ def _run_corpus_relate(
         logger.warning(
             "CORPUS RELATE failed (non-fatal): %s — per-paper JSONs are still "
             "valid. Re-run manually with "
-            "`python -c \"from pipeline.stages.summarization.helpers.corpus_relate "
+            "`python -c \"from pipeline.stages.knowledge_extraction.helpers.corpus_relate "
             "import CorpusRelateStage; CorpusRelateStage().relate_from_dir(...)\"`.",
             exc, exc_info=True,
         )
@@ -1022,8 +1022,8 @@ def _run_all_batch(
     skip_corpus_relate: bool = False,
 ) -> None:
     """Submit all papers simultaneously, poll together, finalize all."""
-    from pipeline.stages.summarization.batch import BatchPhase
-    from pipeline.stages.summarization.runner import SummarizationRunner
+    from pipeline.stages.knowledge_extraction.batch import BatchPhase
+    from pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
 
     runner = build_batch_runner(
         profile_name=profile_name,
@@ -1037,7 +1037,7 @@ def _run_all_batch(
     # ── Phase 1: submit all papers in parallel ────────────────────────────────
     def _submit(pmcid: str):
         try:
-            file_data = SummarizationRunner.load_paper_from_db(pmcid)
+            file_data = KnowledgeExtractionRunner.load_paper_from_db(pmcid)
         except ValueError as exc:
             logger.error("[%s] Load failed: %s", pmcid, exc)
             return pmcid, None
@@ -1136,8 +1136,8 @@ def _run_batch(
     config_path: str | Path | None = DEFAULT_CONFIG_PATH,
     skip_corpus_relate: bool = False,
 ) -> None:
-    from pipeline.stages.summarization.batch import BatchPhase
-    from pipeline.stages.summarization.runner import SummarizationRunner
+    from pipeline.stages.knowledge_extraction.batch import BatchPhase
+    from pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
 
     logger.info("Building batch runner…")
     runner = build_batch_runner(
@@ -1151,7 +1151,7 @@ def _run_batch(
 
     logger.info("Loading paper %s from database…", pmcid)
     try:
-        file_data = SummarizationRunner.load_paper_from_db(pmcid)
+        file_data = KnowledgeExtractionRunner.load_paper_from_db(pmcid)
     except ValueError as exc:
         logger.error("%s", exc)
         sys.exit(1)

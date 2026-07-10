@@ -16,7 +16,7 @@ import pytest
 
 import eval.silver.run_new_summarization_sweeps as m
 from eval.silver.map_theta_sweep import ScorerSpec
-from pipeline.stages.summarization.config import AgreementConfig
+from pipeline.stages.knowledge_extraction.config import AgreementConfig
 
 
 def _args(**over):

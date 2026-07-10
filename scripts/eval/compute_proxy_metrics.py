@@ -1,8 +1,8 @@
-"""Phase 1 — proxy metrics over frozen summarization artifacts.
+"""Phase 1 — proxy metrics over frozen knowledge_extraction artifacts.
 
 Hard scope: this script never imports NLI/LLM/embedding libraries and never
 re-executes any pipeline stage. It reads the JSON, JSONL, and CSV files the
-summarization pipeline already writes and emits one row per pmcid plus one
+knowledge_extraction pipeline already writes and emits one row per pmcid plus one
 ``__aggregate__`` row.
 
 Usage::

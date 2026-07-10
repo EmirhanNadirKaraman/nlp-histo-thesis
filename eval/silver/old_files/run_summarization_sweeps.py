@@ -73,7 +73,7 @@ from dotenv import load_dotenv
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from pipeline.stages.summarization.config import AgreementConfig
+from pipeline.stages.knowledge_extraction.config import AgreementConfig
 
 from eval.silver.matcher import (
     SIMILARITY_THRESHOLD,
@@ -280,7 +280,7 @@ def _hybrid_blend_specs() -> list[ScorerSpec]:
     quartet is held constant in Stage 1b so only the blend axis varies).
     Stage 1b is gated on ``BEST_SCORER == "hybrid"`` in ``_map_grid``.
     """
-    from pipeline.stages.summarization.config import HybridConfig
+    from pipeline.stages.knowledge_extraction.config import HybridConfig
     specs: list[ScorerSpec] = []
     for name, (w_cat, w_emb, w_ent, w_evid) in HYBRID_BLEND_GRID.items():
         cfg = AgreementConfig(

@@ -98,7 +98,7 @@ def run(cfg: RunConfig) -> None:
     with db.session_scope() as session:
         papers = select_papers(session, cfg.n, cfg.seed, cfg.min_words, cfg.max_words)
         if not papers:
-            logger.error("No papers matched. Run the summarization pipeline first.")
+            logger.error("No papers matched. Run the knowledge_extraction pipeline first.")
             sys.exit(1)
 
         sample_path = cfg.results_dir / "paper_sample.json"

@@ -1,5 +1,5 @@
 """
-Tests for pipeline/stages/summarization/corpus_relate.py
+Tests for pipeline/stages/knowledge_extraction/corpus_relate.py
 
 Coverage:
   - _enrich(): comparison_scope and same_paper labeling
@@ -15,13 +15,13 @@ from unittest.mock import patch
 
 import pytest
 
-from pipeline.stages.summarization.helpers.corpus_relate import CorpusRelateStage
+from pipeline.stages.knowledge_extraction.helpers.corpus_relate import CorpusRelateStage
 
-from pipeline.stages.summarization.models import (
+from pipeline.stages.knowledge_extraction.models import (
     CorpusRelation,
     RelationTypeLabel,
 )
-from pipeline.stages.summarization.models import Relation
+from pipeline.stages.knowledge_extraction.models import Relation
 
 
 # ── Minimal fixture builders ───────────────────────────────────────────────────

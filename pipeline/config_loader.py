@@ -1,7 +1,7 @@
 """Unified YAML loader for the two pipeline configs.
 
 A single YAML file drives both `PipelineConfig` (PDF extraction) and
-`SummarizationConfig` (summarisation). Missing keys fall back to dataclass
+`KnowledgeExtractionConfig` (knowledge extraction). Missing keys fall back to dataclass
 defaults; unknown keys raise. Nested dataclasses recurse; Enum fields
 accept their `.value` string; `Path` fields accept any string.
 
@@ -11,7 +11,7 @@ Usage::
 
     pdf_cfg, sum_cfg = load_config("configs/run.yaml")
     PipelineRunner(pdf_cfg).run_batch("files/organized_pdfs")
-    SummarizationRunner(..., config=sum_cfg).process(...)
+    KnowledgeExtractionRunner(..., config=sum_cfg).process(...)
 """
 from __future__ import annotations
 
@@ -24,17 +24,17 @@ from pathlib import Path
 import yaml
 
 from pipeline.stages.pdf_text_extraction.config import PipelineConfig
-from pipeline.stages.summarization.config import SummarizationConfig
+from pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
 
 
-def load_config(yaml_path: str | Path) -> tuple[PipelineConfig, SummarizationConfig]:
+def load_config(yaml_path: str | Path) -> tuple[PipelineConfig, KnowledgeExtractionConfig]:
     raw = yaml.safe_load(Path(yaml_path).read_text()) or {}
     pdf_cfg = PipelineConfig()
-    sum_cfg = SummarizationConfig()
+    sum_cfg = KnowledgeExtractionConfig()
     if raw.get("pdf_extraction"):
         _apply(pdf_cfg, raw["pdf_extraction"])
-    if raw.get("summarization"):
-        _apply(sum_cfg, raw["summarization"])
+    if raw.get("knowledge_extraction"):
+        _apply(sum_cfg, raw["knowledge_extraction"])
     pdf_cfg.prepare()
     return pdf_cfg, sum_cfg
 

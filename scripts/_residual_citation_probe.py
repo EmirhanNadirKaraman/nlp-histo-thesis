@@ -13,8 +13,8 @@ from pathlib import Path
 _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO))
 
-from pipeline.stages.summarization.models import AuditableSummary  # noqa: E402
-from pipeline.stages.summarization.routing.provenance_validator import (  # noqa: E402
+from pipeline.stages.knowledge_extraction.models import AuditableSummary  # noqa: E402
+from pipeline.stages.knowledge_extraction.routing.provenance_validator import (  # noqa: E402
     ProvenanceValidator,
     SourceIndex,
 )

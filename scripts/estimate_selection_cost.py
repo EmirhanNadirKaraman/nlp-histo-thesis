@@ -2,7 +2,7 @@
 
 Reads the YAML produced by ``eval.paper_selection.run_select``, loads each
 paper's sentences from the database (the exact same path the MAP stage uses
-via ``SummarizationRunner.load_paper_from_db``), computes chunk counts at the
+via ``KnowledgeExtractionRunner.load_paper_from_db``), computes chunk counts at the
 production MapConfig defaults, tokenises every sentence with the
 ``cl100k_base`` tokenizer, and prints:
 
@@ -65,7 +65,7 @@ logging.basicConfig(
 logger = logging.getLogger("estimate_selection_cost")
 
 
-# ── MAP defaults (mirror pipeline/stages/summarization/config.py:MapConfig) ─
+# ── MAP defaults (mirror pipeline/stages/knowledge_extraction/config.py:MapConfig) ─
 
 DEFAULT_CHUNK_SIZE = 10
 DEFAULT_CHUNK_OVERLAP = 2
@@ -93,7 +93,7 @@ SILVER_OUTPUT_TOKENS = 1500
 
 # ── Cost matrix (per million tokens) ────────────────────────────────────────
 # Sourced live from
-#   pipeline/stages/summarization/batch/voter_configs.py  (cascade structure)
+#   pipeline/stages/knowledge_extraction/batch/voter_configs.py  (cascade structure)
 # and
 #   configs/model_prices.json via PriceBook  (per-model prices).
 # Pick the cascade with ``--profile {cheap|real}`` (required —
@@ -135,7 +135,7 @@ def build_pricing(profile_name: str | None,
     _REPO_ROOT = Path(__file__).resolve().parents[1]
     if str(_REPO_ROOT) not in sys.path:
         sys.path.insert(0, str(_REPO_ROOT))
-    from pipeline.stages.summarization.batch.voter_configs import get_profile
+    from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
 
     prof = get_profile(profile_name)
     tier_to_voters = {
@@ -252,11 +252,11 @@ class PaperStats:
 def load_paper_stats(pmcid: str, bucket: str, *,
                      tokenizer, chunk_size: int, chunk_overlap: int,
                      nlp) -> PaperStats | None:
-    """Mirror `SummarizationRunner.load_paper_from_db` (TextElement →
+    """Mirror `KnowledgeExtractionRunner.load_paper_from_db` (TextElement →
     spaCy sentencize).
 
     Sort by `TextElement.id` to match the production load path
-    (`pipeline/stages/summarization/runner.py:load_paper_from_db`).
+    (`pipeline/stages/knowledge_extraction/runner.py:load_paper_from_db`).
     `id` is autoincrement and `db_ingester` writes rows in document order
     via per-row `session.flush()`, so `.order_by(id)` preserves document
     order. Sorting by `position_in_section` instead — as this script did
@@ -631,7 +631,7 @@ def main() -> int:
 
     # ── Shared setup (price book + sentencizer + tokenizer) ─────────────────
     logger.info("Loading price book + cascade profile…")
-    from pipeline.stages.summarization.costing import PriceBook
+    from pipeline.stages.knowledge_extraction.costing import PriceBook
     book = PriceBook.load(args.prices)
     pricing, resolved_profile = build_pricing(args.profile, book)
     discount = book.batch_discount_multiplier if args.batch else 1.0

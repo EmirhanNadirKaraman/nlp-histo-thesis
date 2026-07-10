@@ -78,7 +78,7 @@ def test_unknown_field_raises(tmp_path: Path):
 
 def test_summarization_section_independent(tmp_path: Path):
     p = _write(tmp_path, """
-        summarization:
+        knowledge_extraction:
           map:
             theta: 0.65
           resolve:
@@ -104,7 +104,7 @@ def test_routing_pins_loaded(tmp_path: Path):
     assert default_cfg.routing.legacy_single_voter_policy == "keep"
     # Explicit override round-trips (bool coercion + str pass-through).
     p = _write(tmp_path, """
-        summarization:
+        knowledge_extraction:
           routing:
             enable_router: true
             router_single_voter_policy: keep
@@ -119,7 +119,7 @@ def test_routing_pins_loaded(tmp_path: Path):
 def test_legacy_map_routing_paths_rejected(tmp_path: Path):
     """Config-layout-v2 (2026-05-26): the three routing-policy fields moved
     from ``MapConfig`` to ``RoutingConfig``. Stale YAML using the v1 path
-    (``summarization.map.enable_router`` etc.) must fail loudly through the
+    (``knowledge_extraction.map.enable_router`` etc.) must fail loudly through the
     strict loader rather than silently route to a non-existent field.
 
     This is a deliberate hard break — no compatibility alias was added —
@@ -135,7 +135,7 @@ def test_legacy_map_routing_paths_rejected(tmp_path: Path):
         "legacy_single_voter_policy: escalate",
     ):
         p = _write(tmp_path, f"""
-            summarization:
+            knowledge_extraction:
               map:
                 {stale_key}
         """)
@@ -145,7 +145,7 @@ def test_legacy_map_routing_paths_rejected(tmp_path: Path):
 
 # ── AgreementConfig — soft-alignment weights (H-EMB-01) ──────────────────────
 # Centralisation check (2026-05-26): the four weights flow from
-# config.py → run.yaml → SummarizationRunner → EmbeddingSimilarityStrategy
+# config.py → run.yaml → KnowledgeExtractionRunner → EmbeddingSimilarityStrategy
 # without hardcoded overrides anywhere on the path. These tests pin every link.
 
 
@@ -156,7 +156,7 @@ def test_agreement_config_defaults():
     here would silently change MAP agreement-gate behaviour without a YAML
     edit. Cite this test if anyone proposes changing a default outside a
     documented calibration sweep."""
-    from pipeline.stages.summarization.config import AgreementConfig
+    from pipeline.stages.knowledge_extraction.config import AgreementConfig
     cfg = AgreementConfig()
     assert cfg.tau == 0.15
     assert cfg.count_alpha == 0.25
@@ -187,7 +187,7 @@ def test_agreement_config_yaml_override_propagates(tmp_path: Path):
     against accidental coupling between fields in the loader (e.g. a typo
     that propagates one value to multiple slots)."""
     p = _write(tmp_path, """
-        summarization:
+        knowledge_extraction:
           agreement:
             tau: 0.30
             contradiction_weight: 0.40
@@ -207,14 +207,14 @@ def test_agreement_strategy_consumes_all_four_fields():
     This is the final link in the wiring chain:
         run.yaml → AgreementConfig → from_config → strategy._tau etc.
 
-    Production paths (``SummarizationRunner`` at ``runner.py:214`` and
-    ``BatchSummarizationRunner`` at ``batch/runner.py:158``, ``:1148``) all
+    Production paths (``KnowledgeExtractionRunner`` at ``runner.py:214`` and
+    ``BatchKnowledgeExtractionRunner`` at ``batch/runner.py:158``, ``:1148``) all
     funnel through this exact call. If this test passes, the runners forward
     the values by construction; no separate runner-build smoke test needed."""
-    from pipeline.stages.summarization.agreement.embedding_similarity import (
+    from pipeline.stages.knowledge_extraction.agreement.embedding_similarity import (
         EmbeddingSimilarityStrategy,
     )
-    from pipeline.stages.summarization.config import AgreementConfig
+    from pipeline.stages.knowledge_extraction.config import AgreementConfig
     custom = AgreementConfig(
         tau=0.42, count_alpha=0.13, reuse_weight=0.07, contradiction_weight=0.99,
     )
@@ -233,7 +233,7 @@ def test_agreement_strategy_consumes_all_four_fields():
 
 def test_agreement_scorer_kind_default_is_embedding():
     """Default ``scorer_kind="embedding"`` preserves the historical hardcoded choice."""
-    from pipeline.stages.summarization.config import AgreementConfig
+    from pipeline.stages.knowledge_extraction.config import AgreementConfig
     assert AgreementConfig().scorer_kind == "embedding"
 
 
@@ -248,7 +248,7 @@ def test_agreement_scorer_kind_yaml_override_to_hybrid(tmp_path: Path):
     """Explicit YAML override flips the loaded value; untouched fields keep
     their defaults."""
     p = _write(tmp_path, """
-        summarization:
+        knowledge_extraction:
           agreement:
             scorer_kind: hybrid
     """)
@@ -268,8 +268,8 @@ def test_agreement_scorer_kind_invalid_value_raises_at_scorer_build():
     both runners use, so the bad value is caught before any cascade work
     starts. The error message names the bad value and the expected set."""
     import pytest
-    from pipeline.stages.summarization.agreement import SemanticAgreementScorer
-    from pipeline.stages.summarization.config import AgreementConfig
+    from pipeline.stages.knowledge_extraction.agreement import SemanticAgreementScorer
+    from pipeline.stages.knowledge_extraction.config import AgreementConfig
     bad = AgreementConfig(scorer_kind="bogus")  # loader-allowed; runtime-invalid
     with pytest.raises(ValueError, match=r"scorer_kind=.*bogus.*expected.*embedding.*hybrid"):
         SemanticAgreementScorer.from_agreement_config(bad, embed_fn=None)
@@ -285,12 +285,12 @@ def test_agreement_scorer_kind_dispatches_to_correct_strategy():
     Soft-alignment weights flow through ``AgreementConfig`` to either branch
     identically; the hybrid blend weights (``w_category`` etc.) stay at the
     ``HybridStructuredSimilarity`` ctor defaults until a follow-up promotion."""
-    from pipeline.stages.summarization.agreement import (
+    from pipeline.stages.knowledge_extraction.agreement import (
         EmbeddingSimilarityStrategy,
         HybridStructuredSimilarity,
         SemanticAgreementScorer,
     )
-    from pipeline.stages.summarization.config import AgreementConfig
+    from pipeline.stages.knowledge_extraction.config import AgreementConfig
 
     emb = SemanticAgreementScorer.from_agreement_config(
         AgreementConfig(scorer_kind="embedding"), embed_fn=None,
@@ -317,7 +317,7 @@ def test_agreement_scorer_kind_dispatches_to_correct_strategy():
 def test_hybrid_config_defaults():
     """``HybridConfig()`` defaults match the historical
     ``HybridStructuredSimilarity`` ctor: 0.25/0.40/0.25/0.10 — and they sum to 1.0."""
-    from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
+    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
     h = AgreementConfig().hybrid
     assert isinstance(h, HybridConfig)
     assert h.w_category == 0.25
@@ -343,7 +343,7 @@ def test_hybrid_config_yaml_override(tmp_path: Path):
     """Explicit YAML override flips the loaded values; untouched weights
     keep their defaults. Round-trips an ``embedding_heavy``-style override."""
     p = _write(tmp_path, """
-        summarization:
+        knowledge_extraction:
           agreement:
             hybrid:
               w_embedding: 0.65
@@ -364,10 +364,10 @@ def test_hybrid_strategy_consumes_hybrid_config():
     spot-check: an explicit ``w_category=…`` kwarg overrides only that field
     and leaves the other three at the config values (callers that built the
     strategy programmatically before this promotion shouldn't break)."""
-    from pipeline.stages.summarization.agreement.hybrid_structured import (
+    from pipeline.stages.knowledge_extraction.agreement.hybrid_structured import (
         HybridStructuredSimilarity,
     )
-    from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
+    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     cfg = AgreementConfig(
         hybrid=HybridConfig(
@@ -398,10 +398,10 @@ def test_embedding_strategy_ignores_hybrid_config():
     block — switching ``hybrid.w_*`` to extreme values must not perturb the
     embedding strategy's state. Asserts the strategy's soft-alignment weights
     are identical whether or not the hybrid block is at default."""
-    from pipeline.stages.summarization.agreement.embedding_similarity import (
+    from pipeline.stages.knowledge_extraction.agreement.embedding_similarity import (
         EmbeddingSimilarityStrategy,
     )
-    from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
+    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     cfg_default = AgreementConfig()
     cfg_extreme_hybrid = AgreementConfig(
@@ -432,7 +432,7 @@ def test_embedding_strategy_ignores_hybrid_config():
 
 def test_polarity_flag_default_is_true():
     """Default ``force_escalate_on_polarity_conflict=True`` preserves the B-051 safety guard."""
-    from pipeline.stages.summarization.config import AgreementConfig
+    from pipeline.stages.knowledge_extraction.config import AgreementConfig
     assert AgreementConfig().force_escalate_on_polarity_conflict is True
 
 
@@ -448,7 +448,7 @@ def test_polarity_flag_yaml_override_to_false(tmp_path: Path):
     their defaults. Round-trip uses YAML ``false`` (lowercase) — yaml.safe_load
     coerces this to Python ``False`` cleanly."""
     p = _write(tmp_path, """
-        summarization:
+        knowledge_extraction:
           agreement:
             force_escalate_on_polarity_conflict: false
     """)
@@ -463,7 +463,7 @@ def test_normalize_extra_synonyms_loaded_as_mapping(tmp_path: Path):
     """B-037: NormalizeConfig.extra_synonyms is a `dict[str, str]` and must
     pass through the loader without being mistaken for a nested dataclass."""
     p = _write(tmp_path, """
-        summarization:
+        knowledge_extraction:
           normalize:
             extra_synonyms:
               acme corp: ACME

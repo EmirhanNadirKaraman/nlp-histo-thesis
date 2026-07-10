@@ -55,9 +55,9 @@ def main() -> int:
     args = parser.parse_args()
 
     from database import get_db_connection, PipelineRun
-    from pipeline.stages.summarization.batch.models import BatchHandle
-    from pipeline.stages.summarization.models import AuditableSummary
-    from pipeline.stages.summarization.persistence import (
+    from pipeline.stages.knowledge_extraction.batch.models import BatchHandle
+    from pipeline.stages.knowledge_extraction.models import AuditableSummary
+    from pipeline.stages.knowledge_extraction.persistence import (
         create_pipeline_run,
         persist_map_findings,
     )

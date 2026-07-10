@@ -102,7 +102,7 @@ SILVER_PATH  = Path("eval/data/silver_findings_related15.jsonl")
 # ── Voter configs (production setup) ─────────────────────────────────────────
 
 def _make_voters():
-    from pipeline.stages.summarization.batch.voter_configs import (
+    from pipeline.stages.knowledge_extraction.batch.voter_configs import (
         make_l1_voters, make_l2_voters, make_l3_voter,
     )
     return make_l1_voters(), make_l2_voters(), make_l3_voter()
@@ -152,7 +152,7 @@ class ScorerSpec:
 
 
 def _default_scorer_specs() -> list[ScorerSpec]:
-    from pipeline.stages.summarization.config import AgreementConfig
+    from pipeline.stages.knowledge_extraction.config import AgreementConfig
     return [
         ScorerSpec("embedding_default", "embedding", AgreementConfig()),
         ScorerSpec("hybrid_default",    "hybrid",    AgreementConfig()),
@@ -161,11 +161,11 @@ def _default_scorer_specs() -> list[ScorerSpec]:
 
 def _build_scorer(spec: ScorerSpec, embed_fn):
     """Build a SemanticAgreementScorer for ``spec`` (theta deferred to AgreementChecker)."""
-    from pipeline.stages.summarization.agreement import (
+    from pipeline.stages.knowledge_extraction.agreement import (
         EmbeddingSimilarityStrategy,
         SemanticAgreementScorer,
     )
-    from pipeline.stages.summarization.agreement.hybrid_structured import (
+    from pipeline.stages.knowledge_extraction.agreement.hybrid_structured import (
         HybridStructuredSimilarity,
     )
     if spec.kind == "embedding":
@@ -252,13 +252,13 @@ class PrimerHandle:
 
 def run_prime(cases: list[SourceCase], primer_path: Path = PRIMER_PATH) -> PrimerHandle:
     """Build chunk maps for all cases, submit all L1+L2+L3 batch jobs, save primer."""
-    from pipeline.stages.summarization.batch.dispatch import (
+    from pipeline.stages.knowledge_extraction.batch.dispatch import (
         build_requests,
         build_providers,
         OPENAI_MAP_TOOL,
     )
-    from pipeline.stages.summarization.stages.map_stage import _format_sentences
-    from pipeline.stages.summarization.config import MapConfig
+    from pipeline.stages.knowledge_extraction.stages.map_stage import _format_sentences
+    from pipeline.stages.knowledge_extraction.config import MapConfig
 
     L1, L2, L3 = _make_voters()
 
@@ -293,7 +293,7 @@ def run_prime(cases: list[SourceCase], primer_path: Path = PRIMER_PATH) -> Prime
     logger.info("Built chunk maps for %d cases", len(cases))
 
     # Build all requests grouped by (provider, model)
-    from pipeline.stages.summarization.batch.models import BatchRequest
+    from pipeline.stages.knowledge_extraction.batch.models import BatchRequest
     by_prov_model: dict[tuple[str, str], list[BatchRequest]] = {}
 
     for safe_id, cmap in chunk_maps.items():
@@ -346,8 +346,8 @@ def run_retry_failed(primer_path: Path = PRIMER_PATH) -> PrimerHandle:
     replaces the failed job entries in primer.json with the new job IDs.
     Run ``collect`` afterwards to retrieve results and rebuild the voter cache.
     """
-    from pipeline.stages.summarization.batch.dispatch import build_requests, build_providers, OPENAI_MAP_TOOL
-    from pipeline.stages.summarization.batch.models import ProviderJob
+    from pipeline.stages.knowledge_extraction.batch.dispatch import build_requests, build_providers, OPENAI_MAP_TOOL
+    from pipeline.stages.knowledge_extraction.batch.models import ProviderJob
 
     handle = PrimerHandle.load(primer_path)
     L1, L2, L3 = _make_voters()
@@ -438,8 +438,8 @@ def run_collect(
     Check all jobs; retrieve results for completed jobs.
     Returns (updated_handle, is_complete).
     """
-    from pipeline.stages.summarization.batch.dispatch import build_providers
-    from pipeline.stages.summarization.batch.models import ProviderJob
+    from pipeline.stages.knowledge_extraction.batch.dispatch import build_providers
+    from pipeline.stages.knowledge_extraction.batch.models import ProviderJob
 
     jobs = [ProviderJob.from_dict(d) for d in handle.jobs]
     providers_needed = {j.provider for j in jobs}
@@ -501,8 +501,8 @@ def rebuild_cache_from_primer(primer_path: Path = PRIMER_PATH,
 
 def _build_voter_cache(handle: PrimerHandle, cache_path: Path = CACHE_PATH) -> None:
     """Parse handle.raw into a per-case voter cache and write to CACHE_PATH."""
-    from pipeline.stages.summarization.batch.dispatch import parse_result
-    from pipeline.stages.summarization.batch.models import BatchResult
+    from pipeline.stages.knowledge_extraction.batch.dispatch import parse_result
+    from pipeline.stages.knowledge_extraction.batch.models import BatchResult
 
     cache: dict[str, dict] = {}
 
@@ -619,8 +619,8 @@ def _prewarm_agreement_cache(
     sweep runs skip this step entirely.  disk_cache.save() is called after each
     batch so progress survives a crash.
     """
-    from pipeline.stages.summarization.agreement.embedding import _claims
-    from pipeline.stages.summarization.models import AuditableSummary
+    from pipeline.stages.knowledge_extraction.agreement.embedding import _claims
+    from pipeline.stages.knowledge_extraction.models import AuditableSummary
 
     texts: set[str] = set()
     for entry in voter_cache.values():
@@ -719,10 +719,10 @@ def _replay(
         sums l1+l2 *accepts* and so can't recover the L1↔L2 split on its own.
         Invariant: ``invoked["l3"] == accept_counts["l3"]``.
     """
-    from pipeline.stages.summarization.agreement import AgreementChecker
-    from pipeline.stages.summarization.interfaces.scoring import ChunkDecision
-    from pipeline.stages.summarization.models import AuditableSummary
-    from pipeline.stages.summarization.helpers.citation_filter import citation_drop_indices
+    from pipeline.stages.knowledge_extraction.agreement import AgreementChecker
+    from pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision
+    from pipeline.stages.knowledge_extraction.models import AuditableSummary
+    from pipeline.stages.knowledge_extraction.helpers.citation_filter import citation_drop_indices
 
     checker = AgreementChecker(
         scorer,
@@ -1144,7 +1144,7 @@ def main() -> None:
             if done:
                 print("Voter cache written. Ready to sweep.")
                 break
-            from pipeline.stages.summarization.batch.models import ProviderJob
+            from pipeline.stages.knowledge_extraction.batch.models import ProviderJob
             for jd in handle.jobs:
                 j = ProviderJob.from_dict(jd)
                 logger.info("  job %s  provider=%s  status=%s", j.job_id, j.provider, j.status)
@@ -1160,7 +1160,7 @@ def main() -> None:
                 logger.info("All jobs complete. Voter cache ready.")
                 break
             # Show job statuses
-            from pipeline.stages.summarization.batch.models import ProviderJob
+            from pipeline.stages.knowledge_extraction.batch.models import ProviderJob
             for jd in handle.jobs:
                 j = ProviderJob.from_dict(jd)
                 logger.info("  job %s  provider=%s  status=%s", j.job_id, j.provider, j.status)
@@ -1246,13 +1246,13 @@ def main() -> None:
                 if not key:
                     print("GOOGLE_API_KEY not set", file=sys.stderr)
                     sys.exit(1)
-                from pipeline.stages.summarization.agreement.providers import GeminiEmbedder as _AgGem
+                from pipeline.stages.knowledge_extraction.agreement.providers import GeminiEmbedder as _AgGem
                 cache = make_embedding_cache(
                     Path(override) if override else DEFAULT_GEMINI_CACHE_PATH, GEMINI_EMBEDDING_MODEL)
                 return GeminiEmbedder(key), cache, _AgGem()
             from eval.silver.embedders import OpenAIEmbedder
             from eval.silver.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
-            from pipeline.stages.summarization.agreement.providers import OpenAIEmbedder as _AgOAI
+            from pipeline.stages.knowledge_extraction.agreement.providers import OpenAIEmbedder as _AgOAI
             key = os.environ.get("OPENAI_API_KEY")
             if not key:
                 print("OPENAI_API_KEY not set", file=sys.stderr)

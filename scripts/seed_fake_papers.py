@@ -1,5 +1,5 @@
 """Seed two synthetic papers (FAKE01_main, FAKE02_main) for end-to-end
-validation of the summarization pipeline's RELATE / corpus_relate stages.
+validation of the knowledge_extraction pipeline's RELATE / corpus_relate stages.
 
 Why this script exists
 ----------------------

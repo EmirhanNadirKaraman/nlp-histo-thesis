@@ -49,8 +49,8 @@ from eval.silver.run_new_summarization_sweeps import (
     BEST_FORCE_ESCALATE_POLARITY, BEST_REJECT_THETA, BEST_SINGLE_VOTER_POLICY,
     BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,
 )
-from pipeline.stages.summarization.config import AgreementConfig, HybridConfig
-from pipeline.stages.summarization.helpers.grounding_filter import GroundingFilter, _score_pairs
+from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+from pipeline.stages.knowledge_extraction.helpers.grounding_filter import GroundingFilter, _score_pairs
 
 # Frozen MAP config = the shipped 5-voter / escalate pins (BEST_*).
 THETA, REJECT = BEST_THETA, BEST_REJECT_THETA
@@ -111,7 +111,7 @@ def main() -> None:
     #     real cited paragraph from the DB (mirrors runner.py _replace_verbatim_from_db),
     #     so grounding scores real source text rather than paraphrases.
     from database import get_db_connection
-    from pipeline.stages.summarization.persistence import replace_verbatim_from_db
+    from pipeline.stages.knowledge_extraction.persistence import replace_verbatim_from_db
     replace_verbatim_from_db(get_db_connection(), case_outputs)
 
     # 2. Ground every finding through the pipeline's own NLI path (local, free).

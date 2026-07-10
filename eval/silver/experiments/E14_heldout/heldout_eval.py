@@ -55,7 +55,7 @@ from eval.silver.pipeline_sweep import _evaluate_outputs  # noqa: E402
 from eval.silver.run_new_summarization_sweeps import (  # noqa: E402
     BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,
 )
-from pipeline.stages.summarization.config import AgreementConfig, HybridConfig  # noqa: E402
+from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig  # noqa: E402
 
 THETA, REJECT = BEST_THETA, BEST_REJECT_THETA   # calibrated 5-voter operating point (E07: θ0.9 / reject0.2)
 # 5-voter (drop_l2_2 = Claude-Haiku dropped), θ0.9/reject0.2, single_voter_policy=escalate
