@@ -5,16 +5,20 @@
 \usepackage[sc]{mathpazo}
 \usepackage[ngerman,english]{babel} % english is the same as american or USenglish
 \usepackage[autostyle]{csquotes}
-\usepackage[%
-  backend=biber,
-  url=true,
-  style=numeric, % alphabetic, numeric
-  sorting=none, % default == nty, https://tex.stackexchange.com/questions/51434/biblatex-citation-order
-  maxnames=4,
-  minnames=3,
-  maxbibnames=99,
-  giveninits,
-  uniquename=init]{biblatex} % TODO: adapt citation style
+\usepackage[
+    backend=biber,
+    style=apa
+]{biblatex}
+% \usepackage[%
+%   backend=biber,
+%   url=true,
+%   style=numeric, % alphabetic, numeric
+%   sorting=none, % default == nty, https://tex.stackexchange.com/questions/51434/biblatex-citation-order
+%   maxnames=4,
+%   minnames=3,
+%   maxbibnames=99,
+%   giveninits,
+%   uniquename=init]{biblatex} % TODO: adapt citation style
 \usepackage{graphicx}
 \usepackage{scrhack} % necessary for listings package
 \usepackage{listings}

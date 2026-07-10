@@ -17,8 +17,6 @@ with their harmonic mean
     F_{1,\mathrm{loose}} = \frac{2P_{\mathrm{loose}}R_{\mathrm{loose}}} {P_{\mathrm{loose}} + R_{\mathrm{loose}}}.
 \end{equation}
 
-% Loose precision is defined as $n_{\mathrm{matched}} / n_{\mathrm{pipeline}}$, loose recall as $n_{\mathrm{matched}} / n_{\mathrm{silver}}$, and loose-F1 as their harmonic mean. 
-
 Strict precision and recall use the same denominators as their loose counterparts, using the weighted strict true-positive counts. The finding strict-F1 is then computed as the harmonic mean of strict precision and strict recall. In addition to the strict-F1 quality metric, RQ2 reports the source-provenance carry rate: the fraction of final rules and extracted artifacts whose provenance chains resolve back to their sources. This measure is a structural completeness check rather than a scored quality metric; it is therefore reported separately in Section~\ref{section:results-ke-pipeline-output-and-provenance}.
 
 Silver labels are LLM-generated and not ground truth (§\ref{subsec:eval-limitations}). The pipeline configuration is selected on the calibration set of Subsection~\ref{subsec:knowledge-extraction-calibration-set}; the knowledge extraction results reported in Section~\ref{section:results-ke-pipeline-output-and-provenance} and discussed in Section~\ref{section:disc-knowledge-extraction-quality-and-stability} are computed on that calibration cluster, and its generalization to the disjoint held-out evaluation set is reported separately as RQ5 (§\ref{subsec:eval-heldout-generalization}).
