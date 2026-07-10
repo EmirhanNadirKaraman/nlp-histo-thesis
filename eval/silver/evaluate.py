@@ -2,10 +2,9 @@
 Match pipeline findings against silver findings, compute metrics, write report.
 
 Usage:
-  python -m eval.silver.evaluate
-  python -m eval.silver.evaluate --split test --inspect
-  python -m eval.silver.evaluate --silver eval/data/silver_findings.jsonl \\
-                                  --pipeline eval/data/pipeline_findings.jsonl
+  python -m eval.silver.evaluate --silver eval/data/silver_findings_related15.jsonl \\
+                                  --pipeline eval/data/pipeline_findings_related15.jsonl
+  python -m eval.silver.evaluate --silver ... --pipeline ... --split test --inspect
 """
 from __future__ import annotations
 

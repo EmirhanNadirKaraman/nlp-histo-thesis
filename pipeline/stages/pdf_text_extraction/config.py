@@ -233,10 +233,10 @@ class MaskingConfig:
     # plain TEXT by Docling so the layout type can't be used as an anchor).
     # 0.0 = disabled; typical activation value is ~50 (real scientific tables
     # almost never start in the top 50pt of a page).  Same filter site as
-    # `drop_tables_inside_figures` — runs in Step 2 after detection, and is
-    # also re-applied in Step 7's supplementary-source pass for symmetry.
+    # `drop_tables_inside_figures` — runs in Step 2 after detection only;
+    # unlike that flag, it is not re-applied in Step 7's supplementary-source pass.
     # Frozen to 50.0 on 2026-05-21 (Stage 3 sweep winner — +6.1pp crop F1
-    # on Hybrid, 0 TPs lost; see docs/THESIS.md Decisions log).
+    # on Hybrid, 0 TPs lost; see docs/readmes/other_readmes/THESIS.md Decisions log).
     drop_tables_in_top_pts: float = 50.0
 
 
@@ -291,9 +291,10 @@ class CroppingConfig:
 class TextAssemblyConfig:
     """Step 6 hierarchical text-assembly knobs (`HierarchicalTextAssembler`).
 
-    `write_raw_text` is intercepted by Step 5b (pre-assembly text dump) and
-    by the optional `TextFileWriter` companion.  `pre_filter_relevance`
-    toggles per-paragraph relevance filtering inside `parsers.layout_utils.extract_text`.
+    `write_raw_text` gates Step 5b's pre-assembly text dump (`out/text_raw/`)
+    only — it does not affect the Step-8 `TextFileWriter` output, which
+    always writes the assembled text.  `pre_filter_relevance` toggles
+    per-paragraph relevance filtering inside `parsers.layout_utils.extract_text`.
     """
 
     write_raw_text: bool = False  # dump pre-assembly elements to out/text_raw/

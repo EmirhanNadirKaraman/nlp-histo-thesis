@@ -3,7 +3,7 @@
 For each cross-document finding (cited pmcid != document pmcid), record which
 voter produced it and whether the cited pmcid appears in the source text shown
 to the model (an in-text reference the model latched onto) vs nowhere (genuine
-hallucination / external knowledge). Optional DB resolution of the cited te_id.
+hallucination / external knowledge).
 """
 import json
 import sys

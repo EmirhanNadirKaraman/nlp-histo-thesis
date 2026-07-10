@@ -9,10 +9,10 @@ Modes:
   all         prime + grounding + relate in sequence
 
 Usage:
-  python -m eval.silver.pipeline_sweep prime
-  python -m eval.silver.pipeline_sweep grounding --embedder gemini
-  python -m eval.silver.pipeline_sweep relate
-  python -m eval.silver.pipeline_sweep all --embedder gemini
+  python -m eval.silver.pipeline_sweep prime --source eval/data/source_cases_related15.jsonl
+  python -m eval.silver.pipeline_sweep grounding --source eval/data/source_cases_related15.jsonl --silver eval/data/silver_findings_related15.jsonl --embedder gemini
+  python -m eval.silver.pipeline_sweep relate --source eval/data/source_cases_related15.jsonl --silver eval/data/silver_findings_related15.jsonl
+  python -m eval.silver.pipeline_sweep all --source eval/data/source_cases_related15.jsonl --silver eval/data/silver_findings_related15.jsonl --embedder gemini
 
 Notes:
   - prime must run before grounding / relate.
@@ -416,7 +416,7 @@ def _build_corpus_nli_pairs(
     the raw NLI pair dicts.
 
     Results are cached in cache_path so subsequent sweep runs re-use scores
-    without re-loading the DeBERTa model.  Pass force=True to recompute.
+    without re-loading the NLI model.  Pass force=True to recompute.
 
     Per-paper relate_raw_pairs are always empty (structural: GROUP/CANONICALIZE
     ensure uniqueness of (category, relation_type, subject, outcome) within a

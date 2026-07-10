@@ -27,19 +27,20 @@ chosen config against the router before promoting.
 
 Modes
 -----
-  prime     Build chunk maps, submit 6 batch jobs (one per provider×model),
+  prime     Build chunk maps, submit 7 batch jobs (one per provider×model),
             save primer state to eval/data/map_primer/primer.json.
-  collect   Check job statuses; when all complete, build voter_cache.json.
-            Re-run until it prints "Voter cache written."
+  collect   Check job statuses; polls internally (sleeps --poll-interval s
+            between checks) until all complete, then builds voter_cache.json
+            and prints "Voter cache written."
   sweep     Load voter_cache.json, replay theta grid, emit CSV to eval/reports/.
-  all       prime → poll loop (120 s sleep) → collect → sweep in one shot.
+  all       prime → poll loop (30 s sleep, --poll-interval to override) → collect → sweep in one shot.
 
 Usage
 -----
-  python -m eval.silver.map_theta_sweep all
-  python -m eval.silver.map_theta_sweep prime
+  python -m eval.silver.map_theta_sweep all --source <cases.jsonl> --silver <silver.jsonl>
+  python -m eval.silver.map_theta_sweep prime --source <cases.jsonl>
   python -m eval.silver.map_theta_sweep collect
-  python -m eval.silver.map_theta_sweep sweep --embedder gemini
+  python -m eval.silver.map_theta_sweep sweep --silver <silver.jsonl> --embedder gemini
 
 Notes
 -----
@@ -572,7 +573,7 @@ def _ev(x):
     ``AuditableSummary.model_dump()`` yields Enum OBJECTS for relation_type /
     direction / confidence / category, so a bare ``str(enum)`` produces
     ``'RelationTypeEnum.demographic'`` — which never matches the silver string
-    ``'demographic'`` and silently strict-penalises every matched finding (B-071).
+    ``'demographic'`` and silently strict-penalises every matched finding (B-074).
     Raw cached dicts already hold the value string, so this is a no-op for them.
     """
     return getattr(x, "value", x)
@@ -1092,7 +1093,7 @@ def main() -> None:
 
     # ── PRIME ──
     # Only prime/all consume the source-case split. Loading it for
-    # collect/sweep/list is wasteful AND the old "cases=N" log line misled a
+    # collect/sweep is wasteful AND the old "cases=N" log line misled a
     # user into thinking `collect` had submitted N cases. collect/sweep operate
     # off primer.json / voter_cache.json, never the case list — so the source
     # split is loaded only when we actually prime.

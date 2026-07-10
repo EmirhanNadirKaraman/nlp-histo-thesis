@@ -3,7 +3,9 @@
 Both acquisition paths import these blocks so the label/field definitions can
 never drift:
   * ``prepare_manual_batches`` — manual, per-batch JSONL prompts (legacy/fallback).
-  * ``generate`` — Opus-4.7 batch-API generation with forced structured output.
+  * ``api_common`` / ``prepare_api_batch_jsonl`` / ``submit_api_batch`` /
+    ``collect_api_batch`` — Opus-4.7 batch-API generation with forced structured
+    output.
 
 Only the framing differs between the two (batch-of-30 vs one-shot-300, JSONL vs
 forced tool_use); the definitions below are identical for both.

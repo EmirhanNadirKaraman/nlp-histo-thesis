@@ -15,7 +15,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pipeline.stages.summarization.corpus_relate import CorpusRelateStage, _sha8
+from pipeline.stages.summarization.helpers.corpus_relate import CorpusRelateStage, _sha8
+
 from pipeline.stages.summarization.models import (
     CanonicalRule,
     CorpusRelation,

@@ -12,9 +12,9 @@ Options:
 
 Output file: out/inspect/map_normalize_<PMCID>_<timestamp>.json
 
-LLM used: single Azure Foundry model for all voters + escalation (one API
-key, minimum calls).  Set AZURE_FOUNDRY_ENDPOINT and AZURE_FOUNDRY_API_KEY
-in .env before running.
+LLM used: single Vertex AI model (gemini-2.5-flash-lite) for all voters +
+escalation (one API key, minimum calls).  Set VERTEX_PROJECT in .env before
+running.
 """
 from __future__ import annotations
 

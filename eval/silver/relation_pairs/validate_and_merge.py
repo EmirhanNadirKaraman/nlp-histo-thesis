@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""E13 Part 2 — validate the 10 manual raw batches and merge into the final set.
+"""E13 Part 2 — validate the 10 raw batches and merge into the final set.
 
 Reads ``eval/data/relation_pairs/raw_batches/batch_01.jsonl … batch_10.jsonl``
-(the user's pasted Opus-4.7 @ T=0 outputs), validates them, and — only when all
-ten are present and every invariant holds — writes the committed dataset
-``eval/data/relation_claim_pairs_300.jsonl`` plus ``…_300.meta.json``.
+(Opus-4.7 outputs, written by ``collect_api_batch`` or pasted manually; no
+temperature is sent — deprecated for this model, B-072), validates them, and
+— only when all ten are present and every invariant holds — writes the
+committed dataset ``eval/data/relation_claim_pairs_300.jsonl`` plus
+``…_300.meta.json``.
 
 No API / LLM calls. Pure file validation.
 

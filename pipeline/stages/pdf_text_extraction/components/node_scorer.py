@@ -34,7 +34,7 @@ TEXT / LIST_ITEM / PARAGRAPH:
           Applied before pixel checks so it catches layers where the pixel crop
           happens to contain nearby dark pixels (e.g. the element sits inside a
           figure region).
-  R4      in_header_zone AND (R1 OR R2 OR R3) → rejection_reason amended with location hint
+  R4      in_header_zone AND (R-color OR R1 OR R2 OR R3) → rejection_reason amended with location hint
   Otherwise                                → KEEP
 
 Why R2 is gated on render_skipped

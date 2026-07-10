@@ -2,7 +2,7 @@
 Generate a standalone HTML dashboard from sweep report CSVs.
 
 Reads the latest CSVs from eval/reports/ and renders a self-contained HTML file
-with Chart.js P/R/F1 curves, a RELATE heatmap, and best-threshold callouts.
+with Chart.js P/R/F1 curves, RELATE stacked-bar charts, and best-threshold callouts.
 No server required — open directly in any browser.
 
 Usage:

@@ -10,7 +10,7 @@ Parsers in this package:
 - MarkerParser, NougatParser, PDFFiguresParser, DoclingParser,
   PyMuPDF4LLMParser, EnsemblePDFParser
 
-All parsers return the same hierarchical row format as the XML parser::
+The ``BasePDFParser`` subclasses return the same hierarchical row format as the XML parser::
 
     {
         'path_list':   [...],   # section hierarchy as list

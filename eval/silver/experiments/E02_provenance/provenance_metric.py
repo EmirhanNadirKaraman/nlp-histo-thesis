@@ -8,7 +8,7 @@ traced back to its exact source location. Measured over the whole DB corpus:
                         (`unique_path` = PMCID/section/position, `path_list`).
   * MEDIA localization — Tables carry page + bbox (locatable in the PDF) + caption
                          + extracted content; Figures carry caption + section +
-                         crop image (the schema stores no page/bbox for figures).
+                         crop image + page/bbox (added migration 0014, B-075).
   * CROSS-REFERENCE    — in-text "Figure 3 / Table 1" mentions resolved to the
                          actual Figure/Table rows (junction tables).
 

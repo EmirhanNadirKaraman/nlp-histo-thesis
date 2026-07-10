@@ -8,7 +8,7 @@ Why a separate file?
   Parallelism concerns (thread-local runners, progress tracking, KeyboardInterrupt
   handling) live here instead, keeping runner.py clean.
 
-Thread safety model (same as scripts/latest_ingest.py):
+Thread safety model (same as legacy/latest_ingest.py):
   - Each worker thread gets its *own* PipelineRunner via threading.local().
     This gives every thread an independent Docling converter, since Docling is
     not safe to share across threads.
@@ -63,7 +63,7 @@ class ParallelBatchRunner:
         PipelineConfig shared across all workers (read-only after prepare()).
     max_workers:
         Number of worker threads.  Defaults to ``cpu_count // 2`` (min 1),
-        matching the heuristic in scripts/latest_ingest.py.
+        matching the heuristic in legacy/latest_ingest.py.
     """
 
     def __init__(

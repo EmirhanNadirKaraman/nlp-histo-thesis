@@ -13,9 +13,9 @@ frozen ``finalized`` chunk summaries in ``out/summaries/batch_handles.prepatch/`
 
 Usage (from repo root):
 
-    python -m scripts.diagnose_b055                       # scan all handles
-    python -m scripts.diagnose_b055 PMC10047158 PMC...    # specific papers
-    python -m scripts.diagnose_b055 --keep                # leave scratch runs in DB
+    python scripts/diagnose_b055.py                       # scan all handles
+    python scripts/diagnose_b055.py PMC10047158 PMC...    # specific papers
+    python scripts/diagnose_b055.py --keep                # leave scratch runs in DB
 """
 from __future__ import annotations
 

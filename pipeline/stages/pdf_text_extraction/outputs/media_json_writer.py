@@ -15,6 +15,7 @@ Output format (``out/json/{pmcid}_media.json``):
           "caption":    "Haematoxylin and eosin staining...",
           "image_path": "out/figures/PMC123_Figure_1.png",
           "page":       3,
+          "source":     "docling",
           "bbox":       {"x1": 56.0, "y1": 612.0, "x2": 540.0, "y2": 342.0}
         },
         ...

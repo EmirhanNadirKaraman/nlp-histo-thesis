@@ -5,10 +5,11 @@ Embeddings are computed once and cached; all subsequent threshold steps run
 without any API calls.
 
 Usage:
-  python -m eval.silver.sweep
-  python -m eval.silver.sweep --embedder gemini
-  python -m eval.silver.sweep --embedder both
-  python -m eval.silver.sweep --split dev --min-threshold 0.40 --max-threshold 0.80
+  python -m eval.silver.sweep --silver eval/data/silver_findings_related15.jsonl \\
+                               --pipeline eval/data/pipeline_findings_related15.jsonl
+  python -m eval.silver.sweep --silver ... --pipeline ... --embedder gemini
+  python -m eval.silver.sweep --silver ... --pipeline ... --embedder both
+  python -m eval.silver.sweep --silver ... --pipeline ... --split dev --min-threshold 0.40 --max-threshold 0.80
 
 NOTE: Use only the dev split for threshold selection. Never use --split test
 for calibration — that contaminates the held-out evaluation set.

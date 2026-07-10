@@ -47,7 +47,7 @@ Usage::
     # Or read the PMCIDs from a paper-selection YAML
     python scripts/rebuild_from_cached_map.py \\
         --profile haiku_only --health-check no \\
-        --from-selection configs/paper_selection/related15_full.yaml
+        --from-selection configs/paper_selection/related15.yaml
 """
 from __future__ import annotations
 
@@ -143,7 +143,7 @@ def _build_handle_from_cached_json(
     """Reconstruct a BatchHandle whose ``finalized`` holds the raw MAP outputs
     from the cached JSON's ``audit_trail.map_chunks``.
 
-    ``pipeline_run_db_id`` is the row id of an INSERT into ``sum_pipeline_run``
+    ``pipeline_run_db_id`` is the row id of an INSERT into ``pipeline_runs``
     created via ``runner._create_pipeline_run`` BEFORE calling this. Per-stage
     persisters (``persist_map_findings``, ``persist_normal_findings``, …) all
     no-op when this id is None — without it the DB tables stay empty even

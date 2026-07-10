@@ -5,7 +5,7 @@ Attaches supporting evidence from PyMuPDF (fitz) to Docling LayoutElements.
 PyMuPDF is a *support* role here — it validates Docling nodes but never
 contributes layout nodes of its own to the final output.
 
-Two categories of evidence are produced for every element:
+Three categories of evidence are produced for every element:
 
   1. Word / block overlap
      page.get_text("words") → fitz word tuples whose centroids land inside
@@ -16,6 +16,11 @@ Two categories of evidence are produced for every element:
      bbox, and the mean/std/dark-fraction of pixel luminance is computed.
      A visually blank region (high brightness, very few dark pixels) indicates
      an invisible / selectable-but-not-rendered text layer.
+
+  3. Span color
+     page.get_text("dict") → text spans overlapping the bbox are inspected
+     for near-white RGB color, yielding ``invisible_char_fraction`` (used by
+     NodeScorer's white-text ghost-layer rule).
 
 All fitz word/block lists are cached per page for the lifetime of the gatherer
 so that a single page is only parsed once even when many elements live on it.

@@ -29,10 +29,10 @@ Output: Separate JSON files (one per CUI) with structure:
 Files are saved as: {output_dir}/{CUI}_{canonical_name}.json
 
 Usage:
-    python named-entity-recognition/merge_entities_by_umls.py
-    python named-entity-recognition/merge_entities_by_umls.py --output-dir results/umls
-    python named-entity-recognition/merge_entities_by_umls.py --pmcid PMC1234567
-    python named-entity-recognition/merge_entities_by_umls.py --min-occurrences 5
+    python named_entity_recognition/merge_entities_by_umls.py
+    python named_entity_recognition/merge_entities_by_umls.py --output-dir results/umls
+    python named_entity_recognition/merge_entities_by_umls.py --pmcid PMC1234567
+    python named_entity_recognition/merge_entities_by_umls.py --min-occurrences 5
 """
 
 import sys

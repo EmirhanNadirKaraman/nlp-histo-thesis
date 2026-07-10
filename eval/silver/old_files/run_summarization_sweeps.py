@@ -38,7 +38,7 @@ are catalogued.
   *** THE METRIC MISMATCH IS DELIBERATE. *** Only the MAP stages are scored
   against silver per-finding F1. Grounding / relate / resolve / contradiction
   are NOT comparable to MAP silver F1 — do not rank them on the same axis.
-  See docs/CALIBRATION_INVENTORY.md and docs/CALIBRATION_EVAL.md.
+  See docs/readmes/other_readmes/CALIBRATION_INVENTORY.md and docs/readmes/other_readmes/CALIBRATION_EVAL.md.
 
 ────────────────────────────────────────────────────────────────────────────
 Prerequisites for the MAP stages:
@@ -447,7 +447,7 @@ def _enumerate_cells(stage: str) -> list[str]:
 
 # _MapContext / _load_map_context were EXTRACTED to eval/silver/map_context.py
 # (2026-06-17) so the live loader is not stranded in this legacy module. Re-imported
-# here for backward compatibility and for this module's own _run_map_stage (line ~539).
+# here for backward compatibility and for this module's own _run_map_stage (line ~468).
 from eval.silver.map_context import _MapContext, _load_map_context  # noqa: E402,F401
 
 
