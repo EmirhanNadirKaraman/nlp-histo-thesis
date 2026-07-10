@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 
 from pipeline.stages.summarization.batch.dispatch import build_requests
 from pipeline.stages.summarization.batch.models import (

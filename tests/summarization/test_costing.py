@@ -351,7 +351,6 @@ def test_callback_no_usage_present_is_silent():
 def _load_run_paper_module():
     """Load scripts/run_paper.py as a module. scripts/ is not a package."""
     import importlib.util
-    from pathlib import Path
     repo_root = Path(__file__).resolve().parents[2]
     spec = importlib.util.spec_from_file_location(
         "run_paper_script", repo_root / "scripts" / "run_paper.py",

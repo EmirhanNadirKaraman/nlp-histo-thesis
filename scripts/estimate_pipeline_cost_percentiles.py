@@ -538,8 +538,8 @@ def main() -> None:
         "## Dataset",
         "",
         f"- papers with ≥1 text element: **{n}**",
-        f"- ordering: number of text elements (ascending)",
-        f"- percentile method: nearest-rank — `idx = ceil(p × n) − 1`",
+        "- ordering: number of text elements (ascending)",
+        "- percentile method: nearest-rank — `idx = ceil(p × n) − 1`",
         f"- price book: `configs/model_prices.json` ({len(book.known_models())} models)",
         f"- batch_discount_multiplier: **{book.batch_discount_multiplier}**",
         "",
@@ -660,8 +660,8 @@ def main() -> None:
     })
     if missing:
         lines += [
-            f"> ⚠️  **Missing prices** for: " + ", ".join(f"`{m}`" for m in missing) + ". "
-            f"Cost cells render as `n/a`. Add entries to `configs/model_prices.json` and re-run.",
+            "> ⚠️  **Missing prices** for: " + ", ".join(f"`{m}`" for m in missing) + ". "
+            "Cost cells render as `n/a`. Add entries to `configs/model_prices.json` and re-run.",
             "",
         ]
 

@@ -991,7 +991,7 @@ class FinalRule(BaseModel):
     # Observability — which RESOLVE scoring branch produced this rule's
     # final_score. ``relations_present`` uses the votes+grounding+relations
     # formula; ``relations_absent`` uses the grounding-dominant fallback.
-    # See ``current_stages/resolve_stage.py`` for the exact branch logic.
+    # See ``stages/resolve_stage.py`` for the exact branch logic.
     # Default ``relations_absent`` keeps backward compatibility with cached
     # entries from before the field existed.
     score_mode:            Literal["relations_present", "relations_absent"] = "relations_absent"

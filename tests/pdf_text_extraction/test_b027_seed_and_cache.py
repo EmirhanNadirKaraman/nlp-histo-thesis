@@ -16,7 +16,6 @@ from __future__ import annotations
 import json
 import logging
 import sys
-import types
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -33,7 +32,6 @@ from pipeline.stages.pdf_text_extraction.models.dto import (
 )
 from pipeline.stages.pdf_text_extraction.runner import PipelineRunner
 from pipeline.stages.pdf_text_extraction.stage_cache import (
-    StageName,
     _StageCache,
     dump_hierarchical_rows,
     dump_layout_elements,

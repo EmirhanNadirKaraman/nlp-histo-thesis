@@ -8,7 +8,7 @@ Confirms that:
 """
 from __future__ import annotations
 
-from pipeline.stages.summarization.current_stages.resolve_stage import ResolveStage
+from pipeline.stages.summarization.stages.resolve_stage import ResolveStage
 from pipeline.stages.summarization.models import (
     CanonicalRule,
     DirectionEnum,

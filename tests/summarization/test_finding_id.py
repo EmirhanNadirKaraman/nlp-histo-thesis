@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.summarization.current_stages import normalize_stage as _ns
-from pipeline.stages.summarization.current_stages.normalize_stage import (
+from pipeline.stages.summarization.stages import normalize_stage as _ns
+from pipeline.stages.summarization.stages.normalize_stage import (
     NormalizeStage,
 )
 from pipeline.stages.summarization.models import (

@@ -169,7 +169,7 @@ def main(argv: list[str] | None = None) -> int:
                 per_struct[label] = _replay_scores(ctx.voter_cache, checker)
 
     # ── Per-structure table (L1 gate population) ──────────────────────────────
-    print(f"\nPer-chunk L1 agreement score (`primary`) — gate population only")
+    print("\nPer-chunk L1 agreement score (`primary`) — gate population only")
     print(f"reject difference band = ({lo}, {hi}]\n")
     hdr = f"{'structure / variant':44} {'n_gate':>7} {'in band':>8} {'band %':>7} {'min':>6} {'med':>6} {'max':>6}"
     print(hdr)

@@ -20,14 +20,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from . import MODEL, PROMPT_VERSION, SCHEMA_VERSION, LABEL_SOURCE
 from .cache import JudgeCache
 from .client import (
     JudgeRequest, call_opus_sync,
     build_batch_requests, submit_batch, poll_batch,
     retrieve_batch_results, save_batch_meta, load_batch_meta,
 )
-from .sampling import select_papers, PaperSample
+from .sampling import select_papers
 from .metrics import build_summary
 from .tests.q1_precision import build_q1_requests, parse_q1_result
 from .tests.q2_relations import build_q2_requests, parse_q2_result

@@ -11,17 +11,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from pipeline.stages.summarization.helpers.corpus_relate import CorpusRelateStage, _sha8
+from pipeline.stages.summarization.helpers.corpus_relate import CorpusRelateStage
 
 from pipeline.stages.summarization.models import (
-    CanonicalRule,
     CorpusRelation,
-    DirectionEnum,
-    RelationTypeEnum,
     RelationTypeLabel,
 )
 from pipeline.stages.summarization.models import Relation

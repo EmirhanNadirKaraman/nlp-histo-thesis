@@ -54,11 +54,11 @@ from pathlib import Path
 
 from .cache import PipelineCache
 from .config import SummarizationConfig
-from .current_stages.canonicalize_stage import CanonicalizeStage
+from .stages.canonicalize_stage import CanonicalizeStage
 from .helpers.contradiction_detector import ContradictionDetector
 from .helpers.grounding_filter import GroundingFilter
-from .current_stages.group_stage import GroupStage, is_groupable
-from .current_stages.map_stage import MapStage
+from .stages.group_stage import GroupStage, is_groupable
+from .stages.map_stage import MapStage
 from .persistence import (
     RunArtifactWriter,
     RunManifest,
@@ -94,12 +94,12 @@ from .models import (
     RejectionSummary,
     compute_finding_id,
 )
-from .current_stages.normalize_stage import NormalizeStage
+from .stages.normalize_stage import NormalizeStage
 from .costing import PriceBook, UsageCollector, write_cost_reports
 from .observability import TraceCollector, flush_collector
 from .old_stages.reduce_stage import ReduceStage
-from .current_stages.relate_stage import RelateStage
-from .current_stages.resolve_stage import ResolveStage
+from .stages.relate_stage import RelateStage
+from .stages.resolve_stage import ResolveStage
 from .old_stages.rule_stage import RuleStage
 from pipeline.stages.summarization.interfaces import (
     ContradictionChecker,

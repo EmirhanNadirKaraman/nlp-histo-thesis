@@ -9,11 +9,9 @@ import csv
 import json
 from pathlib import Path
 
-import pytest
 
 from eval.paper_selection.export import write_calibration_set
 from eval.paper_selection.fingerprints import (
-    FingerprintConfig,
     build_fingerprint,
     build_fingerprints,
 )

@@ -31,7 +31,6 @@ from eval.silver.matcher import (
     EMBEDDING_MODEL,
     GEMINI_EMBEDDING_MODEL,
     SIMILARITY_THRESHOLD,
-    EmbeddingCache,
     compute_metrics,
     make_embedding_cache,
     compute_sim_matrix,
@@ -39,7 +38,6 @@ from eval.silver.matcher import (
     MATCHERS,
 )
 from eval.silver.schemas import (
-    EvalMetrics,
     MatchResult,
     PipelineCaseOutput,
     SilverCaseResult,

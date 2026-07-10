@@ -19,7 +19,7 @@ Tested invariants:
 """
 from __future__ import annotations
 
-from pipeline.stages.summarization.current_stages.canonicalize_stage import (
+from pipeline.stages.summarization.stages.canonicalize_stage import (
     CanonicalizeStage,
     _split_by_direction,
     _study_coverage,

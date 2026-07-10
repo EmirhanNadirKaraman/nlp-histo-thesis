@@ -17,9 +17,8 @@ from pipeline.stages.summarization.models import (
     FindingScope,
     NormalFinding,
     RelationTypeEnum,
-    SourceSpan,
 )
-from pipeline.stages.summarization.current_stages.normalize_stage import NormalizeStage, normalize_entity
+from pipeline.stages.summarization.stages.normalize_stage import NormalizeStage, normalize_entity
 
 
 PMCID = "PMC12345"
@@ -28,7 +27,7 @@ PMCID = "PMC12345"
 @pytest.fixture(autouse=True)
 def _disable_umls(monkeypatch):
     from pipeline.stages.summarization import umls_resources
-    from pipeline.stages.summarization.current_stages import normalize_stage
+    from pipeline.stages.summarization.stages import normalize_stage
 
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
     umls_resources._reset_for_tests()
@@ -244,7 +243,7 @@ def test_scope_from_best_grounded_finding():
 
 def test_pmcids_populated():
     stage = NormalizeStage()
-    f = _finding(evidence=[f"S1|PMC99|101"])
+    f = _finding(evidence=["S1|PMC99|101"])
     result = stage.normalize([f], PMCID)
     assert "PMC99" in result[0].pmcids
 

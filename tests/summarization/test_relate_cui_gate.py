@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.summarization.current_stages.relate_stage import _should_compare
+from pipeline.stages.summarization.stages.relate_stage import _should_compare
 from pipeline.stages.summarization.models import (
     CanonicalRule,
     DirectionEnum,
@@ -28,7 +28,7 @@ from pipeline.stages.summarization.models import (
 @pytest.fixture(autouse=True)
 def _disable_umls(monkeypatch):
     from pipeline.stages.summarization import umls_resources
-    from pipeline.stages.summarization.current_stages import normalize_stage
+    from pipeline.stages.summarization.stages import normalize_stage
 
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
     umls_resources._reset_for_tests()

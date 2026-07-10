@@ -162,7 +162,7 @@ class TestMapStageRoutingCollector:
     """Verify that _cascade() writes RoutingRecord to collector on the router path."""
 
     def _make_map_stage(self, routing_collector=None, agreement_decision=ChunkDecision.KEEP):
-        from pipeline.stages.summarization.current_stages.map_stage import MapStage
+        from pipeline.stages.summarization.stages.map_stage import MapStage
         from pipeline.stages.summarization.routing.router import MapOutputRouter
 
         mock_voter_llm = MagicMock()
@@ -192,7 +192,7 @@ class TestMapStageRoutingCollector:
 
         router = MapOutputRouter(agreement_checker=mock_checker)
 
-        with patch("pipeline.stages.summarization.current_stages.map_stage.build_map_chain") as mock_build:
+        with patch("pipeline.stages.summarization.stages.map_stage.build_map_chain") as mock_build:
             # 2 L1 voters + 2 L2 voters + 1 L3 escalation = 5 build_map_chain calls
             mock_build.side_effect = [
                 mock_voter_chain,

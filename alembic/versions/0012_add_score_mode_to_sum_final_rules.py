@@ -5,7 +5,7 @@ Captures which RESOLVE scoring branch produced final_score:
   - "relations_absent"  (grounding-dominant fallback)
 
 Nullable so historical rows written before the column existed are valid.
-See pipeline/stages/summarization/current_stages/resolve_stage.py for the
+See pipeline/stages/summarization/stages/resolve_stage.py for the
 exact branch logic.
 
 Revision ID: 0012

@@ -359,7 +359,6 @@ class MapStage:
             Maximum number of chunks to process starting from *start_chunk*.
             None means process all remaining chunks.
         """
-        from ..observability.models import ChunkTrace
 
         with self._escalation_lock:
             self._last_escalation_counts = {

@@ -14,7 +14,6 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 
 from eval.silver.pipeline_sweep import _classify_pair_offline, run_relate_sweep
 

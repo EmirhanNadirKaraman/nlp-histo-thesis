@@ -367,7 +367,7 @@ class TestAgreementCheckerBest:
 class TestCascadeRejectPath:
     def test_reject_calls_escalation_not_none(self):
         """Router REJECT must fall back to the escalation model, not drop chunk."""
-        from pipeline.stages.summarization.current_stages.map_stage import MapStage
+        from pipeline.stages.summarization.stages.map_stage import MapStage
 
         mock_voter_llm = MagicMock()
         mock_escalation_llm = MagicMock()
@@ -379,7 +379,7 @@ class TestCascadeRejectPath:
 
         # Patch build_map_chain so we can control voter and escalation outputs
         with patch(
-            "pipeline.stages.summarization.current_stages.map_stage.build_map_chain"
+            "pipeline.stages.summarization.stages.map_stage.build_map_chain"
         ) as mock_build:
             voter_chain = MagicMock()
             voter_chain.invoke.return_value = _summary([_finding()])

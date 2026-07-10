@@ -109,7 +109,7 @@ nlp-histo/
 │   │   └── outputs/                    #     text/DB writers, stats + run-manifest writers
 │   ├── stages/summarization/           #   Text → auditable clinical rules (3-tier ABC LLM cascade)
 │   │   ├── runner.py                   #     SummarizationRunner (MAP→…→RESOLVE)
-│   │   ├── current_stages/             #     map / normalize / group / canonicalize / relate / resolve
+│   │   ├── stages/                     #     map / normalize / group / canonicalize / relate / resolve
 │   │   ├── agreement/ routing/ batch/  #     voter scorers, MAP router, async batch dispatch
 │   │   └── helpers/ costing/ observability/
 │   └── utils/                          #   cross-pipeline utilities (memory logging)

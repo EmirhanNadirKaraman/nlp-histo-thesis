@@ -10,12 +10,12 @@ from pipeline.stages.summarization.models import (
     DirectionEnum,
     RelationTypeEnum,
 )
-from pipeline.stages.summarization.current_stages.normalize_stage import (
+from pipeline.stages.summarization.stages.normalize_stage import (
     NormalizeStage,
     infer_direction,
     normalize_entity,
 )
-from pipeline.stages.summarization.current_stages.relate_stage import (
+from pipeline.stages.summarization.stages.relate_stage import (
     _classify_pair,
     _norm_outcome_expression,
     _should_compare,

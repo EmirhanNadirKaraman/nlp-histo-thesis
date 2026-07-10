@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from eval.silver.matcher import (
-    SIMILARITY_THRESHOLD,
     _cosine,
     _field_mismatches,
     _normalize,
@@ -14,9 +13,6 @@ from eval.silver.matcher import (
     match_case,
 )
 from eval.silver.schemas import (
-    EvalMetrics,
-    FieldMismatch,
-    MatchResult,
     PipelineCaseOutput,
     PipelineFinding,
     SilverCaseResult,

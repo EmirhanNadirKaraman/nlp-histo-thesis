@@ -373,7 +373,7 @@ def test_map_cache_key_includes_versions_and_cascade():
 def test_map_run_metadata_summary_contains_required_fields():
     from langchain_core.runnables import RunnableLambda
 
-    from pipeline.stages.summarization.current_stages.map_stage import MapStage
+    from pipeline.stages.summarization.stages.map_stage import MapStage
 
     class _DummyLLM(RunnableLambda):
         model_name = "dummy-model"

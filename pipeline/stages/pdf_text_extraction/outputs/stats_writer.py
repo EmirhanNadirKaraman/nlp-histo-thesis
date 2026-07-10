@@ -157,7 +157,7 @@ class DocStatsCollector:
         t = time.monotonic()
         try:
             yield
-        except Exception as exc:
+        except Exception:
             self._safe(lambda: self._stats.stage_timings.append(
                 _StageTiming(name=name, seconds=time.monotonic() - t,
                              ok=False, error=type(exc).__name__)

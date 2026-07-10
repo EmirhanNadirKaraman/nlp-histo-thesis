@@ -45,7 +45,6 @@ Options
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import random
 import sys
@@ -384,7 +383,7 @@ def _print_result(result: dict) -> None:
         print(result["summary"])
 
     if final_rules:
-        print(f"\n── Top final rules (by score) ──\n")
+        print("\n── Top final rules (by score) ──\n")
         for fr in final_rules[:10]:
             flag = " ⚠ CONTRADICTED" if fr.get("is_contradicted") else ""
             print(
@@ -397,7 +396,7 @@ def _print_result(result: dict) -> None:
             )
 
     if relations:
-        print(f"\n── Relations ──\n")
+        print("\n── Relations ──\n")
         for rel in relations:
             print(
                 f"  {rel['relation_type']:<15}  "
@@ -562,7 +561,7 @@ def main() -> None:
                     Path("out/inspector"),
                     corpus_relations_path=corpus_json if ran_corpus else None,
                 )
-                print(f"  Batch inspector → out/inspector/index.html")
+                print("  Batch inspector → out/inspector/index.html")
         except Exception as exc:
             logger.warning("Inspector generation failed (non-fatal): %s", exc)
 

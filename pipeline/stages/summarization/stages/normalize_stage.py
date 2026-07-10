@@ -33,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 # ── Synonym dictionary ─────────────────────────────────────────────────────────
 # synonyms.yaml is the SINGLE source of truth — there is no hardcoded fallback.
-# It lives at the summarization package root, one level above current_stages/
-# (B-066: the prior Path(__file__).parent pointed inside current_stages/ where no
+# It lives at the summarization package root, one level above stages/
+# (B-066: the prior Path(__file__).parent pointed inside stages/ where no
 # file exists. With the fallback removed, a missing or unreadable YAML now yields
 # an empty synonym map and a loud error instead of silently masking the problem
 # with a stale hardcoded dict.)

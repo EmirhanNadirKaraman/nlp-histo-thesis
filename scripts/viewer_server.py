@@ -48,7 +48,6 @@ from inspect_pipeline_output import (  # noqa: E402
     build_corpus_index,
     build_corpus_index_from_db,
     _compute_flags,
-    _is_low_grounding,
     _load_corpus_relations,
 )
 

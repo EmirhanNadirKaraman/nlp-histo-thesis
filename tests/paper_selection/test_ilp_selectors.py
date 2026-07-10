@@ -17,7 +17,6 @@ pulp = pytest.importorskip("pulp")
 from eval.paper_selection.fingerprints import build_fingerprints
 from eval.paper_selection.ilp_selectors import (
     ILPConfig,
-    _extract_valid_solution,
     _prescore_fallback,
     _resolved_limit,
     _retained_related_edges,

@@ -22,7 +22,7 @@ import re
 import time
 from dataclasses import dataclass, field
 
-from .loaders import RawEntity, RawPaper
+from .loaders import RawPaper
 from .models import PaperFingerprint
 
 logger = logging.getLogger(__name__)

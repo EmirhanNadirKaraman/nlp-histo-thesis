@@ -17,7 +17,6 @@ so we measure call_count without paying the model load cost.
 """
 from __future__ import annotations
 
-import importlib
 from unittest.mock import MagicMock, patch
 
 import pytest

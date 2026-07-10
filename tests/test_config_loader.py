@@ -5,7 +5,6 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-import yaml
 
 from pipeline.config_loader import load_config
 from pipeline.stages.pdf_text_extraction.config import (

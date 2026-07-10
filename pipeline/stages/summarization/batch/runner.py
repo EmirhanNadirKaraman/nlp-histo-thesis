@@ -35,23 +35,20 @@ from datetime import datetime, timezone
 from ..agreement import (
     AgreementChecker,
     CascadeDecisionLog,
-    EmbeddingSimilarityStrategy,
     SemanticAgreementScorer,
     evaluate_chunk,
     make_decision_record,
-    producer_from_outcome,
 )
 from ..routing import MapOutputRouter
 from ..config import SummarizationConfig
-from ..current_stages.canonicalize_stage import CanonicalizeStage
-from ..current_stages.group_stage import GroupStage, is_groupable
-from ..current_stages.normalize_stage import NormalizeStage
-from ..current_stages.relate_stage import RelateStage
-from ..current_stages.resolve_stage import ResolveStage
+from ..stages.canonicalize_stage import CanonicalizeStage
+from ..stages.group_stage import GroupStage, is_groupable
+from ..stages.normalize_stage import NormalizeStage
+from ..stages.relate_stage import RelateStage
+from ..stages.resolve_stage import ResolveStage
 from ..helpers.contradiction_detector import ContradictionDetector
 from ..helpers.grounding_filter import GroundingFilter
-from ..interfaces.scoring import ChunkDecision
-from ..current_stages.map_stage import _format_sentences
+from ..stages.map_stage import _format_sentences
 from ..models import (
     AuditableSummary,
     CANONICALIZE_DIRECTION_POLICY_VERSION,
@@ -89,8 +86,8 @@ from ..persistence import (
     replace_verbatim_from_db as _persistence_replace_verbatim_from_db,
 )
 from ..costing import PriceBook, UsageCollector, write_cost_reports
-from .dispatch import OPENAI_MAP_TOOL, build_providers, build_requests, parse_result, submit_level
-from .models import BatchHandle, BatchPhase, BatchResult, ProviderJob, VoterBatchConfig
+from .dispatch import build_providers, parse_result, submit_level
+from .models import BatchHandle, BatchPhase, BatchResult, VoterBatchConfig
 
 logger = logging.getLogger(__name__)
 

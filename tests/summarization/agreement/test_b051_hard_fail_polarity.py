@@ -20,7 +20,6 @@ findings and a fake scorer; no real embeddings, no LLM calls.
 """
 from __future__ import annotations
 
-from typing import Any
 
 import pytest
 

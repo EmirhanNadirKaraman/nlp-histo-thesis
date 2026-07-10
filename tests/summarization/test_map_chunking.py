@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.summarization.current_stages.map_stage import MapStage
+from pipeline.stages.summarization.stages.map_stage import MapStage
 
 
 def _make_stage(chunk_size: int, chunk_overlap: int) -> MapStage:

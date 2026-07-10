@@ -70,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
     keys_all = set(by_key_a) | set(by_key_b)
 
     # ── 1. Totals ──────────────────────────────────────────────────────────
-    print(f"\n=== Totals ===")
+    print("\n=== Totals ===")
     print(f"  {args.label_a:>12}: {len(rels_a):>4} relations  ({args.file_a.name})")
     print(f"  {args.label_b:>12}: {len(rels_b):>4} relations  ({args.file_b.name})")
     print(f"  shared pairs : {len(set(by_key_a) & set(by_key_b)):>4}")
@@ -81,7 +81,7 @@ def main(argv: list[str] | None = None) -> int:
     la = Counter(r.get("relation_type") for r in rels_a)
     lb = Counter(r.get("relation_type") for r in rels_b)
     labels = sorted(set(la) | set(lb))
-    print(f"\n=== Label distribution ===")
+    print("\n=== Label distribution ===")
     print(f"  {'label':<18} {args.label_a:>10} {args.label_b:>10}  Δ")
     for lbl in labels:
         print(f"  {lbl:<18} {la.get(lbl, 0):>10} {lb.get(lbl, 0):>10}  "
@@ -90,7 +90,7 @@ def main(argv: list[str] | None = None) -> int:
     # ── 3. Same- vs cross-paper breakdown ──────────────────────────────────
     sa = Counter(r.get("comparison_scope") for r in rels_a)
     sb = Counter(r.get("comparison_scope") for r in rels_b)
-    print(f"\n=== Scope distribution ===")
+    print("\n=== Scope distribution ===")
     for s in sorted(set(sa) | set(sb)):
         print(f"  {s:<14} {args.label_a}={sa.get(s,0):>3}  {args.label_b}={sb.get(s,0):>3}  "
               f"Δ={sb.get(s,0) - sa.get(s,0):+d}")
@@ -106,12 +106,12 @@ def main(argv: list[str] | None = None) -> int:
             flip_examples.setdefault((ka, kb), []).append((ra, rb))
 
     if flip_counts:
-        print(f"\n=== Label flips on shared pairs ===")
+        print("\n=== Label flips on shared pairs ===")
         print(f"  ({args.label_a:>10}) → ({args.label_b:>10})   count")
         for (ka, kb), n in flip_counts.most_common():
             print(f"  {ka:>12} → {kb:>12}    {n}")
     else:
-        print(f"\n=== Label flips on shared pairs: none ===")
+        print("\n=== Label flips on shared pairs: none ===")
 
     # ── 5. NLI score deltas on shared pairs ───────────────────────────────
     deltas_ab: list[float] = []
@@ -129,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
         n = len(all_abs)
         p50 = all_abs[n // 2]
         p95 = all_abs[min(n - 1, int(0.95 * n))]
-        print(f"\n=== NLI-score deltas (B - A) over shared pairs ===")
+        print("\n=== NLI-score deltas (B - A) over shared pairs ===")
         print(f"  n samples       : {len(deltas_ab) + len(deltas_ba)}")
         print(f"  mean |Δ|        : {statistics.mean(all_abs):.4f}")
         print(f"  median |Δ|      : {p50:.4f}")

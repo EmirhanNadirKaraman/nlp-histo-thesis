@@ -66,7 +66,7 @@ def _validate_selection(
             )
 
     # Mean relatedness sanity: related > diverse, hard > {related, diverse}
-    from .metrics import Hardness, Relatedness
+    from .metrics import Relatedness
     rel_metric = cfg.relatedness if isinstance(cfg.relatedness, Relatedness) else Relatedness()
     hardness_metric = cfg.hardness
 

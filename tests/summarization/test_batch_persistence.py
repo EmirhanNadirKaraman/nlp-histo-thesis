@@ -24,7 +24,6 @@ from pathlib import Path
 os.environ.setdefault("NLP_HISTO_DISABLE_UMLS", "1")
 os.environ.setdefault("NLP_HISTO_SKIP_UMLS_ENRICHMENT", "1")
 
-import pytest
 
 # Module-level logging to surface progress even without ``-s``. INFO lines hit
 # the captured-stdout buffer for failed tests; live ``--log-cli-level=INFO``

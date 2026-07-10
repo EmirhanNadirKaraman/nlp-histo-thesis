@@ -257,7 +257,7 @@ def run_prime(cases: list[SourceCase], primer_path: Path = PRIMER_PATH) -> Prime
         build_providers,
         OPENAI_MAP_TOOL,
     )
-    from pipeline.stages.summarization.current_stages.map_stage import _format_sentences
+    from pipeline.stages.summarization.stages.map_stage import _format_sentences
     from pipeline.stages.summarization.config import MapConfig
 
     L1, L2, L3 = _make_voters()

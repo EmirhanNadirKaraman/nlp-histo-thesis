@@ -25,10 +25,6 @@ the outputs.
 from __future__ import annotations
 
 import json
-import math
-import random
-import re
-import statistics
 import subprocess
 import sys
 import time
@@ -704,9 +700,6 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     """
     name = "05_bootstrap_ci_cascade_vs_sonnet"
     try:
-        from eval.silver.matcher import (
-            DEFAULT_CACHE_PATH, make_embedding_cache,
-        )
         from eval.silver.embedders import OpenAIEmbedder
         from eval.silver.jsonl_utils import read_jsonl
         from eval.silver.schemas import SilverCaseResult
@@ -765,9 +758,6 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     # Use the embedding-only scorer kind because the hybrid blend
     # weights are sweep-specific; this gives a cascade *baseline* whose
     # numbers should be cross-checked against EXP B.2's row.
-    from pipeline.stages.summarization.config import (
-        AgreementConfig, HybridConfig,
-    )
     cascade_cfg = {
         "embedder": "openai",                # use cached openai-matcher
         "scorer": "embedding_default",
@@ -780,7 +770,6 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     }
 
     try:
-        from eval.silver.map_theta_sweep import _replay
         from eval.silver.map_context import _load_map_context
         map_ctx = _load_map_context(cascade_cfg["embedder"], embed_cache_path=None)
         # Replay only dev-split cases.
@@ -1411,7 +1400,7 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
     import os
     try:
         from eval.silver.jsonl_utils import read_jsonl
-        from eval.silver.schemas import SilverCaseResult, PipelineCaseOutput
+        from eval.silver.schemas import SilverCaseResult
         from eval.silver.split import assign_split
         from eval.silver.map_context import _load_map_context
     except Exception as exc:
@@ -1791,7 +1780,7 @@ def _build_real_profile_findings_per_chunk(voter_cache, dev_filter,
     return per-chunk metadata: (case_id, pmcid, chunk_id, source_text,
     accepted_findings, accept_level).
     """
-    from eval.silver.map_theta_sweep import _replay, ScorerSpec, _build_scorer
+    from eval.silver.map_theta_sweep import ScorerSpec, _build_scorer
     from pipeline.stages.summarization.config import (
         AgreementConfig, HybridConfig,
     )
@@ -1892,7 +1881,7 @@ def analyse_real_profile_grounding_polarity() -> AnalysisResult:
         from eval.silver.split import assign_split
         from eval.silver.map_context import _load_map_context
         from pipeline.stages.summarization.models import (
-            Finding, AuditableSummary,
+            AuditableSummary,
         )
         from pipeline.stages.summarization.helpers.grounding_filter import (
             GroundingFilter,

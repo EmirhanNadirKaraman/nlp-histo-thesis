@@ -116,7 +116,7 @@ def test_invoke_l3_records_usage_from_structured_output_raw(fake_auditable_summa
     """When build_map_chain returns include_raw dicts, MapStage records a
     non-zero InvocationUsage from the raw AIMessage even though no LangChain
     callbacks fire (with_structured_output strips them)."""
-    from pipeline.stages.summarization.current_stages import map_stage
+    from pipeline.stages.summarization.stages import map_stage
 
     fake_chain = _make_fake_chain(
         {"input_tokens": 4242, "output_tokens": 99}, fake_auditable_summary,
@@ -160,7 +160,7 @@ def test_invoke_l3_records_missing_when_raw_absent(fake_auditable_summary):
     """Back-compat path: chain returns bare schema (no include_raw). The
     record is still emitted, tagged usage_source='missing' so reports can
     surface the gap rather than silently returning $0."""
-    from pipeline.stages.summarization.current_stages import map_stage
+    from pipeline.stages.summarization.stages import map_stage
 
     class _BareChain:
         def invoke(self, _inp, config=None):

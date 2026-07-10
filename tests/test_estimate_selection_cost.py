@@ -8,7 +8,6 @@ average 124/13 ≈ 9.54 sentences per chunk.
 from __future__ import annotations
 
 import sys
-from math import ceil
 from pathlib import Path
 
 import pytest

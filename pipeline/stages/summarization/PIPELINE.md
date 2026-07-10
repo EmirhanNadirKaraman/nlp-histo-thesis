@@ -4,7 +4,7 @@ This document describes the summarization stage — what each stage does, the ke
 
 **File layout.** The stage implementations live in subpackages, not at the top level of `pipeline/stages/summarization/`. The `## <stage>.py` section headers below name each stage file; use this map to find it:
 
-- `current_stages/` — `map_stage.py`, `normalize_stage.py`, `group_stage.py`, `canonicalize_stage.py`, `relate_stage.py`, `resolve_stage.py`
+- `stages/` — `map_stage.py`, `normalize_stage.py`, `group_stage.py`, `canonicalize_stage.py`, `relate_stage.py`, `resolve_stage.py`
 - `helpers/` — `grounding_filter.py`, `contradiction_detector.py`, `corpus_relate.py`, `citation_filter.py`, `paragraph_lookup.py`, `entity_linker.py`
 - `old_stages/` — `reduce_stage.py`, `rule_stage.py` (optional secondary block; still imported by `runner.py` but off by default — note the name/location tension)
 - top level — `runner.py`, `config.py` (`SummarizationConfig` + per-stage configs; the home of every tunable referenced below), `models.py`, `prompts.py`, `persistence.py`, `cache.py`, `llm_providers.py`, `nli_config.py`, `health_checks.py`

@@ -78,7 +78,7 @@ from ..models import (
     Relation,
     direction_value,
 )
-from ..current_stages.relate_stage import (
+from ..stages.relate_stage import (
     RelateStage,
     _norm_outcome,
     _norm_outcome_expression,

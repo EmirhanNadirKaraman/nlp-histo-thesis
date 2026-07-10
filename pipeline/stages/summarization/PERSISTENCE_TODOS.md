@@ -49,7 +49,7 @@ outcome) are persisted to `skipped_pairs.jsonl` via
 
 ## 4. CANONICALIZE LLM/predicate-selection trace — DECIDE
 
-**Where**: `current_stages/canonicalize_stage.py::_select_predicate`,
+**Where**: `stages/canonicalize_stage.py::_select_predicate`,
 `runner.py::_persist_canonicalize_artifacts` (writes `canonical_rules.jsonl` only).
 
 **Today**: predicate-selection is deterministic (best-grounded fallback). No LLM trace today, so there's nothing to persist beyond the rule itself.
@@ -115,7 +115,7 @@ in `_load_result` / `_save_result`.
 
 ## 9. RESOLVE per-component score breakdown — DEPENDENT on stage exposure
 
-**Where**: `current_stages/resolve_stage.py::resolve` returns only the final
+**Where**: `stages/resolve_stage.py::resolve` returns only the final
 score and counts. `runner.py::_persist_resolve_artifacts::score_trace.jsonl`
 just duplicates `final_rules` fields.
 

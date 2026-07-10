@@ -13,9 +13,8 @@ lock the behaviour without touching the NLI model itself.
 """
 from __future__ import annotations
 
-import pytest
 
-from pipeline.stages.summarization.current_stages.relate_stage import (
+from pipeline.stages.summarization.stages.relate_stage import (
     _build_nli_text,
 )
 from pipeline.stages.summarization.models import (
@@ -172,7 +171,7 @@ def test_scope_aware_flag_toggles_off_at_runtime():
     Smoke check that the constructor stashes the flag for `relate()` to use.
     The real run plumbs `cfg.relate.scope_aware_nli` through here.
     """
-    from pipeline.stages.summarization.current_stages.relate_stage import RelateStage
+    from pipeline.stages.summarization.stages.relate_stage import RelateStage
     s_on  = RelateStage(scope_aware_nli=True)
     s_off = RelateStage(scope_aware_nli=False)
     assert s_on._scope_aware_nli is True
@@ -215,7 +214,7 @@ def test_use_verbatim_falls_back_to_predicate_when_verbatim_missing():
 
 def test_use_verbatim_default_is_off_in_relate_stage():
     """The use_verbatim flag defaults False (backward-compat with measured B.2)."""
-    from pipeline.stages.summarization.current_stages.relate_stage import RelateStage
+    from pipeline.stages.summarization.stages.relate_stage import RelateStage
     s = RelateStage()
     assert s._use_verbatim_for_nli is False
 

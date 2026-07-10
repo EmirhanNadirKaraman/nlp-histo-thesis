@@ -51,7 +51,7 @@ from pipeline.stages.summarization.agreement import AgreementChecker  # noqa: E4
 from pipeline.stages.summarization.batch.voter_configs import get_profile  # noqa: E402
 from pipeline.stages.summarization.cache import PipelineCache  # noqa: E402
 from pipeline.stages.summarization.config import AgreementConfig, HybridConfig  # noqa: E402
-from pipeline.stages.summarization.current_stages.map_stage import MapStage  # noqa: E402
+from pipeline.stages.summarization.stages.map_stage import MapStage  # noqa: E402
 from pipeline.stages.summarization.interfaces.scoring import ChunkDecision  # noqa: E402
 from pipeline.stages.summarization.models import AuditableSummary  # noqa: E402
 from eval.silver.run_new_summarization_sweeps import (  # noqa: E402

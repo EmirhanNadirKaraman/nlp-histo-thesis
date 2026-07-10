@@ -12,11 +12,10 @@ from pipeline.stages.summarization.models import (
     RelationTypeEnum,
     SourceSpan,
 )
-from pipeline.stages.summarization.current_stages.group_stage import (
+from pipeline.stages.summarization.stages.group_stage import (
     GroupStage,
     is_groupable,
     _group_id,
-    _scope_heterogeneity,
 )
 
 PMCID = "PMC12345"

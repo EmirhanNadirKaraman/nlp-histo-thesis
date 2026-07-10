@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 from types import SimpleNamespace
 
-from pipeline.stages.summarization.current_stages.map_stage import MapStage
+from pipeline.stages.summarization.stages.map_stage import MapStage
 
 
 def _make_stub_stage(l1_voter_count: int, l2_voter_count: int) -> MapStage:
@@ -42,7 +42,7 @@ def _fake_outcome():
 def test_l1_shortfall_emits_warning(caplog):
     """L1 with 3 declared voters but only 1 ran → WARNING."""
     stage = _make_stub_stage(l1_voter_count=3, l2_voter_count=3)
-    with caplog.at_level(logging.WARNING, logger="pipeline.stages.summarization.current_stages.map_stage"):
+    with caplog.at_level(logging.WARNING, logger="pipeline.stages.summarization.stages.map_stage"):
         stage._record_cascade_decision(
             _fake_outcome(),
             pmcid="PMC_X", chunk_id="C1", level="l1",
@@ -57,7 +57,7 @@ def test_l1_shortfall_emits_warning(caplog):
 def test_l2_shortfall_emits_warning(caplog):
     """L2 with 3 declared voters but only 2 ran → WARNING."""
     stage = _make_stub_stage(l1_voter_count=3, l2_voter_count=3)
-    with caplog.at_level(logging.WARNING, logger="pipeline.stages.summarization.current_stages.map_stage"):
+    with caplog.at_level(logging.WARNING, logger="pipeline.stages.summarization.stages.map_stage"):
         stage._record_cascade_decision(
             _fake_outcome(),
             pmcid="PMC_X", chunk_id="C5", level="l2",
@@ -73,7 +73,7 @@ def test_full_voter_count_emits_no_warning(caplog):
     """Sanity: voter_count == expected → NO warning. Guards against the
     assertion firing as a constant noise source."""
     stage = _make_stub_stage(l1_voter_count=3, l2_voter_count=3)
-    with caplog.at_level(logging.WARNING, logger="pipeline.stages.summarization.current_stages.map_stage"):
+    with caplog.at_level(logging.WARNING, logger="pipeline.stages.summarization.stages.map_stage"):
         stage._record_cascade_decision(
             _fake_outcome(),
             pmcid="PMC_X", chunk_id="C1", level="l1",
@@ -88,7 +88,7 @@ def test_l3_expected_is_one(caplog):
     voter_count=0 must warn."""
     stage = _make_stub_stage(l1_voter_count=3, l2_voter_count=3)
     # Happy path
-    with caplog.at_level(logging.WARNING, logger="pipeline.stages.summarization.current_stages.map_stage"):
+    with caplog.at_level(logging.WARNING, logger="pipeline.stages.summarization.stages.map_stage"):
         stage._record_cascade_decision(
             _fake_outcome(),
             pmcid="PMC_X", chunk_id="C1", level="l3",
@@ -99,7 +99,7 @@ def test_l3_expected_is_one(caplog):
 
     caplog.clear()
     # Shortfall path
-    with caplog.at_level(logging.WARNING, logger="pipeline.stages.summarization.current_stages.map_stage"):
+    with caplog.at_level(logging.WARNING, logger="pipeline.stages.summarization.stages.map_stage"):
         stage._record_cascade_decision(
             _fake_outcome(),
             pmcid="PMC_X", chunk_id="C1", level="l3",

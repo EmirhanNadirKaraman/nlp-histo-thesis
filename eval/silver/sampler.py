@@ -1,10 +1,8 @@
 """Sample source cases from the TextElement table."""
 from __future__ import annotations
 
-import hashlib
 import logging
 import random
-from pathlib import Path
 from typing import List
 
 logger = logging.getLogger(__name__)
@@ -112,7 +110,7 @@ def sample_papers_source_cases(
     sys.path.insert(0, str(_Path(__file__).parent.parent.parent))
 
     from database import get_db_connection
-    from database.models import TextElement, Document
+    from database.models import Document
 
     db = get_db_connection()
     with db.session_scope() as session:

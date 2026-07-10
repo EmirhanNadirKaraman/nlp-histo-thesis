@@ -40,7 +40,6 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -327,10 +326,10 @@ def _prompt_rubric_score(label: str) -> Dict[str, Any]:
             try:
                 f = float(raw)
             except ValueError:
-                print(f"      invalid — enter 0.0–1.0, 'n/a', or 'skip'")
+                print("      invalid — enter 0.0–1.0, 'n/a', or 'skip'")
                 continue
             if not (0.0 <= f <= 1.0):
-                print(f"      out of range — must be in [0.0, 1.0]")
+                print("      out of range — must be in [0.0, 1.0]")
                 continue
             scored[dim] = f
             break

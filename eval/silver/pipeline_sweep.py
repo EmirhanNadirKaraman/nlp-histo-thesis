@@ -31,7 +31,6 @@ import json
 import logging
 import os
 import sys
-from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -43,7 +42,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 logger = logging.getLogger(__name__)
 
-from eval.silver.embedders import GeminiEmbedder, OpenAIEmbedder, GEMINI_MODEL, OPENAI_MODEL
+from eval.silver.embedders import GeminiEmbedder, OpenAIEmbedder
 from eval.silver.jsonl_utils import read_jsonl
 from eval.silver.matcher import (
     DEFAULT_CACHE_PATH,
@@ -431,7 +430,7 @@ def _build_corpus_nli_pairs(
         return pairs
 
     from pipeline.stages.summarization.models import CanonicalRule
-    from pipeline.stages.summarization.current_stages.relate_stage import RelateStage
+    from pipeline.stages.summarization.stages.relate_stage import RelateStage
     from pipeline.stages.summarization.helpers.corpus_relate import _should_compare_cross_paper
 
     all_rules: list[CanonicalRule] = []

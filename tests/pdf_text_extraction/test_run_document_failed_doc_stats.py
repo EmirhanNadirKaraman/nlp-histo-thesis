@@ -12,7 +12,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-import pytest
 
 from pipeline.stages.pdf_text_extraction.config import PipelineConfig
 from pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, LayoutElement

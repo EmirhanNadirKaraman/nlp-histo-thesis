@@ -20,8 +20,8 @@ from pathlib import Path
 import pytest
 
 from pipeline.stages.summarization.artifact_models import SkippedPair
-from pipeline.stages.summarization.current_stages import relate_stage as _rs
-from pipeline.stages.summarization.current_stages.relate_stage import RelateStage
+from pipeline.stages.summarization.stages import relate_stage as _rs
+from pipeline.stages.summarization.stages.relate_stage import RelateStage
 from pipeline.stages.summarization.models import (
     CanonicalRule,
     DirectionEnum,

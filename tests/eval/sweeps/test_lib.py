@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import csv
 import importlib.util
-import math
 import sys
 from pathlib import Path
 

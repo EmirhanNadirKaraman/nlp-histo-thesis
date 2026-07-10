@@ -23,7 +23,6 @@ import logging
 import math
 import time
 from dataclasses import dataclass, field
-from typing import Iterable
 
 from .metrics import Hardness, Relatedness
 from .models import HardnessBreakdown, PaperFingerprint, SelectionResult

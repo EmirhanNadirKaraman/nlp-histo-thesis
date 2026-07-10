@@ -47,7 +47,6 @@ class OpenAIEmbedder:
         self._total_texts = 0
 
     def __call__(self, texts: list[str]) -> list[list[float]]:
-        import time
         import openai  # lazy import — optional dependency
 
         if not texts:
@@ -131,7 +130,6 @@ class GeminiEmbedder:
         self._total_texts = 0
 
     def __call__(self, texts: list[str]) -> list[list[float]]:
-        import time
 
         if not texts:
             return []

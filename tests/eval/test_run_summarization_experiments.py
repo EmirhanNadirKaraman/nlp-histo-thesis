@@ -275,7 +275,6 @@ def _success_runner(state_key: str, value):
     """Build a fake run() that returns an ExperimentResult with one state update."""
     def _run(ctx):
         # We import via the orch fixture in callers; do it lazily here.
-        from importlib import import_module
         ER = sys.modules["run_summarization_experiments"].ExperimentResult
         return ER(csv_path=None, winner={"strict_f1": 0.9}, notes=f"set {state_key}",
                   state_updates={state_key: value}, status="ok")

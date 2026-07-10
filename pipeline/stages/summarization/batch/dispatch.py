@@ -195,7 +195,7 @@ def build_requests(
                  in-run voter dedup path when a voter slot has already been
                  satisfied from an earlier level's result (BatchHandle.synthetic_results).
     """
-    from ..current_stages.map_stage import _format_sentences  # module-private helper
+    from ..stages.map_stage import _format_sentences  # module-private helper
 
     targets = chunk_ids if chunk_ids is not None else list(chunk_map.keys())
     skip_voters = skip_voters or {}

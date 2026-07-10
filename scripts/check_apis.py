@@ -195,7 +195,7 @@ def cmd_sync_real() -> int:
     from eval.silver.jsonl_utils import read_jsonl
     from eval.silver.pipeline_sweep import case_to_file_data
     from eval.silver.schemas import SourceCase
-    from pipeline.stages.summarization.current_stages.map_stage import _format_sentences
+    from pipeline.stages.summarization.stages.map_stage import _format_sentences
     from pipeline.stages.summarization.llm_providers import (
         anthropic_direct_chat, gemini_direct_chat, openai_direct_chat,
     )

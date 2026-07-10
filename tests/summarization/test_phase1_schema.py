@@ -2,7 +2,6 @@
 Phase 1 smoke tests — schema roundtrip and grounding filter.
 No LLM or database required.
 """
-from unittest.mock import MagicMock
 
 import pytest
 

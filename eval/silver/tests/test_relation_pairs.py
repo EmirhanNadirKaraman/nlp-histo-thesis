@@ -39,7 +39,7 @@ from eval.silver.relation_pairs.validate_and_merge import (
     validate_full,
     validate_record,
 )
-from pipeline.stages.summarization.current_stages.relate_stage import (
+from pipeline.stages.summarization.stages.relate_stage import (
     _build_nli_text,
     _classify_pair,
 )

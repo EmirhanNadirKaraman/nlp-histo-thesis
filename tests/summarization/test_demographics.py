@@ -19,7 +19,7 @@ from pipeline.stages.summarization.models import (
     RelationTypeEnum,
     SourceSpan,
 )
-from pipeline.stages.summarization.current_stages.group_stage import _group_id
+from pipeline.stages.summarization.stages.group_stage import _group_id
 from pipeline.stages.summarization.routing.schema_validator import (
     SchemaValidator,
     _VALID_CATEGORIES,
