@@ -219,7 +219,7 @@ class MapStage:
         self._router = router
         # Finding-level citation filter (B-080) — applied to the selected chunk
         # summary in _cascade, covering every cascade level. None → default
-        # CitationConfig (enabled). See helpers/citation_filter.py.
+        # CitationConfig (enabled). See provenance/citation_filter.py.
         from ..config import CitationConfig  # noqa: PLC0415 — avoid import cycle at module load
         self._citation_cfg = citation_config or CitationConfig()
         self._escalation_lock = threading.Lock()
@@ -762,7 +762,7 @@ class MapStage:
         # result (any level), BEFORE runner._replace_verbatim_from_db, so the
         # optional verbatim check sees the cited sentence, not the DB paragraph.
         if self._citation_cfg.enabled and result is not None and result.findings:
-            from ..helpers.citation_filter import filter_summary_by_citation  # noqa: PLC0415
+            from pipeline.stages.knowledge_extraction.provenance.citation_filter import filter_summary_by_citation  # noqa: PLC0415
             n_before = len(result.findings)
             result, dropped = filter_summary_by_citation(
                 result, chunk, pmcid,

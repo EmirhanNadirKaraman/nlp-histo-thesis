@@ -44,7 +44,7 @@ from .models import (
     ReasonCode,
     RoutingDecision,
 )
-from .provenance_validator import ProvenanceValidator, SourceIndex
+from pipeline.stages.knowledge_extraction.provenance.validator import ProvenanceValidator, SourceIndex
 from .schema_validator import SchemaValidator
 
 logger = logging.getLogger(__name__)

@@ -18,8 +18,8 @@ load_dotenv(str(_REPO / ".env"))
 from eval.silver.map_context import _load_map_context
 from eval.silver.map_theta_sweep import _build_scorer, _replay
 from eval.silver.experiments.E03_grounding.grounding_sweep_related15 import _frozen_spec
-from pipeline.stages.knowledge_extraction.helpers.citation_filter import STRUCTURAL_CITATION_CODES
-from pipeline.stages.knowledge_extraction.routing.provenance_validator import (
+from pipeline.stages.knowledge_extraction.provenance.citation_filter import STRUCTURAL_CITATION_CODES
+from pipeline.stages.knowledge_extraction.provenance.validator import (
     ProvenanceValidator,
     SourceIndex,
 )

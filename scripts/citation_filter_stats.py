@@ -45,12 +45,12 @@ _REPO = Path(__file__).resolve().parents[1]
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from pipeline.stages.knowledge_extraction.helpers.citation_filter import (  # noqa: E402
+from pipeline.stages.knowledge_extraction.provenance.citation_filter import (  # noqa: E402
     STRUCTURAL_CITATION_CODES,
 )
 from pipeline.stages.knowledge_extraction.models import AuditableSummary  # noqa: E402
 from pipeline.stages.knowledge_extraction.routing.models import ReasonCode  # noqa: E402
-from pipeline.stages.knowledge_extraction.routing.provenance_validator import (  # noqa: E402
+from pipeline.stages.knowledge_extraction.provenance.validator import (  # noqa: E402
     ProvenanceValidator,
     SourceIndex,
 )

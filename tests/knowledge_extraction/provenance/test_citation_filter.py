@@ -6,7 +6,7 @@ fails structural validation against the chunk source index.
 """
 from __future__ import annotations
 
-from pipeline.stages.knowledge_extraction.helpers.citation_filter import (
+from pipeline.stages.knowledge_extraction.provenance.citation_filter import (
     citation_drop_indices,
     filter_summary_by_citation,
 )

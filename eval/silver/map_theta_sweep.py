@@ -722,7 +722,7 @@ def _replay(
     from pipeline.stages.knowledge_extraction.agreement import AgreementChecker
     from pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision
     from pipeline.stages.knowledge_extraction.models import AuditableSummary
-    from pipeline.stages.knowledge_extraction.helpers.citation_filter import citation_drop_indices
+    from pipeline.stages.knowledge_extraction.provenance.citation_filter import citation_drop_indices
 
     checker = AgreementChecker(
         scorer,

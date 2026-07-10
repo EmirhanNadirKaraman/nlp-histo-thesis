@@ -34,7 +34,7 @@ import logging
 
 from pipeline.stages.knowledge_extraction.models import AuditableSummary, Finding
 from pipeline.stages.knowledge_extraction.routing.models import ReasonCode
-from pipeline.stages.knowledge_extraction.routing.provenance_validator import (
+from pipeline.stages.knowledge_extraction.provenance.validator import (
     ProvenanceValidator,
     SourceIndex,
 )

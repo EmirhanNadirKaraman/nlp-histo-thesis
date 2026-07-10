@@ -144,7 +144,7 @@ class CitationConfig:
     structural validation against the chunk source index (nonexistent sentence
     position, te_id mismatch, cross-document pmcid). Applied in both runners and
     in the offline replay so eval mirrors production. See
-    ``helpers/citation_filter.py`` and BUGS.md B-080."""
+    ``provenance/citation_filter.py`` and BUGS.md B-080."""
 
     enabled: bool = True
     """Drop findings with hard structural citation failures. False = legacy

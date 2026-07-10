@@ -14,10 +14,10 @@ _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO))
 
 from pipeline.stages.knowledge_extraction.models import AuditableSummary
-from pipeline.stages.knowledge_extraction.helpers.citation_filter import (
+from pipeline.stages.knowledge_extraction.provenance.citation_filter import (
     STRUCTURAL_CITATION_CODES,
 )
-from pipeline.stages.knowledge_extraction.routing.provenance_validator import (
+from pipeline.stages.knowledge_extraction.provenance.validator import (
     ProvenanceValidator,
     SourceIndex,
 )

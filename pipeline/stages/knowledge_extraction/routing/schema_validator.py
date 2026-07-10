@@ -23,7 +23,7 @@ from .models import FindingValidation, ReasonCode
 # The PMC token tolerates word-chars + hyphens so document-id suffixes such as
 # `PMC10100421_HIS-82-393` or `PMC7150310_main` (used as opaque doc keys in the
 # DB) are accepted. Cross-document equality is enforced separately in
-# provenance_validator.py against the expected pmcid.
+# provenance/validator.py against the expected pmcid.
 _CITATION_RE = re.compile(r"^S\d+\|PMC[\w\-]+\|\d+$")
 
 _VALID_CATEGORIES = frozenset([

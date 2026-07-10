@@ -521,7 +521,7 @@ class BatchKnowledgeExtractionRunner:
         for chunk_id, v in handle.finalized.items():
             summary = AuditableSummary.model_validate(v)
             if _citation_active and summary.findings:
-                from ..helpers.citation_filter import filter_summary_by_citation  # noqa: PLC0415
+                from pipeline.stages.knowledge_extraction.provenance.citation_filter import filter_summary_by_citation  # noqa: PLC0415
                 n_before = len(summary.findings)
                 summary, dropped = filter_summary_by_citation(
                     summary, handle.chunk_map.get(chunk_id) or [], pmcid,

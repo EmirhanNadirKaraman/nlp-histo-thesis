@@ -22,7 +22,7 @@ from difflib import SequenceMatcher
 
 from pipeline.stages.knowledge_extraction.models import AuditableSummary, Finding
 
-from .models import FindingValidation, ReasonCode
+from pipeline.stages.knowledge_extraction.routing.models import FindingValidation, ReasonCode
 
 # PMC token accepts word-chars + hyphens so document-id suffixes such as
 # `PMC10100421_HIS-82-393` or `PMC7150310_main` parse correctly.
