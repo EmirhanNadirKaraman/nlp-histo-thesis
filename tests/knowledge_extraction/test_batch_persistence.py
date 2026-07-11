@@ -12,17 +12,23 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
 
-# Disable scispaCy/UMLS load before any pipeline import — these tests synthesise
-# a completed BatchHandle and never need real CUI lookups; loading the linker
-# would add 5-30s per test process for nothing. The env vars are read at call
-# time, so setting them here is sufficient.
-os.environ.setdefault("NLP_HISTO_DISABLE_UMLS", "1")
-os.environ.setdefault("NLP_HISTO_SKIP_UMLS_ENRICHMENT", "1")
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _disable_umls(monkeypatch):
+    """Disable scispaCy/UMLS load — these tests synthesise a completed BatchHandle
+    and never need real CUI lookups; loading the linker would add 5-30s for nothing.
+    The env vars are read at call time (lazy load), so a per-test monkeypatch is
+    sufficient AND auto-resets — a module-level ``os.environ.setdefault`` here leaked
+    the kill-switch process-wide and broke unrelated UMLS-dependent tests in the same
+    session (e.g. ``test_phase_a_gate::test_normalize_stage_normalizes_entities``)."""
+    monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
+    monkeypatch.setenv("NLP_HISTO_SKIP_UMLS_ENRICHMENT", "1")
 
 
 # Module-level logging to surface progress even without ``-s``. INFO lines hit

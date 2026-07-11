@@ -235,6 +235,11 @@ class _CapturedConfig:
     def run(self, *args, **kwargs):
         return {"processed": 0, "failed": 0, "skipped": 0}
 
+    def run_paths(self, *args, **kwargs):
+        # main() pre-filters the PDF list and dispatches via run_paths(paths),
+        # not run(pdf_dir) — mirror the real ParallelBatchRunner API.
+        return {"processed": 0, "failed": 0, "skipped": 0}
+
 
 def _run_main_and_capture(argv) -> _CapturedConfig:
     captured = _CapturedConfig()

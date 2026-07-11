@@ -34,6 +34,10 @@ def _row_for_cell(c: dict) -> dict:
         "theta": round(c["theta"], 2), "reject_theta": round(c["reject"], 2),
         "legacy_single_voter_policy": c["policy"],
         "force_escalate_on_polarity_conflict": str(bool(c["polarity"])).lower(),
+        # production stamps voter_subset into every persisted row (map_theta pins
+        # BEST_VOTER_SUBSET, not "all") — omitting it makes the row key drift 6-tuple
+        # vs the cell's 7-tuple and breaks resume matching.
+        "voter_subset": c.get("voter_subset", "all"),
         "strict_f1_optimal": 0.5, "f1_optimal": 0.5, "escalate_rate": 0.0,
     }
 
@@ -45,7 +49,9 @@ def test_cell_and_row_keys_agree_incl_csv_strings():
     typed = {"embedder": c["embedder"], "variant": c["spec"].name,
              "theta": round(c["theta"], 2), "reject_theta": round(c["reject"], 2),
              "legacy_single_voter_policy": c["policy"],
-             "force_escalate_on_polarity_conflict": str(bool(c["polarity"])).lower()}
+             "force_escalate_on_polarity_conflict": str(bool(c["polarity"])).lower(),
+             # map_theta pins BEST_VOTER_SUBSET (not "all"); production stamps it into the row
+             "voter_subset": c.get("voter_subset", "all")}
     # CSV stores everything as strings (theta as "0.30" etc.)
     csv_row = {k: (f"{v:.2f}" if k in ("theta", "reject_theta") else str(v))
                for k, v in typed.items()}

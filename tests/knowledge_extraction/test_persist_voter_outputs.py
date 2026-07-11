@@ -11,15 +11,25 @@ covers the in-run dedup cache, not persistence).
 """
 from __future__ import annotations
 
-import os
 from unittest.mock import MagicMock
 
-# Skip scispaCy/UMLS load — never touched by this test.
-os.environ.setdefault("NLP_HISTO_DISABLE_UMLS", "1")
-os.environ.setdefault("NLP_HISTO_SKIP_UMLS_ENRICHMENT", "1")
+import pytest
 
 from database.models import SumMapVoterOutput
 from pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
+
+
+@pytest.fixture(autouse=True)
+def _disable_umls(monkeypatch):
+    """Skip scispaCy/UMLS load — never touched by this test.
+
+    Scoped via ``monkeypatch`` (auto-reset after each test) instead of a
+    module-level ``os.environ.setdefault``, which leaked the kill-switch
+    process-wide and broke unrelated UMLS-dependent tests run in the same
+    session (e.g. ``test_phase_a_gate::test_normalize_stage_normalizes_entities``).
+    """
+    monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
+    monkeypatch.setenv("NLP_HISTO_SKIP_UMLS_ENRICHMENT", "1")
 
 
 PMCID = "PMC_TEST_VOTER_PERSIST"

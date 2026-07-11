@@ -85,6 +85,11 @@ class _CapturedConfig:
     def run(self, *args, **kwargs):
         return {"processed": 0, "failed": 0, "skipped": 0}
 
+    def run_paths(self, *args, **kwargs):
+        # main() pre-filters the PDF list and dispatches via run_paths(paths),
+        # not run(pdf_dir) — mirror the real ParallelBatchRunner API.
+        return {"processed": 0, "failed": 0, "skipped": 0}
+
 
 def _run_main_and_capture(argv: list[str]) -> _CapturedConfig:
     captured = _CapturedConfig()
@@ -99,10 +104,11 @@ def test_defaults_preserve_config_values() -> None:
     captured = _run_main_and_capture(["--pdf-dir", "/tmp/does_not_exist"])
     cfg = captured.cfg
     assert cfg is not None
-    # PipelineConfig defaults: all three are False (production defaults)
+    # PipelineConfig defaults: reconstruct/merge default False; expand_tables_with_
+    # footnotes was frozen to True on 2026-05-21 (OFF collapses strict F1 by 35pp).
     assert cfg.docling.reconstruct_tables_from_lists is False
     assert cfg.cropping.merge_tables_by_caption is False
-    assert cfg.cropping.expand_tables_with_footnotes is False
+    assert cfg.cropping.expand_tables_with_footnotes is True
 
 
 def test_all_flags_on_sets_cfg_true() -> None:
@@ -126,7 +132,7 @@ def test_individual_flags_set_only_their_field() -> None:
     cfg = captured.cfg
     assert cfg.docling.reconstruct_tables_from_lists is True
     assert cfg.cropping.merge_tables_by_caption is False
-    assert cfg.cropping.expand_tables_with_footnotes is False
+    assert cfg.cropping.expand_tables_with_footnotes is True  # default (frozen True 2026-05-21)
 
 
 def test_negative_flag_explicitly_sets_false() -> None:
@@ -159,8 +165,8 @@ def test_existing_flags_still_work_alongside_new_ones() -> None:
     # New knobs honored
     assert cfg.docling.reconstruct_tables_from_lists is True
     assert cfg.cropping.merge_tables_by_caption is True
-    # The unmentioned new knob stays at default
-    assert cfg.cropping.expand_tables_with_footnotes is False
+    # The unmentioned new knob stays at default (frozen True 2026-05-21)
+    assert cfg.cropping.expand_tables_with_footnotes is True
 
 
 def test_footnote_thresholds_default_to_config_values() -> None:

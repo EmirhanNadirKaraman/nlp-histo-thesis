@@ -80,11 +80,18 @@ def test_refine_specs_namespaced_by_embedder():
 # ── _select_finalists: CELL-LEVEL Pareto (quality + economy + knee) ──────────
 
 def _cells(*specs):
-    """specs: (emb, scorer_kind, align, theta, strict_f1, escalate). Multi-θ cells —
-    the cost axis (escalate) is θ-driven, so the fixtures MUST have >1 cell/structure."""
+    """specs: (emb, scorer_kind, align, theta, strict_f1, cost). Multi-θ cells —
+    the cost axis is ``_cost_frac`` (price-weighted L2+L3 escalation, θ-driven), so the
+    fixtures MUST have >1 cell/structure. ``cost`` is the intended ``_cost_frac`` in [0,1];
+    we synthesise n_chunks/n_l2_invoked/n_l3_invoked so ``_cost_frac(row) == cost`` exactly
+    (l2 == l3 == cost·n_chunks makes the price weights cancel). ``escalate_rate`` is kept as
+    a reported column but is NOT the cost axis (see ``_cost_frac`` docstring)."""
+    n = 100
     return [{"embedder": e, "scorer_kind": s, "alignment_strategy": a, "theta": t,
              "reject_theta": 0.1, "strict_f1_optimal": f1, "f1_optimal": f1,
-             "escalate_rate": esc} for e, s, a, t, f1, esc in specs]
+             "escalate_rate": cost,
+             "n_chunks": n, "n_l2_invoked": cost * n, "n_l3_invoked": cost * n}
+            for e, s, a, t, f1, cost in specs]
 
 
 # mirrors the real screen: hybrid wins on F1 at θ0.9; embedding owns the cheap frontier

@@ -117,15 +117,21 @@ def test_rank_selects_on_optimal_not_greedy():
     assert best is b
 
 
-def test_rank_tiebreaks_escalate_then_f1_optimal():
+def test_rank_tiebreaks_cost_then_f1_optimal():
+    # Cost axis is _cost_frac (price-weighted L2+L3 escalation, from n_chunks/
+    # n_l2_invoked/n_l3_invoked), NOT bare escalate_rate — see _cost_frac docstring.
     from eval.silver.run_new_summarization_sweeps import _rank
-    # Primary ties → lower escalate_rate wins (even with worse f1_optimal).
-    lo_esc = {"strict_f1_optimal": 0.70, "f1_optimal": 0.60, "escalate_rate": 0.10}
-    hi_esc = {"strict_f1_optimal": 0.70, "f1_optimal": 0.99, "escalate_rate": 0.40}
-    assert _rank(lo_esc, "strict_f1_optimal") > _rank(hi_esc, "strict_f1_optimal")
-    # Primary + escalate tie → higher f1_optimal wins.
-    x = {"strict_f1_optimal": 0.70, "f1_optimal": 0.80, "escalate_rate": 0.10}
-    y = {"strict_f1_optimal": 0.70, "f1_optimal": 0.60, "escalate_rate": 0.10}
+    # Primary ties → LOWER cost_frac wins (even with worse f1_optimal).
+    lo_cost = {"strict_f1_optimal": 0.70, "f1_optimal": 0.60,
+               "n_chunks": 100, "n_l2_invoked": 10, "n_l3_invoked": 10}   # cost_frac 0.1
+    hi_cost = {"strict_f1_optimal": 0.70, "f1_optimal": 0.99,
+               "n_chunks": 100, "n_l2_invoked": 40, "n_l3_invoked": 40}   # cost_frac 0.4
+    assert _rank(lo_cost, "strict_f1_optimal") > _rank(hi_cost, "strict_f1_optimal")
+    # Primary + cost tie → higher f1_optimal wins.
+    x = {"strict_f1_optimal": 0.70, "f1_optimal": 0.80,
+         "n_chunks": 100, "n_l2_invoked": 10, "n_l3_invoked": 10}
+    y = {"strict_f1_optimal": 0.70, "f1_optimal": 0.60,
+         "n_chunks": 100, "n_l2_invoked": 10, "n_l3_invoked": 10}
     assert _rank(x, "strict_f1_optimal") > _rank(y, "strict_f1_optimal")
 
 

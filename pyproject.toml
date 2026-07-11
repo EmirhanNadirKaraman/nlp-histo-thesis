@@ -10,6 +10,11 @@ version = "0.1.0"
 log_cli = true
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s %(levelname)s %(name)s %(message)s"
+# `pdffigures2/` is a gitignored, vendored third-party tool; its own eval
+# tests are not part of this project's suite and fail to import here.
+# The rest of the list restores pytest's built-in defaults (overriding
+# `norecursedirs` replaces them).
+norecursedirs = ["pdffigures2", "*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules", "venv", "{arch}"]
 
 [tool.setuptools.packages.find]
 where = ["."]

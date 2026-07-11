@@ -264,7 +264,7 @@ class TestRelateFromDir:
         fake_relation = _make_raw_relation("CR_a_pos", "CR_b_neg")
 
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[fake_relation]):
+        with patch.object(stage._relate, "relate", return_value=([fake_relation], [], [])):
             relations = stage.relate_from_dir(src, out)
 
         assert out.exists()
@@ -292,7 +292,7 @@ class TestRelateFromDir:
         fake_relation = _make_raw_relation("CR_a_pos", "CR_a_neg")
 
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[fake_relation]):
+        with patch.object(stage._relate, "relate", return_value=([fake_relation], [], [])):
             stage.relate_from_dir(src, out)
 
         payload = json.loads(out.read_text(encoding="utf-8"))
@@ -323,7 +323,7 @@ class TestRelateFromDir:
 
         fake_relation = _make_raw_relation("CR_111", "CR_222")
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[fake_relation]):
+        with patch.object(stage._relate, "relate", return_value=([fake_relation], [], [])):
             stage.relate_from_dir(src, out)
 
         payload = json.loads(out.read_text(encoding="utf-8"))
@@ -353,7 +353,7 @@ class TestRelateFromDir:
         bad.write_text(json.dumps({"pmcid": "PMC999", "status": "error"}), encoding="utf-8")
 
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[]):
+        with patch.object(stage._relate, "relate", return_value=([], [], [])):
             stage.relate_from_dir(src, out)
         # Should not crash; output may or may not be written (no rules = nothing to compare)
 
@@ -367,7 +367,7 @@ class TestRelateFromDir:
         self._write_paper_json(src, "PMC111", [valid])
 
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[]):
+        with patch.object(stage._relate, "relate", return_value=([], [], [])):
             stage.relate_from_dir(src, out)  # must not raise
 
 
@@ -407,7 +407,7 @@ class TestRunSelection:
         self._write_json(new_file, "PMC111", [rule_b], run_id="PMC111_20260201T120000")
 
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[]):
+        with patch.object(stage._relate, "relate", return_value=([], [], [])):
             stage.relate_from_dir(src, out, run_selection="latest_per_pmcid")
 
         # Only the newer run's rule should be loaded
@@ -431,7 +431,7 @@ class TestRunSelection:
                          run_id="PMC222_20260101T120000", status="success")
 
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[]):
+        with patch.object(stage._relate, "relate", return_value=([], [], [])):
             stage.relate_from_dir(src, out, run_selection="latest_per_pmcid")
 
         # The older-but-successful run must be loaded
@@ -454,7 +454,7 @@ class TestRunSelection:
                          run_id="PMC333_20260101T000000", status="success")
 
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[]):
+        with patch.object(stage._relate, "relate", return_value=([], [], [])):
             stage.relate_from_dir(src, out, run_selection="latest_per_pmcid")
 
         payload = json.loads(out.read_text(encoding="utf-8"))
@@ -474,7 +474,7 @@ class TestRunSelection:
                          run_id="PMC444_20260201T000000")
 
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[]):
+        with patch.object(stage._relate, "relate", return_value=([], [], [])):
             stage.relate_from_dir(src, out, run_selection="all")
 
         payload = json.loads(out.read_text(encoding="utf-8"))
@@ -495,7 +495,7 @@ class TestRunSelection:
         self._write_json(ignored_file, "PMC666", [rule_b])
 
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[]):
+        with patch.object(stage._relate, "relate", return_value=([], [], [])):
             stage.relate_from_dir(src, out, manifest=[selected_file])
 
         payload = json.loads(out.read_text(encoding="utf-8"))
@@ -523,7 +523,7 @@ class TestRunSelection:
         os.utime(new_file, (2_000_000, 2_000_000))  # epoch +~23 days
 
         stage = CorpusRelateStage()
-        with patch.object(stage._relate, "relate", return_value=[]):
+        with patch.object(stage._relate, "relate", return_value=([], [], [])):
             stage.relate_from_dir(src, out, run_selection="latest_per_pmcid")
 
         # Exactly one PMCID, one rule

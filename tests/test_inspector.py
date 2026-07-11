@@ -493,6 +493,7 @@ class TestEntityFlags:
         obj = {
             "subject_entity": "CEAN",
             "outcome_entity": "benign",
+            "direction": "unclear",  # polarity-mismatch fires on direction=="unclear" + polarity words
             "predicate_text": "no evidence of malignancy",
             "mean_grounding_score": 0.9,
         }
@@ -503,6 +504,7 @@ class TestEntityFlags:
         obj = {
             "subject_entity": "CEAN",
             "outcome_entity": "invasion",
+            "direction": "unclear",  # polarity-mismatch fires on direction=="unclear" + polarity words
             "predicate_text": "absent vascular invasion",
             "mean_grounding_score": 0.9,
         }

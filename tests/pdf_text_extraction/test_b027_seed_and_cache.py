@@ -416,21 +416,47 @@ def test_seed_pipeline_none_skips_all_seeding(tmp_path, monkeypatch):
     assert "PYTHONHASHSEED" not in os.environ
 
 
+# Restore the nulled module INSIDE the test (try/finally) rather than via
+# ``monkeypatch.setitem``: pytest-randomly's per-test teardown reseed calls the
+# numpy/torch RNG seeders (``thinc.fix_random_seed`` → ``torch.manual_seed``,
+# ``numpy.random.seed``) and runs BEFORE monkeypatch's undo. With the sentinel
+# ``None`` still in ``sys.modules`` that reseed raises ``ModuleNotFoundError:
+# import of <mod> halted; None in sys.modules``, which aborts teardown so the undo
+# never runs — leaking ``None`` into every later test's reseed (a 350+ error
+# cascade). Restoring before we return keeps ``sys.modules`` clean for the reseed.
+def _null_module_during(name: str):
+    _sentinel = object()
+    real = sys.modules.get(name, _sentinel)
+    sys.modules[name] = None
+    def _restore():
+        if real is _sentinel:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = real
+    return _restore
+
+
 def test_seed_pipeline_handles_missing_torch(tmp_path, monkeypatch):
-    monkeypatch.setitem(sys.modules, "torch", None)
     import random
     seeds: list[int] = []
     monkeypatch.setattr(random, "seed", lambda s: seeds.append(s))
-    _make_runner(tmp_path, seed=7)  # must not raise
+    restore = _null_module_during("torch")
+    try:
+        _make_runner(tmp_path, seed=7)  # must not raise
+    finally:
+        restore()
     assert seeds == [7]
 
 
 def test_seed_pipeline_handles_missing_numpy(tmp_path, monkeypatch):
-    monkeypatch.setitem(sys.modules, "numpy", None)
     import random
     seeds: list[int] = []
     monkeypatch.setattr(random, "seed", lambda s: seeds.append(s))
-    _make_runner(tmp_path, seed=11)  # must not raise
+    restore = _null_module_during("numpy")
+    try:
+        _make_runner(tmp_path, seed=11)  # must not raise
+    finally:
+        restore()
     assert seeds == [11]
 
 

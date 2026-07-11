@@ -87,8 +87,9 @@ def test_summarization_section_independent(tmp_path: Path):
     _, sumcfg = load_config(p)
     assert sumcfg.map.theta == 0.65
     assert sumcfg.resolve.grounding_weight == 0.7
-    # untouched defaults survive
-    assert sumcfg.map.reject_theta == 0.2
+    # untouched defaults survive (reject_theta default changed 0.2 → 0.0 on 2026-06-10:
+    # the hard-REJECT drop is off by default; set reject_theta > 0 to make it live)
+    assert sumcfg.map.reject_theta == 0.0
 
 
 def test_routing_pins_loaded(tmp_path: Path):
