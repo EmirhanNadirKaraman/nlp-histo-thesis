@@ -13,6 +13,8 @@ docs/histo_thesis/chapters/*/drafts/
 docs/histo_thesis/pages/drafts/
 docs/THESIS_TODO.md
 
+REPOSITORY_ARCHITECTURE_AUDIT.md
+
 # Bibliography editorial-pass working files (kept local)
 docs/bibliography_verification_report.md
 docs/bibliography_editorial_pass_report.md
@@ -242,6 +244,7 @@ files/
 .claude/
 pdffigures2/
 out/
+profile.prof
 umls_entities/
 umls_texts/
 relevant_texts/
