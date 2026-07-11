@@ -1,7 +1,6 @@
 """Grounding-first routing layer for the MAP stage."""
 from .models import FindingValidation, GateOrigin, ReasonCode, RoutingDecision
 from .policy import PolicyEvaluationResult, PolicyEvaluationStore, PolicySelectionResult, RoutingPolicySpec
-from pipeline.stages.knowledge_extraction.provenance.validator import ProvenanceValidator, SourceIndex
 from .router import MapOutputRouter
 from .routing_dataset import RoutingDataset, RoutingRecord
 from .schema_validator import SchemaValidator
@@ -9,8 +8,6 @@ from .schema_validator import SchemaValidator
 __all__ = [
     "MapOutputRouter",
     "SchemaValidator",
-    "ProvenanceValidator",
-    "SourceIndex",
     "RoutingDecision",
     "FindingValidation",
     "ReasonCode",

@@ -33,7 +33,7 @@ from __future__ import annotations
 import logging
 
 from pipeline.stages.knowledge_extraction.models import AuditableSummary, Finding
-from pipeline.stages.knowledge_extraction.routing.models import ReasonCode
+from pipeline.stages.knowledge_extraction.validation.models import ReasonCode
 from pipeline.stages.knowledge_extraction.provenance.validator import (
     ProvenanceValidator,
     SourceIndex,
