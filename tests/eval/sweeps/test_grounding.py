@@ -14,6 +14,22 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_PATH = REPO_ROOT / "eval" / "sweeps" / "grounding.py"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
+# Sentinel distinguishing "``_lib`` was absent" from "``_lib`` was None".
+_LIB_UNSET = object()
+
+
+def _restore_sys_module(name: str, prev: object) -> None:
+    """Restore ``sys.modules[name]`` to ``prev`` (delete it if it was absent).
+
+    Used so the ``_lib``-manipulating fixtures below neither pollute nor erase
+    the bare ``_lib`` entry for tests that run after them: they save the prior
+    value on setup and put it back verbatim on teardown.
+    """
+    if prev is _LIB_UNSET:
+        sys.modules.pop(name, None)
+    else:
+        sys.modules[name] = prev  # type: ignore[assignment]
+
 
 @pytest.fixture()
 def grounding_module():
@@ -22,11 +38,20 @@ def grounding_module():
     )
     assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
+    # grounding.py prepends its own dir to sys.path and does a bare ``import
+    # _lib``. If a prior test (e.g. scripts/eval/* loaders) left a *different*
+    # module cached under the bare name ``_lib``, that stale module would win
+    # and the sweep would fail with an AttributeError — an order-dependent bug.
+    # Save the current ``_lib`` and clear it so the fresh import binds
+    # eval/sweeps/_lib.py; restore the exact prior state on teardown so we
+    # neither pollute nor erase ``_lib`` for tests that run after us.
+    prev_lib = sys.modules.get("_lib", _LIB_UNSET)
+    sys.modules.pop("_lib", None)
     sys.modules[spec.name] = mod
     spec.loader.exec_module(mod)
     yield mod
     sys.modules.pop(spec.name, None)
-    sys.modules.pop("_lib", None)
+    _restore_sys_module("_lib", prev_lib)
 
 
 def test_cli_happy_path_writes_csv_and_md(tmp_path: Path, grounding_module) -> None:
@@ -112,6 +137,88 @@ def test_markdown_has_disclaimer_and_no_forbidden_phrasings(
         "accuracy=", "precision=", "recall=",
     ]:
         assert forbidden not in text, f"forbidden phrasing in report: {forbidden}"
+
+
+@pytest.fixture()
+def _stale_lib_pollution():
+    """Simulate another test (e.g. a scripts/eval/* loader) having cached a
+    *different* module under the bare name ``_lib`` and never cleaned it up.
+    This is the exact trigger for the historical order-dependent failure."""
+    other = REPO_ROOT / "scripts" / "eval" / "_lib.py"
+    spec = importlib.util.spec_from_file_location("_lib", other)
+    stale = importlib.util.module_from_spec(spec)
+    prev_lib = sys.modules.get("_lib", _LIB_UNSET)
+    sys.modules["_lib"] = stale
+    spec.loader.exec_module(stale)
+    # Sanity: this really is the *wrong* _lib (no sweep writer), as in the bug.
+    assert not hasattr(stale, "write_sweep_markdown")
+    yield
+    _restore_sys_module("_lib", prev_lib)
+
+
+def test_disclaimer_is_order_independent_under_stale_lib(
+    tmp_path: Path, _stale_lib_pollution, grounding_module
+) -> None:
+    """Regression for the ``_lib`` sys.modules collision: ``_stale_lib_pollution``
+    runs *before* ``grounding_module`` (fixture request order), so a stale
+    ``_lib`` is cached when grounding.py is imported. The fixture's setup-time
+    ``sys.modules.pop('_lib')`` rebinds the correct eval/sweeps/_lib.py, so the
+    sweep runs and the disclaimer is present. Without that fix this raised
+    ``AttributeError`` at grounding.py:94, making the disclaimer test order-dependent."""
+    out_md = tmp_path / "g.md"
+    rc = grounding_module.main([
+        "--input", str(FIXTURES / "summaries"),
+        "--thresholds", "0.5",
+        "--out-csv", str(tmp_path / "g.csv"),
+        "--out-md", str(out_md),
+        "--log-level", "WARNING",
+    ])
+    assert rc == 0
+    # Generated output landed in the test's tmp dir, never the tracked report.
+    assert out_md.exists() and out_md.parent == tmp_path
+    assert "does NOT measure accuracy, precision, or recall" in out_md.read_text(
+        encoding="utf-8"
+    )
+
+
+@pytest.fixture()
+def _known_lib_sentinel():
+    """Cache a recognizable sentinel under ``_lib`` and, on teardown — which
+    runs *after* grounding_module's teardown (fixtures finalize in reverse
+    setup order) — assert the sentinel was restored. This proves the
+    grounding_module fixture puts the prior ``_lib`` back rather than deleting
+    it (i.e. it neither pollutes nor erases state for later tests)."""
+    import types
+
+    sentinel = types.ModuleType("_lib")
+    sentinel.__nlp_histo_sentinel__ = True  # type: ignore[attr-defined]
+    prev = sys.modules.get("_lib", _LIB_UNSET)
+    sys.modules["_lib"] = sentinel
+    yield sentinel
+    assert sys.modules.get("_lib") is sentinel, (
+        "grounding_module fixture did not restore the prior sys.modules['_lib'] "
+        "on teardown (it must save/restore, not delete)"
+    )
+    _restore_sys_module("_lib", prev)
+
+
+def test_grounding_module_restores_prior_lib_on_teardown(
+    tmp_path: Path, _known_lib_sentinel, grounding_module
+) -> None:
+    """``_known_lib_sentinel`` sets ``_lib`` to a sentinel *before*
+    grounding_module runs. During the test the correct eval/sweeps/_lib.py is
+    bound (sentinel cleared), so the sweep works; the restore is asserted by
+    ``_known_lib_sentinel``'s teardown, which runs after grounding_module tears
+    down."""
+    assert sys.modules.get("_lib") is not _known_lib_sentinel  # correct _lib active
+    rc = grounding_module.main([
+        "--input", str(FIXTURES / "summaries"),
+        "--thresholds", "0.5",
+        "--out-csv", str(tmp_path / "g.csv"),
+        "--out-md", str(tmp_path / "g.md"),
+        "--log-level", "WARNING",
+    ])
+    assert rc == 0
 
 
 def test_csv_columns_include_missing_score_pct(tmp_path: Path, grounding_module) -> None:

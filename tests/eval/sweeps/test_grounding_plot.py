@@ -105,6 +105,10 @@ def test_main_writes_two_pngs_against_fixture(tmp_path: Path, plot_module) -> No
     rc = plot_module.main([
         "--input", str(FIXTURES / "summaries"),
         "--sweep-csv", str(csv_path),
+        # Isolate from the tracked default ``eval/results/grounding_sweep.md``:
+        # point --sweep-md at a (non-existent) tmp path so main()'s in-place
+        # markdown injection never mutates the repo's committed report.
+        "--sweep-md", str(tmp_path / "sweep.md"),
         "--out-retention", str(out_ret),
         "--out-distribution", str(out_dist),
         "--threshold", "0.5",
