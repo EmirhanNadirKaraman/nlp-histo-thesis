@@ -191,7 +191,7 @@ def test_jsonl_roundtrip(tmp_path: Path):
 # ── RunArtifactWriter — directory layout, manifest, disabled-by-default ─────
 
 def test_writer_creates_run_directory_and_writes_manifest(tmp_path: Path):
-    writer = RunArtifactWriter(run_id="test_run", root_dir=tmp_path)
+    RunArtifactWriter(run_id="test_run", root_dir=tmp_path)
     assert (tmp_path / "test_run").is_dir()
     assert (tmp_path / "test_run" / "logs").is_dir()
     manifest_path = tmp_path / "test_run" / "manifest.json"

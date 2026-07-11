@@ -224,7 +224,6 @@ def batch_process_all_documents(min_chars: int = 50, force: bool = False, limit:
                         tqdm.write(f"✗ Future exception for {pmcid}: {e}")
                         results.append({'status': 'error', 'pmcid': pmcid, 'error': str(e)})
 
-                    done = len(results)
                     ok = sum(1 for r in results if r.get('status') == 'processed')
                     skip = sum(1 for r in results if r.get('status') == 'skipped')
                     fail = sum(1 for r in results if r.get('status') == 'error')

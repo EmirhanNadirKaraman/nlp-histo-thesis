@@ -343,7 +343,6 @@ def _run_demo(demo: dict) -> dict:
     images: list[dict] = []
     seen_pages: set[int] = set()
     for h in new_hits[:3]:
-        key = (h["page"], tuple(h["bbox"]))
         if h["page"] in seen_pages:
             continue
         seen_pages.add(h["page"])

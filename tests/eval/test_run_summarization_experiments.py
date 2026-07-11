@@ -589,14 +589,6 @@ def test_exp_b2_does_no_state_promotion(orch, tmp_path, monkeypatch):
                         lambda *_args, **_kw: [])
 
     # 3. Pre-populate state with a sentinel that EXP B.2 must NOT touch.
-    pre_state = {
-        "PROVISIONAL_FINAL_MAP_CONFIG": {
-            "embedder": "gemini", "scorer": "embedding_default",
-            "theta": 0.9, "reject_theta": 0.2, "polarity_flag": "true",
-            "strict_f1": 0.74,
-        },
-        "DO_NOT_TOUCH": "sentinel",
-    }
     # Skip the cascade row to avoid the heavy _load_map_context path in tests
     # — drop PROVISIONAL_FINAL_MAP_CONFIG so EXP B.2 takes the "skipped" branch.
     ctx_state = {"DO_NOT_TOUCH": "sentinel"}

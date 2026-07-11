@@ -158,9 +158,13 @@ class DocStatsCollector:
         try:
             yield
         except Exception as exc:
+            # Bind the type name to a local BEFORE the lambda so a future
+            # `ruff --fix` can't strip `as exc` as "unused" (it doesn't see the
+            # lambda's use) and silently re-break this — see B-088.
+            err_name = type(exc).__name__
             self._safe(lambda: self._stats.stage_timings.append(
                 _StageTiming(name=name, seconds=time.monotonic() - t,
-                             ok=False, error=type(exc).__name__)
+                             ok=False, error=err_name)
             ))
             self._stats.failed_stage = name
             raise

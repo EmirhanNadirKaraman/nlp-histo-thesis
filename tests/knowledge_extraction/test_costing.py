@@ -251,7 +251,7 @@ def test_batch_savings_section():
 
 def test_report_writes_files(tmp_path):
     book = _book()
-    paths = write_cost_reports(_sample_records(), book, tmp_path)
+    write_cost_reports(_sample_records(), book, tmp_path)
     assert (tmp_path / "cost_report.md").exists()
     assert (tmp_path / "cost_report.json").exists()
     data = json.loads((tmp_path / "cost_report.json").read_text())

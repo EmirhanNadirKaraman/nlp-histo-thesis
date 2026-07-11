@@ -965,9 +965,11 @@ def main() -> None:
             render(item, items, ann, mode, pdf_dir=pdf_dir, sweep_dir=sweep_dir)
             key = getch()
             if key in ("y", "Y", "RIGHT"):
-                _set(item, "correct"); sk += 1
+                _set(item, "correct")
+                sk += 1
             elif key in ("n", "N", "LEFT"):
-                _set(item, "incorrect"); sk += 1
+                _set(item, "incorrect")
+                sk += 1
             elif key in ("s", "S"):
                 sk += 1  # keep as skipped, move on
             elif key == " ":

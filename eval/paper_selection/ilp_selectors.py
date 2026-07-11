@@ -750,7 +750,6 @@ def select_diverse_papers_ilp(
 
     prob = _pulp.LpProblem("diverse_ilp", _pulp.LpMaximize)
     pmcids = [p.pmcid for p in pool]
-    pidx = {pid: i for i, pid in enumerate(pmcids)}
     x = {pid: _pulp.LpVariable(f"x_{i}", cat=_pulp.LpBinary)
          for i, pid in enumerate(pmcids)}
     concept_list = sorted(concept_to_papers.keys())
@@ -999,9 +998,12 @@ def select_hard_papers_ilp(
     for rank, p in enumerate(chosen, start=1):
         b = breakdowns[p.pmcid]
         bucket_tags: list[str] = []
-        if p.pmcid in top_norm:    bucket_tags.append("top_normalized")
-        if p.pmcid in top_abs:     bucket_tags.append("top_absolute")
-        if p.pmcid in medium_band: bucket_tags.append("medium_band")
+        if p.pmcid in top_norm:
+            bucket_tags.append("top_normalized")
+        if p.pmcid in top_abs:
+            bucket_tags.append("top_absolute")
+        if p.pmcid in medium_band:
+            bucket_tags.append("medium_band")
         rationale[p.pmcid] = {
             "rank": rank,
             "selection_reason": (

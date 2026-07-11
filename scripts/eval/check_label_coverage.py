@@ -142,7 +142,6 @@ def main() -> int:
         print(f"error: no variants found under {_SWEEPS_DIR}", file=sys.stderr)
         return 1
 
-    name_width = max(len(v) for v in variants)
     total_unlabelled = 0
     n_printed = 0
     for variant in variants:

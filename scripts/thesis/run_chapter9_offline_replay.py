@@ -153,10 +153,14 @@ def analyse_provenance_carry_rate() -> AnalysisResult:
             has_v = bool(verbatim and str(verbatim).strip())
             has_t = te_id is not None
             has_g = grounding is not None
-            if has_v: paper_v += 1
-            if has_t: paper_t += 1
-            if has_g: paper_g += 1
-            if has_v and has_t and has_g: paper_full += 1
+            if has_v:
+                paper_v += 1
+            if has_t:
+                paper_t += 1
+            if has_g:
+                paper_g += 1
+            if has_v and has_t and has_g:
+                paper_full += 1
 
         n_total += paper_total
         n_with_verbatim += paper_v
@@ -553,7 +557,7 @@ def analyse_theta_heatmap() -> AnalysisResult:
         ax.set_ylabel(r"$\theta_{\mathrm{reject}}$ (reject threshold)")
         ax.set_title(f"Strict F1 heatmap — scorer = {primary_scorer}\n"
                      f"source = {src.name}")
-        cbar = fig.colorbar(im, ax=ax, label="strict_f1")
+        fig.colorbar(im, ax=ax, label="strict_f1")
         for i in range(len(rejects)):
             for j in range(len(thetas)):
                 v = Z[i, j]
@@ -680,7 +684,8 @@ def _bootstrap_paired(per_case_a, per_case_b, n_iters=2000, seed=42):
     diffs.sort()
     a_samples.sort()
     b_samples.sort()
-    pct = lambda xs, p: xs[int(p * (len(xs) - 1))]
+    def pct(xs, p):
+        return xs[int(p * (len(xs) - 1))]
     return {
         "n_cases": n,
         "n_bootstrap_iters": n_iters,
@@ -726,7 +731,8 @@ def analyse_bootstrap_ci() -> AnalysisResult:
         rec.case_id: rec
         for rec in read_jsonl(silver_path, SilverCaseResult)
     }
-    dev_filter = lambda cid: assign_split(cid) == "dev"
+    def dev_filter(cid):
+        return assign_split(cid) == "dev"
 
     # Inject the b2 builder from the orchestrator using importlib so we
     # don't have to vendor it.
@@ -771,12 +777,11 @@ def analyse_bootstrap_ci() -> AnalysisResult:
 
     try:
         from eval.silver.map_context import _load_map_context
-        map_ctx = _load_map_context(cascade_cfg["embedder"], embed_cache_path=None)
+        _load_map_context(cascade_cfg["embedder"], embed_cache_path=None)
         # Replay only dev-split cases.
         # _replay returns a dict; we adapt below.
         # Note: this path may not be straightforwardly per-case-emitting;
         # we degrade gracefully if it fails.
-        replay_status = "ok"
         cascade_outputs = []
         for case_id, entry in voter_cache.items():
             if not dev_filter(entry["case_id"]):
@@ -1422,7 +1427,8 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
         rec.case_id: rec
         for rec in read_jsonl(silver_path, SilverCaseResult)
     }
-    dev_filter = lambda cid: assign_split(cid) == "dev"
+    def dev_filter(cid):
+        return assign_split(cid) == "dev"
 
     # Load matcher (OpenAI embedder + cache).
     try:
@@ -1900,7 +1906,8 @@ def analyse_real_profile_grounding_polarity() -> AnalysisResult:
         )
 
     voter_cache = json.loads(voter_cache_path.read_text())
-    dev_filter = lambda cid: assign_split(cid) == "dev"
+    def dev_filter(cid):
+        return assign_split(cid) == "dev"
 
     try:
         map_ctx = _load_map_context("gemini", embed_cache_path=None)

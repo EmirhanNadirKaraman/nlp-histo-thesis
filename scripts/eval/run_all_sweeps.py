@@ -220,18 +220,24 @@ def _apply_table_in_figure_mode(cfg: PipelineConfig, mode: str) -> None:
 
 def _base_family(base_name: str) -> str:
     """Return 'docling' | 'tatr' | 'hybrid' from a Stage-1 base name."""
-    if "docling" in base_name: return "docling"
-    if "tatr" in base_name:    return "tatr"
-    if "hybrid" in base_name:  return "hybrid"
+    if "docling" in base_name:
+        return "docling"
+    if "tatr" in base_name:
+        return "tatr"
+    if "hybrid" in base_name:
+        return "hybrid"
     raise ValueError(f"unrecognised base family: {base_name!r}")
 
 
 def _tif_mode_for_base(base_name: str) -> str:
     """Pick the right Stage-2-winner mode for a given base."""
     fam = _base_family(base_name)
-    if fam == "docling": return "none"
-    if fam == "tatr":    return BEST_TATR_TABLE_IN_FIGURE_MODE
-    if fam == "hybrid":  return BEST_HYBRID_TABLE_IN_FIGURE_MODE
+    if fam == "docling":
+        return "none"
+    if fam == "tatr":
+        return BEST_TATR_TABLE_IN_FIGURE_MODE
+    if fam == "hybrid":
+        return BEST_HYBRID_TABLE_IN_FIGURE_MODE
     return "none"
 
 
@@ -243,9 +249,12 @@ def _header_zone_pts_for_base(base_name: str) -> float:
     after Stage 3 (default 0.0 = disabled before that decision lands).
     """
     fam = _base_family(base_name)
-    if fam == "docling": return 0.0
-    if fam == "tatr":    return BEST_TATR_HEADER_ZONE_PTS
-    if fam == "hybrid":  return BEST_HYBRID_HEADER_ZONE_PTS
+    if fam == "docling":
+        return 0.0
+    if fam == "tatr":
+        return BEST_TATR_HEADER_ZONE_PTS
+    if fam == "hybrid":
+        return BEST_HYBRID_HEADER_ZONE_PTS
     return 0.0
 
 

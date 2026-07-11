@@ -35,10 +35,14 @@ from __future__ import annotations
 
 import os
 import re
+from typing import TYPE_CHECKING
 
 from langchain_openai import ChatOpenAI
 
 from pipeline.stages.knowledge_extraction.config import DEFAULT_MAX_TOKENS
+
+if TYPE_CHECKING:
+    from langchain_anthropic import ChatAnthropic
 
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 
@@ -265,7 +269,7 @@ def anthropic_direct_chat(
     # at the rate limiter). 180s gives headroom for retries to actually
     # succeed instead of double-timing-out and killing the paper.
     request_timeout: int = 180,
-) -> "ChatAnthropic":  # type: ignore[name-defined]
+) -> "ChatAnthropic":
     """Direct Anthropic API via ChatAnthropic (ANTHROPIC_API_KEY)."""
     from langchain_anthropic import ChatAnthropic
     key = api_key or os.environ["ANTHROPIC_API_KEY"]

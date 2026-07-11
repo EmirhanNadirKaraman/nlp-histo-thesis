@@ -631,14 +631,16 @@ def main() -> None:
         if args.embedder == "gemini":
             api_key = os.environ.get("GOOGLE_API_KEY")
             if not api_key:
-                print("GOOGLE_API_KEY not set", file=sys.stderr); sys.exit(1)
+                print("GOOGLE_API_KEY not set", file=sys.stderr)
+                sys.exit(1)
             embedder = GeminiEmbedder(api_key)
             cache_path = Path(args.embed_cache) if args.embed_cache else DEFAULT_GEMINI_CACHE_PATH
             embed_cache = make_embedding_cache(cache_path, GEMINI_EMBEDDING_MODEL)
         else:
             api_key = os.environ.get("OPENAI_API_KEY")
             if not api_key:
-                print("OPENAI_API_KEY not set", file=sys.stderr); sys.exit(1)
+                print("OPENAI_API_KEY not set", file=sys.stderr)
+                sys.exit(1)
             embedder = OpenAIEmbedder(api_key)
             cache_path = Path(args.embed_cache) if args.embed_cache else DEFAULT_CACHE_PATH
             embed_cache = make_embedding_cache(cache_path, EMBEDDING_MODEL)

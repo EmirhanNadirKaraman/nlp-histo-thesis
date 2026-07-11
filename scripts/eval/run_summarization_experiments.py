@@ -602,8 +602,10 @@ def _run_exp_7(ctx: ExperimentContext) -> ExperimentResult:
     g = s.get("FINAL_GEMINI_MAP_CONFIG")
     o = s.get("FINAL_OPENAI_MAP_CONFIG")
     missing = []
-    if g is None: missing.append("FINAL_GEMINI_MAP_CONFIG")
-    if o is None: missing.append("FINAL_OPENAI_MAP_CONFIG")
+    if g is None:
+        missing.append("FINAL_GEMINI_MAP_CONFIG")
+    if o is None:
+        missing.append("FINAL_OPENAI_MAP_CONFIG")
     if missing:
         raise SystemExit(
             f"EXP 7 (compare) requires state keys {missing}. Run gemini_branch + "

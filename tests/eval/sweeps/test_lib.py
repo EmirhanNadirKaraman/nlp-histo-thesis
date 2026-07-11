@@ -158,7 +158,7 @@ def test_csv_writer_emits_metadata_comments_and_columns(tmp_path: Path, lib) -> 
     text = (tmp_path / "x.csv").read_text(encoding="utf-8")
     assert text.startswith("# sweep_name:")
     assert "# pipeline_config_hashes: " in text
-    data_lines = [l for l in text.splitlines() if not l.startswith("#") and l.strip()]
+    data_lines = [line for line in text.splitlines() if not line.startswith("#") and line.strip()]
     # 1 header + 3 thresholds.
     assert len(data_lines) == 4
     header = data_lines[0].split(",")

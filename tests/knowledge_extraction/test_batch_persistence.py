@@ -117,7 +117,8 @@ def _build_runner(tmp_path: Path) -> BatchKnowledgeExtractionRunner:
     # Disable contradiction detector defensively (also gated on run_reduce now).
     cfg.contradiction_similarity_threshold = None  # type: ignore[misc]
 
-    fake_embed = lambda texts: [[0.0] * 8 for _ in texts]
+    def fake_embed(texts):
+        return [[0.0] * 8 for _ in texts]
     return BatchKnowledgeExtractionRunner(
         l1_voters=[_voter(0.0), _voter(0.3)],
         l2_voters=[_voter(0.2)],

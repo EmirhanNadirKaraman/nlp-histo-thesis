@@ -57,8 +57,10 @@ def test_get_small_nlp_caches_one_load_per_model():
 
 def test_get_small_nlp_caches_per_model_name():
     """Different model names produce independent singletons."""
-    fake_sm = MagicMock(name="sci_sm"); fake_sm.pipe_names = ["senter"]
-    fake_md = MagicMock(name="sci_md"); fake_md.pipe_names = ["senter"]
+    fake_sm = MagicMock(name="sci_sm")
+    fake_sm.pipe_names = ["senter"]
+    fake_md = MagicMock(name="sci_md")
+    fake_md.pipe_names = ["senter"]
 
     def _by_name(name, **_kwargs):
         return fake_sm if "sm" in name else fake_md

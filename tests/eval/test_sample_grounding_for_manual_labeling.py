@@ -32,7 +32,7 @@ def sampler():
 
 def _read_jsonl(path: Path) -> tuple[dict, list[dict]]:
     """Return ``(meta, rows)`` from a JSONL where the first line is ``_meta``."""
-    lines = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    lines = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     return lines[0]["_meta"], lines[1:]
 
 

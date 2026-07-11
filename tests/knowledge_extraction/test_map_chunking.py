@@ -8,7 +8,6 @@ from pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
 
 def _make_stage(chunk_size: int, chunk_overlap: int) -> MapStage:
     """Build a minimal MapStage with stub LLMs (no real API calls)."""
-    stub = object()  # only _make_chunks is exercised — no chains invoked
     stage = object.__new__(MapStage)
     stage.chunk_size = chunk_size
     stage.chunk_overlap = chunk_overlap

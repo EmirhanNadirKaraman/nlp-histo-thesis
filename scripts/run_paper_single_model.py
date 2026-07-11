@@ -49,8 +49,12 @@ import logging
 import random
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
+
+if TYPE_CHECKING:
+    from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
 
 load_dotenv()
 

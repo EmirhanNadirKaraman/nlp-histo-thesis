@@ -123,8 +123,8 @@ def test_csv_columns_include_missing_score_pct(tmp_path: Path, grounding_module)
         "--out-md", str(tmp_path / "g.md"),
         "--log-level", "WARNING",
     ])
-    lines = [l for l in out_csv.read_text(encoding="utf-8").splitlines()
-             if not l.startswith("#") and l.strip()]
+    lines = [line for line in out_csv.read_text(encoding="utf-8").splitlines()
+             if not line.startswith("#") and line.strip()]
     header = lines[0]
     assert "missing_score_count" in header
     assert "missing_score_pct" in header

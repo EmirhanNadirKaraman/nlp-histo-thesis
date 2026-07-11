@@ -67,7 +67,6 @@ def main(argv: list[str] | None = None) -> int:
     rels_b = _relations(args.file_b)
     by_key_a = {_key(r): r for r in rels_a}
     by_key_b = {_key(r): r for r in rels_b}
-    keys_all = set(by_key_a) | set(by_key_b)
 
     # ── 1. Totals ──────────────────────────────────────────────────────────
     print("\n=== Totals ===")

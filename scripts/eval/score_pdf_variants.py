@@ -740,7 +740,6 @@ def render_markdown_rubric(rows: List[Dict[str, Any]], *,
         cap  = (r.get("by_dim") or {}).get("caption")
         ft   = (r.get("by_dim") or {}).get("footnote")
         strict = r.get("strict") or {}
-        counts = r.get("counts") or {}
         out.append(
             f"| {r['variant']} | {r['kind']} | "
             f"{_fmt(crop['precision']) if crop else '—'} | "

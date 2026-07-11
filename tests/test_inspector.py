@@ -553,7 +553,7 @@ class TestCsvDeduplication:
         data = self._build_duplicate_flagged_data()
         ctx = build_context(data)
         out_csv = tmp_path / "dedup.csv"
-        n = export_flagged_csv(ctx, data, out_csv)
+        export_flagged_csv(ctx, data, out_csv)
 
         with open(out_csv, newline="", encoding="utf-8") as fh:
             reader = csv.DictReader(fh)

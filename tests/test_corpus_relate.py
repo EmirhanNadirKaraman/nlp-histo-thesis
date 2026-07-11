@@ -265,7 +265,7 @@ class TestRelateFromDir:
 
         stage = CorpusRelateStage()
         with patch.object(stage._relate, "relate", return_value=([fake_relation], [], [])):
-            relations = stage.relate_from_dir(src, out)
+            stage.relate_from_dir(src, out)
 
         assert out.exists()
         payload = json.loads(out.read_text(encoding="utf-8"))
