@@ -81,7 +81,6 @@ filelock==3.19.1
 filetype==1.2.0
 findpython==0.6.3
 fire==0.7.0
-fitz==0.0.1.dev2
 flake8==7.3.0
 Flask==3.0.0
 Flask-Cors==4.0.0
