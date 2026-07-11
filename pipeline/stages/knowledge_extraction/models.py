@@ -906,7 +906,7 @@ class CanonicalRule(BaseModel):
     # for backward compatibility.
     representative_verbatim:         str | None = None
     # Pointer to the paragraph containing the verbatim sentence above.  Use
-    # ``helpers.paragraph_lookup.get_paragraph_for_rule`` (DB-backed) to
+    # ``provenance.paragraph_lookup.get_paragraph_for_rule`` (DB-backed) to
     # fetch the full ``text_elements.text_content`` — kept out of JSON to
     # avoid ~10× output blow-up.  Optional for backward compatibility.
     representative_text_element_id:  int | None = None

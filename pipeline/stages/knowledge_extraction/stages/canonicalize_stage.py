@@ -178,7 +178,7 @@ class CanonicalizeStage:
                 # came from.  RelateConfig.{scope_aware_nli,
                 # use_verbatim_for_nli} consume these downstream; the
                 # representative_text_element_id is a hint for
-                # helpers.paragraph_lookup.get_paragraph_for_rule (DB-backed,
+                # provenance.paragraph_lookup.get_paragraph_for_rule (DB-backed,
                 # paragraph itself is too large to bake into JSON).
                 best_nf = max(
                     bin_nfs,

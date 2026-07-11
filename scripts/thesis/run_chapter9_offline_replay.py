@@ -1322,7 +1322,7 @@ def analyse_provenance_example() -> AnalysisResult:
                 ),
                 caveats=[
                     "The full source paragraph (text_elements.text_content) "
-                    "requires a DB query via helpers/paragraph_lookup.py; "
+                    "requires a DB query via provenance/paragraph_lookup.py; "
                     "this script reports only the verbatim source sentence "
                     "carried on the canonical rule.",
                 ],
