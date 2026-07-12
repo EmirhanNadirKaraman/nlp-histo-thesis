@@ -73,15 +73,15 @@ Citation format: `[S1|PMC123456|789]` where:
                     (JSON with full provenance to source)
 
   ── Historical side-branch (gen-1) — NOT part of the current flow ──
-  Four standalone NER CLIs read/write the Postgres `entities` table and
+  Three standalone NER CLIs read/write the Postgres `entities` table and
   export per-concept files; nothing downstream consumes their JSON
   (retained for reference — see "Historical standalone NER utilities"):
     batch_ner.py              -> populate `entities` (scispaCy + UMLS linker)
     merge_entities_by_umls.py / export_disease_entities.py
                               -> alternative exporters (all concepts | disease-only)
-    count_tokens.py           -> token/cost stats for the ARCHIVED LangChain
-                                 map-reduce-rules prototype
-                                 (legacy/langchain-summarization/), not this pipeline
+  The exported disease-entity JSON may then be analyzed by the archived
+  cost estimator legacy/langchain-summarization/count_tokens.py (token
+  stats + retired LangChain map-reduce-rules cost model; not this pipeline).
 ```
 
 ## Project Structure
@@ -113,7 +113,7 @@ nlp-histo/
 ├── database/                           # SQLAlchemy ORM (models.py) + connection mgmt; schema via Alembic
 ├── alembic/                            # Schema migrations (head: 0014)
 │
-├── named_entity_recognition/           # live: ner.py + enums.py (used by the KE pipeline) + retained gen-1 standalone CLIs (batch_ner, merge/export, count_tokens)
+├── named_entity_recognition/           # live: ner.py + enums.py (used by the KE pipeline) + retained gen-1 standalone CLIs (batch_ner, merge/export)
 │
 ├── eval/                               # Evaluation harness (measures the two pipelines)
 │   ├── llm_judge/  silver/             #   Opus silver labels + matching + MAP-cascade calibration
@@ -127,7 +127,7 @@ nlp-histo/
 ├── tests/                              # pytest suite (77 test files, ~1,080 test functions; summarisation-heavy)
 ├── docs/readmes/                       # project docs — HOW_TO_RUN.md + other_readmes/ (STRUCTURE, REPOSITORY_GUIDE, BUGS, …) + thesis_review/
 │
-├── legacy/langchain-summarization/     # LEGACY summarisation stack (superseded by pipeline/…/summarization)
+├── legacy/langchain-summarization/     # LEGACY summarisation stack (superseded by pipeline/…/summarization); incl. count_tokens.py cost estimator
 ├── legacy/pdf_parsers/                 # LEGACY research/comparison PDF parsers (Docling/Nougat/Marker/PyMuPDF4LLM/pdffigures/Ensemble; NOT the production path)
 ├── files/                              # Input PDFs/XMLs (not in repo)
 ├── out/                                # Runtime outputs (cached layouts, summaries, run metadata)
@@ -199,12 +199,12 @@ python merge_entities_by_umls.py
 
 # ...or the disease-filtered subset — reads DB, writes files
 python export_disease_entities.py
-
-# Historical cost estimator for the ARCHIVED LangChain map-reduce-rules
-# prototype (legacy/langchain-summarization/): reads the exported disease JSON.
-# NOT a cost calculator for the current production pipeline.
-python count_tokens.py
 ```
+
+> The exported disease-entity JSON can be analyzed by the archived cost
+> estimator `legacy/langchain-summarization/count_tokens.py`, which reports
+> token statistics and estimates costs for the retired LangChain
+> MAP → REDUCE → RULES workflow — not the current production pipeline.
 
 ### 5. Run Knowledge Extraction Pipeline
 
@@ -340,7 +340,7 @@ written via `pipeline/stages/knowledge_extraction/persistence.py`. See
 - **UMLS Linking**: Maps extracted entities to UMLS concepts (CUI)
 - **Persistent Cache**: on-disk entity-linking cache (`named_entity_recognition/entity_linking_cache.json`, ~30 MB) avoids redundant UMLS lookups
 - **Semantic Types**: Filters entities by UMLS semantic types (diseases, chemicals, etc.)
-- **Token Counting (historical)**: `count_tokens.py` estimates costs for the archived LangChain map-reduce-rules prototype (`legacy/langchain-summarization/`), not the current pipeline
+- **Token Counting (historical)**: `legacy/langchain-summarization/count_tokens.py` estimates costs for the archived LangChain map-reduce-rules prototype, not the current pipeline
 
 ### Auditable LLM Pipeline
 - **Structured Pydantic schemas** ensure consistent output format

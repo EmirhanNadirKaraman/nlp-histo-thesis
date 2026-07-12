@@ -6,10 +6,10 @@ Uses tiktoken (OpenAI tokenizer) by default.
 Includes cost estimation for LLM API calls.
 
 Usage:
-    python named_entity_recognition/count_tokens.py
-    python named_entity_recognition/count_tokens.py --input-dir disease_entities
-    python named_entity_recognition/count_tokens.py --estimate-cost
-    python named_entity_recognition/count_tokens.py --output stats.json
+    python legacy/langchain-summarization/count_tokens.py
+    python legacy/langchain-summarization/count_tokens.py --input-dir disease_entities
+    python legacy/langchain-summarization/count_tokens.py --estimate-cost
+    python legacy/langchain-summarization/count_tokens.py --output stats.json
 """
 
 import sys
@@ -19,7 +19,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 
 def count_tokens_whitespace(text: str) -> int:
@@ -666,22 +666,22 @@ def main():
         epilog="""
 Examples:
   # Default (tiktoken tokenizer)
-  python named_entity_recognition/count_tokens.py
+  python legacy/langchain-summarization/count_tokens.py
 
   # With cost estimation for your LangChain pipeline
-  python named_entity_recognition/count_tokens.py --estimate-cost
+  python legacy/langchain-summarization/count_tokens.py --estimate-cost
 
   # Estimate cost with paragraph-level deduplication (for caching)
-  python named_entity_recognition/count_tokens.py --deduplicate --input-dir relevant_texts
+  python legacy/langchain-summarization/count_tokens.py --deduplicate --input-dir relevant_texts
 
   # Use whitespace tokenizer (faster)
-  python named_entity_recognition/count_tokens.py --tokenizer whitespace
+  python legacy/langchain-summarization/count_tokens.py --tokenizer whitespace
 
   # Custom input directory
-  python named_entity_recognition/count_tokens.py --input-dir umls_entities
+  python legacy/langchain-summarization/count_tokens.py --input-dir umls_entities
 
   # Save detailed stats to file
-  python named_entity_recognition/count_tokens.py --output token_stats.json
+  python legacy/langchain-summarization/count_tokens.py --output token_stats.json
         """
     )
 

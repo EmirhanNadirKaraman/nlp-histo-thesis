@@ -122,6 +122,15 @@ Processing 10 concepts:
 - GPT-4: ~$0.50-1.00 (depending on text length)
 - GPT-3.5-Turbo: ~$0.05-0.10
 
+### `count_tokens.py`
+
+`count_tokens.py` (relocated here from `named_entity_recognition/`) reads the
+exported disease-entity JSON, reports token statistics (whitespace / tiktoken),
+and estimates costs using this prototype's historical MAP → REDUCE → RULES
+assumptions and GPT-4o / GPT-4o-mini pricing. It is a companion to
+`price-estimator/estimator.py`. **It is not a cost estimator for the current
+production pipeline** (`pipeline/stages/knowledge_extraction/`).
+
 ## Troubleshooting
 
 **No API key found**:
