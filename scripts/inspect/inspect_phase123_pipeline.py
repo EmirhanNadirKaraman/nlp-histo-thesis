@@ -23,8 +23,18 @@ import json
 import logging
 import pathlib
 import sys
+from pathlib import Path
 
-from dotenv import load_dotenv
+# Bootstrap repo root onto sys.path so the lazy `from database …` / `from pipeline …`
+# imports below resolve when this script is run directly
+# (`python scripts/inspect/inspect_phase123_pipeline.py PMC…`). `scripts/` has no
+# `__init__.py` and the repo is not installed as a package, so Python would
+# otherwise place only `scripts/inspect/` on sys.path (B-094).
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -119,10 +129,10 @@ def main() -> None:
     max_sentences = args.chunks * chunk_size
 
     from pipeline.stages.knowledge_extraction.cache import PipelineCache
-    from pipeline.stages.knowledge_extraction.grounding_filter import GroundingFilter, score_findings
-    from pipeline.stages.knowledge_extraction.group_stage import GroupStage, is_groupable
-    from pipeline.stages.knowledge_extraction.map_stage import MapStage
-    from pipeline.stages.knowledge_extraction.normalize_stage import NormalizeStage
+    from pipeline.stages.knowledge_extraction.grounding.grounding_filter import GroundingFilter, score_findings
+    from pipeline.stages.knowledge_extraction.stages.group_stage import GroupStage, is_groupable
+    from pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
+    from pipeline.stages.knowledge_extraction.stages.normalize_stage import NormalizeStage
 
     llm = build_llm()
     map_stage = MapStage(

@@ -17,6 +17,16 @@ import json
 import logging
 import pathlib
 import sys
+from pathlib import Path
+
+# Bootstrap repo root onto sys.path so the lazy `from database …` / `from pipeline …`
+# imports below resolve when this script is run directly
+# (`python scripts/inspect/inspect_normalize_group.py PMC…`). `scripts/` has no
+# `__init__.py` and the repo is not installed as a package, so Python would
+# otherwise place only `scripts/inspect/` on sys.path (B-094).
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -109,8 +119,8 @@ def main() -> None:
 
     pmcid = args.pmcid
 
-    from pipeline.stages.knowledge_extraction.normalize_stage import NormalizeStage
-    from pipeline.stages.knowledge_extraction.group_stage import GroupStage
+    from pipeline.stages.knowledge_extraction.stages.normalize_stage import NormalizeStage
+    from pipeline.stages.knowledge_extraction.stages.group_stage import GroupStage
 
     findings = load_findings_from_db(pmcid)
 
