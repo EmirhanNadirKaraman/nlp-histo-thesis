@@ -77,8 +77,6 @@ Citation format: `[S1|PMC123456|789]` where:
 │  cascade  entailment   synonym    outcome,    selection +   wise rel.  rule  │
 │  voting    filter      dedup      relation)   surface form  detection  score │
 │                                                                             │
-│  Optional secondary block (off by default):  REDUCE ─► RULES                │
-│                                                                             │
 │  Every FinalRule traces back: CanonicalRule → NormalFinding → source         │
 │  paragraph → source document (provenance recorded at generation time).      │
 │  Results persist to the sum_* Postgres tables via knowledge_extraction/persistence. │

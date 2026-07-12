@@ -1,14 +1,10 @@
 """
-Disk-backed cache for MAP, REDUCE, and RULE outputs.
+Disk-backed cache for MAP outputs.
 
 The MAP cache key is keyed on (input_hash, schema_version, prompt_version,
 stage_name, cascade_signature) so a schema/prompt bump or a cascade reshuffle
 naturally invalidates stale entries. Each MAP entry stores the run metadata
 alongside the result (``{"metadata": {...}, "result": {...}}``).
-
-REDUCE / RULE caches are unrelated legacy caches; they retain the old
-key shape. TODO(task-1 follow-up): version-tag those too once their prompts
-are bumped.
 """
 from __future__ import annotations
 
@@ -47,9 +43,6 @@ class PipelineCache:
     ``$NLP_HISTO_NLI_MODEL`` invalidates persisted entries (their stored
     grounding scores would otherwise be served stale against a different
     NLI model).
-
-    REDUCE → pmcid + sorted chunk_ids of inputs
-    RULE   → pmcid + sorted text_element_ids from the consolidated summary
     """
 
     def __init__(self, path: Path) -> None:

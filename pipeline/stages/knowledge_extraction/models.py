@@ -1,6 +1,6 @@
 """
 Pydantic schemas for all pipeline stages:
-  MAP → REDUCE → RULES → NORMALIZE → GROUP → CANONICALIZE → RELATE → RESOLVE
+  MAP → NORMALIZE → GROUP → CANONICALIZE → RELATE → RESOLVE
 """
 from __future__ import annotations
 

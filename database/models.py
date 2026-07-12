@@ -349,7 +349,8 @@ class PipelineRun(Base):
     # Set on failure
     error = Column(Text, nullable=True)
 
-    # Narrative summary produced by the REDUCE stage
+    # Legacy column: was populated by the retired REDUCE stage; always NULL on
+    # the current pipeline. Retained for schema/migration stability.
     narrative_summary = Column(Text, nullable=True)
 
     started_at = Column(TIMESTAMP, nullable=False, default=func.now())

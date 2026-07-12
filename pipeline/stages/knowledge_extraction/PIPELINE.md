@@ -5,12 +5,17 @@ This document describes the knowledge-extraction stage — what each stage does,
 **File layout.** The stage implementations live in subpackages, not at the top level of `pipeline/stages/knowledge_extraction/`. The `## <stage>.py` section headers below name each stage file; use this map to find it:
 
 - `stages/` — `map_stage.py`, `normalize_stage.py`, `group_stage.py`, `canonicalize_stage.py`, `relate_stage.py`, `resolve_stage.py`
-- `helpers/` — `grounding_filter.py`, `contradiction_detector.py`, `corpus_relate.py`, `entity_linker.py`
+- `helpers/` — `grounding_filter.py`, `corpus_relate.py`, `entity_linker.py`
 - `provenance/` — `validator.py`, `citation_filter.py`, `paragraph_lookup.py` (moved here from `helpers/`)
 - `routing/` — `router.py`, `models.py`, `policy.py`, `routing_dataset.py`, `schema_validator.py`
-- `old_stages/` — `reduce_stage.py`, `rule_stage.py` (the REDUCE→RULES block; still imported by `runner.py`/`batch/runner.py` but currently **unreachable** — `run_reduce` defaults `False` and no CLI flag or test enables it; the "old_stages" name/location is a known tension)
 - top level — `runner.py`, `config.py` (`KnowledgeExtractionConfig` + per-stage configs; the home of every tunable referenced below), `models.py`, `prompts.py`, `persistence.py`, `cache.py`, `llm_providers.py`, `nli_config.py`, `health_checks.py`
 - NER is a **repo-root** module: `named_entity_recognition/ner.py` (not under `knowledge_extraction/`).
+
+> **Retired stages.** An optional MAP → REDUCE → RULES secondary block once
+> existed here but was never reachable in the evaluated production pipeline (no
+> flag, config, or test enabled it). It was removed after the clean-room-verified
+> `thesis-submission-2026-07-11` tag; the historical implementation remains
+> recoverable from that tag.
 
 ---
 
@@ -25,15 +30,14 @@ MAP (LLM, per chunk, ABC cascade)
     ▼
 GROUNDING FILTER (NLI — drops ungrounded findings)
     │
-    ├──────────────────────────────────────────────────────────┐
-    ▼                                                          ▼
-NORMALIZE (deterministic)                              REDUCE (LLM, recursive)
-    │                                                          │
-    ▼                                                          ▼
-GROUP (deterministic)                                  RULES (LLM)
-    │                                                          │
-    ▼                                                          ▼
-CANONICALIZE (LLM)                             GROUNDING FILTER (NLI — drops ungrounded rules)
+    ▼
+NORMALIZE (deterministic)
+    │
+    ▼
+GROUP (deterministic)
+    │
+    ▼
+CANONICALIZE (LLM)
     │
     ▼
 RELATE (NLI — pairwise comparison)
@@ -48,7 +52,7 @@ NER (scispaCy + UMLS — saves to entities table)
 result JSON + DB persistence
 ```
 
-MAP/REDUCE/RULES/CANONICALIZE make LLM calls.
+MAP and CANONICALIZE make LLM calls.
 GROUNDING FILTER and RELATE share one NLI model instance. The active model is
 selected from the registry in `configs/nli_models.yaml` (default
 `pubmedbert_mednli` = `pritamdeka/PubMedBERT-MNLI-MedNLI`; overridable via
@@ -72,8 +76,6 @@ Single source of truth for all data shapes. Every stage reads from and writes to
 | `CanonicalRule` | CANONICALIZE output | One direction-bin of a `FindingGroup`. LLM-selected `predicate_text`. Has `canonical_scope`. |
 | `Relation` | RELATE output | NLI-derived relation between two `CanonicalRule`s. Today only SUPPORT and CONTRADICT are emitted by `_classify_pair` (SCOPE_QUALIFY is defined in `RelationTypeLabel` but no branch produces it — see SCOPE_QUALIFY note in `relate_stage.py`). |
 | `FinalRule` | RESOLVE output | Scored `CanonicalRule` with `final_score`, `support_count`, `contradict_count`, `is_contradicted`. |
-| `ConsolidatedSummary` | REDUCE output | Four-section narrative summary. |
-| `ExtractedRules` | RULE stage output | IF-THEN clinical rules with `evidence_chain`. |
 
 ### Design decisions
 - `Finding.direction` is the structured polarity field (`positive`, `negative`, `absent`, `partial`, `unclear`, `no_direction`). NORMALIZE applies a keyword heuristic (`infer_direction`) as a recovery fallback only when the incoming `direction` is `None` or `unclear` — never as an overwrite.
@@ -96,9 +98,8 @@ Orchestrates the full pipeline for one paper. Entry point: `runner.process(file_
 6. CANONICALIZE → persist canonical rules
 7. RELATE → persist relations
 8. RESOLVE → persist final rules
-9. REDUCE → RULES → GROUNDING FILTER (rules)
-10. NER (if `run_ner=True`, default)
-11. Save result JSON to disk
+9. NER (if `run_ner=True`, default)
+10. Save result JSON to disk
 
 ### Key parameters
 | Parameter | Default | Effect |
@@ -169,7 +170,7 @@ The prompt includes field-level examples for each `relation_type` because early 
 
 ## `grounding_filter.py` — `GroundingFilter`
 
-NLI-based filter. Applied twice: after MAP (on findings), after RULES (on IF-THEN rules).
+NLI-based filter. Applied after MAP (on findings).
 
 ### What it does
 - Runs NLI on `(verbatim_support, claim)` pairs
@@ -323,33 +324,11 @@ Switch is automatic: `relations_present = len(relations) > 0`.
 
 ---
 
-## `reduce_stage.py` — `ReduceStage`
-
-Recursive tree-collapse of `AuditableSummary` → `ConsolidatedSummary`. LLM-based.
-
-Groups chunk summaries in batches of `batch_size=10`, reduces each batch with the LLM, then recursively reduces intermediates until one remains. Output has four fixed sections: `clinical_significance`, `histopathological_features`, `management_outcomes`, `risk_factors_associations`.
-
-Recursive reduction avoids context window overflow from passing all chunks at once.
-
----
-
-## `rule_stage.py` — `RuleStage`
-
-Extracts IF-THEN clinical rules from a `ConsolidatedSummary`. LLM-based.
-
-Output: `Rule` objects with `type` (Diagnostic/Prognostic/Management), `condition` (IF clause), `action` (THEN clause), `confidence`, and `evidence_chain` with verbatim quotes and `text_element_id` links.
-
-This is a **separate output track** from the MAP→NORMALIZE→…→RESOLVE track. Both run in parallel within `runner.process()`. The IF-THEN rules are clinical-decision-support oriented; the final rules from RESOLVE are knowledge-graph oriented.
-
----
-
 ## `cache.py` — `PipelineCache`
 
 JSON-backed disk cache for LLM call results, keyed by content hash.
 
 - MAP: keyed by hash of chunk text
-- REDUCE: keyed by hash of input summaries
-- RULES: keyed by hash of `ConsolidatedSummary` + pmcid
 
 Cache file: `out/summaries/pipeline_cache.json`. Avoids re-running expensive LLM calls when re-running the pipeline with unchanged input (e.g. to test downstream changes without re-running MAP).
 

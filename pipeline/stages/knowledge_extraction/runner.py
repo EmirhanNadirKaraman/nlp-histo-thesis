@@ -1,7 +1,6 @@
 """
 KnowledgeExtractionRunner — orchestrates MAP → GROUNDING → NORMALIZE → GROUP
 → CANONICALIZE → RELATE → RESOLVE with ABC cascading.
-REDUCE → RULES is an optional secondary block (disabled by default).
 
 Usage example
 -------------
@@ -107,7 +106,7 @@ logger = logging.getLogger(__name__)
 class KnowledgeExtractionRunner:
     """
     Full pipeline runner: MAP → GROUNDING → NORMALIZE → GROUP → CANONICALIZE
-    → RELATE → RESOLVE.  REDUCE → RULES is an optional secondary block.
+    → RELATE → RESOLVE.
 
     Parameters
     ----------
@@ -120,7 +119,7 @@ class KnowledgeExtractionRunner:
         Level-1 voters disagree.  Use mid-tier models from different providers
         (e.g. [Gemini-Flash, kimi-k2.5, Haiku]).
     escalation_llm:
-        LLM for MAP Level-3 (final) escalations, REDUCE, and RULES.
+        LLM for MAP Level-3 (final) escalations.
         Typically the most capable model (e.g. Sonnet 4.6).
     config:
         All numeric/boolean pipeline knobs.  Defaults to KnowledgeExtractionConfig()
@@ -742,7 +741,7 @@ class KnowledgeExtractionRunner:
                 writer.finalize("failed", error=str(exc))
             return {"status": "error", "run_id": run_id, "pmcid": pmcid, "error": str(exc)}
         finally:
-            # Flush MAP/REDUCE/RULE in-memory cache to disk on every exit path
+            # Flush the MAP in-memory cache to disk on every exit path
             # (success, error, or KeyboardInterrupt) so partially-completed
             # paper runs don't re-pay for chunks already scored. Safe to call
             # even on the success path — _save_result already returned and

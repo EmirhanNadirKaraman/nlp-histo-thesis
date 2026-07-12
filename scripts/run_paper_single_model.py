@@ -136,9 +136,9 @@ def build_batch_runners(
 
     haiku  = VoterBatchConfig(model="claude-haiku-4-5-20251001",  provider="claude")
     sonnet = VoterBatchConfig(model="claude-sonnet-4-6", provider="claude")
-    sync_llm = build_llm()  # Gemini Flash Lite — used for NORMALIZE/CANONICALIZE/REDUCE
+    sync_llm = build_llm()  # Gemini Flash Lite — used for NORMALIZE/CANONICALIZE
 
-    # Single voter → always KEEP, no escalation. Disable contradiction detector.
+    # Single voter → always KEEP, no escalation.
     cfg = KnowledgeExtractionConfig(
         map=MapConfig(theta=0.0, reject_theta=-1.0),
         grounding=GroundingConfig(threshold=None if skip_nli else 0.3),

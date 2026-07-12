@@ -11,7 +11,7 @@ The handle is persisted to disk between calls so the process can exit freely.
 
     handle = runner.submit(file_data)       # L1 jobs submitted; handle saved
     handle = runner.advance(handle)         # call again until COMPLETE
-    result = runner.finalize(handle)        # REDUCE + RULES (sync)
+    result = runner.finalize(handle)        # run post-MAP chain + persist
 
 Typical script usage::
 
@@ -101,8 +101,8 @@ class BatchKnowledgeExtractionRunner:
     l3_model:
         Single VoterBatchConfig for the Level-3 escalation model.
     escalation_llm:
-        Synchronous LangChain LLM for REDUCE and RULE EXTRACTION (called once
-        per paper at the end, after all MAP batches complete).
+        Retained for constructor compatibility with the sync runner; the batch
+        cascade uses the l1/l2/l3 voter configs and does not call it.
     config:
         All numeric/boolean pipeline knobs.  Defaults to KnowledgeExtractionConfig().
         Only map and grounding sub-configs are used by the batch runner.
@@ -449,9 +449,9 @@ class BatchKnowledgeExtractionRunner:
 
     def finalize(self, handle: BatchHandle) -> dict:
         """
-        Run the modern post-MAP chain (and optionally REDUCE → RULES) on the
-        batch MAP output, persist filesystem artifacts when configured, and
-        return the assembled result dict.
+        Run the modern post-MAP chain on the batch MAP output, persist
+        filesystem artifacts when configured, and return the assembled
+        result dict.
 
         Only call when ``handle.phase == BatchPhase.COMPLETE``.
         """
