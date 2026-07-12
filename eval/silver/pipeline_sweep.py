@@ -291,7 +291,6 @@ def run_prime(cases: list[SourceCase], prime_dir: Path,
     prime_config = KnowledgeExtractionConfig(
         map=MapConfig(theta=0.0, reject_theta=-1.0),
         grounding=GroundingConfig(threshold=0.0),  # score all, drop nothing
-        contradiction_similarity_threshold=None,
     )
 
     runner = _build_runner(prime_config, llm_cache_dir, force_rerun=True)

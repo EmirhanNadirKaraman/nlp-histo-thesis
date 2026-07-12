@@ -142,7 +142,6 @@ def build_batch_runners(
     cfg = KnowledgeExtractionConfig(
         map=MapConfig(theta=0.0, reject_theta=-1.0),
         grounding=GroundingConfig(threshold=None if skip_nli else 0.3),
-        contradiction_similarity_threshold=None,
     )
 
     batch_runner = BatchKnowledgeExtractionRunner(
@@ -189,7 +188,6 @@ def build_runner(
     cfg = KnowledgeExtractionConfig(
         map=MapConfig(theta=0.0, reject_theta=-1.0),
         grounding=GroundingConfig(threshold=0.3 if not skip_nli else None),
-        contradiction_similarity_threshold=None,   # skip pairwise contradiction detection
     )
     return KnowledgeExtractionRunner(
         voter_llms=[llm],

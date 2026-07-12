@@ -175,5 +175,3 @@ summarization:
       w_evidence: 0.05            # E06 entity-heavy blend (was 0.10). weight on evidence text-element-id Jaccard
                                # NOTE: in the per-paper result-cache hash but not the
                                # chunk-level MAP cache (like theta) — sweep via replay.
-
-  contradiction_similarity_threshold: 0.7

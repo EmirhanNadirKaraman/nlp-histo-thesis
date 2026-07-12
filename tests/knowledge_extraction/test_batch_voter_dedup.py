@@ -231,7 +231,6 @@ def test_advance_merges_synthetic_l2_into_finalized(tmp_path):
     )
 
     cfg = KnowledgeExtractionConfig()
-    cfg.contradiction_similarity_threshold = None  # type: ignore[misc]
     runner = BatchKnowledgeExtractionRunner(
         l1_voters=[
             VoterBatchConfig(GEMINI_L1, provider="gemini", temperature=0.1),

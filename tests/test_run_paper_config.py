@@ -73,7 +73,6 @@ knowledge_extraction:
   cost:
     enable_cost_report: true
     write_usage_jsonl: true
-  contradiction_similarity_threshold: 0.7
 """,
         encoding="utf-8",
     )
@@ -90,7 +89,6 @@ def test_load_summarization_config_picks_up_grounding_threshold(
     assert cfg.grounding.threshold == 0.42
     assert cfg.map.theta == 0.8
     assert cfg.relate.entailment_threshold == 0.50
-    assert cfg.contradiction_similarity_threshold == 0.7
 
 
 def test_load_summarization_config_threshold_null(

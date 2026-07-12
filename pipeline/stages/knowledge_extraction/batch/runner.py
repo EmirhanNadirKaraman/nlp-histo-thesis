@@ -752,7 +752,6 @@ class BatchKnowledgeExtractionRunner:
                 "contradiction_threshold": cfg.relate.contradiction_threshold,
                 "map_theta":              cfg.map.theta,
                 "map_reject_theta":       cfg.map.reject_theta,
-                "contradiction_similarity_threshold": cfg.contradiction_similarity_threshold,
             }
             models = {
                 "voter_models":        [v.model for v in self._l1],
@@ -873,7 +872,6 @@ class BatchKnowledgeExtractionRunner:
             "contradiction_threshold": cfg.relate.contradiction_threshold,
             "map_theta":              cfg.map.theta,
             "map_reject_theta":       cfg.map.reject_theta,
-            "contradiction_similarity_threshold": cfg.contradiction_similarity_threshold,
             "enable_router":          self._enable_router,
             "router_single_voter_policy": (
                 self._router_single_voter_policy if self._enable_router else None

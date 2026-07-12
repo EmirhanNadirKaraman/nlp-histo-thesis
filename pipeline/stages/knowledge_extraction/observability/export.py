@@ -84,13 +84,6 @@ def export_run_summary_csv(runs_jsonl: Path, out_csv: Path) -> int:
         "map_findings_out",
         # Grounding (MAP)
         "grounding_map_before", "grounding_map_after", "grounding_map_dropped",
-        # Reduce stage
-        "reduce_iterations", "reduce_batches",
-        "reduce_cache_hits", "reduce_cache_misses", "reduce_findings_out",
-        # Rules
-        "rules_extracted",
-        # Grounding (rules)
-        "grounding_rules_before", "grounding_rules_after", "grounding_rules_dropped",
         # Meta
         "warning_count",
     ]
@@ -262,15 +255,6 @@ def _flatten_run(r: dict[str, Any]) -> dict[str, Any]:
         "grounding_map_before": _g(r, "grounding_map", "items_before"),
         "grounding_map_after": _g(r, "grounding_map", "items_after"),
         "grounding_map_dropped": _g(r, "grounding_map", "dropped"),
-        "reduce_iterations": _g(r, "reduce_stage", "iterations"),
-        "reduce_batches": _g(r, "reduce_stage", "total_batches"),
-        "reduce_cache_hits": _g(r, "reduce_stage", "cache_hits"),
-        "reduce_cache_misses": _g(r, "reduce_stage", "cache_misses"),
-        "reduce_findings_out": _g(r, "reduce_stage", "output_finding_count"),
-        "rules_extracted": _g(r, "rule_stage", "rules_extracted"),
-        "grounding_rules_before": _g(r, "grounding_rules", "items_before"),
-        "grounding_rules_after": _g(r, "grounding_rules", "items_after"),
-        "grounding_rules_dropped": _g(r, "grounding_rules", "dropped"),
         "warning_count": len(r.get("warnings", [])),
     }
 

@@ -17,8 +17,6 @@ from .batch import BatchKnowledgeExtractionRunner, BatchHandle, BatchPhase, Vote
 from .persistence import RunArtifactWriter, RunManifest
 from .models import (
     AuditableSummary,
-    ConsolidatedSummary,
-    ExtractedRules,
     Finding,
     RejectedFinding,
     RejectionSummary,
@@ -36,8 +34,6 @@ __all__ = [
     "BatchPhase",
     "VoterBatchConfig",
     "AuditableSummary",
-    "ConsolidatedSummary",
-    "ExtractedRules",
     "Finding",
     "RejectedFinding",
     "RejectionSummary",

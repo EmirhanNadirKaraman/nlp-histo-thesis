@@ -17,7 +17,7 @@ import logging
 import re
 from collections import Counter
 
-from ..models import AuditableSummary, EvidenceChainItem, ExtractedRules, Finding, Rule, RuleAuditSummary, RuleCounts
+from ..models import AuditableSummary, Finding, Rule, RuleAuditSummary, RuleCounts
 from ..nli_config import get_active_spec
 
 logger = logging.getLogger(__name__)
@@ -111,46 +111,6 @@ class GroundingFilter:
                 dropped.append(finding)
 
         return summary.model_copy(update={"findings": kept}), dropped
-
-    def filter_rules(self, extracted: ExtractedRules) -> ExtractedRules:
-        """
-        For each rule:
-          - Drop evidence_chain items whose verbatim does not entail the rule.
-          - Drop the entire rule if no evidence remains.
-        Returns a new ExtractedRules with updated audit_summary.
-        """
-        if not extracted.rules:
-            return extracted
-
-        surviving: list[Rule] = []
-        for rule in extracted.rules:
-            hypothesis = f"{rule.condition} {rule.action}"
-            pairs = [(item.verbatim, hypothesis) for item in rule.evidence_chain]
-            mask = self._entailment_mask(pairs)
-
-            kept_evidence: list[EvidenceChainItem] = [
-                item for item, ok in zip(rule.evidence_chain, mask) if ok
-            ]
-
-            if not kept_evidence:
-                logger.debug(
-                    "Grounding dropped rule %s — no supporting evidence for: %s %s",
-                    rule.rule_id, rule.condition, rule.action,
-                )
-                continue
-
-            if len(kept_evidence) < len(rule.evidence_chain):
-                logger.debug(
-                    "Rule %s: trimmed evidence %d → %d items",
-                    rule.rule_id, len(rule.evidence_chain), len(kept_evidence),
-                )
-
-            surviving.append(rule.model_copy(update={"evidence_chain": kept_evidence}))
-
-        return ExtractedRules(
-            rules=surviving,
-            audit_summary=_recompute_audit(surviving),
-        )
 
     # ── Internals ──────────────────────────────────────────────────────────────
 

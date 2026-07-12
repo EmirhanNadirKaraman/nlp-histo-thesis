@@ -27,7 +27,6 @@ def _base_kwargs() -> dict:
             "contradiction_threshold": 0.55,
             "map_theta": 0.7,
             "map_reject_theta": 0.3,
-            "contradiction_similarity_threshold": 0.8,
         },
         models={
             "voter_models": ["deepseek", "gemini-flash-lite", "mistral-large"],

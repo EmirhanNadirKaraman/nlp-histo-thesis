@@ -46,7 +46,6 @@ def _haiku_only_runner(tmp_path: Path) -> BatchKnowledgeExtractionRunner:
     """
     haiku = VoterBatchConfig(CLAUDE_HAIKU, provider="claude", temperature=0.1)
     cfg = KnowledgeExtractionConfig()
-    cfg.contradiction_similarity_threshold = None  # type: ignore[misc]
     return BatchKnowledgeExtractionRunner(
         l1_voters=[haiku],
         l2_voters=[haiku],
@@ -134,7 +133,6 @@ def test_advance_handles_mixed_none_and_valid_voters_in_real_profile_shape(
     )
 
     cfg = KnowledgeExtractionConfig()
-    cfg.contradiction_similarity_threshold = None  # type: ignore[misc]
     runner = BatchKnowledgeExtractionRunner(
         l1_voters=[
             VoterBatchConfig(GEMINI_L1, provider="gemini", temperature=0.1),

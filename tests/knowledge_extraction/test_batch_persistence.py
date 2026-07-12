@@ -114,9 +114,6 @@ def _build_runner(tmp_path: Path) -> BatchKnowledgeExtractionRunner:
     ContradictionDetector stage — no real LLM is touched.
     """
     cfg = KnowledgeExtractionConfig()
-    # Contradiction detection is no longer wired into the batch runner; keep the
-    # threshold unset so this smoke config stays LLM-free.
-    cfg.contradiction_similarity_threshold = None  # type: ignore[misc]
 
     def fake_embed(texts):
         return [[0.0] * 8 for _ in texts]

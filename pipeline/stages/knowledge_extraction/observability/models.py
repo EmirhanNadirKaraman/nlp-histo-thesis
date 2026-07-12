@@ -147,24 +147,6 @@ class GroundingFilterTrace:
 
 
 @dataclass
-class ReduceStageTrace:
-    input_chunks: int
-    iterations: int      # recursive collapse passes (ceil(log_b(N)) where b=batch_size)
-    total_batches: int   # total LLM reduce calls attempted
-    cache_hits: int
-    cache_misses: int
-    output_finding_count: int  # findings in final ConsolidatedSummary
-
-
-@dataclass
-class RuleStageTrace:
-    finding_count_in: int
-    rules_extracted: int
-    rules_by_type: dict[str, int]
-    cache_hit: bool
-
-
-@dataclass
 class ExportTrace:
     artifacts: list[dict[str, Any]] = field(default_factory=list)
 
@@ -191,9 +173,6 @@ class RunTrace:
     chunking: ChunkingTrace | None
     map_stage: MapStageTrace | None
     grounding_map: GroundingFilterTrace | None
-    reduce_stage: ReduceStageTrace | None
-    grounding_rules: GroundingFilterTrace | None
-    rule_stage: RuleStageTrace | None
     export: ExportTrace | None
 
     def to_dict(self) -> dict[str, Any]:

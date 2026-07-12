@@ -17,8 +17,6 @@ from .models import (
     GroundingFilterTrace,
     IngestionTrace,
     MapStageTrace,
-    ReduceStageTrace,
-    RuleStageTrace,
     RunTrace,
 )
 
@@ -52,9 +50,6 @@ class TraceCollector:
         self._chunking: ChunkingTrace | None = None
         self._map_stage: MapStageTrace | None = None
         self._grounding_map: GroundingFilterTrace | None = None
-        self._reduce_stage: ReduceStageTrace | None = None
-        self._grounding_rules: GroundingFilterTrace | None = None
-        self._rule_stage: RuleStageTrace | None = None
         self._export: ExportTrace = ExportTrace()
         self._ended_at: datetime | None = None
         self._status: str = "running"
@@ -122,49 +117,13 @@ class TraceCollector:
         Parameters
         ----------
         stage:
-            "map_findings" or "rules"
+            "map_findings" (the only grounding pass on the live path).
         """
-        t = GroundingFilterTrace(
+        self._grounding_map = GroundingFilterTrace(
             stage=stage,
             items_before=items_before,
             items_after=items_after,
             dropped=items_before - items_after,
-        )
-        if stage == "map_findings":
-            self._grounding_map = t
-        else:
-            self._grounding_rules = t
-
-    def record_reduce(
-        self,
-        input_chunks: int,
-        iterations: int,
-        total_batches: int,
-        cache_hits: int,
-        cache_misses: int,
-        output_finding_count: int,
-    ) -> None:
-        self._reduce_stage = ReduceStageTrace(
-            input_chunks=input_chunks,
-            iterations=iterations,
-            total_batches=total_batches,
-            cache_hits=cache_hits,
-            cache_misses=cache_misses,
-            output_finding_count=output_finding_count,
-        )
-
-    def record_rules(
-        self,
-        finding_count_in: int,
-        rules_extracted: int,
-        rules_by_type: dict[str, int],
-        cache_hit: bool,
-    ) -> None:
-        self._rule_stage = RuleStageTrace(
-            finding_count_in=finding_count_in,
-            rules_extracted=rules_extracted,
-            rules_by_type=rules_by_type,
-            cache_hit=cache_hit,
         )
 
     def add_artifact(
@@ -200,8 +159,5 @@ class TraceCollector:
             chunking=self._chunking,
             map_stage=self._map_stage,
             grounding_map=self._grounding_map,
-            reduce_stage=self._reduce_stage,
-            grounding_rules=self._grounding_rules,
-            rule_stage=self._rule_stage,
             export=self._export if self._export.artifacts else None,
         )

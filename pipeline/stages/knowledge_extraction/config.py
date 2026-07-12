@@ -406,7 +406,3 @@ class KnowledgeExtractionConfig:
     resolve: ResolveConfig = field(default_factory=ResolveConfig)
     cost: CostConfig = field(default_factory=CostConfig)
     agreement: AgreementConfig = field(default_factory=AgreementConfig)
-
-    contradiction_similarity_threshold: float | None = 0.7
-    """Cosine similarity threshold for ContradictionDetector candidate pairs.
-    None disables contradiction detection entirely."""

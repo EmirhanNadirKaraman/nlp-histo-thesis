@@ -20,8 +20,6 @@ from typing import Optional
 
 from .models import (
     AuditableSummary,
-    ConsolidatedSummary,
-    ExtractedRules,
     MapRunMetadata,
 )
 
@@ -30,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class PipelineCache:
     """
-    Three-tier cache (map / reduce / rule) persisted as a single JSON file.
+    MAP-stage cache persisted as a single JSON file.
 
     MAP key components
     ------------------
@@ -57,10 +55,8 @@ class PipelineCache:
     def __init__(self, path: Path) -> None:
         self.path = path
         self._map: dict[str, dict] = {}
-        self._reduce: dict[str, dict] = {}
-        self._rule: dict[str, dict] = {}
-        self._hits = {"map": 0, "reduce": 0, "rule": 0}
-        self._misses = {"map": 0, "reduce": 0, "rule": 0}
+        self._hits = {"map": 0}
+        self._misses = {"map": 0}
         self._load()
 
     # ── Persistence ────────────────────────────────────────────────────────────
@@ -71,19 +67,14 @@ class PipelineCache:
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
             self._map = data.get("map", {})
-            self._reduce = data.get("reduce", {})
-            self._rule = data.get("rule", {})
-            logger.info(
-                "Cache loaded: %d map / %d reduce / %d rule entries",
-                len(self._map), len(self._reduce), len(self._rule),
-            )
+            logger.info("Cache loaded: %d map entries", len(self._map))
         except Exception as exc:
             logger.warning("Could not load cache from %s: %s", self.path, exc)
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(
-            json.dumps({"map": self._map, "reduce": self._reduce, "rule": self._rule}),
+            json.dumps({"map": self._map}),
             encoding="utf-8",
         )
 
@@ -117,23 +108,6 @@ class PipelineCache:
             metadata.nli_model_id,
             PipelineCache._input_hash(sentences),
         ))
-
-    @staticmethod
-    def _reduce_key(summaries: list, pmcid: str) -> str:
-        ids = []
-        for s in summaries:
-            if hasattr(s, "chunk_id"):
-                ids.append(s.chunk_id)
-            elif hasattr(s, "pmcid"):
-                ids.append(f"reduced:{s.audit_trail.chunks_processed}")
-            elif isinstance(s, dict):
-                ids.append(s.get("chunk_id", s.get("concept", "?")))
-        return f"{pmcid}|" + ";".join(sorted(ids))
-
-    @staticmethod
-    def _rule_key(summary: ConsolidatedSummary, pmcid: str) -> str:
-        te_ids = sorted(summary.audit_trail.unique_text_element_ids)
-        return f"{pmcid}|rule|" + ",".join(map(str, te_ids))
 
     # ── MAP ────────────────────────────────────────────────────────────────────
 
@@ -211,38 +185,12 @@ class PipelineCache:
             return None
         return outputs
 
-    # ── REDUCE ─────────────────────────────────────────────────────────────────
-
-    def get_reduce(self, summaries: list, pmcid: str) -> Optional[ConsolidatedSummary]:
-        key = self._reduce_key(summaries, pmcid)
-        if key in self._reduce:
-            self._hits["reduce"] += 1
-            return ConsolidatedSummary(**self._reduce[key])
-        self._misses["reduce"] += 1
-        return None
-
-    def set_reduce(self, summaries: list, pmcid: str, result: ConsolidatedSummary) -> None:
-        self._reduce[self._reduce_key(summaries, pmcid)] = result.model_dump()
-
-    # ── RULE ───────────────────────────────────────────────────────────────────
-
-    def get_rule(self, summary: ConsolidatedSummary, pmcid: str) -> Optional[ExtractedRules]:
-        key = self._rule_key(summary, pmcid)
-        if key in self._rule:
-            self._hits["rule"] += 1
-            return ExtractedRules(**self._rule[key])
-        self._misses["rule"] += 1
-        return None
-
-    def set_rule(self, summary: ConsolidatedSummary, pmcid: str, result: ExtractedRules) -> None:
-        self._rule[self._rule_key(summary, pmcid)] = result.model_dump()
-
     # ── Stats ──────────────────────────────────────────────────────────────────
 
     def stats_str(self) -> str:
         lines = ["Cache stats:"]
         total_h = total_m = 0
-        for tier in ("map", "reduce", "rule"):
+        for tier in ("map",):
             h, m = self._hits[tier], self._misses[tier]
             total_h += h
             total_m += m
