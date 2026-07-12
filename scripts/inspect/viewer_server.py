@@ -6,9 +6,9 @@ No static HTML regeneration needed — pages render fresh on every request.
 
 Usage
 -----
-    PYTHONPATH=. python scripts/viewer_server.py
-    PYTHONPATH=. python scripts/viewer_server.py --port 8080
-    PYTHONPATH=. python scripts/viewer_server.py --host 0.0.0.0 --port 5000
+    PYTHONPATH=. python scripts/inspect/viewer_server.py
+    PYTHONPATH=. python scripts/inspect/viewer_server.py --port 8080
+    PYTHONPATH=. python scripts/inspect/viewer_server.py --host 0.0.0.0 --port 5000
 
 Then open http://localhost:5000 in your browser.
 
@@ -40,7 +40,7 @@ except ImportError:
     sys.exit(1)
 
 # ── Bootstrap path so we can import from project root ─────────────────────────
-_ROOT = Path(__file__).resolve().parent.parent
+_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_ROOT))
 
 from inspect_pipeline_output import (  # noqa: E402

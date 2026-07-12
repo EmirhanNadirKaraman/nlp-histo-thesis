@@ -483,7 +483,7 @@ def main():
              "every paper finishes finalize(), `CorpusRelateStage.relate_from_dir` "
              "pools rules from `out/summaries/summaries/*.json` and writes "
              "`out/summaries/corpus_relations.json` (auto-detected by "
-             "`scripts/inspect_pipeline_output.py`). Replay-only, local NLI, "
+             "`scripts/inspect/inspect_pipeline_output.py`). Replay-only, local NLI, "
              "zero API calls — usually free; pass this flag to skip on very "
              "large corpora where pairwise NLI dominates runtime.",
     )
@@ -944,7 +944,7 @@ def _run_corpus_relate(
     pass — see the A/B-test trace 2026-05-27.
 
     Writes ``corpus_relations.json`` at ``output_path``. The inspector
-    (`scripts/inspect_pipeline_output.py`) auto-detects this filename in the
+    (`scripts/inspect/inspect_pipeline_output.py`) auto-detects this filename in the
     parent of the source dir, so the default layout
     (``out/summaries/summaries/*.json`` + ``out/summaries/corpus_relations.json``)
     is picked up by ``--batch-dir`` runs without extra flags.

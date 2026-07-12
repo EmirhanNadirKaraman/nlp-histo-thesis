@@ -1,5 +1,5 @@
 """
-Tests for scripts/inspect_pipeline_output.py
+Tests for scripts/inspect/inspect_pipeline_output.py
 
 Coverage:
   - PMCID validation in compare mode
@@ -19,7 +19,7 @@ import importlib.util
 import pytest
 
 # scripts/ is not a package — load the module directly by file path
-_SCRIPT = Path(__file__).parent.parent / "scripts" / "inspect_pipeline_output.py"
+_SCRIPT = Path(__file__).parent.parent / "scripts" / "inspect" / "inspect_pipeline_output.py"
 _spec = importlib.util.spec_from_file_location("inspect_pipeline_output", _SCRIPT)
 _inspector = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_inspector)

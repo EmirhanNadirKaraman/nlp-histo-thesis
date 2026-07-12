@@ -546,7 +546,7 @@ def main() -> None:
     # ── HTML inspector ─────────────────────────────────────────────────────────
     if not args.no_html:
         try:
-            sys.path.insert(0, str(Path(__file__).parent))
+            sys.path.insert(0, str(Path(__file__).parent / "inspect"))
             from inspect_pipeline_output import render, render_batch
 
             if len(pmcids) == 1 and n_ok == 1:

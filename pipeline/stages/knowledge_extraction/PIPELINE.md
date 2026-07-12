@@ -348,42 +348,42 @@ Runs as part of `KnowledgeExtractionRunner` after RESOLVE when `run_ner=True` (d
 
 ---
 
-## `scripts/inspect_pipeline_output.py`
+## `scripts/inspect/inspect_pipeline_output.py`
 
 Generates self-contained HTML inspector(s) from pipeline output JSON files.
 
 ### Single-run mode
 ```bash
-PYTHONPATH=. python scripts/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json
+PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json
 # → out/inspector/PMC10047158.html
 
 # With explicit output path:
-PYTHONPATH=. python scripts/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json -o out/inspector/PMC10047158.html
+PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json -o out/inspector/PMC10047158.html
 
 # Export flagged findings to CSV:
-PYTHONPATH=. python scripts/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json --export-flagged-csv out/inspector/PMC10047158_flagged.csv
+PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json --export-flagged-csv out/inspector/PMC10047158_flagged.csv
 ```
 
 ### Cross-run diff mode
 Compare two runs of the same PMCID side-by-side. Both JSONs must have matching `pmcid` fields.
 ```bash
-PYTHONPATH=. python scripts/inspect_pipeline_output.py run_a.json --compare run_b.json
+PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py run_a.json --compare run_b.json
 # → out/inspector/PMC10047158_diff.html
 ```
 Produces a diff report with: summary stats for both runs, added/removed/changed final rules, canonical rules, relations, and MAP findings. Field-level diffs shown for `final_score`, `support_count`, `contradict_count`, `is_contradicted`, `mean_grounding_score`, `direction`, `category`, `relation_type`.
 
 ### Batch mode
 ```bash
-PYTHONPATH=. python scripts/inspect_pipeline_output.py --batch-dir out/summaries/summaries/
+PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py --batch-dir out/summaries/summaries/
 # → out/inspector/<pmcid>.html  (one per JSON)
 # → out/inspector/index.html    (sortable/searchable index page)
 ```
 Invalid JSON files are skipped with a warning rather than stopping the batch.
 
 ### Templates
-- `scripts/templates/pipeline_inspector.html.jinja2` — single-run inspector
-- `scripts/templates/pipeline_diff.html.jinja2` — cross-run diff view
-- `scripts/templates/pipeline_batch_index.html.jinja2` — batch index page
+- `scripts/inspect/templates/pipeline_inspector.html.jinja2` — single-run inspector
+- `scripts/inspect/templates/pipeline_diff.html.jinja2` — cross-run diff view
+- `scripts/inspect/templates/pipeline_batch_index.html.jinja2` — batch index page
 
 ### Features
 - Overview stats, final rules with full FINAL→CANONICAL→MAP lineage

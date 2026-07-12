@@ -6,17 +6,17 @@ Generate a self-contained HTML inspector from one (or two) pipeline output JSON 
 Usage
 -----
 Single-run mode:
-    PYTHONPATH=. python scripts/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json
-    PYTHONPATH=. python scripts/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json -o out/inspector/PMC10047158.html
-    PYTHONPATH=. python scripts/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json --export-flagged-csv out/inspector/PMC10047158_flagged.csv
+    PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json
+    PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json -o out/inspector/PMC10047158.html
+    PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py out/summaries/summaries/PMC10047158.json --export-flagged-csv out/inspector/PMC10047158_flagged.csv
 
 Cross-run diff mode:
-    PYTHONPATH=. python scripts/inspect_pipeline_output.py run_a.json --compare run_b.json
-    PYTHONPATH=. python scripts/inspect_pipeline_output.py run_a.json --compare run_b.json -o out/inspector/PMC10047158_diff.html
+    PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py run_a.json --compare run_b.json
+    PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py run_a.json --compare run_b.json -o out/inspector/PMC10047158_diff.html
 
 Batch mode:
-    PYTHONPATH=. python scripts/inspect_pipeline_output.py --batch-dir out/summaries/summaries/
-    PYTHONPATH=. python scripts/inspect_pipeline_output.py --batch-dir out/summaries/summaries/ -o out/inspector/
+    PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py --batch-dir out/summaries/summaries/
+    PYTHONPATH=. python scripts/inspect/inspect_pipeline_output.py --batch-dir out/summaries/summaries/ -o out/inspector/
 
 The output HTML file(s) can be opened directly in any browser — no server needed.
 """
@@ -37,7 +37,7 @@ from typing import Any
 # silently fail with ModuleNotFoundError and the inspector renders without
 # DB-derived enrichments — a latent bug uncovered while wiring paragraph
 # context display.
-_REPO_ROOT = Path(__file__).resolve().parents[1]
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
