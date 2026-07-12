@@ -62,7 +62,7 @@ outcome) are persisted to `skipped_pairs.jsonl` via
 
 ## 5. Corpus-level RELATE artifact — DECIDE
 
-**Where**: `helpers/corpus_relate.py::CorpusRelateStage.relate_incremental`,
+**Where**: `stages/corpus_relate.py::CorpusRelateStage.relate_incremental`,
 `runner.py::_corpus_relate_incremental` (DB-only side effect, no return mirror).
 
 **Today**: incremental cross-paper relations land in Postgres only. The runs/.../relate/corpus/ directory is never created.

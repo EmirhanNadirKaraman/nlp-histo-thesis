@@ -994,7 +994,7 @@ class BatchKnowledgeExtractionRunner:
         if self._db is None:
             return
         try:
-            from ..helpers.corpus_relate import CorpusRelateStage  # noqa: PLC0415
+            from ..stages.corpus_relate import CorpusRelateStage  # noqa: PLC0415
             stage = CorpusRelateStage(
                 entailment_threshold=self._relate._entailment_threshold,
                 contradiction_threshold=self._relate._contradiction_threshold,

@@ -15,7 +15,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.helpers.corpus_relate import CorpusRelateStage
+from pipeline.stages.knowledge_extraction.stages.corpus_relate import CorpusRelateStage
 
 from pipeline.stages.knowledge_extraction.models import (
     CorpusRelation,

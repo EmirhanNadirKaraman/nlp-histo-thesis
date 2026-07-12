@@ -342,7 +342,7 @@ Adapter status: see §0 + §5.4. Today's MVP judges read DB; the JSONL is parall
 
 ### 6.1 Purpose
 
-- **Input:** `CanonicalRule[]` for a single paper (intra-paper) or for the corpus (corpus-relate, `helpers/corpus_relate.py`).
+- **Input:** `CanonicalRule[]` for a single paper (intra-paper) or for the corpus (corpus-relate, `stages/corpus_relate.py`).
 - **Output:** three lists (after working-tree change):
   - `Relation[]` — non-UNRELATED relations only (SUPPORT / CONTRADICT / SCOPE_QUALIFY).
   - `RawNLIPair[]` — every eligible pair including UNRELATED, with all NLI scores. Enables offline threshold sweep.

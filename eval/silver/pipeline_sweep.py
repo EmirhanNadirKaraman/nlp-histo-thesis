@@ -430,7 +430,7 @@ def _build_corpus_nli_pairs(
 
     from pipeline.stages.knowledge_extraction.models import CanonicalRule
     from pipeline.stages.knowledge_extraction.stages.relate_stage import RelateStage
-    from pipeline.stages.knowledge_extraction.helpers.corpus_relate import _should_compare_cross_paper
+    from pipeline.stages.knowledge_extraction.stages.corpus_relate import _should_compare_cross_paper
 
     all_rules: list[CanonicalRule] = []
     id_to_pmcid: dict[str, str] = {}

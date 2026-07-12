@@ -1,6 +1,6 @@
 """Regression test for B-049 cross-paper non-polarity gate.
 
-`_should_compare_cross_paper` in `helpers/corpus_relate.py` must skip any
+`_should_compare_cross_paper` in `stages/corpus_relate.py` must skip any
 pair where either side carries `direction in {unclear, no_direction}`.
 
 Direction can arrive as a `DirectionEnum`, a raw string (from
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.helpers.corpus_relate import (
+from pipeline.stages.knowledge_extraction.stages.corpus_relate import (
     _should_compare_cross_paper,
 )
 from pipeline.stages.knowledge_extraction.models import (

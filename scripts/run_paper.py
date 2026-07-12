@@ -969,7 +969,7 @@ def _run_corpus_relate(
         return
 
     try:
-        from pipeline.stages.knowledge_extraction.helpers.corpus_relate import (  # noqa: PLC0415
+        from pipeline.stages.knowledge_extraction.stages.corpus_relate import (  # noqa: PLC0415
             CorpusRelateStage,
         )
         stage_kwargs: dict = {}
@@ -1002,7 +1002,7 @@ def _run_corpus_relate(
         logger.warning(
             "CORPUS RELATE failed (non-fatal): %s — per-paper JSONs are still "
             "valid. Re-run manually with "
-            "`python -c \"from pipeline.stages.knowledge_extraction.helpers.corpus_relate "
+            "`python -c \"from pipeline.stages.knowledge_extraction.stages.corpus_relate "
             "import CorpusRelateStage; CorpusRelateStage().relate_from_dir(...)\"`.",
             exc, exc_info=True,
         )

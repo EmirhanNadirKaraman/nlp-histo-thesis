@@ -121,11 +121,11 @@ def test_truly_different_outcomes_skipped():
 
 
 def test_corpus_relate_gate_unchanged():
-    """Patch 1 must not alter helpers/corpus_relate._should_compare_cross_paper —
+    """Patch 1 must not alter stages/corpus_relate._should_compare_cross_paper —
     the cross-paper gate was already CUI-aware. This smoke test imports it and
     checks the same two paired cases still resolve identically.
     """
-    from pipeline.stages.knowledge_extraction.helpers.corpus_relate import (
+    from pipeline.stages.knowledge_extraction.stages.corpus_relate import (
         _should_compare_cross_paper,
     )
     a_match = _rule(canonical_id="A", outcome_entity="MGA",                outcome_cui="C9999")

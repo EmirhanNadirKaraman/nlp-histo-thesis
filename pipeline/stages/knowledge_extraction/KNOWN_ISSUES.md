@@ -57,7 +57,7 @@ Requires resolving DES-7 first (score scale mismatch between single-paper and mu
 ## Medium-Impact Accuracy Risks
 
 ### ACC-10 — Cross-paper gate does not check outcome for non-expression rules
-**Status:** FIXED — `_should_compare_cross_paper` in `helpers/corpus_relate.py` now gates on
+**Status:** FIXED — `_should_compare_cross_paper` in `stages/corpus_relate.py` now gates on
 outcome for every relation type (CUI match preferred; `_norm_outcome` /
 `_norm_outcome_expression` fallback when CUIs are absent).
 

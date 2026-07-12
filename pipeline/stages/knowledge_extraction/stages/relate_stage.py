@@ -235,7 +235,7 @@ def _should_compare(a: CanonicalRule, b: CanonicalRule) -> tuple[bool, str]:
            - else if expression relation → expression-marker normalization must match
            - else → normalized outcome strings must be equal
 
-    Mirrors helpers/corpus_relate.py:_should_compare_cross_paper so per-paper
+    Mirrors stages/corpus_relate.py:_should_compare_cross_paper so per-paper
     and cross-paper gates use the same compatibility logic. The earlier per-paper
     gate compared outcomes via raw strip().lower() and ignored CUIs, which
     rejected synonym-identical outcomes purely on surface form.

@@ -1596,7 +1596,7 @@ def _regenerate_corpus_relations(mode_name: str, *,
     corpus_relations JSON to ``output_path``. Reuses the existing
     canonical_rules cached in ``summaries_dir/*.json`` — no MAP re-run.
     """
-    from pipeline.stages.knowledge_extraction.helpers.corpus_relate import (
+    from pipeline.stages.knowledge_extraction.stages.corpus_relate import (
         CorpusRelateStage,
     )
     stage = CorpusRelateStage(

@@ -843,7 +843,7 @@ class KnowledgeExtractionRunner:
         -------
         List of CorpusRelation objects written to output_path.
         """
-        from .helpers.corpus_relate import CorpusRelateStage  # noqa: PLC0415 — lazy import
+        from .stages.corpus_relate import CorpusRelateStage  # noqa: PLC0415 — lazy import
 
         src = source_dir or self._summaries_dir
         out = output_path or (self._output_dir / "corpus_relations.json")
@@ -1145,7 +1145,7 @@ class KnowledgeExtractionRunner:
         if self._db is None:
             return
         try:
-            from .helpers.corpus_relate import CorpusRelateStage  # noqa: PLC0415
+            from .stages.corpus_relate import CorpusRelateStage  # noqa: PLC0415
             stage = CorpusRelateStage(
                 entailment_threshold=self._relate._entailment_threshold,
                 contradiction_threshold=self._relate._contradiction_threshold,
