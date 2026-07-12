@@ -13,9 +13,9 @@ frozen ``finalized`` chunk summaries in ``out/summaries/batch_handles.prepatch/`
 
 Usage (from repo root):
 
-    python scripts/diagnose_b055.py                       # scan all handles
-    python scripts/diagnose_b055.py PMC10047158 PMC...    # specific papers
-    python scripts/diagnose_b055.py --keep                # leave scratch runs in DB
+    python legacy/scripts/probes/diagnose_b055.py                       # scan all handles
+    python legacy/scripts/probes/diagnose_b055.py PMC10047158 PMC...    # specific papers
+    python legacy/scripts/probes/diagnose_b055.py --keep                # leave scratch runs in DB
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ import time
 import traceback
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
