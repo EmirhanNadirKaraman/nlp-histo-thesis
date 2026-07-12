@@ -3,7 +3,7 @@
 > **⚠️ ARCHIVED / SUPERSEDED.** This LangChain + OpenAI (GPT-4o) prototype is an
 > early summarisation stack and is **no longer the production path**. The current
 > summariser is the multi-provider agreement-based-cascading pipeline in
-> `pipeline/stages/summarization/` (see `pipeline/stages/summarization/PIPELINE.md`).
+> `pipeline/stages/knowledge_extraction/` (see `pipeline/stages/knowledge_extraction/PIPELINE.md`).
 > Nothing in the live tree imports this directory; it is retained for provenance
 > only. Commands below (including `cp .env.example .env` — there is no
 > `.env.example` in this folder, only the repo-root one) are not maintained.

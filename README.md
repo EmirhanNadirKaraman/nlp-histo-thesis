@@ -132,7 +132,7 @@ nlp-histo/
 ├── tests/                              # pytest suite (77 test files, ~1,080 test functions; summarisation-heavy)
 ├── docs/readmes/                       # project docs — HOW_TO_RUN.md + other_readmes/ (STRUCTURE, REPOSITORY_GUIDE, BUGS, …) + thesis_review/
 │
-├── langchain-summarization/            # LEGACY summarisation stack (superseded by pipeline/…/summarization)
+├── legacy/langchain-summarization/     # LEGACY summarisation stack (superseded by pipeline/…/summarization)
 ├── files/                              # Input PDFs/XMLs (not in repo)
 ├── out/                                # Runtime outputs (cached layouts, summaries, run metadata)
 ├── requirements.txt
@@ -148,7 +148,7 @@ pip install -r requirements.txt
 # requirements.txt covers the production pipelines (PDF extraction +
 # the multi-provider knowledge_extraction cascade, which uses direct provider APIs).
 # The langchain/* packages are only needed for the legacy
-# langchain-summarization/ prototype, which is no longer the production path.
+# legacy/langchain-summarization/ prototype, which is no longer the production path.
 ```
 
 ### 2. Set Up Database
@@ -220,7 +220,7 @@ python scripts/run_paper.py PMC1234567 --batch --profile real --health-check no
 python scripts/run_paper.py --from-selection configs/paper_selection/related15.yaml --batch --profile real --health-check no
 ```
 
-> The old notebook stack under `langchain-summarization/` is legacy and kept for
+> The old notebook stack under `legacy/langchain-summarization/` is legacy and kept for
 > reference only.
 
 ## Output Examples
