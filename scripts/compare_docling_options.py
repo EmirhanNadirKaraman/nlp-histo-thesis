@@ -28,6 +28,12 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Dict, List
 
+# Bootstrap the repo root onto sys.path so the repository-local imports below resolve
+# when this script is run directly (`python scripts/…`) — B-095.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 from pipeline.stages.pdf_text_extraction.components.layout_extractor import DoclingLayoutExtractor
 from pipeline.stages.pdf_text_extraction.components.text_assembler import HierarchicalTextAssembler
 from pipeline.stages.pdf_text_extraction.config import DoclingConfig, OcrEngine, TextAssemblyConfig

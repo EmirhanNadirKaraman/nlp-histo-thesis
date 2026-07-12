@@ -54,6 +54,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Bootstrap the repo root onto sys.path so the repository-local imports below resolve
+# when this script is run directly (`python scripts/…`) — B-095.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 from pipeline.stages.knowledge_extraction.routing.policy import (  # noqa: E402
     PolicyEvaluationResult,
     PolicyEvaluationStore,
