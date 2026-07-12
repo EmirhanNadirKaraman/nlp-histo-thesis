@@ -268,7 +268,6 @@ def build_batch_runner(
     *,
     artifact_root: Path | None = None,
     artifact_run_id: str | None = None,
-    run_reduce: bool = False,
     db=None,
     force_rerun: bool = False,
     run_ner: bool = False,
@@ -290,8 +289,8 @@ def build_batch_runner(
     if chunk_workers is not None:
         sum_cfg = _dc_replace(sum_cfg, map=_dc_replace(sum_cfg.map, chunk_workers=chunk_workers))
 
-    # REDUCE + RULES still run synchronously (one call per paper at the end).
-    # The L3 voter model in the active profile is used so smoke profiles stay cheap.
+    # escalation_llm is retained for BatchKnowledgeExtractionRunner constructor
+    # compatibility (the batch cascade itself uses the l1/l2/l3 profile voters).
     escalation_llm = anthropic_direct_chat(profile.l3_voter.model, temperature=0.0)
 
     return BatchKnowledgeExtractionRunner(
@@ -308,7 +307,6 @@ def build_batch_runner(
         cascade_profile=profile.name,
         artifact_root=artifact_root,
         artifact_run_id=artifact_run_id,
-        run_reduce=run_reduce,
         db=db,
         force_rerun=force_rerun,
         run_ner=run_ner,

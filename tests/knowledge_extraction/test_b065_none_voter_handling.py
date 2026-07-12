@@ -58,7 +58,6 @@ def _haiku_only_runner(tmp_path: Path) -> BatchKnowledgeExtractionRunner:
         cascade_profile="haiku_only",
         artifact_root=None,
         run_modern_pipeline=False,
-        run_reduce=False,
         enable_router=False,
     )
 
@@ -153,7 +152,6 @@ def test_advance_handles_mixed_none_and_valid_voters_in_real_profile_shape(
         cascade_profile="real",
         artifact_root=None,
         run_modern_pipeline=False,
-        run_reduce=False,
         enable_router=False,
     )
 

@@ -110,11 +110,12 @@ def _voter(temperature: float = 0.0) -> VoterBatchConfig:
 def _build_runner(tmp_path: Path) -> BatchKnowledgeExtractionRunner:
     """Construct a batch runner without any structured-output-capable LLM.
 
-    Works because run_reduce=False keeps Reduce/Rule stages unbuilt and
-    ContradictionDetector unbuilt — no real LLM is touched.
+    Works because the batch runner no longer builds any REDUCE/RULES or
+    ContradictionDetector stage — no real LLM is touched.
     """
     cfg = KnowledgeExtractionConfig()
-    # Disable contradiction detector defensively (also gated on run_reduce now).
+    # Contradiction detection is no longer wired into the batch runner; keep the
+    # threshold unset so this smoke config stays LLM-free.
     cfg.contradiction_similarity_threshold = None  # type: ignore[misc]
 
     def fake_embed(texts):
@@ -123,7 +124,7 @@ def _build_runner(tmp_path: Path) -> BatchKnowledgeExtractionRunner:
         l1_voters=[_voter(0.0), _voter(0.3)],
         l2_voters=[_voter(0.2)],
         l3_model=_voter(0.0),
-        escalation_llm=None,                # never used when run_reduce=False
+        escalation_llm=None,                # retained for ctor compat; unused
         config=cfg,
         output_dir=tmp_path / "out",
         embed_fn=fake_embed,
@@ -131,7 +132,6 @@ def _build_runner(tmp_path: Path) -> BatchKnowledgeExtractionRunner:
         artifact_root=tmp_path / "runs",
         artifact_run_id="batch_test_run",
         run_modern_pipeline=True,
-        run_reduce=False,
     )
 
 
@@ -261,7 +261,6 @@ def test_batch_finalize_disabled_when_artifact_root_none(tmp_path: Path):
         cascade_profile="smoke_fake",
         artifact_root=None,                     # disabled
         run_modern_pipeline=True,
-        run_reduce=False,
     )
     handle = _completed_handle(_audit_summary())
     result = runner.finalize(handle)
@@ -270,7 +269,7 @@ def test_batch_finalize_disabled_when_artifact_root_none(tmp_path: Path):
     assert not (tmp_path / "runs").exists()
 
 
-def test_batch_finalize_legacy_only_when_modern_disabled(tmp_path: Path):
+def test_batch_finalize_map_only_when_modern_disabled(tmp_path: Path):
     runner = BatchKnowledgeExtractionRunner(
         l1_voters=[_voter()],
         l2_voters=[_voter()],
@@ -283,7 +282,6 @@ def test_batch_finalize_legacy_only_when_modern_disabled(tmp_path: Path):
         artifact_root=tmp_path / "runs",
         artifact_run_id="legacy_run",
         run_modern_pipeline=False,
-        run_reduce=False,
     )
     handle = _completed_handle(_audit_summary())
     result = runner.finalize(handle)

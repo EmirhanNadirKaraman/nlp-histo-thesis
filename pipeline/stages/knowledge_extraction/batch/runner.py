@@ -46,7 +46,6 @@ from ..stages.group_stage import GroupStage, is_groupable
 from ..stages.normalize_stage import NormalizeStage
 from ..stages.relate_stage import RelateStage
 from ..stages.resolve_stage import ResolveStage
-from ..helpers.contradiction_detector import ContradictionDetector
 from ..helpers.grounding_filter import GroundingFilter
 from ..stages.map_stage import _format_sentences
 from ..models import (
@@ -60,8 +59,6 @@ from ..models import (
     compute_cascade_signature,
     compute_finding_id,
 )
-from ..old_stages.reduce_stage import ReduceStage
-from ..old_stages.rule_stage import RuleStage
 from ..persistence import (
     RunArtifactWriter,
     RunManifest,
@@ -130,7 +127,6 @@ class BatchKnowledgeExtractionRunner:
         artifact_root: Path | None = None,
         artifact_run_id: str | None = None,
         run_modern_pipeline: bool = True,
-        run_reduce: bool = False,
         db=None,
         force_rerun: bool = False,
         run_ner: bool = False,
@@ -175,30 +171,12 @@ class BatchKnowledgeExtractionRunner:
         # to "keep" inside the per-level processing). Hash-gated on
         # `not enable_router` to mirror the router policy's gating.
         self._legacy_single_voter_policy = legacy_single_voter_policy
-        # ReduceStage/RuleStage call `llm.with_structured_output(...)` in their
-        # ctors, so we only construct them when the legacy REDUCE/RULES block
-        # is enabled. Otherwise the runner can be built with any (or no) LLM —
-        # convenient for tests.
+        # escalation_llm is retained on the runner for API compatibility with
+        # the sync runner's constructor; the batch cascade uses l1/l2/l3_model.
         self._escalation_llm = escalation_llm
-        self._reduce: ReduceStage | None = (
-            ReduceStage(escalation_llm) if run_reduce else None
-        )
-        self._rules: RuleStage | None = (
-            RuleStage(escalation_llm) if run_reduce else None
-        )
         self._grounding = (
             GroundingFilter(cfg.grounding.threshold)
             if cfg.grounding.threshold is not None else None
-        )
-        # ContradictionDetector is only useful with REDUCE/RULES output, so it's
-        # also lazy. Avoids needing a structured-output-capable LLM in tests.
-        self._contradiction = (
-            ContradictionDetector(
-                escalation_llm,
-                similarity_threshold=cfg.contradiction_similarity_threshold,
-            )
-            if (run_reduce and cfg.contradiction_similarity_threshold is not None)
-            else None
         )
         self._output_dir = output_dir
         self._summaries_dir = output_dir / "summaries"
@@ -218,11 +196,10 @@ class BatchKnowledgeExtractionRunner:
         )
 
         # Modern post-MAP chain. Stateless stages — instantiate once.
-        # When ``run_modern_pipeline`` is False, finalize() falls back to the
-        # legacy REDUCE/RULES-only behaviour.
+        # When ``run_modern_pipeline`` is False, the post-MAP stages are skipped
+        # and finalize() persists MAP output only.
         self._cfg_full = cfg
         self._run_modern_pipeline = run_modern_pipeline
-        self._run_reduce = run_reduce
         self._normalize = NormalizeStage(extra_synonyms=cfg.normalize.extra_synonyms)
         self._group = GroupStage()
         self._canonicalize = CanonicalizeStage()
@@ -666,25 +643,6 @@ class BatchKnowledgeExtractionRunner:
                 persist_resolve_artifacts(writer, pmcid, final_rules, relations)
                 self._persist_final_rules(pipeline_run_db_id, pmcid, final_rules, cr_db_id_map)
 
-            # ── Optional REDUCE → RULES (legacy) ─────────────────────────────
-            master = None
-            rules  = None
-            contradiction_report = None
-            if self._run_reduce:
-                if self._reduce is None or self._rules is None:
-                    raise RuntimeError(
-                        "run_reduce=True but ReduceStage/RuleStage were not built. "
-                        "Reconstruct the runner with run_reduce=True."
-                    )
-                logger.info("[%s] REDUCE — %d chunks", pmcid, len(chunk_summaries))
-                master = self._reduce.reduce(chunk_summaries, pmcid)
-                logger.info("[%s] RULES", pmcid)
-                rules = self._rules.extract(master, pmcid)
-                if self._grounding is not None:
-                    rules = self._grounding.filter_rules(rules)
-                if self._contradiction is not None:
-                    contradiction_report = self._contradiction.detect(rules)
-
             # ── Rejection summary (sync parity) ───────────────────────────────
             rejection_summary = _build_rejection_summary(
                 pmcid=pmcid,
@@ -731,19 +689,6 @@ class BatchKnowledgeExtractionRunner:
                 "rejection_summary": rejection_summary.model_dump(),
                 "pipeline_config_hash": self._pipeline_config_hash(),
             }
-            # Legacy REDUCE / RULES output is only included when explicitly run.
-            if self._run_reduce:
-                result["summary"] = master.narrative_summary if master else None
-                result["rules"] = [r.model_dump() for r in rules.rules] if rules else []
-                result["contradiction_report"] = (
-                    contradiction_report.model_dump() if contradiction_report else None
-                )
-                result["audit_trail"]["master_summary"] = (
-                    master.model_dump() if master else None
-                )
-                result["audit_trail"]["rules_provenance"] = (
-                    rules.model_dump() if rules else None
-                )
             self._save_result(result)
             logger.info("[%s] Result saved to %s", pmcid, self._result_path(pmcid))
 
@@ -766,7 +711,7 @@ class BatchKnowledgeExtractionRunner:
 
             self._finish_pipeline_run(
                 pipeline_run_db_id, "success",
-                narrative_summary=master.narrative_summary if master else None,
+                narrative_summary=None,
             )
 
             if writer is not None:

@@ -254,7 +254,6 @@ def test_advance_merges_synthetic_l2_into_finalized(tmp_path):
         cascade_profile="real",
         artifact_root=None,
         run_modern_pipeline=False,
-        run_reduce=False,
         # This test exercises the synthetic-results merge path. The router's
         # ProvenanceValidator would reject the test's synthetic verbatim
         # ("CD30 was associated with OS.") because it isn't a substring of

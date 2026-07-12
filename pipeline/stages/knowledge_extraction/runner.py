@@ -55,7 +55,6 @@ from pathlib import Path
 from .cache import PipelineCache
 from .config import KnowledgeExtractionConfig
 from .stages.canonicalize_stage import CanonicalizeStage
-from .helpers.contradiction_detector import ContradictionDetector
 from .helpers.grounding_filter import GroundingFilter
 from .stages.group_stage import GroupStage, is_groupable
 from .stages.map_stage import MapStage
@@ -83,9 +82,6 @@ from .persistence import (
 )
 from .models import (
     CanonicalRule,
-    ConsolidatedSummary,
-    ContradictionReport,
-    ExtractedRules,
     FinalRule,
     Finding,
     FindingGroup,
@@ -97,12 +93,9 @@ from .models import (
 from .stages.normalize_stage import NormalizeStage
 from .costing import PriceBook, UsageCollector, write_cost_reports
 from .observability import TraceCollector, flush_collector
-from .old_stages.reduce_stage import ReduceStage
 from .stages.relate_stage import RelateStage
 from .stages.resolve_stage import ResolveStage
-from .old_stages.rule_stage import RuleStage
 from pipeline.stages.knowledge_extraction.interfaces import (
-    ContradictionChecker,
     GroundingChecker,
     MapOutputScorer,
 )
@@ -158,9 +151,6 @@ class KnowledgeExtractionRunner:
     run_ner:
         When True and db is not None, runs scispaCy NER + UMLS linking after the
         pipeline completes.
-    run_reduce:
-        When True, runs the optional REDUCE → RULES → contradiction-detection
-        block after RESOLVE.  Disabled by default.
     """
 
     def __init__(
@@ -178,7 +168,6 @@ class KnowledgeExtractionRunner:
         db=None,
         force_rerun: bool = False,
         run_ner: bool = True,
-        run_reduce: bool = False,
         voter_specs:        list[tuple[str, str]] | None = None,
         level2_voter_specs: list[tuple[str, str]] | None = None,
         escalation_spec:    tuple[str, str] | None = None,
@@ -280,26 +269,15 @@ class KnowledgeExtractionRunner:
             use_verbatim_for_nli=cfg.relate.use_verbatim_for_nli,
         )
         self._resolve = ResolveStage(cfg.resolve)
-        self._reduce = ReduceStage(escalation_llm)
-        self._rules = RuleStage(escalation_llm)
         self._grounding: GroundingChecker | None = (
             GroundingFilter(cfg.grounding.threshold)
             if cfg.grounding.threshold is not None else None
-        )
-        self._contradiction: ContradictionChecker | None = (
-            ContradictionDetector(
-                escalation_llm,
-                similarity_threshold=cfg.contradiction_similarity_threshold,
-                embed_fn=embed_fn,
-            )
-            if cfg.contradiction_similarity_threshold is not None else None
         )
 
         self._cfg = cfg
         self._db = db  # DatabaseConnection | None — persistence is fully optional
         self._force_rerun = force_rerun
         self._run_ner = run_ner
-        self._run_reduce = run_reduce
 
         self._trace_enabled = trace_enabled
         self.trace_dir: Path = trace_dir or (output_dir / "traces")
@@ -656,56 +634,6 @@ class KnowledgeExtractionRunner:
                 writer, pmcid, self._final_rules[pmcid], self._relations[pmcid],
             )
 
-            # 2. REDUCE + RULES (optional — disabled by default)
-            master: ConsolidatedSummary | None = None
-            rules: ExtractedRules | None = None
-            contradiction_report: ContradictionReport | None = None
-
-            if self._run_reduce:
-                logger.info("[%s] REDUCE — %d chunks", pmcid, len(chunk_summaries))
-                t0 = time.perf_counter()
-                with mem.stage("REDUCE"):
-                    master = self._reduce.reduce(
-                        chunk_summaries, pmcid, cache=self._cache, collector=collector
-                    )
-                logger.info("[%s] REDUCE done [%.1fs]", pmcid, time.perf_counter() - t0)
-
-                # 3. RULE EXTRACTION
-                logger.info("[%s] RULES", pmcid)
-                t0 = time.perf_counter()
-                with mem.stage("RULES"):
-                    rules = self._rules.extract(
-                        master, pmcid, cache=self._cache, collector=collector
-                    )
-                logger.info("[%s] RULES done [%.1fs] — %d rules",
-                            pmcid, time.perf_counter() - t0, len(rules.rules))
-
-                # 3a. Grounding filter — drop ungrounded rules
-                if self._grounding is not None:
-                    rules_before = len(rules.rules)
-                    logger.info("[%s] GROUNDING (rules) — %d rules", pmcid, rules_before)
-                    t0 = time.perf_counter()
-                    rules = self._grounding.filter_rules(rules)
-                    rules_after = len(rules.rules)
-                    logger.info("[%s] GROUNDING (rules) done [%.1fs] — %d/%d rules kept",
-                                pmcid, time.perf_counter() - t0, rules_after, rules_before)
-                    if collector is not None:
-                        collector.record_grounding(
-                            stage="rules",
-                            items_before=rules_before,
-                            items_after=rules_after,
-                        )
-
-                # 4. Contradiction detection
-                if self._contradiction is not None:
-                    logger.info("[%s] CONTRADICTION DETECTION", pmcid)
-                    t0 = time.perf_counter()
-                    contradiction_report = self._contradiction.detect(rules)
-                    logger.info("[%s] CONTRADICTION DETECTION done [%.1fs]",
-                                pmcid, time.perf_counter() - t0)
-            else:
-                logger.info("[%s] REDUCE/RULES skipped (run_reduce=False)", pmcid)
-
             # NER + UMLS linking (optional)
             if self._run_ner and self._db is not None:
                 logger.info("[%s] NER — running entity extraction + UMLS linking", pmcid)
@@ -759,22 +687,9 @@ class KnowledgeExtractionRunner:
                 "map_run_metadata": self._map.run_metadata_summary(),
                 "rejection_summary": rejection_summary.model_dump(),
             }
-            # Legacy REDUCE / RULES output is only included when explicitly run.
-            if self._run_reduce:
-                result["summary"] = master.narrative_summary if master else None
-                result["rules"] = [r.model_dump() for r in rules.rules] if rules else []
-                result["contradiction_report"] = (
-                    contradiction_report.model_dump() if contradiction_report else None
-                )
-                result["audit_trail"]["master_summary"] = (
-                    master.model_dump() if master else None
-                )
-                result["audit_trail"]["rules_provenance"] = (
-                    rules.model_dump() if rules else None
-                )
             self._finish_pipeline_run(
                 pipeline_run_db_id, "success",
-                narrative_summary=master.narrative_summary if master else None,
+                narrative_summary=None,
             )
             self._save_result(result)
             self._cache.save()
