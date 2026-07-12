@@ -14,7 +14,7 @@ FAIL  → cross-wiring survived, or the "matched by POSITION" fallback fired
 
 Needs GOOGLE_API_KEY. Costs a few tiny batch calls. Blocks while the batch runs.
 
-Run:  python scripts/_gemini_roundtrip_probe.py
+Run:  python legacy/scripts/probes/_gemini_roundtrip_probe.py
 """
 import json
 import logging
@@ -23,7 +23,7 @@ import sys
 import time
 from pathlib import Path
 
-_REPO = Path(__file__).resolve().parents[1]
+_REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(_REPO))
 
 from dotenv import load_dotenv

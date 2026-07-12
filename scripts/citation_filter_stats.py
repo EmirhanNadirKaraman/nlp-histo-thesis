@@ -26,7 +26,7 @@ flagged te_id to its real paper.
 
 NOTE: this is the *all-voter* citation-quality rate. What the citation filter
 removes from the PRODUCTION FUNNEL is the selected-set number — measure that with
-scripts/_replay_contamination.py after the cascade config is frozen.
+legacy/scripts/probes/_replay_contamination.py after the cascade config is frozen.
 
 Usage:
   python scripts/citation_filter_stats.py                                   # related15
