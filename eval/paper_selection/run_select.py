@@ -118,7 +118,13 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output-version", default="calibration_set_v1",
                    help="Identifier used in output filenames (default: calibration_set_v1)")
     p.add_argument("--export-dir", default="configs/paper_selection",
-                   help="Directory where YAML/JSON/CSV are written")
+                   help="Roster destination: where {version}.yaml is written "
+                        "(default: configs/paper_selection)")
+    p.add_argument("--report-dir", default="reports/paper_selection",
+                   help="Report destination: where {version}_rationale.json and "
+                        "{version}_summary.csv are written "
+                        "(default: reports/paper_selection). Pass the same path "
+                        "as --export-dir to colocate all three files.")
     p.add_argument("--jsonl", default=None,
                    help="Path to a JSONL papers export. If unset, uses the DB.")
     p.add_argument("--pmcid", action="append", default=None,
@@ -275,6 +281,7 @@ def main(argv: list[str] | None = None) -> int:
         result, fingerprints,
         version=args.output_version,
         export_dir=Path(args.export_dir),
+        report_dir=Path(args.report_dir),
     )
     print(f"\nWrote: {paths.yaml_path}")
     print(f"Wrote: {paths.json_path}")

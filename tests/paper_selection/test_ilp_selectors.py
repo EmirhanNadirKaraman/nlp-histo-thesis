@@ -285,7 +285,8 @@ def test_cli_strategy_ilp_on_jsonl_fixture(tmp_path: Path):
             }) + "\n")
 
     repo_root = Path(__file__).resolve().parents[2]
-    export_dir = tmp_path / "out"
+    export_dir = tmp_path / "configs"
+    report_dir = tmp_path / "reports"
     cmd = [
         sys.executable, "-m", "eval.paper_selection.run_select",
         "--jsonl", str(jsonl_path),
@@ -297,13 +298,30 @@ def test_cli_strategy_ilp_on_jsonl_fixture(tmp_path: Path):
         "--min-sentences", "1",
         "--output-version", "v_ilp_test",
         "--export-dir", str(export_dir),
+        # Explicit: the CLI default is the tracked reports/paper_selection/, and
+        # this subprocess runs with cwd=repo_root — without this the run would
+        # write test artefacts into the repository.
+        "--report-dir", str(report_dir),
         "--log-level", "WARNING",
     ]
     proc = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True, timeout=120)
     assert proc.returncode == 0, (
         f"CLI failed: stdout={proc.stdout!r} stderr={proc.stderr!r}"
     )
-    payload = json.loads((export_dir / "v_ilp_test_rationale.json").read_text(encoding="utf-8"))
+
+    # Roster YAML in the export dir; derived reports in the report dir — never
+    # the other way round.
+    assert (export_dir / "v_ilp_test.yaml").exists()
+    rationale_path = report_dir / "v_ilp_test_rationale.json"
+    assert rationale_path.exists()
+    assert (report_dir / "v_ilp_test_summary.csv").exists()
+    assert not (export_dir / "v_ilp_test_rationale.json").exists()
+    assert not (export_dir / "v_ilp_test_summary.csv").exists()
+
+    # Hermetic: nothing leaked into the repository's tracked reports directory.
+    assert not list((repo_root / "reports" / "paper_selection").glob("v_ilp_test*"))
+
+    payload = json.loads(rationale_path.read_text(encoding="utf-8"))
     assert payload["version"] == "v_ilp_test"
     assert len(payload["papers"]) == 15
     # Verify the ILP path actually ran (vs silent fallback to greedy):

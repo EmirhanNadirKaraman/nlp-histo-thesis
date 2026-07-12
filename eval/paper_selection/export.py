@@ -1,11 +1,20 @@
 """YAML / JSON / CSV writers for the selection result.
 
-Three deliverables per run, written into ``--export-dir`` (default
-``configs/paper_selection/``) under the ``--output-version`` name:
+Three deliverables per run, named after ``--output-version``, split across two
+destinations:
 
-  - ``{version}.yaml``           — minimal pmcid-only roster
+  - ``{version}.yaml``           — minimal pmcid-only roster; written into the
+                                   *roster* directory ``export_dir``
+                                   (CLI ``--export-dir``, default
+                                   ``configs/paper_selection/``)
   - ``{version}_rationale.json`` — full rationale + breakdowns
   - ``{version}_summary.csv``    — flat one-row-per-paper summary
+
+The latter two are derived reports and are written into ``report_dir``
+(CLI ``--report-dir``, default ``reports/paper_selection/``).
+
+``report_dir=None`` preserves the previous colocated behaviour: all three files
+are written into ``export_dir``.
 """
 from __future__ import annotations
 
@@ -28,11 +37,22 @@ class ExportPaths:
     csv_path:  Path
 
 
-def export_paths(export_dir: Path, version: str) -> ExportPaths:
+def export_paths(
+    export_dir: Path,
+    version: str,
+    report_dir: Path | None = None,
+) -> ExportPaths:
+    """Build the three output paths.
+
+    ``export_dir`` holds the YAML roster; ``report_dir`` holds the rationale
+    JSON and summary CSV. ``report_dir=None`` colocates all three in
+    ``export_dir`` (previous behaviour).
+    """
+    reports = export_dir if report_dir is None else report_dir
     return ExportPaths(
         yaml_path=export_dir / f"{version}.yaml",
-        json_path=export_dir / f"{version}_rationale.json",
-        csv_path=export_dir / f"{version}_summary.csv",
+        json_path=reports / f"{version}_rationale.json",
+        csv_path=reports / f"{version}_summary.csv",
     )
 
 
@@ -88,9 +108,17 @@ def write_calibration_set(
     *,
     version: str,
     export_dir: Path,
+    report_dir: Path | None = None,
 ) -> ExportPaths:
-    export_dir.mkdir(parents=True, exist_ok=True)
-    paths = export_paths(export_dir, version)
+    """Write the roster YAML into ``export_dir`` and the derived rationale JSON
+    + summary CSV into ``report_dir``.
+
+    ``report_dir=None`` keeps the previous behaviour (all three colocated in
+    ``export_dir``). Both directories are created if missing.
+    """
+    paths = export_paths(export_dir, version, report_dir)
+    for directory in {paths.yaml_path.parent, paths.json_path.parent}:
+        directory.mkdir(parents=True, exist_ok=True)
     by_pmcid = {fp.pmcid: fp for fp in fingerprints}
 
     # ── YAML: roster only ───────────────────────────────────────────────────

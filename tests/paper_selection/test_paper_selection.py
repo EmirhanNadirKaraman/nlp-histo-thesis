@@ -232,6 +232,51 @@ def test_export_writes_yaml_json_csv(tmp_path: Path):
     assert {r["bucket"] for r in rows} == {"related", "diverse", "hard"}
 
 
+def test_export_splits_roster_and_reports(tmp_path: Path):
+    """``report_dir`` routes rationale/summary away from the roster directory."""
+    fps = build_fingerprints(_make_corpus())
+    cfg = SelectionConfig(
+        max_sentences_related=10_000,
+        max_sentences_diverse=10_000,
+        min_sentences=1,
+        min_useful_entities=1,
+    )
+    res = select_calibration_set(fps, config=cfg, allow_overlap=False)
+
+    roster_dir = tmp_path / "configs" / "paper_selection"
+    report_dir = tmp_path / "reports" / "paper_selection"
+    paths = write_calibration_set(
+        res, fps, version="v_split", export_dir=roster_dir, report_dir=report_dir,
+    )
+
+    # Both destinations are created on demand.
+    assert roster_dir.is_dir() and report_dir.is_dir()
+
+    # Returned paths point at the split destinations; filenames are unchanged.
+    assert paths.yaml_path == roster_dir / "v_split.yaml"
+    assert paths.json_path == report_dir / "v_split_rationale.json"
+    assert paths.csv_path == report_dir / "v_split_summary.csv"
+    assert paths.yaml_path.exists()
+    assert paths.json_path.exists()
+    assert paths.csv_path.exists()
+
+    # The derived reports never land beside the roster.
+    assert not (roster_dir / "v_split_rationale.json").exists()
+    assert not (roster_dir / "v_split_summary.csv").exists()
+
+    # Contents keep the existing format.
+    assert paths.yaml_path.read_text(encoding="utf-8")
+    payload = json.loads(paths.json_path.read_text(encoding="utf-8"))
+    assert payload["version"] == "v_split"
+    assert set(payload["buckets"]) == {"related", "diverse", "hard"}
+    assert len(payload["papers"]) == 15
+
+    with paths.csv_path.open() as fh:
+        rows = list(csv.DictReader(fh))
+    assert len(rows) == 15
+    assert {r["bucket"] for r in rows} == {"related", "diverse", "hard"}
+
+
 def test_relatedness_set_means_satisfy_validation():
     """related set should have higher mean pairwise relatedness than diverse."""
     fps = build_fingerprints(_make_corpus())
