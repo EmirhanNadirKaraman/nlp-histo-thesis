@@ -1,23 +1,16 @@
 """
-Grounding filter for MAP findings and extracted rules.
+Grounding filter for MAP findings.
 
 Uses a cross-encoder NLI model to check whether each claim is actually
-entailed by its cited verbatim source text.  Applied at two points:
-
-  1. After MAP   — filters Finding objects whose verbatim_support does not
-                   entail the claim.
-  2. After RULES — filters Rule objects whose evidence_chain items do not
-                   entail the rule's condition+action.  Evidence items that
-                   fail are trimmed; rules with no remaining evidence are
-                   dropped entirely.
+entailed by its cited verbatim source text.  Applied after MAP — filters
+Finding objects whose verbatim_support does not entail the claim.
 """
 from __future__ import annotations
 
 import logging
 import re
-from collections import Counter
 
-from ..models import AuditableSummary, Finding, Rule, RuleAuditSummary, RuleCounts
+from ..models import AuditableSummary, Finding
 from ..nli_config import get_active_spec
 
 logger = logging.getLogger(__name__)
@@ -386,21 +379,3 @@ def filter_atomic_findings(
             )
 
     return kept
-
-
-def _recompute_audit(rules: list[Rule]) -> RuleAuditSummary:
-    counts: Counter[str] = Counter(r.type for r in rules)
-    all_pmcids = {item.pmcid for r in rules for item in r.evidence_chain}
-    avg_evidence = (
-        sum(len(r.evidence_chain) for r in rules) / len(rules) if rules else 0.0
-    )
-    return RuleAuditSummary(
-        total_rules=len(rules),
-        rules_by_type=RuleCounts(
-            diagnostic=counts["diagnostic"],
-            prognostic=counts["prognostic"],
-            management=counts["management"],
-        ),
-        pmcids_supporting_rules=sorted(all_pmcids),
-        average_evidence_per_rule=round(avg_evidence, 2),
-    )
