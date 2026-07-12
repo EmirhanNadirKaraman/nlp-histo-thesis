@@ -73,7 +73,7 @@ for pdf_file in "${unprocessed_pdfs[@]}"; do
 done
 
 # Process ALL unprocessed PDFs in ONE batch by passing the temp directory
-java -cp pdffigures2.jar \
+java -cp legacy/pdffigures2/pdffigures2.jar \
     org.allenai.pdffigures2.FigureExtractorBatchCli \
     -e \
     -q \
@@ -149,5 +149,5 @@ if [ "$failed" -gt 0 ]; then
 fi
 
 echo ""
-echo "Next step: python scripts/process_pdffigures_results.py"
+echo "Next step: python legacy/pdffigures2/process_pdffigures_results.py"
 echo "========================================================================"

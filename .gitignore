@@ -242,7 +242,7 @@ files/
 
 .DS_STORE
 .claude/
-pdffigures2/
+/pdffigures2/
 out/
 profile.prof
 umls_entities/
