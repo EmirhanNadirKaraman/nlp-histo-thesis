@@ -109,7 +109,7 @@ nlp-histo/
 │   │   ├── runner.py                   #     KnowledgeExtractionRunner (MAP→…→RESOLVE)
 │   │   ├── stages/                     #     map / normalize / group / canonicalize / relate / resolve
 │   │   ├── agreement/ routing/ batch/  #     voter scorers, MAP router, async batch dispatch
-│   │   └── helpers/ costing/ observability/
+│   │   └── grounding/ costing/ observability/
 │   └── utils/                          #   cross-pipeline utilities (memory logging)
 │
 ├── parsers/                            # Shared parsing hub (layout_utils.py, text_processing.py)

@@ -4,11 +4,11 @@ This document describes the knowledge-extraction stage — what each stage does,
 
 **File layout.** The stage implementations live in subpackages, not at the top level of `pipeline/stages/knowledge_extraction/`. The `## <stage>.py` section headers below name each stage file; use this map to find it:
 
-- `stages/` — `map_stage.py`, `normalize_stage.py`, `group_stage.py`, `canonicalize_stage.py`, `relate_stage.py`, `resolve_stage.py`
-- `helpers/` — `grounding_filter.py`, `corpus_relate.py`, `entity_linker.py`
-- `provenance/` — `validator.py`, `citation_filter.py`, `paragraph_lookup.py` (moved here from `helpers/`)
+- `stages/` — `map_stage.py`, `normalize_stage.py`, `group_stage.py`, `canonicalize_stage.py`, `relate_stage.py`, `corpus_relate.py`, `resolve_stage.py`
+- `grounding/` — `grounding_filter.py`
+- `provenance/` — `validator.py`, `citation_filter.py`, `paragraph_lookup.py` (moved here from the former `helpers/`)
 - `routing/` — `router.py`, `models.py`, `policy.py`, `routing_dataset.py`, `schema_validator.py`
-- top level — `runner.py`, `config.py` (`KnowledgeExtractionConfig` + per-stage configs; the home of every tunable referenced below), `models.py`, `prompts.py`, `persistence.py`, `cache.py`, `llm_providers.py`, `nli_config.py`, `health_checks.py`
+- top level — `runner.py`, `config.py` (`KnowledgeExtractionConfig` + per-stage configs; the home of every tunable referenced below), `models.py`, `prompts.py`, `persistence.py`, `cache.py`, `llm_providers.py`, `nli_config.py`, `health_checks.py`, `entity_linker.py` (beside `umls_resources.py` / `umls_utils.py`)
 - NER is a **repo-root** module: `named_entity_recognition/ner.py` (not under `knowledge_extraction/`).
 
 > **Retired stages.** An optional MAP → REDUCE → RULES secondary block once
