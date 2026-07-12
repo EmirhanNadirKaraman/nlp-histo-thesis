@@ -98,7 +98,7 @@ def extract_text_from_masked(masked_pdf: Path, output_dir: Path):
     logger.info(f"Extracting text from: {masked_pdf.name}")
 
     try:
-        from parsers.pdf_parsers.docling_parser import DoclingParser
+        from legacy.pdf_parsers.docling_parser import DoclingParser
 
         parser = DoclingParser()
         text_elements = parser.extract(str(masked_pdf))

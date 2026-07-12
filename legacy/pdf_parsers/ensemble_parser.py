@@ -21,12 +21,12 @@ import logging
 if __name__ == "__main__" or not __package__:
     # Add parent directories to path for direct execution
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from parsers.pdf_parsers.marker_parser import MarkerParser
-    from parsers.pdf_parsers.nougat_parser import NougatParser
-    from parsers.pdf_parsers.pdffigures_parser import PDFFiguresParser
-    from parsers.pdf_parsers.docling_parser import DoclingParser
-    from parsers.pdf_parsers.pymupdf4llm_parser import PyMuPDF4LLMParser
-    from parsers.pdf_parsers.deduplicator import MedicalPaperDeduplicator
+    from legacy.pdf_parsers.marker_parser import MarkerParser
+    from legacy.pdf_parsers.nougat_parser import NougatParser
+    from legacy.pdf_parsers.pdffigures_parser import PDFFiguresParser
+    from legacy.pdf_parsers.docling_parser import DoclingParser
+    from legacy.pdf_parsers.pymupdf4llm_parser import PyMuPDF4LLMParser
+    from legacy.pdf_parsers.deduplicator import MedicalPaperDeduplicator
 else:
     # Use relative imports when imported as module
     from .marker_parser import MarkerParser

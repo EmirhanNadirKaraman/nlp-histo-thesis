@@ -15,7 +15,7 @@ import logging
 # Handle both direct execution and module import
 if __name__ == "__main__" or not __package__:
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from parsers.pdf_parsers.base_parser import BasePDFParser, HierarchicalPathBuilder
+    from legacy.pdf_parsers.base_parser import BasePDFParser, HierarchicalPathBuilder
 else:
     from .base_parser import BasePDFParser, HierarchicalPathBuilder
 

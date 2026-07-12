@@ -113,7 +113,6 @@ nlp-histo/
 │   └── utils/                          #   cross-pipeline utilities (memory logging)
 │
 ├── parsers/                            # Shared parsing hub (layout_utils.py, text_processing.py)
-│   └── pdf_parsers/                    #   research-only alternative parsers (NOT the production path)
 │
 ├── database/                           # SQLAlchemy ORM (models.py) + connection mgmt; schema via Alembic
 ├── alembic/                            # Schema migrations (head: 0014)
@@ -133,6 +132,7 @@ nlp-histo/
 ├── docs/readmes/                       # project docs — HOW_TO_RUN.md + other_readmes/ (STRUCTURE, REPOSITORY_GUIDE, BUGS, …) + thesis_review/
 │
 ├── legacy/langchain-summarization/     # LEGACY summarisation stack (superseded by pipeline/…/summarization)
+├── legacy/pdf_parsers/                 # LEGACY research/comparison PDF parsers (Docling/Nougat/Marker/PyMuPDF4LLM/pdffigures/Ensemble; NOT the production path)
 ├── files/                              # Input PDFs/XMLs (not in repo)
 ├── out/                                # Runtime outputs (cached layouts, summaries, run metadata)
 ├── requirements.txt
