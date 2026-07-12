@@ -1,7 +1,7 @@
 """
 Process-wide singleton for the scispaCy + UMLS entity linker.
 
-Before this module existed, ``normalize_stage`` and ``helpers/entity_linker``
+Before this module existed, ``normalize_stage`` and ``entity_linker``
 each loaded their own copy of ``en_core_sci_lg`` + ``scispacy_linker``.  The
 UMLS KB resident set is several GB; loading it twice in one process is the
 quickest path to an OOM kill mid-pipeline.

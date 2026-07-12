@@ -12,8 +12,8 @@ import logging
 import os
 from typing import TYPE_CHECKING
 
-from ..umls_resources import get_nlp, get_linker, umls_disabled, _log_memory
-from ..umls_utils import best_cui as _best_cui
+from .umls_resources import get_nlp, get_linker, umls_disabled, _log_memory
+from .umls_utils import best_cui as _best_cui
 
 _SKIP_ENV = "NLP_HISTO_SKIP_UMLS_ENRICHMENT"
 

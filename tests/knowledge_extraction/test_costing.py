@@ -428,7 +428,7 @@ def test_get_nlp_caches_load_result(monkeypatch):
 def test_skip_enrichment_env_no_ops(monkeypatch):
     """--skip-umls-enrichment env var skips before any model load attempt."""
     from pipeline.stages.knowledge_extraction import umls_resources
-    from pipeline.stages.knowledge_extraction.helpers.entity_linker import (
+    from pipeline.stages.knowledge_extraction.entity_linker import (
         enrich_rules_with_cuis,
     )
     from pipeline.stages.knowledge_extraction.models import (

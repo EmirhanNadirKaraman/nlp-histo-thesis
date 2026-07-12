@@ -574,7 +574,7 @@ class KnowledgeExtractionRunner:
 
             # Enrich canonical rules with UMLS CUIs for cross-paper entity matching.
             # No-ops silently if scispacy is unavailable.
-            from .helpers.entity_linker import enrich_rules_with_cuis  # noqa: PLC0415
+            from .entity_linker import enrich_rules_with_cuis  # noqa: PLC0415
             with mem.stage("UMLS_ENRICH"):
                 enrich_rules_with_cuis(self._canonical_rules[pmcid])
             _cr_db_id_map = self._persist_canonical_rules(
