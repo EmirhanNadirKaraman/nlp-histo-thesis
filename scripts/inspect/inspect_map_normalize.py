@@ -2,9 +2,9 @@
 Run real MAP → score_findings → NORMALIZE on one paper and write outputs.
 
 Usage:
-    python scripts/inspect_map_normalize.py PMC10047158
-    python scripts/inspect_map_normalize.py PMC10047158 --chunks 3
-    python scripts/inspect_map_normalize.py --list-only
+    python scripts/inspect/inspect_map_normalize.py PMC10047158
+    python scripts/inspect/inspect_map_normalize.py PMC10047158 --chunks 3
+    python scripts/inspect/inspect_map_normalize.py --list-only
 
 Options:
     --chunks N      Process only the first N chunks (default: 2).

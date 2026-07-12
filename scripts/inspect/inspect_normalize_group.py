@@ -2,8 +2,8 @@
 Inspect NORMALIZE and GROUP stage outputs on a real paper from the database.
 
 Usage:
-    python scripts/inspect_normalize_group.py PMC10047158
-    python scripts/inspect_normalize_group.py PMC10047158 --list-only
+    python scripts/inspect/inspect_normalize_group.py PMC10047158
+    python scripts/inspect/inspect_normalize_group.py PMC10047158 --list-only
 
 --list-only prints available PMCIDs and exits.
 

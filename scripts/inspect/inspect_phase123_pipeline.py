@@ -5,9 +5,9 @@ Runs MAP → post-MAP scoring → NORMALIZE → GROUP and writes a structured
 JSON report. Does NOT run RELATE or RESOLVE.
 
 Usage:
-    python scripts/inspect_phase123_pipeline.py PMC10047158
-    python scripts/inspect_phase123_pipeline.py PMC10047158 --chunks 4
-    python scripts/inspect_phase123_pipeline.py --list-only
+    python scripts/inspect/inspect_phase123_pipeline.py PMC10047158
+    python scripts/inspect/inspect_phase123_pipeline.py PMC10047158 --chunks 4
+    python scripts/inspect/inspect_phase123_pipeline.py --list-only
 
 Options:
     --chunks N      Process only the first N chunks (default: 3).
