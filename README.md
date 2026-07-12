@@ -45,27 +45,12 @@ Citation format: `[S1|PMC123456|789]` where:
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                       NAMED ENTITY RECOGNITION                              │
+│              LLM KNOWLEDGE-EXTRACTION PIPELINE (production)                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  batch_ner.py → Extract medical entities (scispacy + UMLS linker)           │
-│         │                                                                   │
-│         ▼                                                                   │
-│  merge_entities_by_umls.py → Group sentences by UMLS concept (CUI)          │
-│         │                                                                   │
-│         ▼                                                                   │
-│  export_disease_entities.py → Filter to disease-related entities only       │
-│         │                                                                   │
-│         ▼                                                                   │
-│  JSON files per concept with full database provenance:                      │
-│  {cui, canonical_name, sentences: [{pmcid, text_element_id, sentence}]}     │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│           LLM KNOWLEDGE-EXTRACTION PIPELINE (knowledge extraction stage)            │
-├─────────────────────────────────────────────────────────────────────────────┤
+│  Reads text_elements from Postgres and calls run_ner_on_db internally       │
+│  for UMLS entity enrichment where needed. It does NOT consume the JSON      │
+│  produced by the historical standalone NER utilities (see below).           │
 │                                                                             │
 │  Production path = agreement-based cascading (ABC) over a multi-provider    │
 │  voter pool (DeepSeek, Gemini, Mistral, Claude Haiku, Claude Sonnet 4.6),   │
@@ -86,6 +71,17 @@ Citation format: `[S1|PMC123456|789]` where:
                                     ▼
                     Auditable Summaries + Clinical Rules
                     (JSON with full provenance to source)
+
+  ── Historical side-branch (gen-1) — NOT part of the current flow ──
+  Four standalone NER CLIs read/write the Postgres `entities` table and
+  export per-concept files; nothing downstream consumes their JSON
+  (retained for reference — see "Historical standalone NER utilities"):
+    batch_ner.py              -> populate `entities` (scispaCy + UMLS linker)
+    merge_entities_by_umls.py / export_disease_entities.py
+                              -> alternative exporters (all concepts | disease-only)
+    count_tokens.py           -> token/cost stats for the ARCHIVED LangChain
+                                 map-reduce-rules prototype
+                                 (legacy/langchain-summarization/), not this pipeline
 ```
 
 ## Project Structure
@@ -117,7 +113,7 @@ nlp-histo/
 ├── database/                           # SQLAlchemy ORM (models.py) + connection mgmt; schema via Alembic
 ├── alembic/                            # Schema migrations (head: 0014)
 │
-├── named_entity_recognition/           # scispaCy + UMLS entity extraction (ner.py, batch_ner.py, …)
+├── named_entity_recognition/           # live: ner.py + enums.py (used by the KE pipeline) + retained gen-1 standalone CLIs (batch_ner, merge/export, count_tokens)
 │
 ├── eval/                               # Evaluation harness (measures the two pipelines)
 │   ├── llm_judge/  silver/             #   Opus silver labels + matching + MAP-cascade calibration
@@ -179,21 +175,34 @@ python pdf_organizer.py
 cd .. && python pipeline/stages/pdf_text_extraction/runner.py
 ```
 
-### 4. Run NER Pipeline
+### 4. (Historical) standalone NER utilities — gen-1
+
+These are **retained standalone utilities that predate the current integrated
+knowledge-extraction flow**. They are **not a required step** for the production
+pipeline (§5), which calls `run_ner_on_db` internally where NER enrichment is
+needed and does not consume their JSON. They can populate/read the Postgres
+`entities` table and export per-concept files, and may require scispaCy/UMLS
+models, database access, and local setup; depending on the command they write
+database rows or local files.
+
+The two exporters are **alternative** consumers of the `entities` table (run
+either — not necessarily both).
 
 ```bash
 cd named_entity_recognition
 
-# Extract medical entities with UMLS linking
+# Populate the `entities` table (scispaCy + UMLS linking) — writes DB rows
 python batch_ner.py
 
-# Group by UMLS concept
+# Export per-UMLS-concept JSON/TXT (all concepts) — reads DB, writes files
 python merge_entities_by_umls.py
 
-# Export disease entities only
+# ...or the disease-filtered subset — reads DB, writes files
 python export_disease_entities.py
 
-# (Optional) Estimate LLM costs
+# Historical cost estimator for the ARCHIVED LangChain map-reduce-rules
+# prototype (legacy/langchain-summarization/): reads the exported disease JSON.
+# NOT a cost calculator for the current production pipeline.
 python count_tokens.py
 ```
 
@@ -331,7 +340,7 @@ written via `pipeline/stages/knowledge_extraction/persistence.py`. See
 - **UMLS Linking**: Maps extracted entities to UMLS concepts (CUI)
 - **Persistent Cache**: on-disk entity-linking cache (`named_entity_recognition/entity_linking_cache.json`, ~30 MB) avoids redundant UMLS lookups
 - **Semantic Types**: Filters entities by UMLS semantic types (diseases, chemicals, etc.)
-- **Token Counting**: Estimates LLM costs before running knowledge_extraction
+- **Token Counting (historical)**: `count_tokens.py` estimates costs for the archived LangChain map-reduce-rules prototype (`legacy/langchain-summarization/`), not the current pipeline
 
 ### Auditable LLM Pipeline
 - **Structured Pydantic schemas** ensure consistent output format
