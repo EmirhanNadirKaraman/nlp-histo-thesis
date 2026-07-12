@@ -533,7 +533,7 @@ def main() -> None:
     if not args.no_corpus and not args.skip_nli and n_ok >= 2:
         logger.info("Running corpus-level relation stage…")
         try:
-            from pipeline.stages.knowledge_extraction.corpus_relate import CorpusRelateStage
+            from pipeline.stages.knowledge_extraction.stages.corpus_relate import CorpusRelateStage
             CorpusRelateStage().relate_from_dir(summaries_dir, corpus_json)
             ran_corpus = True
         except Exception as exc:
