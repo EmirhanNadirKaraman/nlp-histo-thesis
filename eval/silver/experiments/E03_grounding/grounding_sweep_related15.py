@@ -50,7 +50,7 @@ from eval.silver.run_new_summarization_sweeps import (
     BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,
 )
 from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
-from pipeline.stages.knowledge_extraction.helpers.grounding_filter import GroundingFilter, _score_pairs
+from pipeline.stages.knowledge_extraction.grounding.grounding_filter import GroundingFilter, _score_pairs
 
 # Frozen MAP config = the shipped 5-voter / escalate pins (BEST_*).
 THETA, REJECT = BEST_THETA, BEST_REJECT_THETA

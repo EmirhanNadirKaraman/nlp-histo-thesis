@@ -58,7 +58,7 @@ _DEFAULT_BATCH_SIZE = _ACTIVE_SPEC.batch_size
 
 def _get_nli_pipe(model_name: str = _NLI_MODEL, batch_size: int = _DEFAULT_BATCH_SIZE, device: int | str | None = None):
     """Return cached NLI pipeline, sharing the grounding_filter singleton."""
-    from ..helpers.grounding_filter import _NLI_PIPE_CACHE, _get_device
+    from ..grounding.grounding_filter import _NLI_PIPE_CACHE, _get_device
     resolved_device = device if device is not None else _get_device()
     cache_key = (model_name, resolved_device, batch_size)
     if cache_key not in _NLI_PIPE_CACHE:
@@ -87,7 +87,7 @@ def _nli_scores(pairs: list[tuple[str, str]], pipe) -> list[dict[str, float]]:
     Per-label scores are max-pooled across windows so a supporting or
     contradicting sentence near a window boundary is not silently truncated.
     """
-    from ..helpers.grounding_filter import _split_windows
+    from ..grounding.grounding_filter import _split_windows
 
     _empty: dict[str, float] = {"entailment": 0.0, "contradiction": 0.0, "neutral": 0.0}
     out: list[dict[str, float]] = [dict(_empty) for _ in pairs]

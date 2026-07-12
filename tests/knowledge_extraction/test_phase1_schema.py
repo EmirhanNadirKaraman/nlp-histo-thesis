@@ -5,7 +5,7 @@ No LLM or database required.
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.helpers.grounding_filter import (
+from pipeline.stages.knowledge_extraction.grounding.grounding_filter import (
     filter_atomic_findings,
     score_findings,
 )

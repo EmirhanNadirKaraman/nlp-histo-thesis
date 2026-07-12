@@ -1889,7 +1889,7 @@ def analyse_real_profile_grounding_polarity() -> AnalysisResult:
         from pipeline.stages.knowledge_extraction.models import (
             AuditableSummary,
         )
-        from pipeline.stages.knowledge_extraction.helpers.grounding_filter import (
+        from pipeline.stages.knowledge_extraction.grounding.grounding_filter import (
             GroundingFilter,
         )
     except Exception as exc:

@@ -46,7 +46,7 @@ from ..stages.group_stage import GroupStage, is_groupable
 from ..stages.normalize_stage import NormalizeStage
 from ..stages.relate_stage import RelateStage
 from ..stages.resolve_stage import ResolveStage
-from ..helpers.grounding_filter import GroundingFilter
+from ..grounding.grounding_filter import GroundingFilter
 from ..stages.map_stage import _format_sentences
 from ..models import (
     AuditableSummary,

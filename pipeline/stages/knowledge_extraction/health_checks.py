@@ -56,7 +56,7 @@ def _check_nli_model() -> HealthCheckResult:
     """
     t0 = time.perf_counter()
     try:
-        from .helpers.grounding_filter import GroundingFilter, _score_pairs  # noqa: PLC0415
+        from .grounding.grounding_filter import GroundingFilter, _score_pairs  # noqa: PLC0415
 
         gf = GroundingFilter(batch_size=1)
         nli_pipe = gf._pipe  # noqa: SLF001 — intentional white-box probe of cached pipeline

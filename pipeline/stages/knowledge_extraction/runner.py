@@ -54,7 +54,7 @@ from pathlib import Path
 from .cache import PipelineCache
 from .config import KnowledgeExtractionConfig
 from .stages.canonicalize_stage import CanonicalizeStage
-from .helpers.grounding_filter import GroundingFilter
+from .grounding.grounding_filter import GroundingFilter
 from .stages.group_stage import GroupStage, is_groupable
 from .stages.map_stage import MapStage
 from .persistence import (
