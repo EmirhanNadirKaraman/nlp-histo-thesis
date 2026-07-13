@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 from eval.silver.embedders import GeminiEmbedder, OpenAIEmbedder
 from eval.silver.inspect import write_inspection_report
-from eval.silver.jsonl_utils import read_jsonl, write_jsonl
+from eval.silver.data.jsonl_utils import read_jsonl, write_jsonl
 from eval.silver.matcher import (
     DEFAULT_CACHE_PATH,
     DEFAULT_GEMINI_CACHE_PATH,
@@ -36,13 +36,13 @@ from eval.silver.matcher import (
     match_from_matrix,
     MATCHERS,
 )
-from eval.silver.schemas import (
+from eval.silver.data.schemas import (
     MatchResult,
     PipelineCaseOutput,
     SilverCaseResult,
     SourceCase,
 )
-from eval.silver.split import filter_by_split
+from eval.silver.data.split import filter_by_split
 
 SILVER_PATH   = Path("eval/data/silver_findings_related15.jsonl")
 PIPELINE_PATH = Path("eval/data/pipeline_findings_related15.jsonl")

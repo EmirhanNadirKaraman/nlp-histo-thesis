@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from eval.silver.jsonl_utils import read_jsonl
+from eval.silver.data.jsonl_utils import read_jsonl
 from eval.silver.map_theta_sweep import (
     CACHE_PATH,
     SILVER_PATH,
@@ -32,7 +32,7 @@ from eval.silver.matcher import (
     GEMINI_EMBEDDING_MODEL,
     make_embedding_cache,
 )
-from eval.silver.schemas import SilverCaseResult
+from eval.silver.data.schemas import SilverCaseResult
 
 __all__ = ["_MapContext", "_load_map_context", "CACHE_PATH", "SILVER_PATH"]
 

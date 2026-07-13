@@ -6,9 +6,9 @@ import logging
 import os
 from pathlib import Path
 
-from .jsonl_utils import exists_in_jsonl, read_jsonl
+from eval.silver.data.jsonl_utils import exists_in_jsonl, read_jsonl
 from .prompts import EXTRACT_FINDINGS_TOOL, PROMPT_VERSION, SYSTEM_PROMPT, make_user_prompt
-from .schemas import SilverCaseResult, SilverFinding, SilverFindingScope, SourceCase
+from eval.silver.data.schemas import SilverCaseResult, SilverFinding, SilverFindingScope, SourceCase
 
 logger = logging.getLogger(__name__)
 

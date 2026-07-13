@@ -6,10 +6,10 @@ source_cases_related15.jsonl. Any other --from-selection writes
 source_cases_<yaml-stem>.jsonl (held-out set, etc.).
 
 Usage:
-  python -m eval.silver.sample                                         # related15 → source_cases_related15.jsonl
-  python -m eval.silver.sample --from-selection configs/paper_selection/heldout15.yaml
-  python -m eval.silver.sample --from-selection '' --n 100 --seed 7    # ad-hoc random → source_cases.jsonl
-  python -m eval.silver.sample --pmcids PMC1 PMC2
+  python -m eval.silver.data.sample                                         # related15 → source_cases_related15.jsonl
+  python -m eval.silver.data.sample --from-selection configs/paper_selection/heldout15.yaml
+  python -m eval.silver.data.sample --from-selection '' --n 100 --seed 7    # ad-hoc random → source_cases.jsonl
+  python -m eval.silver.data.sample --pmcids PMC1 PMC2
 """
 from __future__ import annotations
 
@@ -22,9 +22,9 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 
-from eval.silver.sampler import sample_source_cases, sample_papers_source_cases
-from eval.silver.schemas import SourceCase
-from eval.silver.jsonl_utils import write_jsonl
+from eval.silver.data.sampler import sample_source_cases, sample_papers_source_cases
+from eval.silver.data.schemas import SourceCase
+from eval.silver.data.jsonl_utils import write_jsonl
 from eval.paper_selection.loaders import load_pmcids_from_selection
 
 OUTPUT_PATH = Path("eval/data/source_cases.jsonl")

@@ -17,7 +17,7 @@ import pytest
 
 from eval.silver.matcher import greedy_match, optimal_match
 from eval.silver.pipeline_sweep import _evaluate_outputs
-from eval.silver.schemas import (
+from eval.silver.data.schemas import (
     PipelineCaseOutput,
     PipelineFinding,
     SilverCaseResult,

@@ -47,7 +47,7 @@ from eval.silver.pipeline_sweep import _evaluate_outputs
 from eval.silver.run_new_summarization_sweeps import (
     BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache, _subset_meta,
 )
-from eval.silver.schemas import PipelineCaseOutput
+from eval.silver.data.schemas import PipelineCaseOutput
 from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 from pipeline.stages.knowledge_extraction.models import AuditableSummary
 

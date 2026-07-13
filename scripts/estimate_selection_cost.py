@@ -494,9 +494,9 @@ def run_cascade_estimate(args, *, book, pricing, resolved_profile, discount,
 
 def run_calibration_estimate(args, *, book, nlp, tokenizer) -> int:
     """Calibration cost: map_theta_sweep PRIME (all voters) + Opus SILVER."""
-    from eval.silver.jsonl_utils import read_jsonl
-    from eval.silver.schemas import SourceCase
-    from eval.silver.split import filter_by_split
+    from eval.silver.data.jsonl_utils import read_jsonl
+    from eval.silver.data.schemas import SourceCase
+    from eval.silver.data.split import filter_by_split
 
     src_path = Path(args.source_cases)
     if not src_path.exists():

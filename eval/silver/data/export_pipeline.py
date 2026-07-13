@@ -5,8 +5,8 @@ Reads eval/data/source_cases_related15.jsonl, queries sum_map_findings for match
 evidence_refs, writes eval/data/pipeline_findings_related15.jsonl.
 
 Usage:
-  python -m eval.silver.export_pipeline
-  python -m eval.silver.export_pipeline --source eval/data/source_cases_heldout15.jsonl
+  python -m eval.silver.data.export_pipeline
+  python -m eval.silver.data.export_pipeline --source eval/data/source_cases_heldout15.jsonl
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 
-from eval.silver.exporter import export_pipeline_outputs
+from eval.silver.data.exporter import export_pipeline_outputs
 
 SOURCE_PATH = Path("eval/data/source_cases_related15.jsonl")
 OUTPUT_PATH = Path("eval/data/pipeline_findings.jsonl")
@@ -51,7 +51,7 @@ def main():
     source = Path(args.source)
     if not source.exists():
         print(f"Source file not found: {source}", file=sys.stderr)
-        print("Run `python -m eval.silver.sample` first.", file=sys.stderr)
+        print("Run `python -m eval.silver.data.sample` first.", file=sys.stderr)
         sys.exit(1)
 
     output = Path(args.output) if args.output is not None else _derive_output(source)

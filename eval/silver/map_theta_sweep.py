@@ -72,7 +72,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(
 logger = logging.getLogger(__name__)
 
 from eval.silver.embedders import GeminiEmbedder
-from eval.silver.jsonl_utils import read_jsonl
+from eval.silver.data.jsonl_utils import read_jsonl
 from eval.silver.matcher import (
     DEFAULT_GEMINI_CACHE_PATH,
     GEMINI_EMBEDDING_MODEL,
@@ -81,13 +81,13 @@ from eval.silver.matcher import (
     make_embedding_cache,
 )
 from eval.silver.pipeline_sweep import case_to_file_data, _evaluate_outputs
-from eval.silver.schemas import (
+from eval.silver.data.schemas import (
     PipelineCaseOutput,
     PipelineFinding,
     SilverCaseResult,
     SourceCase,
 )
-from eval.silver.split import filter_by_split
+from eval.silver.data.split import filter_by_split
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 

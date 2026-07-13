@@ -706,9 +706,9 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     name = "05_bootstrap_ci_cascade_vs_sonnet"
     try:
         from eval.silver.embedders import OpenAIEmbedder
-        from eval.silver.jsonl_utils import read_jsonl
-        from eval.silver.schemas import SilverCaseResult
-        from eval.silver.split import assign_split
+        from eval.silver.data.jsonl_utils import read_jsonl
+        from eval.silver.data.schemas import SilverCaseResult
+        from eval.silver.data.split import assign_split
     except Exception as exc:
         return AnalysisResult(
             name=name, status="error",
@@ -792,7 +792,7 @@ def analyse_bootstrap_ci() -> AnalysisResult:
             # universal on this corpus per EXP B.2). This is an
             # acknowledged approximation — see caveats.
             ce = entry
-            from eval.silver.schemas import PipelineCaseOutput
+            from eval.silver.data.schemas import PipelineCaseOutput
             findings = []
             chunk_map = ce.get("chunk_map") or {}
             for chunk_id in chunk_map:
@@ -1404,9 +1404,9 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
     name = "10_cascade_vs_sonnet_gap_ci"
     import os
     try:
-        from eval.silver.jsonl_utils import read_jsonl
-        from eval.silver.schemas import SilverCaseResult
-        from eval.silver.split import assign_split
+        from eval.silver.data.jsonl_utils import read_jsonl
+        from eval.silver.data.schemas import SilverCaseResult
+        from eval.silver.data.split import assign_split
         from eval.silver.map_context import _load_map_context
     except Exception as exc:
         return AnalysisResult(
@@ -1884,7 +1884,7 @@ def analyse_real_profile_grounding_polarity() -> AnalysisResult:
     """
     name = "12_real_profile_grounding_polarity"
     try:
-        from eval.silver.split import assign_split
+        from eval.silver.data.split import assign_split
         from eval.silver.map_context import _load_map_context
         from pipeline.stages.knowledge_extraction.models import (
             AuditableSummary,

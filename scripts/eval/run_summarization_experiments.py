@@ -804,9 +804,9 @@ def _run_exp_b2(ctx):
             "  Generate with `python -m eval.silver.generate --batch`."
         )
 
-    from eval.silver.jsonl_utils import read_jsonl
-    from eval.silver.schemas import SilverCaseResult
-    from eval.silver.split import assign_split
+    from eval.silver.data.jsonl_utils import read_jsonl
+    from eval.silver.data.schemas import SilverCaseResult
+    from eval.silver.data.split import assign_split
 
     voter_cache = json.loads(cache_path.read_text(encoding="utf-8"))
     silver_by_case = {rec.case_id: rec for rec in read_jsonl(silver_path, SilverCaseResult)}
@@ -1081,7 +1081,7 @@ def _b2_cache_shape(voter_cache: dict) -> dict:
 
 def _b2_finding_to_pipeline(f: dict, pmcid: str, chunk_id: str, run_id: str):
     """Mirror eval.silver.map_theta_sweep._finding_to_pipeline (without θ stamp)."""
-    from eval.silver.schemas import PipelineFinding
+    from eval.silver.data.schemas import PipelineFinding
     scope = f.get("scope") or {}
     return PipelineFinding(
         pipeline_run_id=0,
@@ -1117,7 +1117,7 @@ def _b2_build_voter_outputs(
     For ``level="l1"`` / ``"l2"``, entries are voter lists indexed by
     ``voter_index``.
     """
-    from eval.silver.schemas import PipelineCaseOutput
+    from eval.silver.data.schemas import PipelineCaseOutput
     outputs = []
     for entry in voter_cache.values():
         case_id = entry["case_id"]

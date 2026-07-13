@@ -55,7 +55,7 @@ def main():
     source = Path(args.source)
     if not source.exists():
         print(f"Source file not found: {source}", file=sys.stderr)
-        print("Run `python -m eval.silver.sample` first.", file=sys.stderr)
+        print("Run `python -m eval.silver.data.sample` first.", file=sys.stderr)
         sys.exit(1)
 
     output = Path(args.output) if args.output is not None else _derive_output(source)

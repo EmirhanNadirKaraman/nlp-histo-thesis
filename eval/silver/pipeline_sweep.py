@@ -42,7 +42,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(
 logger = logging.getLogger(__name__)
 
 from eval.silver.embedders import GeminiEmbedder, OpenAIEmbedder
-from eval.silver.jsonl_utils import read_jsonl
+from eval.silver.data.jsonl_utils import read_jsonl
 from eval.silver.matcher import (
     DEFAULT_CACHE_PATH,
     DEFAULT_GEMINI_CACHE_PATH,
@@ -56,13 +56,13 @@ from eval.silver.matcher import (
     match_from_matrix,
     optimal_match,
 )
-from eval.silver.schemas import (
+from eval.silver.data.schemas import (
     PipelineCaseOutput,
     PipelineFinding,
     SilverCaseResult,
     SourceCase,
 )
-from eval.silver.split import filter_by_split
+from eval.silver.data.split import filter_by_split
 
 PRIME_DIR   = Path("eval/data/pipeline_raw")
 REPORTS_DIR = Path("eval/reports")

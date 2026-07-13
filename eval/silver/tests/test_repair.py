@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from eval.silver.generator import _repair_finding_fields
 from eval.silver.prompts import EXTRACT_FINDINGS_TOOL
-from eval.silver.schemas import SilverFinding
+from eval.silver.data.schemas import SilverFinding
 
 
 # ── _repair_finding_fields ─────────────────────────────────────────────────────

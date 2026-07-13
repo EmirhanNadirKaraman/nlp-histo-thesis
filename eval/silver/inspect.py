@@ -14,7 +14,7 @@ import csv
 import logging
 from pathlib import Path
 
-from .schemas import MatchResult, PipelineCaseOutput, SilverCaseResult, SourceCase
+from eval.silver.data.schemas import MatchResult, PipelineCaseOutput, SilverCaseResult, SourceCase
 
 logger = logging.getLogger(__name__)
 

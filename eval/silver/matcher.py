@@ -27,7 +27,7 @@ from typing import Callable, Union
 
 import numpy as np
 
-from .schemas import (
+from eval.silver.data.schemas import (
     EvalMetrics,
     FieldMismatch,
     MatchedPair,

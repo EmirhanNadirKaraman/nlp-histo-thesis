@@ -12,7 +12,7 @@ from eval.silver.matcher import (
     compute_metrics,
     match_case,
 )
-from eval.silver.schemas import (
+from eval.silver.data.schemas import (
     PipelineCaseOutput,
     PipelineFinding,
     SilverCaseResult,

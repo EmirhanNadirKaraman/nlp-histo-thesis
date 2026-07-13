@@ -192,9 +192,9 @@ def cmd_sync_real() -> int:
     OpenAI-compatible endpoint, a *different* mechanism from the Gemini batch path
     (native response_schema), so this genuinely adds coverage.
     """
-    from eval.silver.jsonl_utils import read_jsonl
+    from eval.silver.data.jsonl_utils import read_jsonl
     from eval.silver.pipeline_sweep import case_to_file_data
-    from eval.silver.schemas import SourceCase
+    from eval.silver.data.schemas import SourceCase
     from pipeline.stages.knowledge_extraction.stages.map_stage import _format_sentences
     from pipeline.stages.knowledge_extraction.llm_providers import (
         anthropic_direct_chat, gemini_direct_chat, openai_direct_chat,

@@ -51,8 +51,8 @@ Both run on the same 15-paper selection. Both feed the final report.
 
 ## §2. Inputs we already have
 
-- `eval/silver/generator.py` — produces `SilverCaseResult.findings: list[SilverFinding]` per paragraph, using Opus + the existing tool-schema (`eval/silver/schemas.py:SilverFinding`).
-- `eval/silver/schemas.py:SilverFinding` fields: `claim, subject_entity, outcome_entity, relation_type, direction, category, confidence, verbatim_support, scope, source_sentence_ids`.
+- `eval/silver/generator.py` — produces `SilverCaseResult.findings: list[SilverFinding]` per paragraph, using Opus + the existing tool-schema (`eval/silver/data/schemas.py:SilverFinding`).
+- `eval/silver/data/schemas.py:SilverFinding` fields: `claim, subject_entity, outcome_entity, relation_type, direction, category, confidence, verbatim_support, scope, source_sentence_ids`.
 - `eval/silver/matcher.py` — embedding-based alignment with cache + `compute_metrics` for P/R/F1, used today for MAP-only comparison. Reusable for every downstream stage.
 - `eval/silver/embedders.py` — OpenAI / Gemini embedders with disk cache.
 - `eval/silver/evaluate.py` — existing CLI that does MAP-level silver eval. The new replay extends the *same metric framework* to later stages.
