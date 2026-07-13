@@ -93,7 +93,7 @@ def _check_umls() -> HealthCheckResult:
     """
     t0 = time.perf_counter()
     try:
-        from .umls_resources import get_linker, get_nlp, umls_disabled  # noqa: PLC0415
+        from .entities.umls_resources import get_linker, get_nlp, umls_disabled  # noqa: PLC0415
 
         if umls_disabled():
             elapsed = (time.perf_counter() - t0) * 1000.0

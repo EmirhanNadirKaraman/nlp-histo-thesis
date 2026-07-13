@@ -488,7 +488,7 @@ class PipelineRunner:
             # directly. Prevents double-loading when this pipeline runs in the
             # same process as the summarisation pipeline.
             try:
-                from pipeline.stages.knowledge_extraction.umls_resources import get_small_nlp
+                from pipeline.stages.knowledge_extraction.entities.umls_resources import get_small_nlp
                 self._nlp = get_small_nlp("en_core_sci_sm")
                 if self._nlp is None:
                     logger.warning("scispaCy not available — NER features disabled")

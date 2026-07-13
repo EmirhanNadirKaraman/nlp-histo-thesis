@@ -62,4 +62,4 @@ include = ["pipeline*", "database*", "parsers*", "named_entity_recognition*"]
 # package (pipeline/stages/knowledge_extraction/stages/normalize_stage.py:41, read at
 # import). configs/*.yaml stay OUT: they live outside every package and are read
 # repo-root-relative, which the supported editable install resolves correctly.
-"pipeline.stages.knowledge_extraction" = ["synonyms.yaml"]
+"pipeline.stages.knowledge_extraction.entities" = ["synonyms.yaml"]

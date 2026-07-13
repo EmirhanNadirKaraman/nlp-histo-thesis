@@ -1,6 +1,6 @@
 import pytest
 
-from pipeline.stages.knowledge_extraction import umls_resources as _umls
+from pipeline.stages.knowledge_extraction.entities import umls_resources as _umls
 
 
 def pytest_runtest_logstart(nodeid, location):

@@ -27,7 +27,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from ..models import DirectionEnum, Finding, FindingScope, NormalFinding, RelationTypeEnum, SourceSpan
-from ..umls_utils import best_cui as _best_cui
+from ..entities.umls_utils import best_cui as _best_cui
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 # file exists. With the fallback removed, a missing or unreadable YAML now yields
 # an empty synonym map and a loud error instead of silently masking the problem
 # with a stale hardcoded dict.)
-_SYNONYMS_YAML = Path(__file__).resolve().parents[1] / "synonyms.yaml"
+_SYNONYMS_YAML = Path(__file__).resolve().parents[1] / "entities" / "synonyms.yaml"
 
 
 def _load_synonyms() -> dict[str, str]:
@@ -85,7 +85,7 @@ def _umls_canonical_with_cui(text: str) -> tuple[str | None, str | None]:
     if text in _UMLS_CACHE:
         return _UMLS_CACHE[text]
 
-    from ..umls_resources import get_nlp, get_linker  # local import: avoid cycles
+    from ..entities.umls_resources import get_nlp, get_linker  # local import: avoid cycles
     nlp = get_nlp()
     if nlp is None:
         _UMLS_CACHE[text] = (None, None)

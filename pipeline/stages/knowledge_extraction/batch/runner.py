@@ -597,7 +597,7 @@ class BatchKnowledgeExtractionRunner:
                 # the import itself can take 5-30s on first use.
                 logger.info("[%s] UMLS enrichment — start (loading scispacy may be slow)", pmcid)
                 t0 = _time.perf_counter()
-                from ..entity_linker import enrich_rules_with_cuis  # noqa: PLC0415
+                from ..entities.entity_linker import enrich_rules_with_cuis  # noqa: PLC0415
                 enrich_rules_with_cuis(canonical_rules)
                 logger.info("[%s] UMLS enrichment — done [%.1fs]",
                             pmcid, _time.perf_counter() - t0)

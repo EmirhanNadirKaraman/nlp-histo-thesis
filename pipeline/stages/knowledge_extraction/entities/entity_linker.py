@@ -1,7 +1,7 @@
 """
 UMLS CUI enrichment for CanonicalRules.
 
-Delegates model loading to ``pipeline.stages.knowledge_extraction.umls_resources`` so
+Delegates model loading to ``pipeline.stages.knowledge_extraction.entities.umls_resources`` so
 the scispaCy + UMLS linker is loaded at most once per process.  Loading the
 ~5 GB UMLS knowledge base twice was the most reliable way to OOM-kill a run
 mid-pipeline; this module exists to keep that from happening again.

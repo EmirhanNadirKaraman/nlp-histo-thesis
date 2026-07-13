@@ -1,6 +1,6 @@
 """NERScorer — pairwise entity Jaccard overlap using scispaCy.
 
-Delegates model loading to ``pipeline.stages.knowledge_extraction.umls_resources`` so
+Delegates model loading to ``pipeline.stages.knowledge_extraction.entities.umls_resources`` so
 the scispaCy model is loaded at most once per process.  Previously this module
 held its own copy of ``en_core_sci_lg``; combined with the NORMALIZE/UMLS
 linker load that meant ~2 copies of the model resident at once, which OOM-killed
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def _get_nlp():
     """Return the shared scispaCy nlp (or None when UMLS is unavailable)."""
-    from pipeline.stages.knowledge_extraction.umls_resources import get_nlp  # noqa: PLC0415
+    from pipeline.stages.knowledge_extraction.entities.umls_resources import get_nlp  # noqa: PLC0415
     return get_nlp()
 
 

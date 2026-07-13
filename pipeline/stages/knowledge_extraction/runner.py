@@ -574,7 +574,7 @@ class KnowledgeExtractionRunner:
 
             # Enrich canonical rules with UMLS CUIs for cross-paper entity matching.
             # No-ops silently if scispacy is unavailable.
-            from .entity_linker import enrich_rules_with_cuis  # noqa: PLC0415
+            from .entities.entity_linker import enrich_rules_with_cuis  # noqa: PLC0415
             with mem.stage("UMLS_ENRICH"):
                 enrich_rules_with_cuis(self._canonical_rules[pmcid])
             _cr_db_id_map = self._persist_canonical_rules(
@@ -879,7 +879,7 @@ class KnowledgeExtractionRunner:
             dict with keys ``pmcid`` and ``sentences_with_provenance``.
         """
         from database import get_db_connection, Document, TextElement  # type: ignore
-        from .umls_resources import get_small_nlp
+        from .entities.umls_resources import get_small_nlp
 
         # B-038 fix: route through the process-wide small-model singleton so
         # every call (especially in batch mode where this runs once per paper)

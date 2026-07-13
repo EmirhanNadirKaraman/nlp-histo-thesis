@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pipeline.stages.knowledge_extraction import umls_resources as ur_mod
+from pipeline.stages.knowledge_extraction.entities import umls_resources as ur_mod
 
 
 def _reset_caches():

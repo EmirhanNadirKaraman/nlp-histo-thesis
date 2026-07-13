@@ -5,11 +5,12 @@ This document describes the knowledge-extraction stage — what each stage does,
 **File layout.** The stage implementations live in subpackages, not at the top level of `pipeline/stages/knowledge_extraction/`. The `## <stage>.py` section headers below name each stage file; use this map to find it:
 
 - `stages/` — `map_stage.py`, `normalize_stage.py`, `group_stage.py`, `canonicalize_stage.py`, `relate_stage.py`, `corpus_relate.py`, `resolve_stage.py`
-- `grounding/` — `grounding_filter.py`
+- `grounding/` — `grounding_filter.py` (NLI entailment filter) and `nli_config.py` (the NLI model registry it resolves)
 - `provenance/` — `validator.py`, `citation_filter.py`, `paragraph_lookup.py` (moved here from the former `helpers/`)
 - `routing/` — `router.py`, `models.py`, `policy.py`, `routing_dataset.py`, `schema_validator.py`
-- top level — `runner.py`, `config.py` (`KnowledgeExtractionConfig` + per-stage configs; the home of every tunable referenced below), `models.py`, `prompts.py`, `persistence.py`, `cache.py`, `llm_providers.py`, `health_checks.py`, `entity_linker.py` (beside `umls_resources.py` / `umls_utils.py`)
-- `grounding/` — `grounding_filter.py` (NLI entailment filter) and `nli_config.py` (the NLI model registry it resolves)
+- top level — `runner.py`, `config.py` (`KnowledgeExtractionConfig` + per-stage configs; the home of every tunable referenced below), `models.py`, `persistence.py`, `cache.py`, `enum_logging.py`, `health_checks.py`
+- `llm/` — `prompts.py`, `llm_providers.py`, `llm_errors.py`
+- `entities/` — `entity_linker.py`, `umls_resources.py`, `umls_utils.py`, and the curated `synonyms.yaml`
 - NER is a **repo-root** module: `named_entity_recognition/ner.py` (not under `knowledge_extraction/`).
 
 > **Retired stages.** An optional MAP → REDUCE → RULES secondary block once
@@ -194,7 +195,7 @@ The filter runs **before** NORMALIZE, on raw MAP output. This means it acts on L
 Deterministic entity normalization + conditional deduplication. `Finding` → `NormalFinding`.
 
 ### Entity normalization — `_norm()` resolution order
-1. **Synonym dict** (`synonyms.yaml`, loaded at startup) — domain knowledge takes priority
+1. **Synonym dict** (`entities/synonyms.yaml`, loaded at startup) — domain knowledge takes priority
 2. **UMLS linker** (scispaCy `en_core_sci_lg`, threshold 0.85) — filtered by junk semantic type blocklist
 3. **Identity fallback** — stripped input returned unchanged
 
@@ -211,7 +212,7 @@ Findings sharing the same `(te_id, subject_entity, outcome_entity, relation_type
 
 ---
 
-## `synonyms.yaml`
+## `entities/synonyms.yaml`
 
 Canonical source of entity synonym mappings. Loaded by `_load_synonyms()` at startup with the hardcoded dict as fallback.
 

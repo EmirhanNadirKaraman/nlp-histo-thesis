@@ -27,7 +27,7 @@ from pipeline.stages.knowledge_extraction.models import (
 
 @pytest.fixture(autouse=True)
 def _disable_umls(monkeypatch):
-    from pipeline.stages.knowledge_extraction import umls_resources
+    from pipeline.stages.knowledge_extraction.entities import umls_resources
     from pipeline.stages.knowledge_extraction.stages import normalize_stage
 
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")

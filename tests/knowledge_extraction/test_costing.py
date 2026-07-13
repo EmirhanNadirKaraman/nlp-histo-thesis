@@ -405,7 +405,7 @@ def test_total_savings_marked_unavailable_when_any_missing(tmp_path):
 
 def test_umls_disabled_env_skips_load(monkeypatch):
     """Env var kill-switch must short-circuit before any spacy import."""
-    from pipeline.stages.knowledge_extraction import umls_resources
+    from pipeline.stages.knowledge_extraction.entities import umls_resources
     umls_resources._reset_for_tests()
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
     nlp = umls_resources.get_nlp()
@@ -415,7 +415,7 @@ def test_umls_disabled_env_skips_load(monkeypatch):
 
 def test_get_nlp_caches_load_result(monkeypatch):
     """Second call must hit the cached None without re-probing."""
-    from pipeline.stages.knowledge_extraction import umls_resources
+    from pipeline.stages.knowledge_extraction.entities import umls_resources
     umls_resources._reset_for_tests()
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
     assert umls_resources.get_nlp() is None
@@ -427,8 +427,8 @@ def test_get_nlp_caches_load_result(monkeypatch):
 
 def test_skip_enrichment_env_no_ops(monkeypatch):
     """--skip-umls-enrichment env var skips before any model load attempt."""
-    from pipeline.stages.knowledge_extraction import umls_resources
-    from pipeline.stages.knowledge_extraction.entity_linker import (
+    from pipeline.stages.knowledge_extraction.entities import umls_resources
+    from pipeline.stages.knowledge_extraction.entities.entity_linker import (
         enrich_rules_with_cuis,
     )
     from pipeline.stages.knowledge_extraction.models import (
