@@ -157,8 +157,9 @@ createdb -U postgres nlp_histo
 cp .env.example .env
 # Edit .env with DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
-# Initialize schema (Alembic-managed)
-alembic upgrade head
+# Create the schema from the SQLAlchemy models. This initializes a new
+# database; `alembic upgrade head` does not build the schema from empty.
+python -c "from database import get_db_connection; get_db_connection().create_tables()"
 ```
 
 ### 3. Run Data Pipeline
@@ -316,15 +317,30 @@ text_element_figure_references (junction)
 text_element_table_references (junction)
 ```
 
-The schema above is the document-extraction core (7 tables). The full schema is
-**21 Alembic-managed tables** (`alembic upgrade head`): the 7 above, plus
-`pipeline_runs` and `llm_judge_cache`, plus 12 knowledge-extraction-persistence tables
+The schema above is the document-extraction core (7 tables). The full schema also has
+`pipeline_runs` and `llm_judge_cache`, plus the knowledge-extraction-persistence tables
 (`sum_map_findings`, `sum_map_voter_outputs`, `sum_normal_findings`,
 `sum_normal_finding_spans`, `sum_finding_groups`, `sum_group_members`,
 `sum_canonical_rules`, `sum_relations`, `sum_final_rules`,
 `sum_rejection_summaries`, `sum_rejected_findings`, `sum_corpus_relations`)
 written via `pipeline/stages/knowledge_extraction/persistence.py`. See
 `database/models.py` for the authoritative definitions.
+
+### Schema ownership
+
+The current runtime schema is defined by the SQLAlchemy models in `database/models.py`.
+`create_tables()` calls `Base.metadata.create_all()` and is the mechanism that
+**initializes a new database**.
+
+Alembic currently manages **incremental historical changes**, not complete
+empty-database initialization: the migration chain assumes the core ORM-created tables
+already exist, and it does **not** currently reproduce the ORM schema exactly. Treat
+`database/models.py` as authoritative.
+
+- `alembic current` — inspect the recorded revision of an existing database.
+- `alembic upgrade head` — intended **only** for an existing database that was
+  initialized under the project's historical setup and is known to be behind the
+  migration head. It is **not** the fresh-database initialization command.
 
 ## Key Features
 

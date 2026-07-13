@@ -175,8 +175,8 @@ alembic current  # Uses 'custom_db', not the .env value
 **One line of code** in `db_connection.py` eliminated **15+ lines** from every other script. That's good software engineering! 🎉
 
 **Files simplified** (historical note — `setup_db.py` and `ingest.py` have
-since been removed from `database/`; the schema is now Alembic-managed and
-ingestion lives in the pipeline):
+since been removed from `database/`; schema creation lives in the ORM
+(`create_tables()`), while ingestion lives in the pipeline):
 - ✅ all scripts that import from `database` - no longer need dotenv loading
 
 **Centralized in:**
