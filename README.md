@@ -149,18 +149,47 @@ pip install -r requirements.txt
 
 ### 2. Set Up Database
 
+Prerequisite: a running PostgreSQL server (check with `pg_isready`). The database
+itself must exist **before** the schema can be initialized — `database.init_db`
+creates tables, not the database.
+
 ```bash
-# Create PostgreSQL database
-createdb -U postgres nlp_histo
+# 1. Create the (empty) PostgreSQL database, using your own role and name
+createdb -U <postgres-user> <database-name>
 
-# Configure credentials
+# 2. Configure credentials
 cp .env.example .env
-# Edit .env with DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+# Edit the five DB_* values in .env:
+#   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+# (DB_PASSWORD must be present; leave it empty for peer/trust authentication.)
 
-# Create the schema from the SQLAlchemy models. This initializes a new
-# database; `alembic upgrade head` does not build the schema from empty.
-python -c "from database import get_db_connection; get_db_connection().create_tables()"
+# 3. Create and verify the schema
+python -m database.init_db
 ```
+
+`python -m database.init_db` creates the ORM-managed schema (`database/models.py`)
+and then verifies it. On success it reports the number of tables verified.
+
+It is **safe to run again**: it only ever creates *missing* tables and never drops,
+truncates, or alters existing objects. If an existing table has drifted from the
+models (for example a missing column), the command **fails with a clear message
+instead of attempting an automatic repair**, and creates nothing.
+
+Verification modes:
+
+```bash
+python -m database.init_db --check-only   # verify only; creates nothing
+python -m database.init_db --smoke        # initialize, then a minimal ORM round trip
+```
+
+`--smoke` inserts one `Document` + `TextElement`, reads them back through the ORM,
+and rolls the transaction back — leaving **no rows** behind. The two flags cannot be
+combined (`--check-only` is strictly read-only).
+
+> **Alembic is not the fresh-database initializer in this repository.** Do not run
+> `alembic upgrade head` merely to initialize a newly created empty database — it
+> cannot build the schema from empty (see [Schema ownership](#schema-ownership)).
+> `database.init_db` uses the current SQLAlchemy ORM schema.
 
 ### 3. Run Data Pipeline
 
@@ -330,7 +359,8 @@ written via `pipeline/stages/knowledge_extraction/persistence.py`. See
 
 The current runtime schema is defined by the SQLAlchemy models in `database/models.py`.
 `create_tables()` calls `Base.metadata.create_all()` and is the mechanism that
-**initializes a new database**.
+**initializes a new database**; `python -m database.init_db` is the maintained command
+that wraps it with configuration validation and schema verification.
 
 Alembic currently manages **incremental historical changes**, not complete
 empty-database initialization: the migration chain assumes the core ORM-created tables
