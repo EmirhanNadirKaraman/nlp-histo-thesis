@@ -21,10 +21,10 @@ $/1M per tier, L1=1.75 / L2=9.60 / L3=18.00, L1 term dropped as constant). Unlik
 ``escalate_rate`` it charges the L1→L2 traffic too (L2 ≈ 5.5× L1/call).
 
 Usage:
-  python -m eval.silver.escalation_breakdown <csv>            # write <name>_escalation.csv
-  python -m eval.silver.escalation_breakdown <csv> --print    # summary table, no write
-  python -m eval.silver.escalation_breakdown <csv> --rank     # cost-efficiency Pareto frontier
-  python -m eval.silver.escalation_breakdown <csv> --in-place # overwrite input
+  python -m eval.silver.analysis.escalation_breakdown <csv>            # write <name>_escalation.csv
+  python -m eval.silver.analysis.escalation_breakdown <csv> --print    # summary table, no write
+  python -m eval.silver.analysis.escalation_breakdown <csv> --rank     # cost-efficiency Pareto frontier
+  python -m eval.silver.analysis.escalation_breakdown <csv> --in-place # overwrite input
 
 Default writes ``<name>_escalation.csv`` with all derived columns appended (this
 is the safe "persisted cost_frac" — it never touches the engine's own CSV).

@@ -43,7 +43,7 @@ are catalogued.
 ────────────────────────────────────────────────────────────────────────────
 Prerequisites for the MAP stages:
   * primed voter cache  eval/data/map_primer/voter_cache.json
-        (from `python -m eval.silver.map_theta_sweep prime --split all` + `collect`)
+        (from `python -m eval.silver.analysis.map_theta_sweep prime --split all` + `collect`)
   * silver labels       eval/data/silver_findings.jsonl
         (from `python -m eval.silver.generation.generate --batch`)
 
@@ -78,7 +78,7 @@ from pipeline.stages.knowledge_extraction.config import AgreementConfig
 from eval.silver.matching.matcher import (
     SIMILARITY_THRESHOLD,
 )
-from eval.silver.map_theta_sweep import (
+from eval.silver.analysis.map_theta_sweep import (
     REJECT_THETA_GRID,
     REPORTS_DIR,
     THETA_GRID,
@@ -236,7 +236,7 @@ STAGES: dict[str, SweepSpec] = {
         executable=False, metric="retention/rejection curve (NOT silver F1)",
         scaffold_reason=(
             "needs MAP findings + their NLI grounding scores. Either a full-pipeline "
-            "prime (eval.silver.pipeline_sweep) or the Layer-A artifact sweep "
+            "prime (eval.silver.analysis.pipeline_sweep) or the Layer-A artifact sweep "
             "(eval/sweeps/grounding.py) — and the latter is retention-only, not "
             "silver-F1-comparable to the MAP stages.")),
     "relate": SweepSpec(
@@ -244,7 +244,7 @@ STAGES: dict[str, SweepSpec] = {
         executable=False, metric="relation-count / pair-distribution stats (NOT finding-level F1)",
         scaffold_reason=(
             "RELATE output is at the FinalRule level; silver labels are per-finding, "
-            "so there is no silver-F1 metric for relation pairs. eval.silver.pipeline_sweep "
+            "so there is no silver-F1 metric for relation pairs. eval.silver.analysis.pipeline_sweep "
             "relate emits relation-count stats only.")),
     "resolve": SweepSpec(
         "resolve", "Stage 6 — RESOLVE weights  [SCAFFOLD]",
@@ -445,10 +445,10 @@ def _enumerate_cells(stage: str) -> list[str]:
 # Execution (MAP stages only).
 # ─────────────────────────────────────────────────────────────────────────────
 
-# _MapContext / _load_map_context were EXTRACTED to eval/silver/map_context.py
+# _MapContext / _load_map_context were EXTRACTED to eval/silver/analysis/map_context.py
 # (2026-06-17) so the live loader is not stranded in this legacy module. Re-imported
 # here for backward compatibility and for this module's own _run_map_stage (line ~468).
-from eval.silver.map_context import _MapContext, _load_map_context  # noqa: E402,F401
+from eval.silver.analysis.map_context import _MapContext, _load_map_context  # noqa: E402,F401
 
 
 def _select_winner(rows: list[dict], metric: str, max_escalate: Optional[float]) -> Optional[dict]:

@@ -5,7 +5,7 @@ No real sweeps run; no caches touched; no API calls. Each test exercises
 either pure resolution logic (phase → experiments, topological ordering,
 ``_per_scorer_best``) or hard-fail paths that short-circuit *before* any
 ``run_sweep`` invocation. The orchestrator's expensive paths (calling into
-``eval.silver.map_theta_sweep.run_sweep``) are reached only via ``--run``
+``eval.silver.analysis.map_theta_sweep.run_sweep``) are reached only via ``--run``
 on executable EXPs, and none of these tests do that.
 
 Loaded with ``importlib.util`` because ``scripts/`` is not a package

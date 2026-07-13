@@ -38,8 +38,8 @@ os.environ["OPENAI_API_KEY"] = ""
 
 from langchain_core.runnables import RunnableLambda  # noqa: E402
 
-from eval.silver.map_context import _load_map_context  # noqa: E402
-from eval.silver.map_theta_sweep import (  # noqa: E402
+from eval.silver.analysis.map_context import _load_map_context  # noqa: E402
+from eval.silver.analysis.map_theta_sweep import (  # noqa: E402
     ScorerSpec,
     _build_scorer,
     _replay,
@@ -51,7 +51,7 @@ from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridC
 from pipeline.stages.knowledge_extraction.stages.map_stage import MapStage  # noqa: E402
 from pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision  # noqa: E402
 from pipeline.stages.knowledge_extraction.models import AuditableSummary  # noqa: E402
-from eval.silver.run_new_summarization_sweeps import (  # noqa: E402
+from eval.silver.analysis.run_new_summarization_sweeps import (  # noqa: E402
     BEST_FORCE_ESCALATE_POLARITY, BEST_REJECT_THETA, BEST_SINGLE_VOTER_POLICY,
     BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,  # noqa: F401  (BEST_VOTER_SUBSET/_filtered used by importers)
 )

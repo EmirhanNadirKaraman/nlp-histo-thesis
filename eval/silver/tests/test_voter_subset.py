@@ -13,8 +13,8 @@ import copy
 
 import pytest
 
-import eval.silver.run_new_summarization_sweeps as m
-from eval.silver.map_theta_sweep import REJECT_THETA_GRID, THETA_GRID
+import eval.silver.analysis.run_new_summarization_sweeps as m
+from eval.silver.analysis.map_theta_sweep import REJECT_THETA_GRID, THETA_GRID
 
 
 @pytest.fixture(autouse=True)

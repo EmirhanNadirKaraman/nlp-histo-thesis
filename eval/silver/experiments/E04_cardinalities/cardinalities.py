@@ -40,7 +40,7 @@ from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from eval.silver.map_theta_sweep import REPORTS_DIR  # noqa: E402
+from eval.silver.analysis.map_theta_sweep import REPORTS_DIR  # noqa: E402
 
 _DEFAULT_SUMMARIES = _REPO_ROOT / "out" / "summaries" / "summaries"
 _DEFAULT_SOURCE = _REPO_ROOT / "eval" / "data" / "source_cases_related15.jsonl"

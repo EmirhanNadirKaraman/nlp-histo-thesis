@@ -40,16 +40,16 @@ from eval.silver.experiments.E10_baselines.single_model_baselines import (
     _frozen_spec,
     _single_model_outputs,
 )
-from eval.silver.map_context import _load_map_context
-from eval.silver.map_theta_sweep import (
+from eval.silver.analysis.map_context import _load_map_context
+from eval.silver.analysis.map_theta_sweep import (
     REPORTS_DIR,
     _build_scorer,
     _make_voters,
     _replay,
 )
 from eval.silver.matching.matcher import SIMILARITY_THRESHOLD
-from eval.silver.pipeline_sweep import _evaluate_outputs
-from eval.silver.run_new_summarization_sweeps import (
+from eval.silver.analysis.pipeline_sweep import _evaluate_outputs
+from eval.silver.analysis.run_new_summarization_sweeps import (
     BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,
 )
 

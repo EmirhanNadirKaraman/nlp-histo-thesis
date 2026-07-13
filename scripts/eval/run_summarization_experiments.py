@@ -24,7 +24,7 @@ default to ``split=dev`` and refuse ``--split test`` unless
 ``--allow-test-tuning`` is passed — protects against accidental held-out tuning.
 
 The orchestrator reuses existing per-stage code (``run_sweep`` from
-``eval/silver/map_theta_sweep.py``; ``_load_map_context`` from
+``eval/silver/analysis/map_theta_sweep.py``; ``_load_map_context`` from
 ``run_summarization_sweeps.py``); it does not duplicate sweep mechanics.
 
 Usage::
@@ -299,7 +299,7 @@ def _per_scorer_best(rows: list[dict], metric: str = "strict_f1") -> list[dict]:
 
 def _build_exp1_scorer_specs():
     """The 7 scorer ScorerSpecs for EXP 1 / EXP 4 (1 embedding + 6 hybrid blends)."""
-    from eval.silver.map_theta_sweep import ScorerSpec
+    from eval.silver.analysis.map_theta_sweep import ScorerSpec
     from eval.silver.old_files.run_summarization_sweeps import HYBRID_BLEND_GRID
     from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
@@ -320,7 +320,7 @@ def _agreement_weight_grid_around(base_cfg) -> list:
     selected scorer's defaults. Mirrors ``_weight_variant_specs`` for the
     hybrid-on-hybrid case but built from the EXP 1 / 4 winner.
     """
-    from eval.silver.map_theta_sweep import ScorerSpec
+    from eval.silver.analysis.map_theta_sweep import ScorerSpec
     from eval.silver.old_files.run_summarization_sweeps import (
         TAU_GRID, COUNT_ALPHA_GRID, REUSE_WEIGHT_GRID, CONTRADICTION_WEIGHT_GRID,
     )
@@ -362,8 +362,8 @@ def _run_branch_scorer_comparison(
     ctx: ExperimentContext, embedder: str, exp_label: str,
 ) -> ExperimentResult:
     """Shared body for EXP 1 (Gemini) and EXP 4 (OpenAI)."""
-    from eval.silver.map_theta_sweep import run_sweep, THETA_GRID, REJECT_THETA_GRID
-    from eval.silver.map_context import _load_map_context
+    from eval.silver.analysis.map_theta_sweep import run_sweep, THETA_GRID, REJECT_THETA_GRID
+    from eval.silver.analysis.map_context import _load_map_context
 
     map_ctx = _load_map_context(embedder, embed_cache_path=None)
     specs = _build_exp1_scorer_specs()
@@ -437,8 +437,8 @@ def _run_branch_agreement_weights(
             f"Run the {embedder}_branch phase first, or pass --include-deps."
         )
 
-    from eval.silver.map_theta_sweep import run_sweep
-    from eval.silver.map_context import _load_map_context
+    from eval.silver.analysis.map_theta_sweep import run_sweep
+    from eval.silver.analysis.map_context import _load_map_context
     from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     winner_scorer = s[f"BEST_{prefix}_SCORER"]
@@ -512,8 +512,8 @@ def _run_branch_polarity_flag(
             f"Run the {embedder}_branch phase first, or pass --include-deps."
         )
 
-    from eval.silver.map_theta_sweep import run_sweep, ScorerSpec
-    from eval.silver.map_context import _load_map_context
+    from eval.silver.analysis.map_theta_sweep import run_sweep, ScorerSpec
+    from eval.silver.analysis.map_context import _load_map_context
     from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     winner_scorer = s[f"BEST_{prefix}_SCORER"]
@@ -664,8 +664,8 @@ def _run_exp_f(ctx: ExperimentContext) -> ExperimentResult:
     prefix = embedder.upper()
     cfg = ctx.state.get(f"FINAL_{prefix}_MAP_CONFIG", final)
 
-    from eval.silver.map_theta_sweep import run_sweep, ScorerSpec
-    from eval.silver.map_context import _load_map_context
+    from eval.silver.analysis.map_theta_sweep import run_sweep, ScorerSpec
+    from eval.silver.analysis.map_context import _load_map_context
     from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     scorer_kind = "hybrid" if str(cfg["scorer"]).startswith("hybrid") else "embedding"
@@ -795,7 +795,7 @@ def _run_exp_b2(ctx):
     if not cache_path.exists():
         raise SystemExit(
             f"EXP B.2 (baselines): voter cache not found: {cache_path}\n"
-            "  Prime it with `python -m eval.silver.map_theta_sweep prime --split all` "
+            "  Prime it with `python -m eval.silver.analysis.map_theta_sweep prime --split all` "
             "then `collect`."
         )
     if not silver_path.exists():
@@ -1080,7 +1080,7 @@ def _b2_cache_shape(voter_cache: dict) -> dict:
 
 
 def _b2_finding_to_pipeline(f: dict, pmcid: str, chunk_id: str, run_id: str):
-    """Mirror eval.silver.map_theta_sweep._finding_to_pipeline (without θ stamp)."""
+    """Mirror eval.silver.analysis.map_theta_sweep._finding_to_pipeline (without θ stamp)."""
     from eval.silver.data.schemas import PipelineFinding
     scope = f.get("scope") or {}
     return PipelineFinding(
@@ -1156,7 +1156,7 @@ def _b2_build_voter_outputs(
 def _b2_eval_outputs(
     case_outputs, silver_by_case, embedder, embed_cache, sim_threshold,
 ) -> dict:
-    """Mirror eval.silver.pipeline_sweep._evaluate_outputs.
+    """Mirror eval.silver.analysis.pipeline_sweep._evaluate_outputs.
 
     Returns ``{strict_f1, f1, precision, recall, n_matched, n_silver, n_pipeline}``.
     """
@@ -1253,9 +1253,9 @@ def _b2_replay_cascade(
     ``GOOGLE_API_KEY`` (gemini) or ``OPENAI_API_KEY`` (openai) only when the
     agreement embedding cache is cold; warm caches → zero API calls.
     """
-    from eval.silver.map_theta_sweep import _replay, ScorerSpec, _build_scorer
+    from eval.silver.analysis.map_theta_sweep import _replay, ScorerSpec, _build_scorer
     from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
-    from eval.silver.map_context import _load_map_context
+    from eval.silver.analysis.map_context import _load_map_context
 
     scorer_kind = "hybrid" if str(pfm.get("scorer", "")).startswith("hybrid") else "embedding"
 

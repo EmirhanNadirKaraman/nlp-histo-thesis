@@ -126,7 +126,7 @@ Adapter status: see §0 + §5.4. Today's MVP judges read DB; the JSONL is parall
 **Post-MAP, runner-side**
 
 - `Finding.finding_id` is assigned for every emitted finding *before* grounding (`runner.py:365-373`) so grounding-rejected findings carry the same id as their pre-grounding counterpart.
-- Grounding filter: `grounding_filter.GroundingFilter` runs NLI entailment on `(verbatim_support, claim)`. `grounding.threshold` lives in pipeline config (default referenced from `eval/silver/pipeline_sweep.py` sweep range). Findings below threshold are recorded in `rejected_findings.jsonl` (and `SumRejectedFinding` with `stage="grounding_map"`).
+- Grounding filter: `grounding_filter.GroundingFilter` runs NLI entailment on `(verbatim_support, claim)`. `grounding.threshold` lives in pipeline config (default referenced from `eval/silver/analysis/pipeline_sweep.py` sweep range). Findings below threshold are recorded in `rejected_findings.jsonl` (and `SumRejectedFinding` with `stage="grounding_map"`).
 
 ### 2.3 Information lost or transformed
 
@@ -501,7 +501,7 @@ All weights / caps in `ResolveConfig` (imported from `config.py`).
 | id | name | input | unit | judge prompt idea | output schema | metric | MVP? |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Rs-1 | Ranking quality | top-N FinalRules + a uniformly-sampled tail rule | one pair | "Which of these two rules carries stronger evidence?" | `winner: id, reason` | pairwise win-rate vs Opus silver | Later — useful but expensive. |
-| Rs-2 | Weight sweep | full `final_rules.jsonl` + cached components | full corpus | `eval/silver/pipeline_sweep.py relate` and equivalent grounding sweep | sweep CSV | per-weight P / R / F1 vs silver | Later — **partially unblocked**; full ablation needs component breakdown (TODO). |
+| Rs-2 | Weight sweep | full `final_rules.jsonl` + cached components | full corpus | `eval/silver/analysis/pipeline_sweep.py relate` and equivalent grounding sweep | sweep CSV | per-weight P / R / F1 vs silver | Later — **partially unblocked**; full ablation needs component breakdown (TODO). |
 | Rs-3 | Contradiction-penalty correctness | FinalRule with `is_contradicted=True` + the contradicting Relation(s) + both rules | one final rule | "Is this contradiction real? Does the penalty seem warranted?" | `contradiction_real: bool` | precision of contradict signal | Later. |
 
 ---
@@ -631,7 +631,7 @@ python -m eval.llm_judge --mode sync --tests q1,q2,q3 --n 2 \
   --max-requests 12 --results-dir /tmp/judge_smoke
 ```
 
-against a run that populated both DB and JSONL will succeed today. The JSONL is supplementary: it enables offline replay (`eval/silver/pipeline_sweep.py`, `map_theta_sweep.py`), it preserves `finding_id` / `skipped_pairs` / `raw_pairs` for Later judges, and it gives a portable thesis archive. If/when we run eval against a DB-less archive, build §9's adapter.
+against a run that populated both DB and JSONL will succeed today. The JSONL is supplementary: it enables offline replay (`eval/silver/analysis/pipeline_sweep.py`, `map_theta_sweep.py`), it preserves `finding_id` / `skipped_pairs` / `raw_pairs` for Later judges, and it gives a portable thesis archive. If/when we run eval against a DB-less archive, build §9's adapter.
 
 ### 10.5 Two infrastructure tweaks before scaling MVP
 
@@ -739,11 +739,11 @@ Optional for Later: co-locate at `<artifact_root>/<run_id>/eval/judge_<judge_run
 ### 11.6 Opus-pipeline calibration pass (selected-15)
 
 - **Summarization:** all-Opus cascade. Most expensive, slowest. Two purposes:
-  1. **Silver findings for `eval/silver/`**: Opus-extracted findings on the same paragraphs become the silver set. Reuse `eval/silver/generation/generator.py` (the Opus-based silver generator) for extraction; reuse `eval/silver/evaluate.py` for P/R/F1 against pipeline findings.
+  1. **Silver findings for `eval/silver/`**: Opus-extracted findings on the same paragraphs become the silver set. Reuse `eval/silver/generation/generator.py` (the Opus-based silver generator) for extraction; reuse `eval/silver/analysis/evaluate.py` for P/R/F1 against pipeline findings.
   2. **Threshold sweep inputs**:
-     - `eval/silver/map_theta_sweep.py` for MAP agreement θ.
-     - `eval/silver/pipeline_sweep.py grounding` for the grounding threshold.
-     - `eval/silver/pipeline_sweep.py relate` for RELATE thresholds.
+     - `eval/silver/analysis/map_theta_sweep.py` for MAP agreement θ.
+     - `eval/silver/analysis/pipeline_sweep.py grounding` for the grounding threshold.
+     - `eval/silver/analysis/pipeline_sweep.py relate` for RELATE thresholds.
      - The CSVs already at `eval/reports/grounding_sweep_*.csv`, `relate_sweep_*.csv`, `map_theta_sweep_*.csv` (per `git status` and `ls`) gain Opus columns.
 - **Pass criteria:** §10.1–§10.3 "Opus" thresholds — these are calibration ceilings, not pass/fail gates.
 

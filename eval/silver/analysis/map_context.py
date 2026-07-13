@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Optional
 
 from eval.silver.data.jsonl_utils import read_jsonl
-from eval.silver.map_theta_sweep import (
+from eval.silver.analysis.map_theta_sweep import (
     CACHE_PATH,
     SILVER_PATH,
     _make_cached_embed_fn,
@@ -61,7 +61,7 @@ def _load_map_context(
     if not cache_path.exists():
         raise SystemExit(
             f"voter cache not found: {cache_path}\n"
-            "Run `python -m eval.silver.map_theta_sweep prime` (with --source/--primer-dir) "
+            "Run `python -m eval.silver.analysis.map_theta_sweep prime` (with --source/--primer-dir) "
             "then `collect`.")
     if not silver_path.exists():
         raise SystemExit(

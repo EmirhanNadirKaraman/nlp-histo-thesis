@@ -193,7 +193,7 @@ def cmd_sync_real() -> int:
     (native response_schema), so this genuinely adds coverage.
     """
     from eval.silver.data.jsonl_utils import read_jsonl
-    from eval.silver.pipeline_sweep import case_to_file_data
+    from eval.silver.analysis.pipeline_sweep import case_to_file_data
     from eval.silver.data.schemas import SourceCase
     from pipeline.stages.knowledge_extraction.stages.map_stage import _format_sentences
     from pipeline.stages.knowledge_extraction.llm_providers import (

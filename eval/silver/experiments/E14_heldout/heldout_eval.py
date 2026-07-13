@@ -10,10 +10,10 @@ ZERO voter API — replays the cached heldout15 primer (only cheap, one-time agr
 embeddings, served from cache after the first run). It needs the heldout15 primer to
 exist first (the one billable step — the cascade gather):
 
-  python -m eval.silver.map_theta_sweep prime \
+  python -m eval.silver.analysis.map_theta_sweep prime \
       --source eval/data/source_cases_heldout15.jsonl \
       --primer-dir eval/data/map_primer_heldout15 --split all
-  python -m eval.silver.map_theta_sweep collect \
+  python -m eval.silver.analysis.map_theta_sweep collect \
       --source eval/data/source_cases_heldout15.jsonl \
       --primer-dir eval/data/map_primer_heldout15 --split all
 
@@ -43,16 +43,16 @@ from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from eval.silver.map_context import _load_map_context  # noqa: E402
-from eval.silver.map_theta_sweep import (  # noqa: E402
+from eval.silver.analysis.map_context import _load_map_context  # noqa: E402
+from eval.silver.analysis.map_theta_sweep import (  # noqa: E402
     REPORTS_DIR,
     ScorerSpec,
     _build_scorer,
     _replay,
 )
 from eval.silver.matching.matcher import SIMILARITY_THRESHOLD  # noqa: E402
-from eval.silver.pipeline_sweep import _evaluate_outputs  # noqa: E402
-from eval.silver.run_new_summarization_sweeps import (  # noqa: E402
+from eval.silver.analysis.pipeline_sweep import _evaluate_outputs  # noqa: E402
+from eval.silver.analysis.run_new_summarization_sweeps import (  # noqa: E402
     BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,
 )
 from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig  # noqa: E402

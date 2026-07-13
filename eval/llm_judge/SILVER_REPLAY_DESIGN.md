@@ -55,7 +55,7 @@ Both run on the same 15-paper selection. Both feed the final report.
 - `eval/silver/data/schemas.py:SilverFinding` fields: `claim, subject_entity, outcome_entity, relation_type, direction, category, confidence, verbatim_support, scope, source_sentence_ids`.
 - `eval/silver/matching/matcher.py` — embedding-based alignment with cache + `compute_metrics` for P/R/F1, used today for MAP-only comparison. Reusable for every downstream stage.
 - `eval/silver/matching/embedders.py` — OpenAI / Gemini embedders with disk cache.
-- `eval/silver/evaluate.py` — existing CLI that does MAP-level silver eval. The new replay extends the *same metric framework* to later stages.
+- `eval/silver/analysis/evaluate.py` — existing CLI that does MAP-level silver eval. The new replay extends the *same metric framework* to later stages.
 - `pipeline/stages/summarization/current_stages/{normalize,group,canonicalize,relate,resolve}_stage.py` — the deterministic stages, callable independently of `KnowledgeExtractionRunner`.
 
 ## §3. Architecture
@@ -170,7 +170,7 @@ Same matcher (`eval/silver/matching/matcher.py`) at every stage; only the embedd
 
 ### 4.1 MAP exit (sanity check)
 
-Already implemented in `eval/silver/evaluate.py`. Compares pipeline MAP findings vs silver MAP findings. Embedding string:
+Already implemented in `eval/silver/analysis/evaluate.py`. Compares pipeline MAP findings vs silver MAP findings. Embedding string:
 
 ```
 claim | subject_entity | outcome_entity | relation_type | direction | category
@@ -286,14 +286,14 @@ In a separate PR sequence from `STAGE_EVAL_DESIGN.md`'s per-stage judges. Both c
 
 1. **Adapter** (`adapter.py`) + unit tests (round-trip `SilverFinding ↔ Finding`, evidence-string parse-back, `compute_finding_id` stability).
 2. **SilverReplayRunner** (`runner.py`). Wraps post-MAP stages; reuses `persistence.py` writers. Pin determinism settings (§3.4).
-3. **MAP-exit sanity check** — run replay, confirm `eval/silver/evaluate.py` still passes against the new path (it should be byte-identical for stage 1).
+3. **MAP-exit sanity check** — run replay, confirm `eval/silver/analysis/evaluate.py` still passes against the new path (it should be byte-identical for stage 1).
 4. **NORMALIZE-exit comparison** (`compare.py:compare_normalize`) — reuses `compute_sim_matrix`, `match_from_matrix`, `compute_metrics` from `eval/silver/matching/matcher.py`. Validate on 2 papers.
 5. **GROUP-exit** — adds member-set Jaccard via NORMALIZE alignment chain.
 6. **CANONICALIZE-exit** — adds direction-bin and predicate-pick agreement.
 7. **RELATE-exit** — both relation-set match and raw-pair Spearman.
 8. **RESOLVE-exit** — E2E-F1 + top-k F1 + score-bucket calibration.
 9. **Report writer** (`metrics.py`) — per-paper CSV, corpus CSV with bootstrap CIs, threshold-sweep table, stratum split.
-10. **Wire into `eval.silver.evaluate` CLI** as a `--mode replay` subcommand, or keep `python -m eval.silver.replay` as its own entrypoint.
+10. **Wire into `eval.silver.analysis.evaluate` CLI** as a `--mode replay` subcommand, or keep `python -m eval.silver.replay` as its own entrypoint.
 
 Steps 1–3 are scaffolding; the first usable signal is at step 4.
 

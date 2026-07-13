@@ -33,8 +33,8 @@ from dotenv import load_dotenv
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from eval.silver.map_context import _load_map_context
-from eval.silver.map_theta_sweep import (
+from eval.silver.analysis.map_context import _load_map_context
+from eval.silver.analysis.map_theta_sweep import (
     REPORTS_DIR,
     ScorerSpec,
     _build_scorer,
@@ -43,8 +43,8 @@ from eval.silver.map_theta_sweep import (
     _replay,
 )
 from eval.silver.matching.matcher import SIMILARITY_THRESHOLD
-from eval.silver.pipeline_sweep import _evaluate_outputs
-from eval.silver.run_new_summarization_sweeps import (
+from eval.silver.analysis.pipeline_sweep import _evaluate_outputs
+from eval.silver.analysis.run_new_summarization_sweeps import (
     BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache, _subset_meta,
 )
 from eval.silver.data.schemas import PipelineCaseOutput

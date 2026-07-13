@@ -40,8 +40,8 @@ from dotenv import load_dotenv
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from eval.silver.map_theta_sweep import REPORTS_DIR, _make_voters
-from eval.silver.run_new_summarization_sweeps import (
+from eval.silver.analysis.map_theta_sweep import REPORTS_DIR, _make_voters
+from eval.silver.analysis.run_new_summarization_sweeps import (
     BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _subset_meta,
 )
 

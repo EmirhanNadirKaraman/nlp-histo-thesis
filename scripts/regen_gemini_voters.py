@@ -185,7 +185,7 @@ def main() -> None:
     if "heldout" in str(primer_dir):
         print("  python -m eval.silver.experiments.E14_heldout.heldout_eval")
     else:
-        print("  python -m eval.silver.map_theta_sweep sweep --split all --embedder gemini \\")
+        print("  python -m eval.silver.analysis.map_theta_sweep sweep --split all --embedder gemini \\")
         print("      --silver eval/data/silver_findings_related15.jsonl")
     print("Sanity-check contamination is gone:")
     print(f"  python legacy/scripts/probes/_citation_probe.py {cache_path}")

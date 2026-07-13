@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import pytest
 
-from eval.silver.run_new_summarization_sweeps import (
+from eval.silver.analysis.run_new_summarization_sweeps import (
     _DEFAULT_BLEND,
     _DEFAULTS,
     _deviation,

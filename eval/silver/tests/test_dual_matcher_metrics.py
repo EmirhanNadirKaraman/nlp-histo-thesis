@@ -16,7 +16,7 @@ from unittest.mock import patch
 import pytest
 
 from eval.silver.matching.matcher import greedy_match, optimal_match
-from eval.silver.pipeline_sweep import _evaluate_outputs
+from eval.silver.analysis.pipeline_sweep import _evaluate_outputs
 from eval.silver.data.schemas import (
     PipelineCaseOutput,
     PipelineFinding,
@@ -107,7 +107,7 @@ def test_evaluate_outputs_reports_both_matchers(mock_emb):
 # ── harness selects on strict_f1_optimal, never greedy ───────────────────────
 
 def test_rank_selects_on_optimal_not_greedy():
-    from eval.silver.run_new_summarization_sweeps import _rank
+    from eval.silver.analysis.run_new_summarization_sweeps import _rank
     # Row A wins on greedy but loses on optimal; selection must pick B.
     a = {"strict_f1_optimal": 0.60, "f1_optimal": 0.62,
          "strict_f1_greedy": 0.90, "f1_greedy": 0.91, "escalate_rate": 0.0}
@@ -120,7 +120,7 @@ def test_rank_selects_on_optimal_not_greedy():
 def test_rank_tiebreaks_cost_then_f1_optimal():
     # Cost axis is _cost_frac (price-weighted L2+L3 escalation, from n_chunks/
     # n_l2_invoked/n_l3_invoked), NOT bare escalate_rate — see _cost_frac docstring.
-    from eval.silver.run_new_summarization_sweeps import _rank
+    from eval.silver.analysis.run_new_summarization_sweeps import _rank
     # Primary ties → LOWER cost_frac wins (even with worse f1_optimal).
     lo_cost = {"strict_f1_optimal": 0.70, "f1_optimal": 0.60,
                "n_chunks": 100, "n_l2_invoked": 10, "n_l3_invoked": 10}   # cost_frac 0.1
@@ -139,7 +139,7 @@ def test_selection_metric_choices_exclude_greedy():
     """The harness --metric flag must not offer any greedy metric for selection."""
     import ast
     from pathlib import Path
-    src = Path(__file__).resolve().parents[1] / "run_new_summarization_sweeps.py"
+    src = Path(__file__).resolve().parents[1] / "analysis" / "run_new_summarization_sweeps.py"
     tree = ast.parse(src.read_text())
     # find the --metric add_argument call and read its choices=[...]
     choices = None

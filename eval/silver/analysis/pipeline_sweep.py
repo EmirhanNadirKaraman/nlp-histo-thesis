@@ -9,15 +9,15 @@ Modes:
   all         prime + grounding + relate in sequence
 
 Usage:
-  python -m eval.silver.pipeline_sweep prime --source eval/data/source_cases_related15.jsonl
-  python -m eval.silver.pipeline_sweep grounding --source eval/data/source_cases_related15.jsonl --silver eval/data/silver_findings_related15.jsonl --embedder gemini
-  python -m eval.silver.pipeline_sweep relate --source eval/data/source_cases_related15.jsonl --silver eval/data/silver_findings_related15.jsonl
-  python -m eval.silver.pipeline_sweep all --source eval/data/source_cases_related15.jsonl --silver eval/data/silver_findings_related15.jsonl --embedder gemini
+  python -m eval.silver.analysis.pipeline_sweep prime --source eval/data/source_cases_related15.jsonl
+  python -m eval.silver.analysis.pipeline_sweep grounding --source eval/data/source_cases_related15.jsonl --silver eval/data/silver_findings_related15.jsonl --embedder gemini
+  python -m eval.silver.analysis.pipeline_sweep relate --source eval/data/source_cases_related15.jsonl --silver eval/data/silver_findings_related15.jsonl
+  python -m eval.silver.analysis.pipeline_sweep all --source eval/data/source_cases_related15.jsonl --silver eval/data/silver_findings_related15.jsonl --embedder gemini
 
 Notes:
   - prime must run before grounding / relate.
   - grounding uses the fixed eval-matching threshold (--sim-threshold, default 0.55).
-    Run eval.silver.sweep first to calibrate that threshold.
+    Run eval.silver.analysis.sweep first to calibrate that threshold.
   - relate produces relation-count statistics (no silver comparison — RELATE output
     is at FinalRule level, not at the individual Finding level that silver labels target).
   - MAP theta sweep is not included here (requires a full ABC cascade re-run per
@@ -580,7 +580,7 @@ def main() -> None:
     parser.add_argument("--embed-cache",  default=None,
                         help="Override embedding cache path")
     parser.add_argument("--sim-threshold", type=float, default=SIMILARITY_THRESHOLD,
-                        help="Fixed eval-matching threshold (calibrate with eval.silver.sweep first)")
+                        help="Fixed eval-matching threshold (calibrate with eval.silver.analysis.sweep first)")
     parser.add_argument("--split",        default="dev", choices=["dev", "test", "all"])
     parser.add_argument("--dev-fraction", type=float, default=0.8)
     parser.add_argument("--seed",         type=int, default=42)

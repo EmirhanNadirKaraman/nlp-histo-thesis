@@ -44,7 +44,7 @@ from dotenv import load_dotenv
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from eval.silver.map_theta_sweep import (  # reused engine + voter definitions
+from eval.silver.analysis.map_theta_sweep import (  # reused engine + voter definitions
     REPORTS_DIR,
     ScorerSpec,
     _make_voters,
@@ -52,7 +52,7 @@ from eval.silver.map_theta_sweep import (  # reused engine + voter definitions
     run_sweep,
 )
 from eval.silver.matching.matcher import SIMILARITY_THRESHOLD
-from eval.silver.map_context import _load_map_context
+from eval.silver.analysis.map_context import _load_map_context
 from pipeline.stages.knowledge_extraction.config import AgreementConfig
 
 

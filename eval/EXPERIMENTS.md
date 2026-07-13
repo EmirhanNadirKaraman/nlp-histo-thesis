@@ -174,7 +174,7 @@ findings/paper vs ~80), hence ~$20 for 15 papers.
 
 ### G-2 — Threshold sweep (offline) · P3 · $0
 
-**Already implemented:** `eval/silver/pipeline_sweep.py`
+**Already implemented:** `eval/silver/analysis/pipeline_sweep.py`
 
 **What it tests:** precision/recall/F1 tradeoff at grounding thresholds from
 `None` to `0.70`. Uses cached NLI scores — no API calls.

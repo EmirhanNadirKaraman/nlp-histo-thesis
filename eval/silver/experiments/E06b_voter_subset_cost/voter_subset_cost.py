@@ -7,7 +7,7 @@ CORRECT price-weighted per-chunk cost, writes the augmented CSV as a sidecar
 NEXT TO the input (``<stem>_cost.csv``), and prints a per-config domination
 table (each voter drop vs its ``voter_subset="all"`` baseline).
 
-WHY A DEDICATED COSTER (not ``eval.silver.escalation_breakdown``)
+WHY A DEDICATED COSTER (not ``eval.silver.analysis.escalation_breakdown``)
 -----------------------------------------------------------------
 ``escalation_breakdown.py``'s ``cost_frac`` drops the L1 term as "constant" and
 charges the FULL-ensemble per-tier prices (L2=9.6, L3=18). That is valid ONLY
@@ -70,7 +70,7 @@ from dotenv import load_dotenv
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from eval.silver.map_theta_sweep import REPORTS_DIR, _make_voters
+from eval.silver.analysis.map_theta_sweep import REPORTS_DIR, _make_voters
 
 _DERIVED = (
     "l1_escalate_rate", "l2_escalate_rate_cond", "l1_active_price", "l2_active_price",

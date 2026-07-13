@@ -45,7 +45,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 # Pure file transform — define the reports dir locally rather than importing
-# eval.silver.map_theta_sweep (which would pull in the summarisation pipeline
+# eval.silver.analysis.map_theta_sweep (which would pull in the summarisation pipeline
 # and its load-time stdout noise) just for a Path constant.
 _REPORTS_DIR = _REPO_ROOT / "eval" / "reports" / "E01_doc_extraction"
 _DEFAULT_JSON = _REPORTS_DIR / "figtable_extraction_sweep_rerun_27pdf_20260604_PR.json"

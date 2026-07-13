@@ -776,7 +776,7 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     }
 
     try:
-        from eval.silver.map_context import _load_map_context
+        from eval.silver.analysis.map_context import _load_map_context
         _load_map_context(cascade_cfg["embedder"], embed_cache_path=None)
         # Replay only dev-split cases.
         # _replay returns a dict; we adapt below.
@@ -927,8 +927,8 @@ def analyse_exp_f_test_split() -> AnalysisResult:
     """
     name = "06_exp_f_test_split"
     try:
-        from eval.silver.map_theta_sweep import run_sweep, ScorerSpec
-        from eval.silver.map_context import _load_map_context
+        from eval.silver.analysis.map_theta_sweep import run_sweep, ScorerSpec
+        from eval.silver.analysis.map_context import _load_map_context
         from pipeline.stages.knowledge_extraction.config import (
             AgreementConfig, HybridConfig,
         )
@@ -1352,7 +1352,7 @@ def _build_cascade_outputs(voter_cache, agreement_embed_fn, dev_filter):
       force_escalate_on_polarity_conflict = True,
       legacy_single_voter_policy = "keep".
     """
-    from eval.silver.map_theta_sweep import _replay, ScorerSpec, _build_scorer
+    from eval.silver.analysis.map_theta_sweep import _replay, ScorerSpec, _build_scorer
     from pipeline.stages.knowledge_extraction.config import (
         AgreementConfig, HybridConfig,
     )
@@ -1407,7 +1407,7 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
         from eval.silver.data.jsonl_utils import read_jsonl
         from eval.silver.data.schemas import SilverCaseResult
         from eval.silver.data.split import assign_split
-        from eval.silver.map_context import _load_map_context
+        from eval.silver.analysis.map_context import _load_map_context
     except Exception as exc:
         return AnalysisResult(
             name=name, status="error",
@@ -1786,7 +1786,7 @@ def _build_real_profile_findings_per_chunk(voter_cache, dev_filter,
     return per-chunk metadata: (case_id, pmcid, chunk_id, source_text,
     accepted_findings, accept_level).
     """
-    from eval.silver.map_theta_sweep import ScorerSpec, _build_scorer
+    from eval.silver.analysis.map_theta_sweep import ScorerSpec, _build_scorer
     from pipeline.stages.knowledge_extraction.config import (
         AgreementConfig, HybridConfig,
     )
@@ -1885,7 +1885,7 @@ def analyse_real_profile_grounding_polarity() -> AnalysisResult:
     name = "12_real_profile_grounding_polarity"
     try:
         from eval.silver.data.split import assign_split
-        from eval.silver.map_context import _load_map_context
+        from eval.silver.analysis.map_context import _load_map_context
         from pipeline.stages.knowledge_extraction.models import (
             AuditableSummary,
         )

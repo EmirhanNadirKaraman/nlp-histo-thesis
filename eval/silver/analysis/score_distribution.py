@@ -30,21 +30,21 @@ the distribution SHAPE — expect bimodal (clusters near 0 and near 1, sparse
 middle), which is *why* reject_theta is insensitive in the band.
 
 Usage:
-  python -m eval.silver.score_distribution                      # all finalists, band (0.1,0.2]
-  python -m eval.silver.score_distribution --band 0.1 0.2       # explicit band
-  python -m eval.silver.score_distribution --bins 20
-  python -m eval.silver.score_distribution --structure gemini embedding greedy
+  python -m eval.silver.analysis.score_distribution                      # all finalists, band (0.1,0.2]
+  python -m eval.silver.analysis.score_distribution --band 0.1 0.2       # explicit band
+  python -m eval.silver.analysis.score_distribution --bins 20
+  python -m eval.silver.analysis.score_distribution --structure gemini embedding greedy
   # model_validate prints "Repaired category…" to stdout (B-016) — filter it:
-  python -m eval.silver.score_distribution 2>/dev/null | grep -v "Repaired category"
+  python -m eval.silver.analysis.score_distribution 2>/dev/null | grep -v "Repaired category"
 """
 from __future__ import annotations
 
 import argparse
 from collections import defaultdict
 
-from eval.silver.map_context import _load_map_context
-from eval.silver.map_theta_sweep import _build_scorer
-from eval.silver.run_new_summarization_sweeps import (
+from eval.silver.analysis.map_context import _load_map_context
+from eval.silver.analysis.map_theta_sweep import _build_scorer
+from eval.silver.analysis.run_new_summarization_sweeps import (
     FINALIST_STRUCTURES,
     _default_spec,
     _refine_specs,

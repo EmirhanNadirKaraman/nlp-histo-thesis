@@ -37,10 +37,10 @@ Modes
 
 Usage
 -----
-  python -m eval.silver.map_theta_sweep all --source <cases.jsonl> --silver <silver.jsonl>
-  python -m eval.silver.map_theta_sweep prime --source <cases.jsonl>
-  python -m eval.silver.map_theta_sweep collect
-  python -m eval.silver.map_theta_sweep sweep --silver <silver.jsonl> --embedder gemini
+  python -m eval.silver.analysis.map_theta_sweep all --source <cases.jsonl> --silver <silver.jsonl>
+  python -m eval.silver.analysis.map_theta_sweep prime --source <cases.jsonl>
+  python -m eval.silver.analysis.map_theta_sweep collect
+  python -m eval.silver.analysis.map_theta_sweep sweep --silver <silver.jsonl> --embedder gemini
 
 Notes
 -----
@@ -80,7 +80,7 @@ from eval.silver.matching.matcher import (
     EmbeddingCache,
     make_embedding_cache,
 )
-from eval.silver.pipeline_sweep import case_to_file_data, _evaluate_outputs
+from eval.silver.analysis.pipeline_sweep import case_to_file_data, _evaluate_outputs
 from eval.silver.data.schemas import (
     PipelineCaseOutput,
     PipelineFinding,

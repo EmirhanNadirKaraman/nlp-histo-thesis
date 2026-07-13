@@ -92,7 +92,7 @@ class RoutingConfig:
     alone and the sync (`build_runner`) and batch (`build_batch_runner`) entry
     points cannot silently diverge — both read this field. The MAP calibration
     sweep replays the legacy path only (`CASCADE_PATH='legacy_agreement_checker'`
-    in `eval/silver/map_theta_sweep.py`), so any sweep-chosen (theta, reject_theta,
+    in `eval/silver/analysis/map_theta_sweep.py`), so any sweep-chosen (theta, reject_theta,
     scorer) must be re-validated against the router before flipping this True."""
 
     router_single_voter_policy: str = "escalate"

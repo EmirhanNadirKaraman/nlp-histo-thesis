@@ -89,12 +89,12 @@ The voter-subset axis is backward-compatible in the cell key (subset "all" → t
 original 6-tuple), so adding it never invalidated an in-flight checkpoint.
 
 Usage:
-  python -m eval.silver.run_new_summarization_sweeps --stage structure_screen --list-variants
-  python -m eval.silver.run_new_summarization_sweeps --stage structure_screen
-  python -m eval.silver.run_new_summarization_sweeps --stage family_refine
-  python -m eval.silver.run_new_summarization_sweeps --stage family_refine --from-csv <csv>   # re-print configs, no rerun
-  python -m eval.silver.run_new_summarization_sweeps --stage voter_subset_screen
-  python -m eval.silver.run_new_summarization_sweeps --stage map_theta
+  python -m eval.silver.analysis.run_new_summarization_sweeps --stage structure_screen --list-variants
+  python -m eval.silver.analysis.run_new_summarization_sweeps --stage structure_screen
+  python -m eval.silver.analysis.run_new_summarization_sweeps --stage family_refine
+  python -m eval.silver.analysis.run_new_summarization_sweeps --stage family_refine --from-csv <csv>   # re-print configs, no rerun
+  python -m eval.silver.analysis.run_new_summarization_sweeps --stage voter_subset_screen
+  python -m eval.silver.analysis.run_new_summarization_sweeps --stage map_theta
 """
 from __future__ import annotations
 
@@ -111,7 +111,7 @@ from eval.paths import REPO_ROOT as _REPO_ROOT
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from eval.silver.map_theta_sweep import (  # reused engine + helpers
+from eval.silver.analysis.map_theta_sweep import (  # reused engine + helpers
     REJECT_THETA_GRID,
     REPORTS_DIR,
     THETA_GRID,
@@ -121,7 +121,7 @@ from eval.silver.map_theta_sweep import (  # reused engine + helpers
     run_sweep,
 )
 from eval.silver.matching.matcher import SIMILARITY_THRESHOLD
-from eval.silver.map_context import _load_map_context  # reused loader
+from eval.silver.analysis.map_context import _load_map_context  # reused loader
 from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -293,10 +293,10 @@ def _cost_frac(row: dict) -> float:
 
 _FINALIST_EMPTY_MSG = (
     "FINALIST_STRUCTURES is empty — family_refine has nothing to refine.\n"
-    "  1. Run:  python -m eval.silver.run_new_summarization_sweeps --stage structure_screen\n"
+    "  1. Run:  python -m eval.silver.analysis.run_new_summarization_sweeps --stage structure_screen\n"
     "  2. Copy the printed `FINALIST_STRUCTURES = [...]` block into the constant near the top\n"
-    "     of eval/silver/run_new_summarization_sweeps.py.\n"
-    "  3. Re-run: python -m eval.silver.run_new_summarization_sweeps --stage family_refine"
+    "     of eval/silver/analysis/run_new_summarization_sweeps.py.\n"
+    "  3. Re-run: python -m eval.silver.analysis.run_new_summarization_sweeps --stage family_refine"
 )
 
 # ── Voter-subset / leave-one-voter-out (targeted, AFTER family_refine) ────────
