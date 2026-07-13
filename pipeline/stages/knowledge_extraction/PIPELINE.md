@@ -2,17 +2,66 @@
 
 This document describes the knowledge-extraction stage — what each stage does, the key design decisions, and known issues. Keep it up to date when making structural changes.
 
-**File layout.** The stage implementations live in subpackages, not at the top level of `pipeline/stages/knowledge_extraction/`. The `## <stage>.py` section headers below name each stage file; use this map to find it:
+## Package organization
+
+The implementation lives in subpackages; only a small set of primitives sits at the top
+level of `pipeline/stages/knowledge_extraction/`. The `## <file>.py` section headers below
+name each file by its bare filename — use this map to find it.
+
+```
+knowledge_extraction/
+├── agreement/            voter-agreement scorers + embedding providers
+├── batch/                async batch dispatch + cascade voter profiles
+├── costing/              usage and cost accounting
+├── entities/             entity linking, UMLS resource lifecycle, normalization utilities, synonyms.yaml
+├── grounding/            grounding filter + NLI model configuration
+├── interfaces/           Protocol definitions
+├── llm/                  provider construction, LLM-specific errors, prompt definitions
+├── observability/        metrics/export infrastructure, health diagnostics, trace artifacts
+├── provenance/           citation/verbatim provenance + source-paragraph lookup
+├── routing/              MAP-stage schema/provenance gates and policy
+├── stages/               the seven stage implementations
+├── validation/           shared validation models
+├── __init__.py
+├── models.py             every Pydantic data shape the stages exchange
+├── config.py             KnowledgeExtractionConfig + per-stage configs (home of every tunable below)
+├── runner.py             KnowledgeExtractionRunner — orchestration entry point
+├── persistence.py        DB persistence boundary (called by the runner between stages)
+├── cache.py              PipelineCache — LLM call caching
+├── enum_logging.py       Enum-observation sink used by models.py
+├── PIPELINE.md           (this file)
+├── KNOWN_ISSUES.md
+├── MANUAL_KNOWN_ISSUES.md
+├── PERSISTENCE_TODOS.md
+└── VOTER_CACHE_DESIGN.md
+```
+
+**Packages.**
 
 - `stages/` — `map_stage.py`, `normalize_stage.py`, `group_stage.py`, `canonicalize_stage.py`, `relate_stage.py`, `corpus_relate.py`, `resolve_stage.py`
+- `llm/` — `prompts.py` (chain builders / prompt templates), `llm_providers.py` (provider construction), `llm_errors.py` (retryable vs. permanent error classification)
+- `entities/` — `entity_linker.py` (CUI enrichment), `umls_resources.py` (process-wide scispaCy + UMLS singleton), `umls_utils.py` (`best_cui`, threshold), and the curated `synonyms.yaml`
 - `grounding/` — `grounding_filter.py` (NLI entailment filter) and `nli_config.py` (the NLI model registry it resolves)
+- `observability/` — `collector.py` / `export.py` / `models.py` (JSONL trace collection and export), `health_checks.py` (pre-run component diagnostics), `artifact_models.py` (on-disk trace artifacts — the RELATE `SkippedPair`)
 - `provenance/` — `validator.py`, `citation_filter.py`, `paragraph_lookup.py` (moved here from the former `helpers/`)
 - `routing/` — `router.py`, `models.py`, `policy.py`, `routing_dataset.py`, `schema_validator.py`
-- top level — `runner.py`, `config.py` (`KnowledgeExtractionConfig` + per-stage configs; the home of every tunable referenced below), `models.py`, `persistence.py`, `cache.py`, `enum_logging.py`
-- `observability/` — trace collection (`collector.py`, `export.py`, `models.py`) plus `health_checks.py` and `artifact_models.py` (the RELATE `SkippedPair` trace artifact)
-- `llm/` — `prompts.py`, `llm_providers.py`, `llm_errors.py`
-- `entities/` — `entity_linker.py`, `umls_resources.py`, `umls_utils.py`, and the curated `synonyms.yaml`
+- `agreement/` — voter-agreement scorers (embedding, lexical, NER, hybrid, semantic, polarity-conflict) plus the embedding providers they call
+- `batch/` — `runner.py`, `dispatch.py`, the per-vendor batch clients (Anthropic / Azure / Vertex / Gemini / OpenAI), and `voter_configs.py` (cascade profiles)
+- `costing/` — `collector.py`, `pricing.py`, `invocation_usage.py`, `report.py`
+- `interfaces/` — Protocols: `agreement.py`, `grounding.py`, `scoring.py`, `similarity.py`
+- `validation/` — shared validation models
 - NER is a **repo-root** module: `named_entity_recognition/ner.py` (not under `knowledge_extraction/`).
+
+**Why these modules stay at the top level.** Each is a primitive the subpackages depend on,
+so pushing it down would either invert the dependency direction or create a one-file package
+for its own sake:
+
+- `models.py` — the central low-level data-model primitive, with the largest importer surface in the package.
+- `config.py` — shared package configuration, and part of the current public surface.
+- `runner.py` — package orchestration and the supported entry point.
+- `persistence.py` — the shared persistence boundary, and part of the current public surface.
+- `cache.py` — a shared single-module infrastructure primitive; a one-file caching package would not improve ownership.
+- `enum_logging.py` — a low-level enum-observation sink used directly by `models.py`; moving it upward would invert the dependency direction.
 
 > **Retired stages.** An optional MAP → REDUCE → RULES secondary block once
 > existed here but was never reachable in the evaluated production pipeline (no
@@ -220,6 +269,17 @@ Canonical source of entity synonym mappings. Loaded by `_load_synonyms()` at sta
 **Format:** `lowercase surface form: Canonical Name`
 
 Add new entries here — no code change needed. Covers: survival endpoints (OS/PFS/DFS), IHC markers (CD30/Ki-67/BCL2/MYC/PD-L1/etc.), treatments (R-CHOP/CHOP), disease entities (CEAN), cell variants.
+
+**Ownership and packaging.** The file is owned by `entities/`, and it is the package's only
+non-Python file read at runtime. It is declared as setuptools package data under
+`pipeline.stages.knowledge_extraction.entities` (`pyproject.toml`), so it ships inside the
+installed package, and NORMALIZE loads it **package-locally** — relative to the module, not
+to the working directory — which is why it resolves from any CWD. Relocating it into
+`entities/` changed only its location; the resource content itself was not changed.
+
+`configs/nli_models.yaml` (the NLI registry that `grounding/nli_config.py` resolves) is the
+counter-example: it lives outside every package and is deliberately *not* package data. It is
+read repo-root-relative, which the supported editable install resolves.
 
 ---
 

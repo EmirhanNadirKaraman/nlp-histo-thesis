@@ -9,7 +9,7 @@
 # Label contract: code expects the HF pipeline to emit labels case-insensitively
 # containing one of {entailment, neutral, contradiction}. If a candidate model
 # emits LABEL_0/LABEL_1/LABEL_2, add a `label_map` here and wire it through
-# nli_config.py before use.
+# pipeline/stages/knowledge_extraction/grounding/nli_config.py before use.
 
 default: pubmedbert_mednli
 
