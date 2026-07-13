@@ -81,9 +81,9 @@ OUTPUT_TOKENS_PER_CHUNK = 1500
 # ── Calibration (silver) defaults ───────────────────────────────────────────
 # The map_theta_sweep PRIME runs EVERY voter on EVERY chunk (no escalation) so
 # the sweep can replay any theta — priced as project_map_cost at l2_rate=
-# l3_rate=1.0. The Opus SILVER step (eval.silver.generate) is one judge call
+# l3_rate=1.0. The Opus SILVER step (eval.silver.generation.generate) is one judge call
 # per source case.
-DEFAULT_SILVER_MODEL = "claude-opus-4-7"   # = eval/silver/generator.py DEFAULT_MODEL
+DEFAULT_SILVER_MODEL = "claude-opus-4-7"   # = eval/silver/generation/generator.py DEFAULT_MODEL
 # Opus findings-JSON tokens per case. Hard cap is max_tokens=8192
 # (generator.py); a single paragraph realistically emits far fewer. Conservative
 # middle estimate (> the 800 voter output — judging is more verbose); override
@@ -379,12 +379,12 @@ def silver_token_totals(cases, tokenizer,
                         out_tokens_per_case: int) -> tuple[int, int]:
     """Opus-silver input/output token totals over ALL cases.
 
-    Mirrors ``eval.silver.generator``: one Opus call per case =
+    Mirrors ``eval.silver.generation.generator``: one Opus call per case =
     ``SYSTEM_PROMPT`` + tool schema + ``make_user_prompt(text, path)``. The
     prompt is measured live so the estimate tracks ``PROMPT_VERSION``.
     """
     import json as _json
-    from eval.silver.prompts import (
+    from eval.silver.generation.prompts import (
         SYSTEM_PROMPT, EXTRACT_FINDINGS_TOOL, make_user_prompt,
     )
     fixed = (len(tokenizer.encode(SYSTEM_PROMPT))

@@ -2,7 +2,7 @@
 
 End-to-end and per-stage evaluation via **silver MAP findings replayed through stages 2–6**.
 
-Companion to `STAGE_EVAL_DESIGN.md` (which covers per-stage *isolated* judges). This doc covers the *cumulative* per-stage evaluation that falls out of one architectural move: take silver MAP findings already produced by `eval/silver/generator.py`, push them through the same NORMALIZE → GROUP → CANONICALIZE → RELATE → RESOLVE code paths the pipeline uses, and compare the pipeline's output to the silver-replay output at every stage exit.
+Companion to `STAGE_EVAL_DESIGN.md` (which covers per-stage *isolated* judges). This doc covers the *cumulative* per-stage evaluation that falls out of one architectural move: take silver MAP findings already produced by `eval/silver/generation/generator.py`, push them through the same NORMALIZE → GROUP → CANONICALIZE → RELATE → RESOLVE code paths the pipeline uses, and compare the pipeline's output to the silver-replay output at every stage exit.
 
 The result is **end-to-end F1 plus a stage-by-stage F1 curve from one silver source** — without hand-curating any silver gold at NORMALIZE/GROUP/CANONICALIZE/RELATE/RESOLVE.
 
@@ -51,7 +51,7 @@ Both run on the same 15-paper selection. Both feed the final report.
 
 ## §2. Inputs we already have
 
-- `eval/silver/generator.py` — produces `SilverCaseResult.findings: list[SilverFinding]` per paragraph, using Opus + the existing tool-schema (`eval/silver/data/schemas.py:SilverFinding`).
+- `eval/silver/generation/generator.py` — produces `SilverCaseResult.findings: list[SilverFinding]` per paragraph, using Opus + the existing tool-schema (`eval/silver/data/schemas.py:SilverFinding`).
 - `eval/silver/data/schemas.py:SilverFinding` fields: `claim, subject_entity, outcome_entity, relation_type, direction, category, confidence, verbatim_support, scope, source_sentence_ids`.
 - `eval/silver/matching/matcher.py` — embedding-based alignment with cache + `compute_metrics` for P/R/F1, used today for MAP-only comparison. Reusable for every downstream stage.
 - `eval/silver/matching/embedders.py` — OpenAI / Gemini embedders with disk cache.
@@ -76,7 +76,7 @@ The orchestrator entrypoint:
 ```bash
 python -m eval.silver.replay \
   --pipeline-run-id <int>                 # the KnowledgeExtractionRunner run to evaluate
-  --silver-run <path>                     # silver MAP output dir (from eval/silver/generator.py)
+  --silver-run <path>                     # silver MAP output dir (from eval/silver/generation/generator.py)
   --output eval/reports/replay_<date>     # where to write per-stage CSVs + alignments
 ```
 
@@ -110,7 +110,7 @@ Pipeline evidence format: `"[S{i}|{pmcid}|{te_id}]"`. NORMALIZE parses this to e
 
 `SilverFinding.source_sentence_ids: list[int]` carries `sentence_id`s but **not** `text_element_id`s. Resolution:
 
-1. Silver was generated per-paragraph (per `eval/silver/generator.py`). The case being judged has a known `te_id`.
+1. Silver was generated per-paragraph (per `eval/silver/generation/generator.py`). The case being judged has a known `te_id`.
 2. Adapter receives `(silver_case, te_id)` together. For each `source_sentence_id`, emit `f"[S{sid}|{pmcid}|{te_id}]"`.
 
 If a silver finding spans multiple paragraphs (cross-paragraph aggregate finding), it gets multiple evidence strings, one per `(sentence_id, te_id)` pair. The adapter accepts an optional `cross_paragraph_te_ids: dict[int, int]` for this case; default is single-paragraph.

@@ -801,7 +801,7 @@ def _run_exp_b2(ctx):
     if not silver_path.exists():
         raise SystemExit(
             f"EXP B.2 (baselines): silver labels not found: {silver_path}\n"
-            "  Generate with `python -m eval.silver.generate --batch`."
+            "  Generate with `python -m eval.silver.generation.generate --batch`."
         )
 
     from eval.silver.data.jsonl_utils import read_jsonl

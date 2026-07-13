@@ -45,7 +45,7 @@ Prerequisites for the MAP stages:
   * primed voter cache  eval/data/map_primer/voter_cache.json
         (from `python -m eval.silver.map_theta_sweep prime --split all` + `collect`)
   * silver labels       eval/data/silver_findings.jsonl
-        (from `python -m eval.silver.generate --batch`)
+        (from `python -m eval.silver.generation.generate --batch`)
 
 Usage:
   python -m eval.silver.run_summarization_sweeps                          # stage menu

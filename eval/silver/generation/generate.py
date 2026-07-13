@@ -5,9 +5,9 @@ Reads eval/data/source_cases_related15.jsonl, writes eval/data/silver_findings_r
 Skips cases already in the output file (cache by case_id + prompt_version + model).
 
 Usage:
-  python -m eval.silver.generate
-  python -m eval.silver.generate --model claude-opus-4-5
-  python -m eval.silver.generate --source eval/data/source_cases.jsonl
+  python -m eval.silver.generation.generate
+  python -m eval.silver.generation.generate --model claude-opus-4-5
+  python -m eval.silver.generation.generate --source eval/data/source_cases.jsonl
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 
-from eval.silver.generator import SilverGenerator, DEFAULT_MODEL
+from .generator import SilverGenerator, DEFAULT_MODEL
 
 SOURCE_PATH = Path("eval/data/source_cases_related15.jsonl")
 OUTPUT_PATH = Path("eval/data/silver_findings.jsonl")

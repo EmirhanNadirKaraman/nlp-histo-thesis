@@ -739,7 +739,7 @@ Optional for Later: co-locate at `<artifact_root>/<run_id>/eval/judge_<judge_run
 ### 11.6 Opus-pipeline calibration pass (selected-15)
 
 - **Summarization:** all-Opus cascade. Most expensive, slowest. Two purposes:
-  1. **Silver findings for `eval/silver/`**: Opus-extracted findings on the same paragraphs become the silver set. Reuse `eval/silver/generator.py` (the Opus-based silver generator) for extraction; reuse `eval/silver/evaluate.py` for P/R/F1 against pipeline findings.
+  1. **Silver findings for `eval/silver/`**: Opus-extracted findings on the same paragraphs become the silver set. Reuse `eval/silver/generation/generator.py` (the Opus-based silver generator) for extraction; reuse `eval/silver/evaluate.py` for P/R/F1 against pipeline findings.
   2. **Threshold sweep inputs**:
      - `eval/silver/map_theta_sweep.py` for MAP agreement θ.
      - `eval/silver/pipeline_sweep.py grounding` for the grounding threshold.

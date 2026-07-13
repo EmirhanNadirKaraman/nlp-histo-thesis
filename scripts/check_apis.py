@@ -52,7 +52,7 @@ def _inventory() -> dict[str, list[str]]:
         GEMINI_L1, GEMINI_L2,
         CLAUDE_L2, CLAUDE_L3,
     )
-    from eval.silver.generator import DEFAULT_MODEL as SILVER_OPUS
+    from eval.silver.generation.generator import DEFAULT_MODEL as SILVER_OPUS
 
     def _dedupe(xs):
         seen, out = set(), []

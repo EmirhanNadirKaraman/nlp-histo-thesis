@@ -6,8 +6,8 @@ import logging
 import pytest
 from pydantic import ValidationError
 
-from eval.silver.generator import _repair_finding_fields
-from eval.silver.prompts import EXTRACT_FINDINGS_TOOL
+from eval.silver.generation.generator import _repair_finding_fields
+from eval.silver.generation.prompts import EXTRACT_FINDINGS_TOOL
 from eval.silver.data.schemas import SilverFinding
 
 
@@ -15,7 +15,7 @@ from eval.silver.data.schemas import SilverFinding
 
 def test_repair_category_demographics_to_demographic(caplog):
     """LLM alias 'demographics' (trailing s) is repaired to canonical 'demographic'."""
-    with caplog.at_level(logging.WARNING, logger="eval.silver.generator"):
+    with caplog.at_level(logging.WARNING, logger="eval.silver.generation.generator"):
         repaired = _repair_finding_fields({"category": "demographics", "claim": "test"}, "case1")
     assert repaired["category"] == "demographic"
     assert "demographic" in caplog.text

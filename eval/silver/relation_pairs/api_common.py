@@ -9,7 +9,7 @@ TEMPERATURE: ``claude-opus-4-7`` REJECTS the ``temperature`` parameter
 ("`temperature` is deprecated for this model", B-072 — verified empirically). We
 therefore send NO temperature; the model uses its default sampling and the forced
 tool_use schema keeps generation variance low (same approach as silver-finding
-generation, ``eval/silver/generator.py``). The thesis text says "temperature
+generation, ``eval/silver/generation/generator.py``). The thesis text says "temperature
 zero"; that is not literally achievable for this model and must be reconciled in
 the write-up.
 """

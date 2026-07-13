@@ -66,7 +66,7 @@ def _load_map_context(
     if not silver_path.exists():
         raise SystemExit(
             f"silver labels not found: {silver_path}\n"
-            "Run `python -m eval.silver.generate --batch`.")
+            "Run `python -m eval.silver.generation.generate --batch`.")
 
     voter_cache = json.loads(cache_path.read_text(encoding="utf-8"))
     silver_by_case = {rec.case_id: rec for rec in read_jsonl(silver_path, SilverCaseResult)}
