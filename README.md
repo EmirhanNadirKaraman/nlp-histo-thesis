@@ -154,12 +154,12 @@ itself must exist **before** the schema can be initialized — `database.init_db
 creates tables, not the database.
 
 ```bash
-# 1. Create the (empty) PostgreSQL database, using your own role and name
-createdb -U <postgres-user> <database-name>
+# 1. Create the (empty) PostgreSQL database, owned by the application role
+createdb -U <admin-role> -O <db-user> <database-name>
 
 # 2. Configure credentials
 cp .env.example .env
-# Edit the five DB_* values in .env:
+# Set DB_USER=<db-user>, DB_NAME=<database-name>, and the remaining DB_* values:
 #   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 # (DB_PASSWORD must be present; leave it empty for peer/trust authentication.)
 
@@ -167,8 +167,21 @@ cp .env.example .env
 python -m database.init_db
 ```
 
-`python -m database.init_db` creates the ORM-managed schema (`database/models.py`)
-and then verifies it. On success it reports the number of tables verified.
+**Ownership matters.** `<admin-role>` is any PostgreSQL role permitted to create
+databases; `<db-user>` must be the same role you put in `DB_USER` in `.env`. The
+`-O <db-user>` flag makes the application role the **owner** of the new database,
+which is what lets `database.init_db` create the ORM tables. The application role
+itself therefore does **not** need the `CREATEDB` privilege — only the
+administrative role does. Substitute your own role and database names; do not
+copy `<admin-role>` literally, and do not assume the role is called `postgres`.
+
+*(Alternative: an administrator may instead grant the configured role sufficient
+schema-creation rights on the new database. Assigning ownership with `-O` is the
+recommended and simpler setup.)*
+
+`python -m database.init_db` connects as `DB_USER`, creates the ORM-managed schema
+(`database/models.py`), and then verifies it. On success it reports the number of
+tables verified.
 
 It is **safe to run again**: it only ever creates *missing* tables and never drops,
 truncates, or alters existing objects. If an existing table has drifted from the
