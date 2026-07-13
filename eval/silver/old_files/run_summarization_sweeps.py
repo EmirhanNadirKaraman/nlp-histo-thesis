@@ -75,7 +75,7 @@ load_dotenv(str(_REPO_ROOT / ".env"))
 
 from pipeline.stages.knowledge_extraction.config import AgreementConfig
 
-from eval.silver.matcher import (
+from eval.silver.matching.matcher import (
     SIMILARITY_THRESHOLD,
 )
 from eval.silver.map_theta_sweep import (

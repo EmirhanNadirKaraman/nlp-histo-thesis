@@ -851,8 +851,8 @@ def _run_exp_b2(ctx):
     # weren't necessarily embedded by the cascade-only previous runs. Even
     # one cache miss requires a real API key — there is no honest dry-run
     # for a missing embedding, so refuse upfront if the key is absent.
-    from eval.silver.embedders import OpenAIEmbedder
-    from eval.silver.matcher import (
+    from eval.silver.matching.embedders import OpenAIEmbedder
+    from eval.silver.matching.matcher import (
         DEFAULT_CACHE_PATH as MATCHER_CACHE_PATH,
         EMBEDDING_MODEL as MATCHER_EMBEDDING_MODEL,
         make_embedding_cache,
@@ -1160,7 +1160,7 @@ def _b2_eval_outputs(
 
     Returns ``{strict_f1, f1, precision, recall, n_matched, n_silver, n_pipeline}``.
     """
-    from eval.silver.matcher import compute_sim_matrix, match_from_matrix
+    from eval.silver.matching.matcher import compute_sim_matrix, match_from_matrix
     STRICT_FIELDS = {"category", "relation_type", "direction"}
     n_silver = n_pipeline = n_matched = 0
     strict_tp = 0.0
@@ -1204,7 +1204,7 @@ def _b2_l1_best_oracle(
     labels this row ``l1_best_oracle`` and the column ``model_or_source`` is
     ``oracle(silver-selected L1)`` to keep the framing honest.
     """
-    from eval.silver.matcher import compute_sim_matrix, match_from_matrix
+    from eval.silver.matching.matcher import compute_sim_matrix, match_from_matrix
     STRICT_FIELDS = {"category", "relation_type", "direction"}
     n_voters = len(l1_outputs_per_voter)
     if n_voters == 0:

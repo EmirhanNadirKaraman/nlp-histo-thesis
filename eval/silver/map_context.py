@@ -27,7 +27,7 @@ from eval.silver.map_theta_sweep import (
     _make_cached_embed_fn,
     _prewarm_agreement_cache,
 )
-from eval.silver.matcher import (
+from eval.silver.matching.matcher import (
     DEFAULT_GEMINI_CACHE_PATH,
     GEMINI_EMBEDDING_MODEL,
     make_embedding_cache,
@@ -75,7 +75,7 @@ def _load_map_context(
         api_key = os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             raise SystemExit("GOOGLE_API_KEY not set")
-        from eval.silver.embedders import GeminiEmbedder
+        from eval.silver.matching.embedders import GeminiEmbedder
         from pipeline.stages.knowledge_extraction.agreement.providers import (
             GeminiEmbedder as AgreementGeminiEmbedder,
         )
@@ -87,8 +87,8 @@ def _load_map_context(
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
             raise SystemExit("OPENAI_API_KEY not set")
-        from eval.silver.embedders import OpenAIEmbedder
-        from eval.silver.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
+        from eval.silver.matching.embedders import OpenAIEmbedder
+        from eval.silver.matching.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
         from pipeline.stages.knowledge_extraction.agreement.providers import (
             OpenAIEmbedder as AgreementOpenAIEmbedder,
         )

@@ -21,10 +21,10 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 logger = logging.getLogger(__name__)
 
-from eval.silver.embedders import GeminiEmbedder, OpenAIEmbedder
+from eval.silver.matching.embedders import GeminiEmbedder, OpenAIEmbedder
 from eval.silver.inspect import write_inspection_report
 from eval.silver.data.jsonl_utils import read_jsonl, write_jsonl
-from eval.silver.matcher import (
+from eval.silver.matching.matcher import (
     DEFAULT_CACHE_PATH,
     DEFAULT_GEMINI_CACHE_PATH,
     EMBEDDING_MODEL,

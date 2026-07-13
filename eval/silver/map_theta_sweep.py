@@ -71,9 +71,9 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 logger = logging.getLogger(__name__)
 
-from eval.silver.embedders import GeminiEmbedder
+from eval.silver.matching.embedders import GeminiEmbedder
 from eval.silver.data.jsonl_utils import read_jsonl
-from eval.silver.matcher import (
+from eval.silver.matching.matcher import (
     DEFAULT_GEMINI_CACHE_PATH,
     GEMINI_EMBEDDING_MODEL,
     SIMILARITY_THRESHOLD,
@@ -1249,8 +1249,8 @@ def main() -> None:
                 cache = make_embedding_cache(
                     Path(override) if override else DEFAULT_GEMINI_CACHE_PATH, GEMINI_EMBEDDING_MODEL)
                 return GeminiEmbedder(key), cache, _AgGem()
-            from eval.silver.embedders import OpenAIEmbedder
-            from eval.silver.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
+            from eval.silver.matching.embedders import OpenAIEmbedder
+            from eval.silver.matching.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
             from pipeline.stages.knowledge_extraction.agreement.providers import OpenAIEmbedder as _AgOAI
             key = os.environ.get("OPENAI_API_KEY")
             if not key:

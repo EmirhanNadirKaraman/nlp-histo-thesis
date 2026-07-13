@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from eval.silver.embedders import _is_retryable, _retry_with_backoff
+from eval.silver.matching.embedders import _is_retryable, _retry_with_backoff
 
 
 def _no_sleep(_):  # never actually wait in tests

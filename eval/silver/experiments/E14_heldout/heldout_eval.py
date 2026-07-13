@@ -50,7 +50,7 @@ from eval.silver.map_theta_sweep import (  # noqa: E402
     _build_scorer,
     _replay,
 )
-from eval.silver.matcher import SIMILARITY_THRESHOLD  # noqa: E402
+from eval.silver.matching.matcher import SIMILARITY_THRESHOLD  # noqa: E402
 from eval.silver.pipeline_sweep import _evaluate_outputs  # noqa: E402
 from eval.silver.run_new_summarization_sweeps import (  # noqa: E402
     BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,

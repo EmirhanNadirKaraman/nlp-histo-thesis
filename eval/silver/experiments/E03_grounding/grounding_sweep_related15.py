@@ -42,7 +42,7 @@ from eval.silver.map_theta_sweep import (
     _replay,
     _write_csv,
 )
-from eval.silver.matcher import SIMILARITY_THRESHOLD
+from eval.silver.matching.matcher import SIMILARITY_THRESHOLD
 from eval.silver.pipeline_sweep import _apply_grounding_threshold, _evaluate_outputs
 from eval.silver.map_context import _load_map_context
 from eval.silver.run_new_summarization_sweeps import (

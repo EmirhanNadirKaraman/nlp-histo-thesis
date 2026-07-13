@@ -621,7 +621,7 @@ def _b2_match_per_case(case_outputs, silver_by_case, embedder, embed_cache,
                        sim_threshold=0.55):
     """Like ``_b2_eval_outputs`` but returns per-case (strict_tp, n_silver, n_pipeline).
     """
-    from eval.silver.matcher import compute_sim_matrix, match_from_matrix
+    from eval.silver.matching.matcher import compute_sim_matrix, match_from_matrix
     per_case = []
     for co in case_outputs:
         silver = silver_by_case.get(co.case_id)
@@ -705,7 +705,7 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     """
     name = "05_bootstrap_ci_cascade_vs_sonnet"
     try:
-        from eval.silver.embedders import OpenAIEmbedder
+        from eval.silver.matching.embedders import OpenAIEmbedder
         from eval.silver.data.jsonl_utils import read_jsonl
         from eval.silver.data.schemas import SilverCaseResult
         from eval.silver.data.split import assign_split
@@ -821,10 +821,10 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     # embedder (the production matcher).
     import os
     try:
-        from eval.silver.matcher import (
+        from eval.silver.matching.matcher import (
             make_embedding_cache as _make_cache, DEFAULT_CACHE_PATH as _DCP
         )
-        from eval.silver.embedders import OpenAIEmbedder
+        from eval.silver.matching.embedders import OpenAIEmbedder
         cache_obj = _make_cache(_DCP)
         api_key = os.environ.get("OPENAI_API_KEY", "")
         if not api_key:
@@ -1432,10 +1432,10 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
 
     # Load matcher (OpenAI embedder + cache).
     try:
-        from eval.silver.matcher import (
+        from eval.silver.matching.matcher import (
             make_embedding_cache, DEFAULT_CACHE_PATH,
         )
-        from eval.silver.embedders import OpenAIEmbedder
+        from eval.silver.matching.embedders import OpenAIEmbedder
         api_key = os.environ.get("OPENAI_API_KEY", "")
         if not api_key:
             return AnalysisResult(

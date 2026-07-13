@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from eval.silver.matcher import (
+from eval.silver.matching.matcher import (
     _cosine,
     _field_mismatches,
     _normalize,
@@ -121,7 +121,7 @@ def _mock_embedder(texts):
     return result
 
 
-@patch("eval.silver.matcher.get_embeddings")
+@patch("eval.silver.matching.matcher.get_embeddings")
 def test_perfect_match(mock_emb):
     # silver[0] and pipeline[0] should match (same position → cosine 1.0)
     mock_emb.side_effect = lambda texts, embedder, cache: _mock_embedder(texts)
@@ -136,7 +136,7 @@ def test_perfect_match(mock_emb):
     assert result.unmatched_pipeline == []
 
 
-@patch("eval.silver.matcher.get_embeddings")
+@patch("eval.silver.matching.matcher.get_embeddings")
 def test_no_match_below_threshold(mock_emb):
     # silver[0] maps to unit vec 0, pipeline[0] to unit vec 1 → cosine 0.0
     mock_emb.side_effect = lambda texts, embedder, cache: _mock_embedder(texts)
@@ -150,7 +150,7 @@ def test_no_match_below_threshold(mock_emb):
     assert len(result.unmatched_pipeline) == 1
 
 
-@patch("eval.silver.matcher.get_embeddings")
+@patch("eval.silver.matching.matcher.get_embeddings")
 def test_empty_silver(mock_emb):
     mock_emb.side_effect = lambda texts, embedder, cache: _mock_embedder(texts)
     silver = _silver(claims=())
@@ -163,7 +163,7 @@ def test_empty_silver(mock_emb):
     assert len(result.unmatched_pipeline) == 1
 
 
-@patch("eval.silver.matcher.get_embeddings")
+@patch("eval.silver.matching.matcher.get_embeddings")
 def test_empty_pipeline(mock_emb):
     mock_emb.side_effect = lambda texts, embedder, cache: _mock_embedder(texts)
     silver = _silver(claims=("claim A",))
@@ -178,7 +178,7 @@ def test_empty_pipeline(mock_emb):
 
 # ── compute_metrics ────────────────────────────────────────────────────────────
 
-@patch("eval.silver.matcher.get_embeddings")
+@patch("eval.silver.matching.matcher.get_embeddings")
 def test_metrics_perfect(mock_emb):
     mock_emb.side_effect = lambda texts, embedder, cache: _mock_embedder(texts)
     silver = _silver(claims=("A",))
@@ -191,7 +191,7 @@ def test_metrics_perfect(mock_emb):
     assert metrics.f1 == pytest.approx(1.0)
 
 
-@patch("eval.silver.matcher.get_embeddings")
+@patch("eval.silver.matching.matcher.get_embeddings")
 def test_metrics_zero_recall(mock_emb):
     mock_emb.side_effect = lambda texts, embedder, cache: _mock_embedder(texts)
     silver = _silver(claims=("A",))

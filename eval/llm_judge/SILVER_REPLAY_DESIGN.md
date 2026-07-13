@@ -31,7 +31,7 @@ The two frameworks are complementary:
 
 | Framework | Question answered | Cost |
 | --- | --- | --- |
-| **Silver replay** (this doc) | How much does pipeline drift from a silver reference at each stage exit? End-to-end F1. | One silver MAP run + 0 extra judge calls for stages 2–6 (alignment uses embedding cache from `eval/silver/matcher.py`). |
+| **Silver replay** (this doc) | How much does pipeline drift from a silver reference at each stage exit? End-to-end F1. | One silver MAP run + 0 extra judge calls for stages 2–6 (alignment uses embedding cache from `eval/silver/matching/matcher.py`). |
 | **Per-stage judges** (`STAGE_EVAL_DESIGN.md`) | Where is each individual stage's error rate? | One judge call per emitted item per stage. |
 
 Both run on the same 15-paper selection. Both feed the final report.
@@ -53,8 +53,8 @@ Both run on the same 15-paper selection. Both feed the final report.
 
 - `eval/silver/generator.py` — produces `SilverCaseResult.findings: list[SilverFinding]` per paragraph, using Opus + the existing tool-schema (`eval/silver/data/schemas.py:SilverFinding`).
 - `eval/silver/data/schemas.py:SilverFinding` fields: `claim, subject_entity, outcome_entity, relation_type, direction, category, confidence, verbatim_support, scope, source_sentence_ids`.
-- `eval/silver/matcher.py` — embedding-based alignment with cache + `compute_metrics` for P/R/F1, used today for MAP-only comparison. Reusable for every downstream stage.
-- `eval/silver/embedders.py` — OpenAI / Gemini embedders with disk cache.
+- `eval/silver/matching/matcher.py` — embedding-based alignment with cache + `compute_metrics` for P/R/F1, used today for MAP-only comparison. Reusable for every downstream stage.
+- `eval/silver/matching/embedders.py` — OpenAI / Gemini embedders with disk cache.
 - `eval/silver/evaluate.py` — existing CLI that does MAP-level silver eval. The new replay extends the *same metric framework* to later stages.
 - `pipeline/stages/summarization/current_stages/{normalize,group,canonicalize,relate,resolve}_stage.py` — the deterministic stages, callable independently of `KnowledgeExtractionRunner`.
 
@@ -166,7 +166,7 @@ For thesis reproducibility, pin: scispaCy model + linker version, NLI model hash
 
 ## §4. Per-stage comparison and metrics
 
-Same matcher (`eval/silver/matcher.py`) at every stage; only the embedding input string changes.
+Same matcher (`eval/silver/matching/matcher.py`) at every stage; only the embedding input string changes.
 
 ### 4.1 MAP exit (sanity check)
 
@@ -274,7 +274,7 @@ And `corpus.csv` with the same columns aggregated (mean + bootstrap 95% CI over 
 ## §5. Sampling, thresholds, and sweeps
 
 - **Paper set**: the selected-15 (5 related + 5 diverse + 5 hard). Report each stratum separately *and* combined so the "hard" bucket can carry the regression-detection claim.
-- **Embedding threshold**: default 0.55 from `eval/silver/matcher.py`. Sweep ∈ {0.45, 0.50, 0.55, 0.60, 0.65} and report curves so the headline F1 isn't a single arbitrary cutoff.
+- **Embedding threshold**: default 0.55 from `eval/silver/matching/matcher.py`. Sweep ∈ {0.45, 0.50, 0.55, 0.60, 0.65} and report curves so the headline F1 isn't a single arbitrary cutoff.
 - **Cascade tiers** (summarization model):
   - Run silver replay once with Opus silver MAP (the silver source itself).
   - Run pipeline three times with Haiku / Sonnet / Opus cascades.
@@ -287,7 +287,7 @@ In a separate PR sequence from `STAGE_EVAL_DESIGN.md`'s per-stage judges. Both c
 1. **Adapter** (`adapter.py`) + unit tests (round-trip `SilverFinding ↔ Finding`, evidence-string parse-back, `compute_finding_id` stability).
 2. **SilverReplayRunner** (`runner.py`). Wraps post-MAP stages; reuses `persistence.py` writers. Pin determinism settings (§3.4).
 3. **MAP-exit sanity check** — run replay, confirm `eval/silver/evaluate.py` still passes against the new path (it should be byte-identical for stage 1).
-4. **NORMALIZE-exit comparison** (`compare.py:compare_normalize`) — reuses `compute_sim_matrix`, `match_from_matrix`, `compute_metrics` from `eval/silver/matcher.py`. Validate on 2 papers.
+4. **NORMALIZE-exit comparison** (`compare.py:compare_normalize`) — reuses `compute_sim_matrix`, `match_from_matrix`, `compute_metrics` from `eval/silver/matching/matcher.py`. Validate on 2 papers.
 5. **GROUP-exit** — adds member-set Jaccard via NORMALIZE alignment chain.
 6. **CANONICALIZE-exit** — adds direction-bin and predicate-pick agreement.
 7. **RELATE-exit** — both relation-set match and raw-pair Spearman.

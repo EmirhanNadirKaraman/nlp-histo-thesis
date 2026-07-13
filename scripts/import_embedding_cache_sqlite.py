@@ -24,7 +24,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from eval.silver.matcher import import_json_cache_to_sqlite
+from eval.silver.matching.matcher import import_json_cache_to_sqlite
 
 
 def main() -> int:

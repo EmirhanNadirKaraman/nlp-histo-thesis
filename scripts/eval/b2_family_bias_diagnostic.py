@@ -59,11 +59,11 @@ load_dotenv(str(_REPO_ROOT / ".env"))
 
 from eval.silver.data.jsonl_utils import read_jsonl
 from eval.silver.data.schemas import SilverCaseResult
-from eval.silver.matcher import (
+from eval.silver.matching.matcher import (
     DEFAULT_CACHE_PATH, EMBEDDING_MODEL, compute_sim_matrix, match_from_matrix,
     make_embedding_cache,
 )
-from eval.silver.embedders import OpenAIEmbedder
+from eval.silver.matching.embedders import OpenAIEmbedder
 from eval.silver.data.split import assign_split
 
 

@@ -51,7 +51,7 @@ from eval.silver.map_theta_sweep import (  # reused engine + voter definitions
     _write_csv,
     run_sweep,
 )
-from eval.silver.matcher import SIMILARITY_THRESHOLD
+from eval.silver.matching.matcher import SIMILARITY_THRESHOLD
 from eval.silver.map_context import _load_map_context
 from pipeline.stages.knowledge_extraction.config import AgreementConfig
 

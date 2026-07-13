@@ -140,12 +140,12 @@ def _probe_gemini_chat(models: list[str]) -> bool:
 
 
 def _probe_embeddings() -> bool:
-    from eval.silver.matcher import EMBEDDING_MODEL, GEMINI_EMBEDDING_MODEL
+    from eval.silver.matching.matcher import EMBEDDING_MODEL, GEMINI_EMBEDDING_MODEL
     ok = True
     okey = os.environ.get("OPENAI_API_KEY")
     if okey:
         try:
-            from eval.silver.embedders import OpenAIEmbedder
+            from eval.silver.matching.embedders import OpenAIEmbedder
             v = OpenAIEmbedder(okey)(_EMBED_INPUT)
             print(f"  openai     {EMBEDDING_MODEL:30s} OK  dim={len(v[0])}")
         except Exception as exc:  # noqa: BLE001
@@ -156,7 +156,7 @@ def _probe_embeddings() -> bool:
     gkey = os.environ.get("GOOGLE_API_KEY")
     if gkey:
         try:
-            from eval.silver.embedders import GeminiEmbedder
+            from eval.silver.matching.embedders import GeminiEmbedder
             v = GeminiEmbedder(gkey)(_EMBED_INPUT)
             print(f"  gemini     {GEMINI_EMBEDDING_MODEL:30s} OK  dim={len(v[0])}")
         except Exception as exc:  # noqa: BLE001

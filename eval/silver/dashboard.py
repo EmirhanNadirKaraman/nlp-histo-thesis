@@ -79,7 +79,7 @@ sim-threshold: {sim_threshold}</div>
 <div class="card" id="card-eval">
   <h2>Eval Matching Threshold</h2>
   <div class="subtitle">Cosine similarity cutoff for silver ↔ pipeline finding matching.
-    Set SIMILARITY_THRESHOLD in eval/silver/matcher.py to the best value.</div>
+    Set SIMILARITY_THRESHOLD in eval/silver/matching/matcher.py to the best value.</div>
   {eval_best_box}
   <canvas id="chart-eval"></canvas>
   {eval_table}

@@ -15,7 +15,7 @@ from unittest.mock import patch
 
 import pytest
 
-from eval.silver.matcher import greedy_match, optimal_match
+from eval.silver.matching.matcher import greedy_match, optimal_match
 from eval.silver.pipeline_sweep import _evaluate_outputs
 from eval.silver.data.schemas import (
     PipelineCaseOutput,
@@ -62,7 +62,7 @@ def test_greedy_and_optimal_matched_sets_differ():
 
 # ── _evaluate_outputs reports both matcher metric sets ───────────────────────
 
-@patch("eval.silver.matcher.get_embeddings")
+@patch("eval.silver.matching.matcher.get_embeddings")
 def test_evaluate_outputs_reports_both_matchers(mock_emb):
     # Normalised cosines:  s0·p0=.80 s0·p1=.55 | s1·p0=.60 s1·p1=.10  (thr=.5)
     #   greedy: takes (s0,p0)=.80, then (s1,p1)=.10 < .5 → 1 match
