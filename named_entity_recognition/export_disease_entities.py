@@ -20,14 +20,10 @@ Usage:
     python named_entity_recognition/export_disease_entities.py --semantic-types T047 T191
 """
 
-import sys
 import json
 import argparse
 from pathlib import Path
 from collections import defaultdict
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy.dialects.postgresql import array
 from database import get_db_connection, Entity, TextElement, Document

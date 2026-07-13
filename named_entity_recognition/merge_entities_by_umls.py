@@ -40,9 +40,6 @@ import json
 from pathlib import Path
 from collections import defaultdict
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from database import get_db_connection, Entity, TextElement, Document
 
 

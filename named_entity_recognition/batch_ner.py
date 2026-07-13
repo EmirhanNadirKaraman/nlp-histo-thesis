@@ -1,4 +1,3 @@
-import sys
 import argparse
 import json
 from pathlib import Path
@@ -7,9 +6,6 @@ import threading
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import func
 from database import get_db_connection, Document, TextElement

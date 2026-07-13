@@ -1,11 +1,7 @@
 # query the database to get all texts in a document, filter out the ones with few character counts, and run NER from scispacy on it
 import re
 import sys
-from pathlib import Path
 from tqdm import tqdm
-
-# Add parent directory to path so we can import database module
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy import func
 from database import get_db_connection, TextElement, Document, Entity

@@ -254,17 +254,29 @@ database rows or local files.
 The two exporters are **alternative** consumers of the `entities` table (run
 either — not necessarily both).
 
+These commands assume the editable install from §1 — the packages import normally,
+so no `cd` is needed to make imports work.
+
 ```bash
+# From the repository root — populates the `entities` table (scispaCy + UMLS
+# linking). Writes DB rows; its cache is anchored next to the module, not to the
+# working directory.
+python -m named_entity_recognition.batch_ner
+
+# The two exporters default to a *CWD-relative* output directory, so run them from
+# inside the package directory to keep writing where they always have:
+#   merge_entities_by_umls  -> named_entity_recognition/umls_entities_lg/
+#   export_disease_entities -> named_entity_recognition/disease_entities_lg/
+# (the `cd` is only for the output location; pass --output-dir to place it elsewhere)
 cd named_entity_recognition
 
-# Populate the `entities` table (scispaCy + UMLS linking) — writes DB rows
-python batch_ner.py
-
 # Export per-UMLS-concept JSON/TXT (all concepts) — reads DB, writes files
-python merge_entities_by_umls.py
+python -m named_entity_recognition.merge_entities_by_umls
 
 # ...or the disease-filtered subset — reads DB, writes files
-python export_disease_entities.py
+python -m named_entity_recognition.export_disease_entities
+
+cd ..
 ```
 
 > The exported disease-entity JSON can be analyzed by the archived cost
