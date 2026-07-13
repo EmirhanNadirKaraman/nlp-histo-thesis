@@ -16,7 +16,7 @@ single block + returned to the caller so it can be persisted to the run
 artifact for thesis-trail traceability.
 
 Usage:
-    from pipeline.stages.knowledge_extraction.health_checks import run_health_checks
+    from pipeline.stages.knowledge_extraction.observability.health_checks import run_health_checks
     results = run_health_checks(db=db_conn)
     if any(not r.ok for r in results):
         # operator decides whether to abort or proceed; we don't raise
@@ -56,7 +56,7 @@ def _check_nli_model() -> HealthCheckResult:
     """
     t0 = time.perf_counter()
     try:
-        from .grounding.grounding_filter import GroundingFilter, _score_pairs  # noqa: PLC0415
+        from ..grounding.grounding_filter import GroundingFilter, _score_pairs  # noqa: PLC0415
 
         gf = GroundingFilter(batch_size=1)
         nli_pipe = gf._pipe  # noqa: SLF001 — intentional white-box probe of cached pipeline
@@ -93,7 +93,7 @@ def _check_umls() -> HealthCheckResult:
     """
     t0 = time.perf_counter()
     try:
-        from .entities.umls_resources import get_linker, get_nlp, umls_disabled  # noqa: PLC0415
+        from ..entities.umls_resources import get_linker, get_nlp, umls_disabled  # noqa: PLC0415
 
         if umls_disabled():
             elapsed = (time.perf_counter() - t0) * 1000.0
@@ -141,7 +141,7 @@ def _check_embedding_provider() -> HealthCheckResult:
     """
     t0 = time.perf_counter()
     try:
-        from .agreement.providers import GeminiEmbedder, OpenAIEmbedder  # noqa: PLC0415
+        from ..agreement.providers import GeminiEmbedder, OpenAIEmbedder  # noqa: PLC0415
 
         # Prefer Gemini if its key is set (matches production cheap-profile
         # default); fall back to OpenAI.

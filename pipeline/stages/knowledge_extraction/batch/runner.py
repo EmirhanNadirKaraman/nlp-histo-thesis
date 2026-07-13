@@ -701,7 +701,7 @@ class BatchKnowledgeExtractionRunner:
             # actually writing to the DB.
             if self._db is not None and pipeline_run_db_id is not None:
                 try:
-                    from ..health_checks import assert_persistence_row_counts  # noqa: PLC0415
+                    from ..observability.health_checks import assert_persistence_row_counts  # noqa: PLC0415
                     assert_persistence_row_counts(self._db, pmcid)
                 except Exception as exc:  # noqa: BLE001
                     logger.warning(

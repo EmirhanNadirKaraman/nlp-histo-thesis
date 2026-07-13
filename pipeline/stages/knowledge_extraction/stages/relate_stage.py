@@ -34,7 +34,7 @@ from __future__ import annotations
 import itertools
 import logging
 
-from ..artifact_models import SkippedPair
+from ..observability.artifact_models import SkippedPair
 from ..models import (
     CanonicalRule,
     NON_POLARITY_DIRS,

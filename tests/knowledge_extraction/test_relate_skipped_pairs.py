@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.artifact_models import SkippedPair
+from pipeline.stages.knowledge_extraction.observability.artifact_models import SkippedPair
 from pipeline.stages.knowledge_extraction.stages import relate_stage as _rs
 from pipeline.stages.knowledge_extraction.stages.relate_stage import RelateStage
 from pipeline.stages.knowledge_extraction.models import (

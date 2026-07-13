@@ -508,7 +508,7 @@ def main():
         # Run BEFORE any LLM call so operators see component-level health
         # before paying for a cascade. Default-on for safety; pass
         # `--health-check no` for fast single-paper dev iteration.
-        from pipeline.stages.knowledge_extraction.health_checks import run_health_checks
+        from pipeline.stages.knowledge_extraction.observability.health_checks import run_health_checks
         # DB probe needs a real connection; reuse the run-side helper.
         try:
             db_for_health = _open_db_connection("health_check") if "_open_db_connection" in globals() else None
