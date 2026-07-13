@@ -6,9 +6,9 @@ with Chart.js P/R/F1 curves, RELATE stacked-bar charts, and best-threshold callo
 No server required — open directly in any browser.
 
 Usage:
-  python -m eval.silver.dashboard
-  python -m eval.silver.dashboard --reports eval/reports --out eval/reports/dashboard.html
-  python -m eval.silver.dashboard --grounding path/to/grounding.csv --sweep path/to/sweep.csv
+  python -m eval.silver.reporting.dashboard
+  python -m eval.silver.reporting.dashboard --reports eval/reports --out eval/reports/dashboard.html
+  python -m eval.silver.reporting.dashboard --grounding path/to/grounding.csv --sweep path/to/sweep.csv
 """
 from __future__ import annotations
 
