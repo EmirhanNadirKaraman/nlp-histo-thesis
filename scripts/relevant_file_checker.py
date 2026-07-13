@@ -6,10 +6,10 @@ Analyzes Python files to show import dependencies in a hierarchical structure.
 Shows which files import from which other files, helping understand code relationships.
 
 Usage:
-    python misc/relevant_file_checker.py
-    python misc/relevant_file_checker.py --file scripts/latest_ingest.py
-    python misc/relevant_file_checker.py --reverse
-    python misc/relevant_file_checker.py --external
+    python scripts/relevant_file_checker.py
+    python scripts/relevant_file_checker.py --file legacy/latest_ingest.py
+    python scripts/relevant_file_checker.py --reverse
+    python scripts/relevant_file_checker.py --external
 """
 
 import ast
@@ -392,25 +392,25 @@ def main():
         epilog="""
 Examples:
   # Show summary of local imports
-  python misc/relevant_file_checker.py --summary
+  python scripts/relevant_file_checker.py --summary
 
   # Show full local import hierarchy
-  python misc/relevant_file_checker.py
+  python scripts/relevant_file_checker.py
 
   # Show local imports for a specific file
-  python misc/relevant_file_checker.py --file scripts/latest_ingest.py
+  python scripts/relevant_file_checker.py --file legacy/latest_ingest.py
 
   # Show local imports with external dependencies
-  python misc/relevant_file_checker.py --file scripts/latest_ingest.py --show-external
+  python scripts/relevant_file_checker.py --file legacy/latest_ingest.py --show-external
 
   # Show reverse dependencies (what imports each local module)
-  python misc/relevant_file_checker.py --reverse
+  python scripts/relevant_file_checker.py --reverse
 
   # Show reverse dependencies for a specific module
-  python misc/relevant_file_checker.py --reverse --module database
+  python scripts/relevant_file_checker.py --reverse --module database
 
   # Show all external dependencies
-  python misc/relevant_file_checker.py --external
+  python scripts/relevant_file_checker.py --external
         """
     )
 
@@ -447,7 +447,7 @@ Examples:
 
     args = parser.parse_args()
 
-    # Get project root (parent of misc/)
+    # Get project root (parent of scripts/)
     project_root = Path(__file__).parent.parent
 
     # Initialize analyzer

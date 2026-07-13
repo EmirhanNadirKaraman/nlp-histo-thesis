@@ -10,9 +10,9 @@ Counts pages in PDF files that are:
 Outputs a sorted list by page count (smallest to largest).
 
 Usage:
-    python misc/pdf_page_counter.py
-    python misc/pdf_page_counter.py --pdf-dir files/organized_pdfs
-    python misc/pdf_page_counter.py --output results.csv
+    python scripts/pdf_page_counter.py
+    python scripts/pdf_page_counter.py --pdf-dir files/organized_pdfs
+    python scripts/pdf_page_counter.py --output results.csv
 """
 
 import sys
@@ -263,16 +263,16 @@ def main():
         epilog="""
 Examples:
   # Default usage (files/organized_pdfs/)
-  python misc/pdf_page_counter.py
+  python scripts/pdf_page_counter.py
 
   # Custom PDF directory
-  python misc/pdf_page_counter.py --pdf-dir path/to/pdfs
+  python scripts/pdf_page_counter.py --pdf-dir path/to/pdfs
 
   # Save results to CSV
-  python misc/pdf_page_counter.py --output results/unprocessed_pdfs.csv
+  python scripts/pdf_page_counter.py --output results/unprocessed_pdfs.csv
 
   # Custom blacklist location
-  python misc/pdf_page_counter.py --blacklist out/my_blacklist.json
+  python scripts/pdf_page_counter.py --blacklist out/my_blacklist.json
         """
     )
 
