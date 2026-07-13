@@ -5,6 +5,18 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nlp-histo"
 version = "0.1.0"
+# Supported runtime window, 3.10–3.12 — not merely the minimum syntax level.
+# Floor (>=3.10), three ways: langchain / langchain-core / torch declare
+# Requires-Python >= 3.10, and the Pydantic schemas in
+# pipeline/stages/knowledge_extraction/models.py use PEP-604 unions (`str | None`),
+# which Pydantic evaluates at class-creation time even under
+# `from __future__ import annotations`.
+# Ceiling (<3.13): scispacy declares Requires-Python <3.13, and the UMLS/NER path
+# depends on it — so 3.13+ is not a supported runtime for this project.
+# Dependencies are NOT declared here: requirements.txt remains the tested dependency
+# source of truth, so install with
+# `pip install -r requirements.txt` then `pip install -e . --no-deps`.
+requires-python = ">=3.10,<3.13"
 
 [tool.pytest.ini_options]
 log_cli = true
@@ -38,4 +50,16 @@ extend-exclude = [
 
 [tool.setuptools.packages.find]
 where = ["."]
+# Whitelist — everything else (eval, scripts, tests, legacy, reports, docs, out)
+# is excluded by omission. `eval` is deliberately NOT installed: it is run as
+# `python -m eval.…` from the repository root (installing a top-level package
+# literally named `eval` would be a generic-name collision), and
+# eval/silver/old_files/ has no __init__.py, so packages.find would silently drop it.
 include = ["pipeline*", "database*", "parsers*", "named_entity_recognition*"]
+
+[tool.setuptools.package-data]
+# synonyms.yaml is the only non-Python file loaded at runtime from an installed
+# package (pipeline/stages/knowledge_extraction/stages/normalize_stage.py:41, read at
+# import). configs/*.yaml stay OUT: they live outside every package and are read
+# repo-root-relative, which the supported editable install resolves correctly.
+"pipeline.stages.knowledge_extraction" = ["synonyms.yaml"]
