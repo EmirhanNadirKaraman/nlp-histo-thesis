@@ -49,7 +49,7 @@ def main():
                              "auto-routes to silver_findings_<stem>.jsonl.")
     parser.add_argument("--model",   default=DEFAULT_MODEL)
     parser.add_argument("--batch",   action="store_true",
-                        help="Use Anthropic batch API (~50% cheaper). Re-run to check status.")
+                        help="Use Anthropic batch API (~50%% cheaper). Re-run to check status.")
     args = parser.parse_args()
 
     source = Path(args.source)
