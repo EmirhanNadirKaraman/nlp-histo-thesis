@@ -20,15 +20,12 @@ the prewarmed cache). Run:  python -m eval.silver.bridge_one_case_proof
 from __future__ import annotations
 
 import os
-import sys
 import tempfile
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+from dotenv import load_dotenv
 
-from dotenv import load_dotenv  # noqa: E402
+from eval.paths import REPO_ROOT as _REPO_ROOT
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
