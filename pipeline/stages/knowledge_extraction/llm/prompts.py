@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from langchain_core.prompts import ChatPromptTemplate
 
-from .models import AuditableSummary
+from ..models import AuditableSummary
 
 # ── MAP ────────────────────────────────────────────────────────────────────────
 

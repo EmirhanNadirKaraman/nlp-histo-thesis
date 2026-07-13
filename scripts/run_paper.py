@@ -190,7 +190,7 @@ def build_runner(
     from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
     from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
     from dataclasses import replace as _dc_replace
-    from pipeline.stages.knowledge_extraction.llm_providers import (
+    from pipeline.stages.knowledge_extraction.llm.llm_providers import (
         anthropic_direct_chat,
         gemini_direct_chat,
         openai_direct_chat,
@@ -278,7 +278,7 @@ def build_batch_runner(
     from dataclasses import replace as _dc_replace
     from pipeline.stages.knowledge_extraction.batch import BatchKnowledgeExtractionRunner
     from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
-    from pipeline.stages.knowledge_extraction.llm_providers import (
+    from pipeline.stages.knowledge_extraction.llm.llm_providers import (
         anthropic_direct_chat,
     )
 

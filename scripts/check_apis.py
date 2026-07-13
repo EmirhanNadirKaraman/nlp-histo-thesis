@@ -196,10 +196,10 @@ def cmd_sync_real() -> int:
     from eval.silver.analysis.pipeline_sweep import case_to_file_data
     from eval.silver.data.schemas import SourceCase
     from pipeline.stages.knowledge_extraction.stages.map_stage import _format_sentences
-    from pipeline.stages.knowledge_extraction.llm_providers import (
+    from pipeline.stages.knowledge_extraction.llm.llm_providers import (
         anthropic_direct_chat, gemini_direct_chat, openai_direct_chat,
     )
-    from pipeline.stages.knowledge_extraction.prompts import build_map_chain
+    from pipeline.stages.knowledge_extraction.llm.prompts import build_map_chain
 
     src = Path("eval/data/source_cases_related15.jsonl")
     if not src.exists():

@@ -69,7 +69,7 @@ def test_category_literal_values():
 
 
 def test_prompt_lists_match_enums():
-    from pipeline.stages.knowledge_extraction import prompts
+    from pipeline.stages.knowledge_extraction.llm import prompts
     src = prompts._MAP_SYSTEM
     # Direction values must each appear textually in the prompt
     for v in ("positive", "negative", "absent", "partial", "unclear", "no_direction"):

@@ -79,7 +79,7 @@ RELATE_CON_THRESHOLDS = [0.40, 0.50, 0.60, 0.70]
 # ── LLM / runner factory (mirrors run_paper_single_model.py) ──────────────────
 
 def _build_llm():
-    from pipeline.stages.knowledge_extraction.llm_providers import gemini_direct_chat
+    from pipeline.stages.knowledge_extraction.llm.llm_providers import gemini_direct_chat
     return gemini_direct_chat("gemini-2.5-flash-lite", max_tokens=16384, request_timeout=60)
 
 

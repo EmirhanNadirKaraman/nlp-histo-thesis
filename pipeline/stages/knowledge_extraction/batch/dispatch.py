@@ -10,7 +10,7 @@ import re
 from langchain_core.prompts import ChatPromptTemplate
 
 from ..models import AuditableSummary
-from ..prompts import _MAP_SYSTEM, _MAP_USER
+from ..llm.prompts import _MAP_SYSTEM, _MAP_USER
 from .models import BatchRequest, BatchResult, ProviderJob, VoterBatchConfig
 
 logger = logging.getLogger(__name__)

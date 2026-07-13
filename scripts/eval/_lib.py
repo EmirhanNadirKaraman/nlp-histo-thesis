@@ -3,7 +3,7 @@
 Strict invariant: this module never imports NLI/LLM/embedding libraries
 (transformers, torch, openai, anthropic, google.genai, vertexai,
 sentence_transformers) nor any code from
-``pipeline.stages.knowledge_extraction.llm_providers``. Phase 1 scripts that import
+``pipeline.stages.knowledge_extraction.llm.llm_providers``. Phase 1 scripts that import
 ``_lib`` must keep that invariant.
 """
 
