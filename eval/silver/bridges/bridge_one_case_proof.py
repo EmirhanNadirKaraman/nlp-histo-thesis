@@ -15,7 +15,7 @@ fed one case at chunk_size=10 / chunk_overlap=0:
                   output for that case (`_replay`, the exact code E06–E12 calibrated on).
 
 Only cheap, cache-warm agreement embeddings stay live (GeminiEmbedder, served from
-the prewarmed cache). Run:  python -m eval.silver.bridge_one_case_proof
+the prewarmed cache). Run:  python -m eval.silver.bridges.bridge_one_case_proof
 """
 from __future__ import annotations
 

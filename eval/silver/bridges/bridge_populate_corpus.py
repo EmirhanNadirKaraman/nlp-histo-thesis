@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bridge: primer θ0.9 cascade MAP → per-paper JSONs for rebuild_from_cached_map.
 
-Generalizes the validated one-case proof (eval/silver/bridge_one_case_proof.py) to
+Generalizes the validated one-case proof (eval/silver/bridges/bridge_one_case_proof.py) to
 the whole corpus. For each paper it pools its primer CASES (per text element),
 resolves every chunk at the frozen θ0.9 cascade from the cached l1/l2/l3 votes
 (ZERO voter API — exactly the sweep's AgreementChecker), re-numbers chunk ids
@@ -14,10 +14,10 @@ Default writes to a NON-DESTRUCTIVE staging dir. ``--install`` writes into
 rebuild_from_cached_map picks them up.
 
   # validate one paper (staging, zero API, checks output == sweep θ0.9):
-  python -m eval.silver.bridge_populate_corpus --pmcids PMC7540531_HIS-77-460 --validate
+  python -m eval.silver.bridges.bridge_populate_corpus --pmcids PMC7540531_HIS-77-460 --validate
 
   # all 15 papers, install into the summaries dir for the rebuild step:
-  python -m eval.silver.bridge_populate_corpus --all --install
+  python -m eval.silver.bridges.bridge_populate_corpus --all --install
 """
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ load_dotenv(str(_REPO_ROOT / ".env"))
 os.environ["ANTHROPIC_API_KEY"] = ""
 os.environ["OPENAI_API_KEY"] = ""
 
-from eval.silver.bridge_one_case_proof import (  # noqa: E402
+from .bridge_one_case_proof import (  # noqa: E402
     BEST_FORCE_ESCALATE_POLARITY,
     BEST_SINGLE_VOTER_POLICY,
     BEST_VOTER_SUBSET,
@@ -208,7 +208,7 @@ def main() -> int:
         print(f"\n=== VALIDATION: {'PASS ✓' if all_ok else 'FAIL ✗'} ===")
         if all_ok:
             print("Next (downstream + DB + files, no API):\n"
-                  "  python -m eval.silver.bridge_populate_corpus --all --install\n"
+                  "  python -m eval.silver.bridges.bridge_populate_corpus --all --install\n"
                   "  python scripts/rebuild_from_cached_map.py --profile real --health-check no")
         return 0 if all_ok else 1
     return 0
