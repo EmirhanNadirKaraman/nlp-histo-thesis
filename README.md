@@ -137,15 +137,38 @@ nlp-histo/
 
 ## Quick Start
 
-### 1. Install Dependencies
+### 1. Install Dependencies and the Project
+
+Supported Python versions: **3.10 – 3.12**. (3.10 is the floor — langchain and torch
+require it, and the Pydantic schemas use PEP-604 unions. 3.13 is not supported —
+scispaCy caps at `<3.13`.)
 
 ```bash
-pip install -r requirements.txt
+# 1. Dependencies — requirements.txt is the tested source of truth
+python -m pip install -r requirements.txt
 # requirements.txt covers the production pipelines (PDF extraction +
 # the multi-provider knowledge_extraction cascade, which uses direct provider APIs).
 # The langchain/* packages are only needed for the legacy
 # legacy/langchain-summarization/ prototype, which is no longer the production path.
+
+# 2. The project itself, in editable mode
+python -m pip install -e . --no-deps
 ```
+
+`--no-deps` is deliberate: `pyproject.toml` does **not** duplicate the dependency list,
+so `requirements.txt` stays the single tested manifest. Installing the project makes
+`pipeline`, `database`, `parsers` and `named_entity_recognition` importable as normal
+packages, without the per-file `sys.path` bootstraps that direct-run scripts would
+otherwise need.
+
+`eval` is **intentionally not installed**. It is run from the repository root as
+`python -m eval.…` (a top-level distribution package literally named `eval` would be a
+generic-name collision).
+
+> **Run commands from the repository root.** Editable installation fixes *imports*; it
+> does not make the project location-independent. The pipeline's `PathConfig` and the
+> evaluation harness read repository-root-relative data paths (`out/`, `files/`,
+> `configs/`, `eval/data/`), so a different working directory will not find them.
 
 ### 2. Set Up Database
 
