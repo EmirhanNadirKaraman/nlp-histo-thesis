@@ -28,52 +28,109 @@ python -m eval.silver.<module> --help
 ```
 
 Several modules come as **deliberate CLI / library pairs** — a thin command-line front end
-plus the reusable implementation it calls: `sample.py`/`sampler.py`,
-`export_pipeline.py`/`exporter.py`, `generate.py`/`generator.py`. These pairs are
-intentional, not duplicated implementations.
+plus the reusable implementation it calls: `data/sample.py`/`data/sampler.py`,
+`data/export_pipeline.py`/`data/exporter.py`,
+`generation/generate.py`/`generation/generator.py`. These pairs are intentional, not
+duplicated implementations.
 
 ```
 eval/silver/
-├── *.py              top-level modules: sampling/export, silver generation, matching,
-│                     evaluation, calibration sweeps, replay bridges, reporting
+├── data/             schemas, JSONL IO, deterministic splits, DB-backed sampling + export
+├── matching/         embedding adapters, embedding caches, finding alignment, P/R/F1
+├── generation/       silver-label generation CLI + library, and its prompts
+├── reporting/        Markdown/CSV inspection reports and the HTML dashboard
+├── analysis/         evaluation drivers, calibration sweeps, replay context, score analyses
+├── bridges/          interoperability tools: primer→corpus bridge + one-case proof
 ├── experiments/      numbered thesis experiment packages (E01–E14) + corpus_stats
 ├── relation_pairs/   E13 claim-pair workflow (Anthropic Message Batches)
-├── old_files/        superseded historical drivers — reference only
-└── tests/            the package's pytest suite
+├── old_files/        superseded historical driver — still imported for its constants
+├── tests/            the package's pytest suite (intentionally co-located)
+└── __init__.py
 ```
+
+The six subpackages layer strictly downward — `data` depends on nothing else here;
+`matching`, `generation` and `reporting` depend on `data`; `analysis` depends on
+`data`/`matching`/`reporting`; `bridges` depends on `analysis`. The import graph is
+acyclic, and no lower layer imports an upper one.
+
+Facts worth keeping in mind:
+
+* **`eval` is not installed** as part of the distribution (`pyproject.toml` deliberately
+  excludes it). Commands are run as `python -m eval.silver.…` **from the repository
+  root**; `database`, `pipeline` and friends come from the editable project install.
+* **Data and artifact paths stay repository-root-relative** (`eval/data/…`, `out/…`,
+  `configs/…`), so the working directory must be the repository root.
+* **`tests/` is intentionally co-located** with the package it tests, rather than living
+  under the top-level `tests/` tree.
+* **`old_files/` stays** because active code still imports constants from it
+  (`scripts/eval/run_summarization_experiments.py`), not merely for provenance.
+* **`experiments/` and `relation_pairs/` are unchanged** by the package grouping.
 
 ## Main workflows
 
-### Source-case preparation
+### Source-case preparation — `data/`
 
-`sample`, `export_pipeline` — select source cases and export pipeline findings for them.
-**Database-backed:** these require access to the PostgreSQL instance.
+```bash
+python -m eval.silver.data.sample --help
+python -m eval.silver.data.export_pipeline --help
+```
 
-### Silver-label generation
+Select source cases and export pipeline findings for them. **Database-backed:** these
+require access to the PostgreSQL instance. `data/` also holds the Pydantic schemas
+(`schemas`), JSONL helpers (`jsonl_utils`) and the deterministic dev/test split
+(`split`), which are pure offline utilities.
 
-`generate`, `generator`, `prompts` — produce silver findings from source cases.
-**This workflow uses Anthropic / Opus and can make paid API calls.**
+### Silver-label generation — `generation/`
 
-### Matching and evaluation
+```bash
+python -m eval.silver.generation.generate --help
+```
 
-`embedders`, `matcher`, `evaluate` — embed and align pipeline findings against silver
-findings, then compute metrics. The embedding providers (OpenAI / Gemini) **can make
-paid API calls on a cache miss**; a warm local embedding cache is not guaranteed.
+Produces silver findings from source cases (`generate` CLI → `generator` library, with
+prompts in `prompts`). **This workflow uses Anthropic / Opus and can make paid API
+calls.**
 
-### Calibration and replay
+### Matching and evaluation — `matching/` + `analysis/`
 
-`sweep`, `pipeline_sweep`, `map_theta_sweep`, `run_new_summarization_sweeps`,
-`map_context`, `score_distribution`, `escalation_breakdown`, and the `bridge_*` modules
-are calibration, replay, and analysis utilities. They are effectively offline **only when
-the required local primer and embedding-cache bundle already exists** — otherwise they
-fall back to live embedding calls.
+```bash
+python -m eval.silver.analysis.evaluate --help
+```
 
-### Inspection and reporting
+`matching/` provides the embedding adapters (`embedders`), the embedding caches and the
+alignment + P/R/F1 metrics (`matcher`); `analysis/evaluate` drives them. The embedding
+providers (OpenAI / Gemini) **can make paid API calls on a cache miss**; a warm local
+embedding cache is not guaranteed.
 
-`inspect`, `dashboard`, `split`, `schemas`, `jsonl_utils` — human-readable reports, the
-HTML dashboard, deterministic dev/test splitting, Pydantic schemas, and JSONL helpers.
-These modules do not themselves construct API clients or require database access (the
-input artifacts they read are produced by the workflows above).
+### Calibration and replay — `analysis/` + `bridges/`
+
+```bash
+python -m eval.silver.analysis.sweep --help
+python -m eval.silver.analysis.pipeline_sweep --help
+python -m eval.silver.analysis.map_theta_sweep --help
+python -m eval.silver.analysis.run_new_summarization_sweeps --help
+python -m eval.silver.analysis.score_distribution --help
+python -m eval.silver.analysis.escalation_breakdown --help
+python -m eval.silver.bridges.bridge_populate_corpus --help
+```
+
+Calibration, replay and analysis utilities (`analysis/map_context` is a library, not a
+CLI), plus the corpus bridges. They are effectively offline **only when the required
+local primer and embedding-cache bundle already exists** — otherwise they fall back to
+live embedding calls.
+
+> `bridges/bridge_one_case_proof` has a `__main__` but **no argparse**, so it does not
+> support `--help`: any argument is ignored and the proof runs. Read it before invoking.
+
+### Inspection and reporting — `reporting/`
+
+```bash
+python -m eval.silver.reporting.dashboard --help
+```
+
+`reporting/inspect` writes the human-readable Markdown/CSV reports (library only) and
+`reporting/dashboard` renders the standalone HTML dashboard. These modules do not
+construct API clients or require database access — the input artifacts they read are
+produced by the workflows above.
 
 ## Offline, cached, and paid execution
 
@@ -111,9 +168,11 @@ not be run casually**. E13's authoritative experiment record remains in
 
 ## Historical code
 
-`old_files/` contains **superseded historical drivers**, retained for provenance and
-reference only. It is **not** a maintained entry point, and its contents should not be
-modernized or reactivated without an explicit reason.
+`old_files/` contains a **superseded historical driver** (`run_summarization_sweeps.py`).
+It is **not** a maintained entry point and its self-documented commands no longer
+resolve — but it is **not dead**: `scripts/eval/run_summarization_experiments.py` still
+imports constants (e.g. `HYBRID_BLEND_GRID`) from it, which is why it stays in place. Its
+contents should not be modernized or reactivated without an explicit reason.
 
 ## Tests
 
