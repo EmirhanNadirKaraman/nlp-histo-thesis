@@ -11,7 +11,7 @@ import logging
 import re
 
 from ..models import AuditableSummary, Finding
-from ..nli_config import get_active_spec
+from .nli_config import get_active_spec
 
 logger = logging.getLogger(__name__)
 

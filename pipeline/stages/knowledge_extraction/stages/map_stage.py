@@ -265,7 +265,7 @@ class MapStage:
         # the metadata stamped on every cache entry reflects the model that
         # produced the persisted grounding scores. Resolves ``$NLP_HISTO_NLI_MODEL``.
         try:
-            from ..nli_config import get_active_spec  # noqa: PLC0415 — local import
+            from ..grounding.nli_config import get_active_spec  # noqa: PLC0415 — local import
             self._nli_model_id = get_active_spec().hf_id
         except Exception:  # noqa: BLE001
             self._nli_model_id = ""

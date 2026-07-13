@@ -8,7 +8,8 @@ This document describes the knowledge-extraction stage — what each stage does,
 - `grounding/` — `grounding_filter.py`
 - `provenance/` — `validator.py`, `citation_filter.py`, `paragraph_lookup.py` (moved here from the former `helpers/`)
 - `routing/` — `router.py`, `models.py`, `policy.py`, `routing_dataset.py`, `schema_validator.py`
-- top level — `runner.py`, `config.py` (`KnowledgeExtractionConfig` + per-stage configs; the home of every tunable referenced below), `models.py`, `prompts.py`, `persistence.py`, `cache.py`, `llm_providers.py`, `nli_config.py`, `health_checks.py`, `entity_linker.py` (beside `umls_resources.py` / `umls_utils.py`)
+- top level — `runner.py`, `config.py` (`KnowledgeExtractionConfig` + per-stage configs; the home of every tunable referenced below), `models.py`, `prompts.py`, `persistence.py`, `cache.py`, `llm_providers.py`, `health_checks.py`, `entity_linker.py` (beside `umls_resources.py` / `umls_utils.py`)
+- `grounding/` — `grounding_filter.py` (NLI entailment filter) and `nli_config.py` (the NLI model registry it resolves)
 - NER is a **repo-root** module: `named_entity_recognition/ner.py` (not under `knowledge_extraction/`).
 
 > **Retired stages.** An optional MAP → REDUCE → RULES secondary block once

@@ -20,8 +20,13 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
+# Repository-level resource, anchored to this file rather than the working directory:
+# grounding -> knowledge_extraction -> stages -> pipeline -> <repo root>/configs/…
+# `configs/` lives outside every installed package, so it cannot be package data; an
+# editable install keeps `__file__` in the source tree, so this resolves correctly from
+# any working directory under the supported install contract.
 _CONFIG_PATH = (
-    Path(__file__).resolve().parents[3] / "configs" / "nli_models.yaml"
+    Path(__file__).resolve().parents[4] / "configs" / "nli_models.yaml"
 )
 
 _FALLBACK_HF_ID = "pritamdeka/PubMedBERT-MNLI-MedNLI"

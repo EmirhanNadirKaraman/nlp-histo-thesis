@@ -43,7 +43,7 @@ from ..models import (
     RelationTypeLabel,
     direction_value,
 )
-from ..nli_config import get_active_spec
+from ..grounding.nli_config import get_active_spec
 
 logger = logging.getLogger(__name__)
 
