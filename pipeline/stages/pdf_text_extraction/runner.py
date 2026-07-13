@@ -43,6 +43,10 @@ The module also exposes a thin argparse `main()` for shell invocations and
 a `_retarget_paths` helper that repoints every `PathConfig` directory under
 a sweep-specific root (used by `scripts/eval/run_all_sweeps.py`).
 
+Run it from the repository root as a module::
+
+    python -m pipeline.stages.pdf_text_extraction.runner --help
+
 Usage::
 
     from pathlib import Path
@@ -63,11 +67,6 @@ Usage::
 from __future__ import annotations
 
 import logging
-import sys
-from pathlib import Path as _Path
-
-# Allow running as `python pipeline/stages/pdf_text_extraction/runner.py` from the project root
-sys.path.insert(0, str(_Path(__file__).parent.parent.parent.parent))
 import traceback
 from pathlib import Path
 from typing import List, Optional

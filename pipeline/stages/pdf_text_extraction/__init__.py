@@ -42,6 +42,8 @@ Quick start
     from pipeline.stages.pdf_text_extraction import ParallelBatchRunner
     ParallelBatchRunner(cfg, max_workers=4).run(pdf_dir=Path("files/organized_pdfs"))
 """
+from typing import TYPE_CHECKING
+
 from pipeline.stages.pdf_text_extraction.config import (
     PipelineConfig,
     PathConfig,
@@ -56,9 +58,38 @@ from pipeline.stages.pdf_text_extraction.config import (
     RuntimeConfig,
     TableDetectorType,
 )
-from pipeline.stages.pdf_text_extraction.runner import PipelineRunner
-from pipeline.stages.pdf_text_extraction.batch import ParallelBatchRunner
 from pipeline.stages.pdf_text_extraction.blacklist import BlacklistManager
+
+# `PipelineRunner` and `ParallelBatchRunner` are resolved lazily. Importing them here
+# would make `python -m pipeline.stages.pdf_text_extraction.runner` re-execute an
+# already-imported module (runpy RuntimeWarning), and would pull `.runner` / `.batch`
+# into every consumer that only wants the config dataclasses. The package-root names
+# keep working — `from pipeline.stages.pdf_text_extraction import PipelineRunner`
+# resolves through `__getattr__` (PEP 562) to the exact same class object.
+if TYPE_CHECKING:  # static analysers still see the real symbols
+    from pipeline.stages.pdf_text_extraction.batch import ParallelBatchRunner
+    from pipeline.stages.pdf_text_extraction.runner import PipelineRunner
+
+_LAZY_EXPORTS = {
+    "PipelineRunner": "pipeline.stages.pdf_text_extraction.runner",
+    "ParallelBatchRunner": "pipeline.stages.pdf_text_extraction.batch",
+}
+
+
+def __getattr__(name: str):
+    module_path = _LAZY_EXPORTS.get(name)
+    if module_path is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    from importlib import import_module
+
+    value = getattr(import_module(module_path), name)
+    globals()[name] = value          # cache: subsequent lookups skip __getattr__
+    return value
+
+
+def __dir__():
+    return sorted(__all__)
+
 
 __all__ = [
     # Config

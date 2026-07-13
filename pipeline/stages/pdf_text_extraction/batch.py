@@ -31,7 +31,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 import threading
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -40,8 +39,6 @@ from typing import Any, Callable, Dict, List, Optional
 
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from pipeline.stages.pdf_text_extraction.blacklist import BlacklistManager
 from pipeline.stages.pdf_text_extraction.config import PipelineConfig

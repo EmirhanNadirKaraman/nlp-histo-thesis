@@ -238,7 +238,7 @@ python tarball_extractor.py
 python pdf_organizer.py
 
 # Process and ingest to database (production pipeline; see HOW_TO_RUN.md §2 for flags)
-cd .. && python pipeline/stages/pdf_text_extraction/runner.py
+cd .. && python -m pipeline.stages.pdf_text_extraction.runner
 ```
 
 ### 4. (Historical) standalone NER utilities — gen-1
