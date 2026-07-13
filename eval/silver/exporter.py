@@ -21,9 +21,6 @@ def export_pipeline_outputs(
     Uses the most recent successful pipeline run per pmcid.
     Writes pipeline_findings.jsonl — one line per case.
     """
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
     from database import get_db_connection
     from database.models import PipelineRun, SumMapFinding
 

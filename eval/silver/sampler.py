@@ -42,10 +42,6 @@ def sample_source_cases(
 
     ``seed`` is frozen at 42 so the silver source-case set is reproducible.
     """
-    import sys
-    from pathlib import Path as _Path
-    sys.path.insert(0, str(_Path(__file__).parent.parent.parent))
-
     from database import get_db_connection
     from database.models import TextElement, Document
 
@@ -105,10 +101,6 @@ def sample_papers_source_cases(
     complete set of paragraphs for each selected paper — giving the pipeline
     per-paper context for RELATE/RESOLVE calibration.
     """
-    import sys
-    from pathlib import Path as _Path
-    sys.path.insert(0, str(_Path(__file__).parent.parent.parent))
-
     from database import get_db_connection
     from database.models import Document
 

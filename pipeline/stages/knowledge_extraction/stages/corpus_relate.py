@@ -844,9 +844,6 @@ def _main() -> None:
 
     db = None
     if not args.no_save_to_db:
-        _repo_root = Path(__file__).resolve().parents[4]
-        if str(_repo_root) not in sys.path:
-            sys.path.insert(0, str(_repo_root))
         try:
             from database import get_db_connection  # noqa: PLC0415
             db = get_db_connection()
@@ -873,8 +870,4 @@ def _main() -> None:
 
 
 if __name__ == "__main__":
-    # Allow running from project root without installing the package
-    _repo_root = Path(__file__).resolve().parents[4]
-    if str(_repo_root) not in sys.path:
-        sys.path.insert(0, str(_repo_root))
     _main()
