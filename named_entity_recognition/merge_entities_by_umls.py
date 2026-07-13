@@ -29,10 +29,16 @@ Output: Separate JSON files (one per CUI) with structure:
 Files are saved as: {output_dir}/{CUI}_{canonical_name}.json
 
 Usage:
-    python named_entity_recognition/merge_entities_by_umls.py
-    python named_entity_recognition/merge_entities_by_umls.py --output-dir results/umls
-    python named_entity_recognition/merge_entities_by_umls.py --pmcid PMC1234567
-    python named_entity_recognition/merge_entities_by_umls.py --min-occurrences 5
+    Run from inside `named_entity_recognition/`: the default output directory is
+    CWD-relative, so this keeps the files where they have always been written
+    (`named_entity_recognition/umls_entities_lg/`). The `cd` is not needed for
+    imports — the editable install provides those.
+
+    cd named_entity_recognition
+    python -m named_entity_recognition.merge_entities_by_umls
+    python -m named_entity_recognition.merge_entities_by_umls --output-dir results/umls
+    python -m named_entity_recognition.merge_entities_by_umls --pmcid PMC1234567
+    python -m named_entity_recognition.merge_entities_by_umls --min-occurrences 5
 """
 
 import sys
@@ -178,8 +184,9 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
         if row_count == 0:
             print("No entities with UMLS mappings found.")
             if pmcid:
-                print(f"\nMake sure document {pmcid} has been processed with NER:")
-                print(f"  python named-entity-recognition/ner.py {pmcid} --save")
+                print(f"\nMake sure document {pmcid} has been processed with NER.")
+                print("The maintained batch NER workflow populates the `entities` table:")
+                print("  python -m named_entity_recognition.batch_ner")
             return {}
 
         print(f"Processed {row_count} entity occurrences with UMLS mappings\n")
@@ -297,21 +304,27 @@ def main():
         description="Merge entities by UMLS CUI and generate JSON and TXT output",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+Run from inside named_entity_recognition/ — the default output directory is
+CWD-relative, so this writes to named_entity_recognition/umls_entities_lg/ as
+before.  (The cd is only for the output location, not for imports.)
+
+  cd named_entity_recognition
+
 Examples:
   # Process all documents (creates both JSON and TXT files)
-  python named_entity_recognition/merge_entities_by_umls.py
+  python -m named_entity_recognition.merge_entities_by_umls
 
   # Filter by model (auto-sets output dir to umls_entities_lg)
-  python named_entity_recognition/merge_entities_by_umls.py --model en_core_sci_lg
+  python -m named_entity_recognition.merge_entities_by_umls --model en_core_sci_lg
 
   # Process specific document
-  python named_entity_recognition/merge_entities_by_umls.py --pmcid PMC1448691
+  python -m named_entity_recognition.merge_entities_by_umls --pmcid PMC1448691
 
   # Filter by minimum occurrences (only CUIs with 10+ mentions)
-  python named_entity_recognition/merge_entities_by_umls.py --min-occurrences 10
+  python -m named_entity_recognition.merge_entities_by_umls --min-occurrences 10
 
   # Custom output directory
-  python named_entity_recognition/merge_entities_by_umls.py --output-dir results/umls_concepts
+  python -m named_entity_recognition.merge_entities_by_umls --output-dir results/umls_concepts
         """
     )
 
@@ -359,12 +372,13 @@ Examples:
         print("="*80)
         print("Troubleshooting:")
         print("="*80)
-        print("\n  1. Make sure you have entities in the database:")
-        print("     python named-entity-recognition/ner.py PMC1234567 --save")
-        print("\n  2. Check database connection:")
-        print("     python database/query_examples.py")
-        print("\n  3. Verify UMLS data exists:")
-        print("     python named-entity-recognition/query_entities.py")
+        print("\n  1. Populate the `entities` table with the batch NER workflow")
+        print("     (run from the repository root):")
+        print("     python -m named_entity_recognition.batch_ner")
+        print("\n  2. Check the database connection and schema (read-only; creates nothing):")
+        print("     python -m database.init_db --check-only")
+        print("\n  3. This command and `export_disease_entities` consume the UMLS-linked")
+        print("     entities written by `batch_ner` — if it reports none, NER has not run.")
         print("="*80 + "\n")
         sys.exit(1)
 

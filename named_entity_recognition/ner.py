@@ -398,6 +398,8 @@ if __name__ == "__main__":
         if save_to_db:
             print("✓ NER processing complete! Results saved to database.")
         else:
-            print("Preview complete. To save to database, run with --save flag:")
-            print(f"  python named-entity-recognition/ner.py {pmcid} {min_chars} --save")
+            print("Preview complete — nothing was written to the database.")
+            print("The maintained batch NER workflow populates the `entities` table")
+            print("(run from the repository root):")
+            print("  python -m named_entity_recognition.batch_ner")
         print("="*80)

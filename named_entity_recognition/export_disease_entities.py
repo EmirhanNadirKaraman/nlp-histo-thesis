@@ -14,10 +14,16 @@ Instead, it:
 3. Exports JSON and TXT files for each concept
 
 Usage:
-    python named_entity_recognition/export_disease_entities.py
-    python named_entity_recognition/export_disease_entities.py --output-dir disease_entities
-    python named_entity_recognition/export_disease_entities.py --min-occurrences 5
-    python named_entity_recognition/export_disease_entities.py --semantic-types T047 T191
+    Run from inside `named_entity_recognition/`: the default output directory is
+    CWD-relative, so this keeps the files where they have always been written
+    (`named_entity_recognition/disease_entities_lg/`). The `cd` is not needed for
+    imports — the editable install provides those.
+
+    cd named_entity_recognition
+    python -m named_entity_recognition.export_disease_entities
+    python -m named_entity_recognition.export_disease_entities --output-dir disease_entities
+    python -m named_entity_recognition.export_disease_entities --min-occurrences 5
+    python -m named_entity_recognition.export_disease_entities --semantic-types T047 T191
 """
 
 import json
@@ -306,27 +312,33 @@ def main():
         description="Export disease-related entities grouped by UMLS CUI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+Run from inside named_entity_recognition/ — the default output directory is
+CWD-relative, so this writes to named_entity_recognition/disease_entities_lg/ as
+before.  (The cd is only for the output location, not for imports.)
+
+  cd named_entity_recognition
+
 Examples:
   # Export all disease entities
-  python named_entity_recognition/export_disease_entities.py
+  python -m named_entity_recognition.export_disease_entities
 
   # Filter by model (auto-sets output dir to disease_entities_lg)
-  python named_entity_recognition/export_disease_entities.py --model en_core_sci_lg
+  python -m named_entity_recognition.export_disease_entities --model en_core_sci_lg
 
   # Custom output directory
-  python named_entity_recognition/export_disease_entities.py --output-dir results/diseases
+  python -m named_entity_recognition.export_disease_entities --output-dir results/diseases
 
   # Filter by minimum occurrences
-  python named_entity_recognition/export_disease_entities.py --min-occurrences 10
+  python -m named_entity_recognition.export_disease_entities --min-occurrences 10
 
   # Specific semantic types only (diseases and neoplasms)
-  python named_entity_recognition/export_disease_entities.py --semantic-types T047 T191
+  python -m named_entity_recognition.export_disease_entities --semantic-types T047 T191
 
   # Process specific document
-  python named_entity_recognition/export_disease_entities.py --pmcid PMC1448691
+  python -m named_entity_recognition.export_disease_entities --pmcid PMC1448691
 
   # Limit to first N documents
-  python named_entity_recognition/export_disease_entities.py --limit 50
+  python -m named_entity_recognition.export_disease_entities --limit 50
 
 Available semantic types:
   T047 - Disease or Syndrome
