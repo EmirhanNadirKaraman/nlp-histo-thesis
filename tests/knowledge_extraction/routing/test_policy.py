@@ -13,7 +13,6 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
-from pathlib import Path
 
 import pytest
 
@@ -23,8 +22,9 @@ from pipeline.stages.knowledge_extraction.routing.policy import (
     PolicySelectionResult,
     RoutingPolicySpec,
 )
+from tests.paths import SCRIPTS
 
-_SCRIPTS_DIR = Path(__file__).parents[3] / "scripts"
+_SCRIPTS_DIR = SCRIPTS
 
 
 def _import_select_with_pulp():

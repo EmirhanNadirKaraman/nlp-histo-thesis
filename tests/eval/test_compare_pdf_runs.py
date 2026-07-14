@@ -19,7 +19,7 @@ import pytest
 # Load ``scripts/eval/compare_pdf_runs.py`` by file path so the test does not
 # require ``scripts`` to be an importable package (mirrors
 # ``tests/eval/test_compute_proxy_metrics.py``).
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+from tests.paths import REPO_ROOT as _REPO_ROOT
 _SCRIPT_PATH = _REPO_ROOT / "scripts" / "eval" / "compare_pdf_runs.py"
 
 

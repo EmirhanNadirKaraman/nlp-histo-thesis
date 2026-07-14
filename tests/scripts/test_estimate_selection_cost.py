@@ -11,10 +11,10 @@ import sys
 
 import pytest
 
-from tests.paths import REPO_ROOT, SCRIPTS
+from tests.paths import SCRIPTS
 
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+# scripts/ is not a package, so it must be on sys.path to import the script by
+# name. The repository root is already there (pytest inserts the rootdir).
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 

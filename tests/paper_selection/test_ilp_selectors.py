@@ -30,6 +30,8 @@ from eval.paper_selection.loaders import RawEntity, RawPaper
 from eval.paper_selection.metrics import Hardness, Relatedness
 from eval.paper_selection.selectors import SelectionConfig, select_calibration_set
 
+from tests.paths import REPO_ROOT
+
 
 # ── Fixture builders ─────────────────────────────────────────────────────────
 
@@ -284,7 +286,7 @@ def test_cli_strategy_ilp_on_jsonl_fixture(tmp_path: Path):
                 "n_captions": paper.n_captions,
             }) + "\n")
 
-    repo_root = Path(__file__).resolve().parents[2]
+    repo_root = REPO_ROOT
     export_dir = tmp_path / "configs"
     report_dir = tmp_path / "reports"
     cmd = [

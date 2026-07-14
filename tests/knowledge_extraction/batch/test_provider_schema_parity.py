@@ -20,13 +20,13 @@ from __future__ import annotations
 
 import ast
 import inspect
-from pathlib import Path
+
+from tests.paths import REPO_ROOT
 
 
 
 _BATCH_DIR = (
-    Path(__file__).resolve().parents[3]
-    / "pipeline" / "stages" / "knowledge_extraction" / "batch"
+    REPO_ROOT / "pipeline" / "stages" / "knowledge_extraction" / "batch"
 )
 
 

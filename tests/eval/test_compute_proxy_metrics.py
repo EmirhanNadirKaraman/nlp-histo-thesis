@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from tests.paths import REPO_ROOT
 SCRIPT_DIR = REPO_ROOT / "scripts" / "eval"
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures" / "summaries"
 

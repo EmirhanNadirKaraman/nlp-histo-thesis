@@ -33,7 +33,7 @@ from sqlalchemy.dialects import postgresql
 
 from database.models import Base
 
-_REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+from tests.paths import REPO_ROOT as _REPO_ROOT
 _VERSIONS = _REPO_ROOT / "alembic" / "versions"
 _DIALECT = postgresql.dialect()
 

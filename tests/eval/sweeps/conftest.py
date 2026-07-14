@@ -13,13 +13,12 @@ Production defaults are unchanged — this only guards the tests.
 
 from __future__ import annotations
 
-from pathlib import Path
 
 import pytest
 
-_TRACKED_REPORT = (
-    Path(__file__).resolve().parents[3] / "eval" / "results" / "grounding_sweep.md"
-)
+from tests.paths import REPO_ROOT
+
+_TRACKED_REPORT = REPO_ROOT / "eval" / "results" / "grounding_sweep.md"
 
 
 @pytest.fixture(autouse=True)

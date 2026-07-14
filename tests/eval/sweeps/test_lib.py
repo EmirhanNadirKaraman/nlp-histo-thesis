@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+from tests.paths import REPO_ROOT
 LIB_PATH = REPO_ROOT / "eval" / "sweeps" / "_lib.py"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 

@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+from tests.paths import REPO_ROOT
 SCRIPT_PATH = REPO_ROOT / "eval" / "sweeps" / "grounding.py"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 

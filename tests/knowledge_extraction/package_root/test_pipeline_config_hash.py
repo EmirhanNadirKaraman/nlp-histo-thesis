@@ -200,11 +200,10 @@ def test_both_runners_include_map_agreement_policy_version_in_thresholds():
     re-opens the stale-cache hole that B-051 cache-invalidation closes.
     Greps the runner source for the literal key to enforce parity.
     """
-    from pathlib import Path
+    from tests.paths import REPO_ROOT
 
-    repo = Path(__file__).resolve().parents[3]
-    sync_src = (repo / "pipeline/stages/knowledge_extraction/runner.py").read_text()
-    batch_src = (repo / "pipeline/stages/knowledge_extraction/batch/runner.py").read_text()
+    sync_src = (REPO_ROOT / "pipeline/stages/knowledge_extraction/runner.py").read_text()
+    batch_src = (REPO_ROOT / "pipeline/stages/knowledge_extraction/batch/runner.py").read_text()
     assert '"map_agreement_policy_version"' in sync_src, (
         "KnowledgeExtractionRunner._pipeline_config_hash must include "
         "'map_agreement_policy_version' in the thresholds dict (B-051)."
