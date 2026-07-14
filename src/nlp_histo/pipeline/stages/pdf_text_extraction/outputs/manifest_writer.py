@@ -43,9 +43,16 @@ def make_run_id() -> str:
 
 
 def _git_info() -> Dict[str, Any]:
-    """Best-effort git SHA + dirty flag.  Returns ``{}`` on any failure."""
+    """Best-effort git SHA + dirty flag. Returns ``{}`` when git metadata is unavailable.
+
+    Provenance, not configuration: an installed wheel is not inside a checkout, so
+    there is nothing to walk up to. Ask git about the *working directory* instead of
+    counting parents from ``__file__`` — outside a repository git simply exits
+    non-zero and the manifest records no git fields (schema unchanged; consumers
+    already treat them as optional). Never runs at import.
+    """
     try:
-        repo_root = Path(__file__).resolve().parents[6]
+        repo_root = Path.cwd()
         sha = subprocess.check_output(
             ["git", "rev-parse", "HEAD"],
             cwd=str(repo_root),

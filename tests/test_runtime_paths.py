@@ -143,3 +143,34 @@ def test_replay_resolves_its_cache_under_the_artifact_root(tmp_path) -> None:
     assert replay.frozen_embedding_cache() == (
         tmp_path / "eval" / "data" / "embedding_cache_openai.sqlite"
     )
+
+def test_manifest_git_info_outside_a_checkout(tmp_path, monkeypatch) -> None:
+    """Outside a git repository the manifest records empty fields — it must not crash."""
+    from nlp_histo.pipeline.stages.pdf_text_extraction.outputs.manifest_writer import (
+        _git_info,
+    )
+
+    monkeypatch.chdir(tmp_path)
+    info = _git_info()
+    assert info.get("sha") in (None, "")
+
+def test_manifest_git_info_does_not_walk_parents() -> None:
+    from nlp_histo.pipeline.stages.pdf_text_extraction.outputs import manifest_writer
+
+    tree = ast.parse(Path(manifest_writer.__file__).read_text(encoding="utf-8"))
+    walks = [n for n in ast.walk(tree)
+             if isinstance(n, ast.Attribute) and n.attr == "parents"]
+    assert not walks, "an installed wheel is not N parents below a git checkout"
+
+def test_output_defaults_stay_relative_to_the_caller(tmp_path, monkeypatch) -> None:
+    """`out/…` means "under the directory you ran from" — deliberately, not a bug.
+
+    They must not be reinterpreted as relative to the installed package.
+    """
+    from nlp_histo.pipeline.stages.pdf_text_extraction.config import PathConfig
+
+    monkeypatch.chdir(tmp_path)
+    cfg = PathConfig()
+    assert not cfg.output_root.is_absolute()
+    assert cfg.output_root == Path("out")
+    assert (tmp_path / cfg.output_root).parent == tmp_path
