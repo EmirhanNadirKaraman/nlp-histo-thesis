@@ -169,18 +169,39 @@ nlp-histo replay chapter9 --artifact-root . --output-dir /tmp/replay-out
 
 Offline: no API key, no database, no model inference, no cost.
 
-`--artifact-root` is **required**. The replay used to infer the repository root from its
-own file location, which is meaningless once installed. The root must contain:
+`--artifact-root` is **required**, and it is a **repository-shaped artifact tree**, not a
+flat bundle: the *code* comes from the installed package, the tree supplies only *data*.
+Every input below is validated in one pass **before** anything is written — a missing or
+invalid artifact lists all problems and exits non-zero, so an incomplete tree can never
+produce a partial set of tables that reads like a result.
 
 ```
-out/summaries/summaries/
-eval/data/map_primer/voter_cache.json
-eval/data/embedding_cache_openai.sqlite
+out/summaries/summaries/                        per-paper summary JSONs
+out/summaries/cascade_decisions/                per-chunk cascade decisions
+out/summaries/corpus_relations*.json            ≥1 variant, for the NLI-input A/B table
+eval/data/map_primer/voter_cache.json           frozen voter outputs
+eval/data/silver_findings_related15.jsonl       silver labels
+eval/data/embedding_cache_openai.sqlite         frozen embedding cache
+scripts/eval/run_summarization_experiments.py   orchestrator, loaded by path
+reports/stage6_PR.md                            frozen rubric report, parsed as data
 ```
 
 The embedding cache is *required*, not optional: without it the matcher would miss and
 issue **paid** embedding calls in a workflow documented as free, so the command refuses
-to start instead. Missing inputs are named in the error and nothing is written.
+to start instead. It is validated as a real SQLite file, not merely as an existing path.
+
+This tree is roughly **2.8 GB** and is **not** in the wheel. A symlink or hard-link tree
+pointing at the repository's artifacts works and costs nothing.
+
+**A complete run writes exactly 9 CSVs.** Two files in the historical results directory
+do not regenerate, for reasons that predate this packaging work:
+
+* `04_theta_heatmap.csv` — needs `eval/reports/exp_{1,4}_*_scorer_full_*.csv`, which are
+  no longer in the tree; the analysis reports `status=missing` and writes nothing.
+* `10_cascade_vs_sonnet_gap_ci_per_case.csv` — fails with
+  `ValueError: too many values to unpack (expected 4)`: `map_theta_sweep._replay()` now
+  returns 5 values and the replay unpacks 4. Verified to be a pre-existing mismatch at
+  the branch point, untouched by the packaging migration, and not fixed here.
 
 Outputs default to `<artifact-root>/out/thesis_results/chapter9_offline_replay/`.
 

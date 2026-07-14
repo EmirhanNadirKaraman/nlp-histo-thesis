@@ -28,11 +28,12 @@ import json
 import subprocess
 import argparse
 import sys
+from dataclasses import dataclass
 from collections.abc import Sequence
 import time
 import traceback
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import field
 from pathlib import Path
 from typing import Any, Callable
 
@@ -50,16 +51,114 @@ LOG_PATH: Path = None  # type: ignore[assignment]
 
 DEFAULT_OUTPUT_SUBPATH = Path("out") / "thesis_results" / "chapter9_offline_replay"
 
-# Artifacts the replay cannot run without; checked up-front so a missing tree is a
-# clear validation error rather than an empty CSV or a confusing KeyError.
-REQUIRED_ARTIFACTS = (
-    Path("out") / "summaries" / "summaries",
-    Path("eval") / "data" / "map_primer" / "voter_cache.json",
-    # The frozen embedding cache. It is REQUIRED, not optional: without it the matcher
-    # would miss and issue PAID embedding calls in a workflow documented as offline and
-    # free. Better to refuse to start than to quietly spend money.
-    Path("eval") / "data" / "embedding_cache_openai.sqlite",
+# ── The chapter-9 artifact contract ───────────────────────────────────────────
+#
+# --artifact-root is not a flat bundle of results: it is a REPOSITORY-SHAPED tree of
+# frozen artifacts. The replay reads pipeline outputs (out/summaries/…), frozen
+# evaluation data (eval/data/…) and one repository experiment module
+# (scripts/eval/run_summarization_experiments.py) which it loads by path. The source
+# code itself comes from the installed wheel; only the artifacts are supplied here.
+#
+# The whole required set is declared once, below, and validated in a single pass
+# BEFORE any output directory is created and before any analysis runs. Previously only
+# three inputs were checked, so an incomplete root produced a partial run — 4 CSVs
+# instead of 9 — which reads like a result and is not one.
+
+
+@dataclass(frozen=True)
+class RequiredArtifact:
+    """One input the replay cannot proceed without."""
+
+    relative_path: Path
+    purpose: str
+    kind: str = "file"  # "file" | "dir" | "sqlite" | "glob"
+    pattern: str = ""   # only for kind="glob"
+
+    def describe(self) -> str:
+        return f"{self.relative_path}/{self.pattern}" if self.kind == "glob" else str(self.relative_path)
+
+    def validate(self, root: Path) -> str | None:
+        """Return a human-readable problem, or None when the artifact is usable."""
+        path = root / self.relative_path
+
+        if self.kind == "glob":
+            if not path.is_dir():
+                return "directory missing"
+            if not any(path.glob(self.pattern)):
+                return f"no file matching {self.pattern}"
+            return None
+
+        if not path.exists():
+            return "missing"
+        if self.kind == "dir":
+            if not path.is_dir():
+                return "not a directory"
+            if not any(path.iterdir()):
+                return "directory is empty"
+            return None
+        if not path.is_file():
+            return "not a regular file"
+        if path.stat().st_size == 0:
+            return "file is empty"
+        if self.kind == "sqlite":
+            # Cheap header check — never open or scan the (multi-hundred-MB) cache.
+            with path.open("rb") as fh:
+                if fh.read(16) != b"SQLite format 3\x00":
+                    return "not a SQLite database"
+        return None
+
+
+REQUIRED_ARTIFACTS: tuple[RequiredArtifact, ...] = (
+    RequiredArtifact(
+        Path("out") / "summaries" / "summaries",
+        "per-paper summary JSONs — provenance carry rate, grounding retention, "
+        "NLI A/B, provenance example, real-profile grounding",
+        kind="dir",
+    ),
+    RequiredArtifact(
+        Path("out") / "summaries" / "cascade_decisions",
+        "per-chunk cascade decisions — polarity-conflict counts",
+        kind="dir",
+    ),
+    RequiredArtifact(
+        Path("eval") / "data" / "map_primer" / "voter_cache.json",
+        "frozen voter outputs — MAP replay for the bootstrap CIs",
+    ),
+    RequiredArtifact(
+        Path("eval") / "data" / "silver_findings_related15.jsonl",
+        "silver labels — bootstrap CI scoring",
+    ),
+    RequiredArtifact(
+        Path("eval") / "data" / "embedding_cache_openai.sqlite",
+        "frozen embedding cache — REQUIRED: without it the matcher misses and issues "
+        "PAID embedding calls in a workflow documented as offline and free",
+        kind="sqlite",
+    ),
+    RequiredArtifact(
+        Path("scripts") / "eval" / "run_summarization_experiments.py",
+        "experiment orchestrator, loaded by path for the cascade/Sonnet outputs",
+    ),
+    RequiredArtifact(
+        Path("reports") / "stage6_PR.md",
+        "frozen rubric report, parsed as data — per-rubric variant-18 table",
+    ),
+    # The NLI-input A/B table compares whichever corpus-relation variants are present
+    # (predicate / verbatim / scope_* / current production). It needs AT LEAST ONE — with
+    # none it reports status="missing" and emits no CSV, which is the gap that turned an
+    # incomplete root into a partial run. Requiring all four would be wrong: the frozen
+    # tree only carries two.
+    RequiredArtifact(
+        Path("out") / "summaries",
+        "corpus-relation variants — NLI-input A/B table (at least one required)",
+        kind="glob",
+        pattern="corpus_relations*.json",
+    ),
 )
+
+# Deliberately NOT required — their analyses degrade to status="missing" and simply emit
+# no CSV, which is the historical behaviour:
+#   eval/reports/exp_{1,4}_*_scorer_full_*.csv → 04_theta_heatmap
+OPTIONAL_INPUTS = (Path("eval") / "reports",)
 
 FROZEN_EMBEDDING_CACHE = Path("eval") / "data" / "embedding_cache_openai.sqlite"
 
@@ -67,6 +166,19 @@ FROZEN_EMBEDDING_CACHE = Path("eval") / "data" / "embedding_cache_openai.sqlite"
 def frozen_embedding_cache() -> Path:
     """The embedding cache inside the supplied artifact root — never the user cache."""
     return _REPO_ROOT / FROZEN_EMBEDDING_CACHE
+
+
+def validate_artifacts(root: Path) -> list[str]:
+    """Return one line per missing/invalid artifact. Empty list ⇒ the tree is usable."""
+    problems: list[str] = []
+    for artifact in REQUIRED_ARTIFACTS:
+        problem = artifact.validate(root)
+        if problem is not None:
+            problems.append(
+                f"  - {artifact.describe()} ({problem})\n"
+                f"    Required for: {artifact.purpose}"
+            )
+    return problems
 
 
 def configure(artifact_root: Path, output_dir: Path | None = None) -> None:
@@ -82,12 +194,14 @@ def configure(artifact_root: Path, output_dir: Path | None = None) -> None:
     if not root.is_dir():
         raise FileNotFoundError(f"--artifact-root does not exist: {root}")
 
-    missing = [str(rel) for rel in REQUIRED_ARTIFACTS if not (root / rel).exists()]
-    if missing:
+    problems = validate_artifacts(root)
+    if problems:
         raise FileNotFoundError(
-            f"artifact root {root} is missing required inputs: {', '.join(missing)}. "
-            "Point --artifact-root at a tree containing out/summaries/ and "
-            "eval/data/map_primer/voter_cache.json."
+            "Chapter-9 replay artifact validation failed:\n\n"
+            + "\n\n".join(problems)
+            + "\n\n--artifact-root must point at a repository-shaped frozen artifact "
+              f"tree (given: {root}). The source code comes from the installed package; "
+              "only these artifacts are supplied."
         )
 
     _REPO_ROOT = root
@@ -2185,9 +2299,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="nlp-histo replay chapter9",
         description=(
-            "Chapter-9 offline replay. Reads frozen artifacts and recomputes the "
-            "thesis tables — offline, no API key, no database, no cost."
+            "Chapter-9 offline replay: recompute the thesis tables from frozen "
+            "artifacts. Offline — no API key, no database, no model download, no cost.\n"
+            "\n"
+            "--artifact-root is a REPOSITORY-SHAPED artifact tree, not a flat bundle. "
+            "The code comes from the installed package; the tree supplies only data:\n"
+            "  out/summaries/summaries/            per-paper summary JSONs\n"
+            "  out/summaries/cascade_decisions/    per-chunk cascade decisions\n"
+            "  eval/data/map_primer/voter_cache.json     frozen voter outputs\n"
+            "  eval/data/silver_findings_related15.jsonl silver labels\n"
+            "  eval/data/embedding_cache_openai.sqlite   frozen embedding cache\n"
+            "  scripts/eval/run_summarization_experiments.py  orchestrator (loaded by path)\n"
+            "  reports/stage6_PR.md                frozen rubric report\n"
+            "\n"
+            "Every one is validated before anything is written. A missing frozen cache "
+            "fails validation rather than falling back to PAID embedding calls. A "
+            "complete run writes 9 CSVs."
         ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--artifact-root", type=Path, required=True,

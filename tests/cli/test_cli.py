@@ -199,5 +199,8 @@ def test_replay_missing_artifacts_is_a_clear_error(tmp_path, capsys) -> None:
     rc = replay.main(["--artifact-root", str(tmp_path)])
     assert rc == 2
     err = capsys.readouterr().err
-    assert "missing required inputs" in err
+    assert "artifact validation failed" in err
     assert "voter_cache.json" in err
+    # every missing input is reported in one pass, each with why it is needed
+    assert "embedding_cache_openai.sqlite" in err
+    assert "Required for:" in err
