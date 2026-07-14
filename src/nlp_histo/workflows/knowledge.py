@@ -314,12 +314,27 @@ def build_batch_runner(
 
 # ── Entry point ────────────────────────────────────────────────────────────────
 
-def _all_pmcids() -> list[str]:
-    """Return all unique PMCIDs from eval/data/source_cases_related15.jsonl in file order."""
+#: The frozen calibration selection. It is a thesis artifact, NOT application data, so
+#: it is not packaged: it lives in the repository and is supplied explicitly. The
+#: default is relative to the CALLER's working directory (i.e. the repository root),
+#: and --source-cases overrides it.
+DEFAULT_SOURCE_CASES = Path("eval/data/source_cases_related15.jsonl")
+
+
+def _all_pmcids(source: Path | None = None) -> list[str]:
+    """Return all unique PMCIDs from the source-cases file, in file order.
+
+    Fails BEFORE any paid API call when the file is absent, naming the path and the
+    option that supplies it.
+    """
     import json
-    source = Path("eval/data/source_cases_related15.jsonl")
+    source = Path(source) if source is not None else DEFAULT_SOURCE_CASES
     if not source.exists():
-        logger.error("source_cases_related15.jsonl not found at %s", source)
+        logger.error(
+            "source-cases file not found: %s — pass --source-cases PATH "
+            "(the frozen selection lives in the repository, it is not packaged).",
+            source,
+        )
         sys.exit(1)
     pmcids: list[str] = []
     seen: set[str] = set()
@@ -336,10 +351,10 @@ def _all_pmcids() -> list[str]:
     return pmcids
 
 
-def _sample_pmcids(n: int, seed: int) -> list[str]:
+def _sample_pmcids(n: int, seed: int, source: Path | None = None) -> list[str]:
     """Pick n unique PMCIDs from eval/data/source_cases_related15.jsonl using the given seed."""
     import random
-    pmcids = _all_pmcids()
+    pmcids = _all_pmcids(source)
     rng = random.Random(seed)
     sample = rng.sample(pmcids, min(n, len(pmcids)))
     logger.info("Auto-sampled %d PMCIDs (seed=%d): %s", len(sample), seed, sample)
@@ -467,6 +482,11 @@ def main(argv: Sequence[str] | None = None) -> int:
              "drop vs Sonnet-only per EXP B.2 (docs/EXP_B2_RESULTS.md).",
     )
     parser.add_argument(
+        "--source-cases", type=Path, default=None, metavar="PATH",
+        help="Frozen selection file for --all/--sample "
+             "(default: {}). Repository artifact; not packaged.".format(DEFAULT_SOURCE_CASES),
+    )
+    parser.add_argument(
         "--config", default=DEFAULT_CONFIG_PATH, metavar="PATH",
         help=f"YAML used to populate KnowledgeExtractionConfig (default: "
              f"{DEFAULT_CONFIG_PATH}). The knowledge_extraction block ("
@@ -528,9 +548,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         pmcids = _load_selection_yaml(Path(args.from_selection))
         logger.info("Loaded %d PMCIDs from %s", len(pmcids), args.from_selection)
     elif args.all:
-        pmcids = _all_pmcids()
+        pmcids = _all_pmcids(args.source_cases)
     elif args.pmcid is None:
-        pmcids = _sample_pmcids(args.sample, args.seed)
+        pmcids = _sample_pmcids(args.sample, args.seed, args.source_cases)
     else:
         pmcid = args.pmcid.strip()
         if not pmcid.startswith("PMC"):
