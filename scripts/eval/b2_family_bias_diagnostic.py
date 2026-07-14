@@ -57,14 +57,14 @@ if str(_REPO_ROOT) not in sys.path:
 from dotenv import load_dotenv
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from eval.silver.data.jsonl_utils import read_jsonl
-from eval.silver.data.schemas import SilverCaseResult
-from eval.silver.matching.matcher import (
+from nlp_histo.evaluation.jsonl_utils import read_jsonl
+from nlp_histo.evaluation.schemas import SilverCaseResult
+from nlp_histo.evaluation.matching.matcher import (
     DEFAULT_CACHE_PATH, EMBEDDING_MODEL, compute_sim_matrix, match_from_matrix,
     make_embedding_cache,
 )
-from eval.silver.matching.embedders import OpenAIEmbedder
-from eval.silver.data.split import assign_split
+from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
+from nlp_histo.evaluation.split import assign_split
 
 
 # ── Voter spec: position in voter_cache list → (model, family) ──────────────

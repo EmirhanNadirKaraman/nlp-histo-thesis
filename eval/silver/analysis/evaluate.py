@@ -21,10 +21,10 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 logger = logging.getLogger(__name__)
 
-from eval.silver.matching.embedders import GeminiEmbedder, OpenAIEmbedder
+from nlp_histo.evaluation.matching.embedders import GeminiEmbedder, OpenAIEmbedder
 from eval.silver.reporting.inspect import write_inspection_report
-from eval.silver.data.jsonl_utils import read_jsonl, write_jsonl
-from eval.silver.matching.matcher import (
+from nlp_histo.evaluation.jsonl_utils import read_jsonl, write_jsonl
+from nlp_histo.evaluation.matching.matcher import (
     DEFAULT_CACHE_PATH,
     DEFAULT_GEMINI_CACHE_PATH,
     EMBEDDING_MODEL,
@@ -36,13 +36,13 @@ from eval.silver.matching.matcher import (
     match_from_matrix,
     MATCHERS,
 )
-from eval.silver.data.schemas import (
+from nlp_histo.evaluation.schemas import (
     MatchResult,
     PipelineCaseOutput,
     SilverCaseResult,
     SourceCase,
 )
-from eval.silver.data.split import filter_by_split
+from nlp_histo.evaluation.split import filter_by_split
 
 SILVER_PATH   = Path("eval/data/silver_findings_related15.jsonl")
 PIPELINE_PATH = Path("eval/data/pipeline_findings_related15.jsonl")

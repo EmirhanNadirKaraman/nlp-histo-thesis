@@ -20,19 +20,19 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from eval.silver.data.jsonl_utils import read_jsonl
+from nlp_histo.evaluation.jsonl_utils import read_jsonl
 from eval.silver.analysis.map_theta_sweep import (
     CACHE_PATH,
     SILVER_PATH,
     _make_cached_embed_fn,
     _prewarm_agreement_cache,
 )
-from eval.silver.matching.matcher import (
+from nlp_histo.evaluation.matching.matcher import (
     DEFAULT_GEMINI_CACHE_PATH,
     GEMINI_EMBEDDING_MODEL,
     make_embedding_cache,
 )
-from eval.silver.data.schemas import SilverCaseResult
+from nlp_histo.evaluation.schemas import SilverCaseResult
 
 __all__ = ["_MapContext", "_load_map_context", "CACHE_PATH", "SILVER_PATH"]
 
@@ -75,7 +75,7 @@ def _load_map_context(
         api_key = os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             raise SystemExit("GOOGLE_API_KEY not set")
-        from eval.silver.matching.embedders import GeminiEmbedder
+        from nlp_histo.evaluation.matching.embedders import GeminiEmbedder
         from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
             GeminiEmbedder as AgreementGeminiEmbedder,
         )
@@ -87,8 +87,8 @@ def _load_map_context(
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
             raise SystemExit("OPENAI_API_KEY not set")
-        from eval.silver.matching.embedders import OpenAIEmbedder
-        from eval.silver.matching.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
+        from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
+        from nlp_histo.evaluation.matching.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
         from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
             OpenAIEmbedder as AgreementOpenAIEmbedder,
         )

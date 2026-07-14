@@ -621,7 +621,7 @@ def _b2_match_per_case(case_outputs, silver_by_case, embedder, embed_cache,
                        sim_threshold=0.55):
     """Like ``_b2_eval_outputs`` but returns per-case (strict_tp, n_silver, n_pipeline).
     """
-    from eval.silver.matching.matcher import compute_sim_matrix, match_from_matrix
+    from nlp_histo.evaluation.matching.matcher import compute_sim_matrix, match_from_matrix
     per_case = []
     for co in case_outputs:
         silver = silver_by_case.get(co.case_id)
@@ -705,10 +705,10 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     """
     name = "05_bootstrap_ci_cascade_vs_sonnet"
     try:
-        from eval.silver.matching.embedders import OpenAIEmbedder
-        from eval.silver.data.jsonl_utils import read_jsonl
-        from eval.silver.data.schemas import SilverCaseResult
-        from eval.silver.data.split import assign_split
+        from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
+        from nlp_histo.evaluation.jsonl_utils import read_jsonl
+        from nlp_histo.evaluation.schemas import SilverCaseResult
+        from nlp_histo.evaluation.split import assign_split
     except Exception as exc:
         return AnalysisResult(
             name=name, status="error",
@@ -792,7 +792,7 @@ def analyse_bootstrap_ci() -> AnalysisResult:
             # universal on this corpus per EXP B.2). This is an
             # acknowledged approximation — see caveats.
             ce = entry
-            from eval.silver.data.schemas import PipelineCaseOutput
+            from nlp_histo.evaluation.schemas import PipelineCaseOutput
             findings = []
             chunk_map = ce.get("chunk_map") or {}
             for chunk_id in chunk_map:
@@ -821,10 +821,10 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     # embedder (the production matcher).
     import os
     try:
-        from eval.silver.matching.matcher import (
+        from nlp_histo.evaluation.matching.matcher import (
             make_embedding_cache as _make_cache, DEFAULT_CACHE_PATH as _DCP
         )
-        from eval.silver.matching.embedders import OpenAIEmbedder
+        from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
         cache_obj = _make_cache(_DCP)
         api_key = os.environ.get("OPENAI_API_KEY", "")
         if not api_key:
@@ -1404,9 +1404,9 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
     name = "10_cascade_vs_sonnet_gap_ci"
     import os
     try:
-        from eval.silver.data.jsonl_utils import read_jsonl
-        from eval.silver.data.schemas import SilverCaseResult
-        from eval.silver.data.split import assign_split
+        from nlp_histo.evaluation.jsonl_utils import read_jsonl
+        from nlp_histo.evaluation.schemas import SilverCaseResult
+        from nlp_histo.evaluation.split import assign_split
         from eval.silver.analysis.map_context import _load_map_context
     except Exception as exc:
         return AnalysisResult(
@@ -1432,10 +1432,10 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
 
     # Load matcher (OpenAI embedder + cache).
     try:
-        from eval.silver.matching.matcher import (
+        from nlp_histo.evaluation.matching.matcher import (
             make_embedding_cache, DEFAULT_CACHE_PATH,
         )
-        from eval.silver.matching.embedders import OpenAIEmbedder
+        from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
         api_key = os.environ.get("OPENAI_API_KEY", "")
         if not api_key:
             return AnalysisResult(
@@ -1884,7 +1884,7 @@ def analyse_real_profile_grounding_polarity() -> AnalysisResult:
     """
     name = "12_real_profile_grounding_polarity"
     try:
-        from eval.silver.data.split import assign_split
+        from nlp_histo.evaluation.split import assign_split
         from eval.silver.analysis.map_context import _load_map_context
         from nlp_histo.pipeline.stages.knowledge_extraction.models import (
             AuditableSummary,

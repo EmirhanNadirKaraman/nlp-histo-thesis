@@ -71,9 +71,9 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 logger = logging.getLogger(__name__)
 
-from eval.silver.matching.embedders import GeminiEmbedder
-from eval.silver.data.jsonl_utils import read_jsonl
-from eval.silver.matching.matcher import (
+from nlp_histo.evaluation.matching.embedders import GeminiEmbedder
+from nlp_histo.evaluation.jsonl_utils import read_jsonl
+from nlp_histo.evaluation.matching.matcher import (
     DEFAULT_GEMINI_CACHE_PATH,
     GEMINI_EMBEDDING_MODEL,
     SIMILARITY_THRESHOLD,
@@ -81,13 +81,13 @@ from eval.silver.matching.matcher import (
     make_embedding_cache,
 )
 from eval.silver.analysis.pipeline_sweep import case_to_file_data, _evaluate_outputs
-from eval.silver.data.schemas import (
+from nlp_histo.evaluation.schemas import (
     PipelineCaseOutput,
     PipelineFinding,
     SilverCaseResult,
     SourceCase,
 )
-from eval.silver.data.split import filter_by_split
+from nlp_histo.evaluation.split import filter_by_split
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -1249,8 +1249,8 @@ def main() -> None:
                 cache = make_embedding_cache(
                     Path(override) if override else DEFAULT_GEMINI_CACHE_PATH, GEMINI_EMBEDDING_MODEL)
                 return GeminiEmbedder(key), cache, _AgGem()
-            from eval.silver.matching.embedders import OpenAIEmbedder
-            from eval.silver.matching.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
+            from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
+            from nlp_histo.evaluation.matching.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
             from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import OpenAIEmbedder as _AgOAI
             key = os.environ.get("OPENAI_API_KEY")
             if not key:

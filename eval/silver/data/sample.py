@@ -23,8 +23,8 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 
 from eval.silver.data.sampler import sample_source_cases, sample_papers_source_cases
-from eval.silver.data.schemas import SourceCase
-from eval.silver.data.jsonl_utils import write_jsonl
+from nlp_histo.evaluation.schemas import SourceCase
+from nlp_histo.evaluation.jsonl_utils import write_jsonl
 from eval.paper_selection.loaders import load_pmcids_from_selection
 
 OUTPUT_PATH = Path("eval/data/source_cases.jsonl")

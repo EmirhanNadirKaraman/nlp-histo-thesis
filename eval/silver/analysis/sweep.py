@@ -30,9 +30,9 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 logger = logging.getLogger(__name__)
 
-from eval.silver.matching.embedders import GeminiEmbedder, OpenAIEmbedder
-from eval.silver.data.jsonl_utils import read_jsonl
-from eval.silver.matching.matcher import (
+from nlp_histo.evaluation.matching.embedders import GeminiEmbedder, OpenAIEmbedder
+from nlp_histo.evaluation.jsonl_utils import read_jsonl
+from nlp_histo.evaluation.matching.matcher import (
     DEFAULT_CACHE_PATH,
     DEFAULT_GEMINI_CACHE_PATH,
     STRICT_FIELDS,
@@ -41,8 +41,8 @@ from eval.silver.matching.matcher import (
     make_embedding_cache,
     match_from_matrix,
 )
-from eval.silver.data.schemas import PipelineCaseOutput, SilverCaseResult
-from eval.silver.data.split import filter_by_split
+from nlp_histo.evaluation.schemas import PipelineCaseOutput, SilverCaseResult
+from nlp_histo.evaluation.split import filter_by_split
 
 SILVER_PATH   = Path("eval/data/silver_findings_related15.jsonl")
 PIPELINE_PATH = Path("eval/data/pipeline_findings_related15.jsonl")
@@ -252,7 +252,7 @@ def main() -> None:
     sweep_results: list[tuple[str, list[dict], dict]] = []  # (label, rows, best)
 
     if use_openai:
-        from eval.silver.matching.embedders import OPENAI_MODEL
+        from nlp_histo.evaluation.matching.embedders import OPENAI_MODEL
         cache = make_embedding_cache(Path(args.embed_cache), OPENAI_MODEL)
         embedder = OpenAIEmbedder(openai_key)  # type: ignore[arg-type]
         rows, best = _run_sweep(
@@ -263,7 +263,7 @@ def main() -> None:
         all_rows.extend(rows)
 
     if use_gemini:
-        from eval.silver.matching.embedders import GEMINI_MODEL
+        from nlp_histo.evaluation.matching.embedders import GEMINI_MODEL
         cache = make_embedding_cache(Path(args.embed_cache_gemini), GEMINI_MODEL)
         embedder = GeminiEmbedder(gemini_key)  # type: ignore[arg-type]
         rows, best = _run_sweep(

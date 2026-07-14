@@ -43,7 +43,7 @@ from eval.silver.analysis.map_theta_sweep import (
     _make_voters,
     _replay,
 )
-from eval.silver.matching.matcher import SIMILARITY_THRESHOLD
+from nlp_histo.evaluation.matching.matcher import SIMILARITY_THRESHOLD
 from eval.silver.analysis.pipeline_sweep import _evaluate_outputs
 from eval.silver.analysis.run_new_summarization_sweeps import (
     BEST_REJECT_THETA, BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,

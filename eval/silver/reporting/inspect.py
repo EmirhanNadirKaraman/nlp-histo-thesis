@@ -14,7 +14,7 @@ import csv
 import logging
 from pathlib import Path
 
-from eval.silver.data.schemas import MatchResult, PipelineCaseOutput, SilverCaseResult, SourceCase
+from nlp_histo.evaluation.schemas import MatchResult, PipelineCaseOutput, SilverCaseResult, SourceCase
 
 logger = logging.getLogger(__name__)
 

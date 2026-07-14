@@ -804,9 +804,9 @@ def _run_exp_b2(ctx):
             "  Generate with `python -m eval.silver.generation.generate --batch`."
         )
 
-    from eval.silver.data.jsonl_utils import read_jsonl
-    from eval.silver.data.schemas import SilverCaseResult
-    from eval.silver.data.split import assign_split
+    from nlp_histo.evaluation.jsonl_utils import read_jsonl
+    from nlp_histo.evaluation.schemas import SilverCaseResult
+    from nlp_histo.evaluation.split import assign_split
 
     voter_cache = json.loads(cache_path.read_text(encoding="utf-8"))
     silver_by_case = {rec.case_id: rec for rec in read_jsonl(silver_path, SilverCaseResult)}
@@ -851,8 +851,8 @@ def _run_exp_b2(ctx):
     # weren't necessarily embedded by the cascade-only previous runs. Even
     # one cache miss requires a real API key — there is no honest dry-run
     # for a missing embedding, so refuse upfront if the key is absent.
-    from eval.silver.matching.embedders import OpenAIEmbedder
-    from eval.silver.matching.matcher import (
+    from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
+    from nlp_histo.evaluation.matching.matcher import (
         DEFAULT_CACHE_PATH as MATCHER_CACHE_PATH,
         EMBEDDING_MODEL as MATCHER_EMBEDDING_MODEL,
         make_embedding_cache,
@@ -1081,7 +1081,7 @@ def _b2_cache_shape(voter_cache: dict) -> dict:
 
 def _b2_finding_to_pipeline(f: dict, pmcid: str, chunk_id: str, run_id: str):
     """Mirror eval.silver.analysis.map_theta_sweep._finding_to_pipeline (without θ stamp)."""
-    from eval.silver.data.schemas import PipelineFinding
+    from nlp_histo.evaluation.schemas import PipelineFinding
     scope = f.get("scope") or {}
     return PipelineFinding(
         pipeline_run_id=0,
@@ -1117,7 +1117,7 @@ def _b2_build_voter_outputs(
     For ``level="l1"`` / ``"l2"``, entries are voter lists indexed by
     ``voter_index``.
     """
-    from eval.silver.data.schemas import PipelineCaseOutput
+    from nlp_histo.evaluation.schemas import PipelineCaseOutput
     outputs = []
     for entry in voter_cache.values():
         case_id = entry["case_id"]
@@ -1160,7 +1160,7 @@ def _b2_eval_outputs(
 
     Returns ``{strict_f1, f1, precision, recall, n_matched, n_silver, n_pipeline}``.
     """
-    from eval.silver.matching.matcher import compute_sim_matrix, match_from_matrix
+    from nlp_histo.evaluation.matching.matcher import compute_sim_matrix, match_from_matrix
     STRICT_FIELDS = {"category", "relation_type", "direction"}
     n_silver = n_pipeline = n_matched = 0
     strict_tp = 0.0
@@ -1204,7 +1204,7 @@ def _b2_l1_best_oracle(
     labels this row ``l1_best_oracle`` and the column ``model_or_source`` is
     ``oracle(silver-selected L1)`` to keep the framing honest.
     """
-    from eval.silver.matching.matcher import compute_sim_matrix, match_from_matrix
+    from nlp_histo.evaluation.matching.matcher import compute_sim_matrix, match_from_matrix
     STRICT_FIELDS = {"category", "relation_type", "direction"}
     n_voters = len(l1_outputs_per_voter)
     if n_voters == 0:

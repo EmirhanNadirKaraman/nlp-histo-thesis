@@ -6,7 +6,7 @@ import sqlite3
 
 import pytest
 
-from eval.silver.matching.matcher import (
+from nlp_histo.evaluation.matching.matcher import (
     EmbeddingCache,
     SQLiteEmbeddingCache,
     import_json_cache_to_sqlite,

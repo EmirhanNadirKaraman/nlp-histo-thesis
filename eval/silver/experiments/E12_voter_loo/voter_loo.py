@@ -47,7 +47,7 @@ from eval.silver.analysis.map_theta_sweep import (  # reused engine + voter defi
     _write_csv,
     run_sweep,
 )
-from eval.silver.matching.matcher import SIMILARITY_THRESHOLD
+from nlp_histo.evaluation.matching.matcher import SIMILARITY_THRESHOLD
 from eval.silver.analysis.map_context import _load_map_context
 from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig
 

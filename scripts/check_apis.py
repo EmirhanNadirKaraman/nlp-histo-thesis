@@ -140,12 +140,12 @@ def _probe_gemini_chat(models: list[str]) -> bool:
 
 
 def _probe_embeddings() -> bool:
-    from eval.silver.matching.matcher import EMBEDDING_MODEL, GEMINI_EMBEDDING_MODEL
+    from nlp_histo.evaluation.matching.matcher import EMBEDDING_MODEL, GEMINI_EMBEDDING_MODEL
     ok = True
     okey = os.environ.get("OPENAI_API_KEY")
     if okey:
         try:
-            from eval.silver.matching.embedders import OpenAIEmbedder
+            from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
             v = OpenAIEmbedder(okey)(_EMBED_INPUT)
             print(f"  openai     {EMBEDDING_MODEL:30s} OK  dim={len(v[0])}")
         except Exception as exc:  # noqa: BLE001
@@ -156,7 +156,7 @@ def _probe_embeddings() -> bool:
     gkey = os.environ.get("GOOGLE_API_KEY")
     if gkey:
         try:
-            from eval.silver.matching.embedders import GeminiEmbedder
+            from nlp_histo.evaluation.matching.embedders import GeminiEmbedder
             v = GeminiEmbedder(gkey)(_EMBED_INPUT)
             print(f"  gemini     {GEMINI_EMBEDDING_MODEL:30s} OK  dim={len(v[0])}")
         except Exception as exc:  # noqa: BLE001
@@ -192,9 +192,9 @@ def cmd_sync_real() -> int:
     OpenAI-compatible endpoint, a *different* mechanism from the Gemini batch path
     (native response_schema), so this genuinely adds coverage.
     """
-    from eval.silver.data.jsonl_utils import read_jsonl
+    from nlp_histo.evaluation.jsonl_utils import read_jsonl
     from eval.silver.analysis.pipeline_sweep import case_to_file_data
-    from eval.silver.data.schemas import SourceCase
+    from nlp_histo.evaluation.schemas import SourceCase
     from nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage import _format_sentences
     from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers import (
         anthropic_direct_chat, gemini_direct_chat, openai_direct_chat,

@@ -27,7 +27,7 @@ from typing import Callable, Union
 
 import numpy as np
 
-from eval.silver.data.schemas import (
+from nlp_histo.evaluation.schemas import (
     EvalMetrics,
     FieldMismatch,
     MatchedPair,
