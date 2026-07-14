@@ -18,12 +18,8 @@ into ``eval/data/relation_pairs/raw_batches/batch_0k.jsonl``.
 from __future__ import annotations
 
 import hashlib
-import sys
-from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+from eval.paths import REPO_ROOT as _REPO_ROOT  # noqa: E402
 
 from eval.silver.relation_pairs.prompt_spec import (  # noqa: E402
     CLAIM_RULES,

@@ -24,12 +24,9 @@ Offline -- CSV reports only, no API/DB.
 from __future__ import annotations
 
 import csv
-import sys
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[4]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+from eval.paths import REPO_ROOT as _REPO_ROOT  # noqa: E402
 
 import matplotlib  # noqa: E402
 

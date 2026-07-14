@@ -33,7 +33,7 @@ from eval.silver.relation_pairs.prompt_spec import (
     definitions_block,
 )
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+from eval.paths import REPO_ROOT as _REPO_ROOT  # noqa: E402
 
 MODEL = "claude-opus-4-7"
 MAX_TOKENS = 12000  # ~30 structured pairs ≈ 3–4k tokens; generous, no truncation

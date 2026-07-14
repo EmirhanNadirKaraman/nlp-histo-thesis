@@ -10,13 +10,10 @@ Read-only; operates on the committed ``relation_claim_pairs_300.jsonl``.
 from __future__ import annotations
 
 import json
-import sys
 from collections import Counter
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+from eval.paths import REPO_ROOT as _REPO_ROOT  # noqa: E402
 
 from eval.silver.relation_pairs.validate_and_merge import (  # noqa: E402
     LABELS,
