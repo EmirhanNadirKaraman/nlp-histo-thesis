@@ -43,9 +43,15 @@ logger = logging.getLogger(__name__)
 
 from nlp_histo.evaluation.matching.embedders import GeminiEmbedder, OpenAIEmbedder
 from nlp_histo.evaluation.jsonl_utils import read_jsonl
+from eval.paths import REPO_ROOT
+
+# Frozen embedding caches live in the repository, not in the user cache dir:
+# these drivers must hit the SAME sqlite files the thesis used, or they would
+# miss and issue PAID embedding calls. Passed explicitly to the library.
+_FROZEN_OPENAI_CACHE = REPO_ROOT / "eval" / "data" / "embedding_cache_openai.sqlite"
+_FROZEN_GEMINI_CACHE = REPO_ROOT / "eval" / "data" / "embedding_cache_gemini.sqlite"
+
 from nlp_histo.evaluation.matching.matcher import (
-    DEFAULT_CACHE_PATH,
-    DEFAULT_GEMINI_CACHE_PATH,
     EMBEDDING_MODEL,
     GEMINI_EMBEDDING_MODEL,
     SIMILARITY_THRESHOLD,
@@ -632,7 +638,7 @@ def main() -> None:
                 print("GOOGLE_API_KEY not set", file=sys.stderr)
                 sys.exit(1)
             embedder = GeminiEmbedder(api_key)
-            cache_path = Path(args.embed_cache) if args.embed_cache else DEFAULT_GEMINI_CACHE_PATH
+            cache_path = Path(args.embed_cache) if args.embed_cache else _FROZEN_GEMINI_CACHE
             embed_cache = make_embedding_cache(cache_path, GEMINI_EMBEDDING_MODEL)
         else:
             api_key = os.environ.get("OPENAI_API_KEY")
@@ -640,7 +646,7 @@ def main() -> None:
                 print("OPENAI_API_KEY not set", file=sys.stderr)
                 sys.exit(1)
             embedder = OpenAIEmbedder(api_key)
-            cache_path = Path(args.embed_cache) if args.embed_cache else DEFAULT_CACHE_PATH
+            cache_path = Path(args.embed_cache) if args.embed_cache else _FROZEN_OPENAI_CACHE
             embed_cache = make_embedding_cache(cache_path, EMBEDDING_MODEL)
 
         grounding_rows = run_grounding_sweep(

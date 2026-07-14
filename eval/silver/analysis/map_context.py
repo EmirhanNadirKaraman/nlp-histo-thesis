@@ -27,8 +27,15 @@ from eval.silver.analysis.map_theta_sweep import (
     _make_cached_embed_fn,
     _prewarm_agreement_cache,
 )
+from eval.paths import REPO_ROOT
+
+# Frozen embedding caches live in the repository, not in the user cache dir:
+# these drivers must hit the SAME sqlite files the thesis used, or they would
+# miss and issue PAID embedding calls. Passed explicitly to the library.
+_FROZEN_OPENAI_CACHE = REPO_ROOT / "eval" / "data" / "embedding_cache_openai.sqlite"
+_FROZEN_GEMINI_CACHE = REPO_ROOT / "eval" / "data" / "embedding_cache_gemini.sqlite"
+
 from nlp_histo.evaluation.matching.matcher import (
-    DEFAULT_GEMINI_CACHE_PATH,
     GEMINI_EMBEDDING_MODEL,
     make_embedding_cache,
 )
@@ -80,7 +87,7 @@ def _load_map_context(
             GeminiEmbedder as AgreementGeminiEmbedder,
         )
         embedder = GeminiEmbedder(api_key)
-        path = Path(embed_cache_path) if embed_cache_path else DEFAULT_GEMINI_CACHE_PATH
+        path = Path(embed_cache_path) if embed_cache_path else _FROZEN_GEMINI_CACHE
         embed_cache = make_embedding_cache(path, GEMINI_EMBEDDING_MODEL)
         raw_agreement_fn = AgreementGeminiEmbedder()
     else:
@@ -88,12 +95,12 @@ def _load_map_context(
         if not api_key:
             raise SystemExit("OPENAI_API_KEY not set")
         from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
-        from nlp_histo.evaluation.matching.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
+        from nlp_histo.evaluation.matching.matcher import EMBEDDING_MODEL
         from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
             OpenAIEmbedder as AgreementOpenAIEmbedder,
         )
         embedder = OpenAIEmbedder(api_key)
-        path = Path(embed_cache_path) if embed_cache_path else DEFAULT_CACHE_PATH
+        path = Path(embed_cache_path) if embed_cache_path else _FROZEN_OPENAI_CACHE
         embed_cache = make_embedding_cache(path, EMBEDDING_MODEL)
         raw_agreement_fn = AgreementOpenAIEmbedder()
 

@@ -87,17 +87,26 @@ def test_library_reads_no_artifact_at_import() -> None:
     assert not offenders, f"evaluation library reads artifacts at import: {offenders}"
 
 
-def test_matcher_cache_defaults_are_unchanged() -> None:
-    """Frozen behaviour: the embedding-cache defaults must keep their exact values.
+def test_matcher_cache_default_is_not_cwd_relative(monkeypatch, tmp_path) -> None:
+    """The embedding cache must not default to a repository-relative path.
 
-    They are cwd-relative (a known repository assumption catalogued for the path
-    pass). Changing them silently would cause cache misses and re-run *paid*
-    embedding calls, so they are pinned here rather than "cleaned up".
+    It used to be ``Path("eval/data/embedding_cache_openai.sqlite")`` — pinned in this
+    file while the value was still frozen. The path pass replaced it with an explicit
+    resolver (argument > env var > user cache dir), because a cwd-relative default
+    misses away from the repository root, and a miss means *paid* embedding calls.
+    The repository experiment drivers now pass their frozen sqlite paths explicitly,
+    so their behaviour — and their avoidance of paid calls — is unchanged.
     """
     from nlp_histo.evaluation.matching import matcher
 
-    assert str(matcher.DEFAULT_CACHE_PATH) == "eval/data/embedding_cache_openai.sqlite"
-    assert str(matcher.DEFAULT_GEMINI_CACHE_PATH) == "eval/data/embedding_cache_gemini.sqlite"
+    assert not hasattr(matcher, "DEFAULT_CACHE_PATH")
+    assert not hasattr(matcher, "DEFAULT_GEMINI_CACHE_PATH")
+
+    monkeypatch.delenv(matcher.OPENAI_CACHE_ENV, raising=False)
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    default = matcher.default_embedding_cache_path("openai")
+    assert default.is_absolute()
+    assert default == tmp_path / "nlp-histo" / "embedding_cache_openai.sqlite"
 
 
 def test_repository_experiment_drivers_import_the_installed_library() -> None:

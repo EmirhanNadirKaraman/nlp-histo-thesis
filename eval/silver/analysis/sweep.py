@@ -32,9 +32,15 @@ logger = logging.getLogger(__name__)
 
 from nlp_histo.evaluation.matching.embedders import GeminiEmbedder, OpenAIEmbedder
 from nlp_histo.evaluation.jsonl_utils import read_jsonl
+from eval.paths import REPO_ROOT
+
+# Frozen embedding caches live in the repository, not in the user cache dir:
+# these drivers must hit the SAME sqlite files the thesis used, or they would
+# miss and issue PAID embedding calls. Passed explicitly to the library.
+_FROZEN_OPENAI_CACHE = REPO_ROOT / "eval" / "data" / "embedding_cache_openai.sqlite"
+_FROZEN_GEMINI_CACHE = REPO_ROOT / "eval" / "data" / "embedding_cache_gemini.sqlite"
+
 from nlp_histo.evaluation.matching.matcher import (
-    DEFAULT_CACHE_PATH,
-    DEFAULT_GEMINI_CACHE_PATH,
     STRICT_FIELDS,
     EmbeddingCache,
     compute_sim_matrix,
@@ -171,9 +177,9 @@ def main() -> None:
     parser.add_argument("--pipeline", required=True,
                         help="Pipeline findings JSONL (REQUIRED — must match the silver set).")
     parser.add_argument("--reports",  default=str(REPORTS_DIR))
-    parser.add_argument("--embed-cache",        default=str(DEFAULT_CACHE_PATH),
+    parser.add_argument("--embed-cache",        default=str(_FROZEN_OPENAI_CACHE),
                         help="Cache path for OpenAI embeddings")
-    parser.add_argument("--embed-cache-gemini", default=str(DEFAULT_GEMINI_CACHE_PATH),
+    parser.add_argument("--embed-cache-gemini", default=str(_FROZEN_GEMINI_CACHE),
                         help="Cache path for Gemini embeddings")
     parser.add_argument("--embedder", default="openai", choices=["openai", "gemini", "both"],
                         help="Embedding provider to use (default: openai)")

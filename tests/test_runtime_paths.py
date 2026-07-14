@@ -87,3 +87,59 @@ def test_resource_override_env_vars(tmp_path, monkeypatch) -> None:
     registry = tmp_path / "n.yaml"
     monkeypatch.setenv("NLP_HISTO_NLI_MODELS", str(registry))
     assert Path(str(_config_path())) == registry
+
+def test_embedding_cache_default_is_outside_the_package(monkeypatch, tmp_path) -> None:
+    from nlp_histo.evaluation.matching import matcher
+
+    monkeypatch.delenv(matcher.OPENAI_CACHE_ENV, raising=False)
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+
+    default = matcher.default_embedding_cache_path("openai")
+    package_dir = Path(matcher.__file__).resolve().parent
+    assert package_dir not in default.resolve().parents
+    assert default == tmp_path / "nlp-histo" / "embedding_cache_openai.sqlite"
+
+def test_embedding_cache_env_overrides(monkeypatch, tmp_path) -> None:
+    from nlp_histo.evaluation.matching import matcher
+
+    monkeypatch.setenv(matcher.GEMINI_CACHE_ENV, str(tmp_path / "g.sqlite"))
+    assert matcher.default_embedding_cache_path("gemini") == tmp_path / "g.sqlite"
+
+def test_resolving_the_embedding_cache_creates_nothing(monkeypatch, tmp_path) -> None:
+    from nlp_histo.evaluation.matching import matcher
+
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    matcher.default_embedding_cache_path("openai")
+    assert not list(tmp_path.iterdir())
+
+def test_matcher_no_longer_hardcodes_the_repository_cache() -> None:
+    from nlp_histo.evaluation.matching import matcher
+
+    src = Path(matcher.__file__).read_text(encoding="utf-8")
+    assert 'Path("eval/data/embedding_cache_openai.sqlite")' not in src, (
+        "a cwd-relative cache default misses away from the repository root — and a "
+        "miss means PAID embedding calls"
+    )
+
+def test_replay_requires_the_frozen_embedding_cache(tmp_path, capsys) -> None:
+    """An offline command must refuse to start rather than silently make paid calls."""
+    from nlp_histo.workflows import replay
+
+    (tmp_path / "out" / "summaries" / "summaries").mkdir(parents=True)
+    primer = tmp_path / "eval" / "data" / "map_primer"
+    primer.mkdir(parents=True)
+    (primer / "voter_cache.json").write_text("{}")
+    # ...but no embedding_cache_openai.sqlite
+
+    rc = replay.main(["--artifact-root", str(tmp_path)])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "embedding_cache_openai.sqlite" in err
+
+def test_replay_resolves_its_cache_under_the_artifact_root(tmp_path) -> None:
+    from nlp_histo.workflows import replay
+
+    replay._REPO_ROOT = tmp_path
+    assert replay.frozen_embedding_cache() == (
+        tmp_path / "eval" / "data" / "embedding_cache_openai.sqlite"
+    )

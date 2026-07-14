@@ -51,6 +51,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+# Frozen repository cache — these drivers must hit the SAME sqlite file the thesis
+# used, or they would miss and issue PAID embedding calls.
+_FROZEN_OPENAI_CACHE = _REPO_ROOT / "eval" / "data" / "embedding_cache_openai.sqlite"
+
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
@@ -60,7 +64,7 @@ load_dotenv(str(_REPO_ROOT / ".env"))
 from nlp_histo.evaluation.jsonl_utils import read_jsonl
 from nlp_histo.evaluation.schemas import SilverCaseResult
 from nlp_histo.evaluation.matching.matcher import (
-    DEFAULT_CACHE_PATH, EMBEDDING_MODEL, compute_sim_matrix, match_from_matrix,
+    EMBEDDING_MODEL, compute_sim_matrix, match_from_matrix,
     make_embedding_cache,
 )
 from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
@@ -125,7 +129,7 @@ def main(argv=None) -> int:
             "any miss costs <$0.001) and re-run."
         )
     embedder = OpenAIEmbedder(api_key)
-    embed_cache = make_embedding_cache(DEFAULT_CACHE_PATH, EMBEDDING_MODEL)
+    embed_cache = make_embedding_cache(_FROZEN_OPENAI_CACHE, EMBEDDING_MODEL)
 
     orch = _load_orch_helpers()
 

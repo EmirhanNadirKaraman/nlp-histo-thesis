@@ -47,8 +47,31 @@ logger = logging.getLogger(__name__)
 SIMILARITY_THRESHOLD = 0.55
 EMBEDDING_MODEL = "text-embedding-3-small"
 GEMINI_EMBEDDING_MODEL = "gemini-embedding-001"
-DEFAULT_CACHE_PATH = Path("eval/data/embedding_cache_openai.sqlite")
-DEFAULT_GEMINI_CACHE_PATH = Path("eval/data/embedding_cache_gemini.sqlite")
+# Embedding-cache location.
+#
+# These used to be cwd-relative literals (``eval/data/embedding_cache_*.sqlite``),
+# which is not safe in an installed library: away from the repository root they
+# resolve to a directory that does not exist, the cache silently misses, and the
+# matcher issues PAID embedding calls. Resolution is now explicit:
+#
+#   explicit argument  >  $NLP_HISTO_{OPENAI,GEMINI}_EMBEDDING_CACHE  >  user cache dir
+#
+# Repository-only experiment drivers and the chapter-9 replay pass their frozen
+# SQLite paths explicitly, so their behaviour — and their avoidance of paid calls —
+# is unchanged. Resolving a path never creates anything.
+OPENAI_CACHE_ENV = "NLP_HISTO_OPENAI_EMBEDDING_CACHE"
+GEMINI_CACHE_ENV = "NLP_HISTO_GEMINI_EMBEDDING_CACHE"
+
+
+def default_embedding_cache_path(provider: str = "openai") -> Path:
+    """Where the embedding cache lives when the caller names no path."""
+    env_var = GEMINI_CACHE_ENV if provider == "gemini" else OPENAI_CACHE_ENV
+    override = os.environ.get(env_var)
+    if override:
+        return Path(override).expanduser()
+
+    cache_root = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache"))
+    return cache_root / "nlp-histo" / f"embedding_cache_{provider}.sqlite"
 
 # Fields compared for field-mismatch detection (both silver and pipeline have these)
 _SCOPE_FIELD_PAIRS = [
@@ -219,8 +242,7 @@ def make_embedding_cache(path, embedding_model: str = EMBEDDING_MODEL):
     For ``sqlite`` the on-disk path is ``path`` with its suffix swapped to
     ``.sqlite``, so any historical caller passing ``…/embedding_cache_gemini.json``
     still resolves to ``…/embedding_cache_gemini.sqlite``. Production paths now
-    use the ``.sqlite`` extension directly (``DEFAULT_CACHE_PATH`` /
-    ``DEFAULT_GEMINI_CACHE_PATH``, renamed 2026-05-26 when the in-repo JSON
+    use the ``.sqlite`` extension directly (``default_embedding_cache_path()``, renamed 2026-05-26 when the in-repo JSON
     cache was retired).
 
     The JSON backend code path is still present (selected via the env var) for
@@ -536,7 +558,7 @@ def match_case(
 ) -> MatchResult:
     """Match one case. Uses/updates cache if provided."""
     if cache is None:
-        cache = make_embedding_cache(DEFAULT_CACHE_PATH)
+        cache = make_embedding_cache(default_embedding_cache_path('openai'))
     sim, _, _ = compute_sim_matrix(silver, pipeline, embedder, cache)
     return match_from_matrix(silver, pipeline, sim, threshold, match_fn=match_fn)
 

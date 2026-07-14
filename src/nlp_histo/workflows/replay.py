@@ -55,7 +55,18 @@ DEFAULT_OUTPUT_SUBPATH = Path("out") / "thesis_results" / "chapter9_offline_repl
 REQUIRED_ARTIFACTS = (
     Path("out") / "summaries" / "summaries",
     Path("eval") / "data" / "map_primer" / "voter_cache.json",
+    # The frozen embedding cache. It is REQUIRED, not optional: without it the matcher
+    # would miss and issue PAID embedding calls in a workflow documented as offline and
+    # free. Better to refuse to start than to quietly spend money.
+    Path("eval") / "data" / "embedding_cache_openai.sqlite",
 )
+
+FROZEN_EMBEDDING_CACHE = Path("eval") / "data" / "embedding_cache_openai.sqlite"
+
+
+def frozen_embedding_cache() -> Path:
+    """The embedding cache inside the supplied artifact root — never the user cache."""
+    return _REPO_ROOT / FROZEN_EMBEDDING_CACHE
 
 
 def configure(artifact_root: Path, output_dir: Path | None = None) -> None:
@@ -862,11 +873,9 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     # embedder (the production matcher).
     import os
     try:
-        from nlp_histo.evaluation.matching.matcher import (
-            make_embedding_cache as _make_cache, DEFAULT_CACHE_PATH as _DCP
-        )
+        from nlp_histo.evaluation.matching.matcher import make_embedding_cache as _make_cache
         from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
-        cache_obj = _make_cache(_DCP)
+        cache_obj = _make_cache(frozen_embedding_cache())
         api_key = os.environ.get("OPENAI_API_KEY", "")
         if not api_key:
             return AnalysisResult(
@@ -1473,9 +1482,7 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
 
     # Load matcher (OpenAI embedder + cache).
     try:
-        from nlp_histo.evaluation.matching.matcher import (
-            make_embedding_cache, DEFAULT_CACHE_PATH,
-        )
+        from nlp_histo.evaluation.matching.matcher import make_embedding_cache
         from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
         api_key = os.environ.get("OPENAI_API_KEY", "")
         if not api_key:
@@ -1483,7 +1490,7 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
                 name=name, status="error",
                 notes="OPENAI_API_KEY missing; matcher embedder needs it.",
             )
-        matcher_cache = make_embedding_cache(DEFAULT_CACHE_PATH)
+        matcher_cache = make_embedding_cache(frozen_embedding_cache())
         matcher_embedder = OpenAIEmbedder(api_key=api_key)
     except Exception as exc:
         return AnalysisResult(

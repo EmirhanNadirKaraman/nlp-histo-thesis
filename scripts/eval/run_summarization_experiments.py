@@ -59,6 +59,7 @@ from typing import Callable, Optional
 # Make ``eval.*`` and ``pipeline.*`` importable when this script is run directly
 # (``scripts/`` is not a package — same pattern as run_all_sweeps.py).
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+MATCHER_CACHE_PATH = _REPO_ROOT / "eval" / "data" / "embedding_cache_openai.sqlite"
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
@@ -853,7 +854,6 @@ def _run_exp_b2(ctx):
     # for a missing embedding, so refuse upfront if the key is absent.
     from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
     from nlp_histo.evaluation.matching.matcher import (
-        DEFAULT_CACHE_PATH as MATCHER_CACHE_PATH,
         EMBEDDING_MODEL as MATCHER_EMBEDDING_MODEL,
         make_embedding_cache,
     )

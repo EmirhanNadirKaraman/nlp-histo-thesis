@@ -73,8 +73,15 @@ logger = logging.getLogger(__name__)
 
 from nlp_histo.evaluation.matching.embedders import GeminiEmbedder
 from nlp_histo.evaluation.jsonl_utils import read_jsonl
+from eval.paths import REPO_ROOT
+
+# Frozen embedding caches live in the repository, not in the user cache dir:
+# these drivers must hit the SAME sqlite files the thesis used, or they would
+# miss and issue PAID embedding calls. Passed explicitly to the library.
+_FROZEN_OPENAI_CACHE = REPO_ROOT / "eval" / "data" / "embedding_cache_openai.sqlite"
+_FROZEN_GEMINI_CACHE = REPO_ROOT / "eval" / "data" / "embedding_cache_gemini.sqlite"
+
 from nlp_histo.evaluation.matching.matcher import (
-    DEFAULT_GEMINI_CACHE_PATH,
     GEMINI_EMBEDDING_MODEL,
     SIMILARITY_THRESHOLD,
     EmbeddingCache,
@@ -1247,17 +1254,17 @@ def main() -> None:
                     sys.exit(1)
                 from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import GeminiEmbedder as _AgGem
                 cache = make_embedding_cache(
-                    Path(override) if override else DEFAULT_GEMINI_CACHE_PATH, GEMINI_EMBEDDING_MODEL)
+                    Path(override) if override else _FROZEN_GEMINI_CACHE, GEMINI_EMBEDDING_MODEL)
                 return GeminiEmbedder(key), cache, _AgGem()
             from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
-            from nlp_histo.evaluation.matching.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
+            from nlp_histo.evaluation.matching.matcher import EMBEDDING_MODEL
             from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import OpenAIEmbedder as _AgOAI
             key = os.environ.get("OPENAI_API_KEY")
             if not key:
                 print("OPENAI_API_KEY not set", file=sys.stderr)
                 sys.exit(1)
             cache = make_embedding_cache(
-                Path(override) if override else DEFAULT_CACHE_PATH, EMBEDDING_MODEL)
+                Path(override) if override else _FROZEN_OPENAI_CACHE, EMBEDDING_MODEL)
             return OpenAIEmbedder(key), cache, _AgOAI()
 
         all_rows: list[dict] = []
