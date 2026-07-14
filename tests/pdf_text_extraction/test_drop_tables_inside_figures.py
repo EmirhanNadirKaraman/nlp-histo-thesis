@@ -21,8 +21,8 @@ from unittest.mock import patch
 
 import pytest
 
-from pipeline.stages.pdf_text_extraction import runner as runner_mod
-from pipeline.stages.pdf_text_extraction.models.dto import (
+from nlp_histo.pipeline.stages.pdf_text_extraction import runner as runner_mod
+from nlp_histo.pipeline.stages.pdf_text_extraction.models.dto import (
     BoundingBox,
     DetectedRegion,
     LayoutElement,
@@ -243,7 +243,7 @@ class _CapturedConfig:
 
 def _run_main_and_capture(argv) -> _CapturedConfig:
     captured = _CapturedConfig()
-    with patch("pipeline.stages.pdf_text_extraction.batch.ParallelBatchRunner",
+    with patch("nlp_histo.pipeline.stages.pdf_text_extraction.batch.ParallelBatchRunner",
                captured):
         runner_mod.main(argv)
     return captured

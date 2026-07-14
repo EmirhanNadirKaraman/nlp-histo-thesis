@@ -6,11 +6,11 @@ fails structural validation against the chunk source index.
 """
 from __future__ import annotations
 
-from pipeline.stages.knowledge_extraction.provenance.citation_filter import (
+from nlp_histo.pipeline.stages.knowledge_extraction.provenance.citation_filter import (
     citation_drop_indices,
     filter_summary_by_citation,
 )
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     AuditMetadata,
     AuditableSummary,
     Finding,

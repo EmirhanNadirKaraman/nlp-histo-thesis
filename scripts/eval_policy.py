@@ -50,12 +50,12 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from pipeline.stages.knowledge_extraction.routing.policy import (  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.policy import (  # noqa: E402
     PolicyEvaluationResult,
     PolicyEvaluationStore,
     RoutingPolicySpec,
 )
-from pipeline.stages.knowledge_extraction.routing.routing_dataset import RoutingDataset  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.routing_dataset import RoutingDataset  # noqa: E402
 
 
 # ── CLI ────────────────────────────────────────────────────────────────────────

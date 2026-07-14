@@ -17,8 +17,8 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.stages.relate_stage import _should_compare
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.relate_stage import _should_compare
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     CanonicalRule,
     DirectionEnum,
     RelationTypeEnum,
@@ -27,8 +27,8 @@ from pipeline.stages.knowledge_extraction.models import (
 
 @pytest.fixture(autouse=True)
 def _disable_umls(monkeypatch):
-    from pipeline.stages.knowledge_extraction.entities import umls_resources
-    from pipeline.stages.knowledge_extraction.stages import normalize_stage
+    from nlp_histo.pipeline.stages.knowledge_extraction.entities import umls_resources
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages import normalize_stage
 
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
     umls_resources._reset_for_tests()
@@ -125,7 +125,7 @@ def test_corpus_relate_gate_unchanged():
     the cross-paper gate was already CUI-aware. This smoke test imports it and
     checks the same two paired cases still resolve identically.
     """
-    from pipeline.stages.knowledge_extraction.stages.corpus_relate import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages.corpus_relate import (
         _should_compare_cross_paper,
     )
     a_match = _rule(canonical_id="A", outcome_entity="MGA",                outcome_cui="C9999")

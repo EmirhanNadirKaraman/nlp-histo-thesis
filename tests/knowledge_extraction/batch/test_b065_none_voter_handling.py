@@ -23,14 +23,14 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.batch.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import (
     BatchHandle,
     BatchPhase,
     VoterBatchConfig,
 )
-from pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
-from pipeline.stages.knowledge_extraction.batch.voter_configs import CLAUDE_HAIKU
-from pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import CLAUDE_HAIKU
+from nlp_histo.pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
 
 
 PMCID = "PMC9999991"
@@ -72,7 +72,7 @@ def test_advance_does_not_crash_when_lone_l1_voter_returns_none(
 
     # Mock submit_level so the post-escalation L2 submission is a no-op —
     # the regression we care about is purely _process_level's None handling.
-    from pipeline.stages.knowledge_extraction.batch import runner as _runner_mod
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch import runner as _runner_mod
     monkeypatch.setattr(_runner_mod, "submit_level", lambda *a, **kw: [])
 
     handle = BatchHandle(pmcid=PMCID, phase=BatchPhase.L1_SUBMITTED)
@@ -124,10 +124,10 @@ def test_advance_handles_mixed_none_and_valid_voters_in_real_profile_shape(
     return valid AuditableSummary JSON; Pass 2 must collect claims only from
     the surviving voters and Pass 3 must run agreement on N=2 (not N=3).
     """
-    from pipeline.stages.knowledge_extraction.batch.voter_configs import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import (
         GEMINI_L1, OPENAI_L1,
     )
-    from pipeline.stages.knowledge_extraction.models import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import (
         AuditableSummary, AuditMetadata, Finding,
         DirectionEnum, RelationTypeEnum, FindingScope,
     )
@@ -153,7 +153,7 @@ def test_advance_handles_mixed_none_and_valid_voters_in_real_profile_shape(
         enable_router=False,
     )
 
-    from pipeline.stages.knowledge_extraction.batch import runner as _runner_mod
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch import runner as _runner_mod
     monkeypatch.setattr(_runner_mod, "submit_level", lambda *a, **kw: [])
 
     # Two valid voters + one failed voter for the same chunk.

@@ -12,14 +12,14 @@ Skip automatically if transformers is not installed:
 """
 import pytest
 
-from pipeline.stages.knowledge_extraction.models import Finding
+from nlp_histo.pipeline.stages.knowledge_extraction.models import Finding
 
 transformers = pytest.importorskip("transformers", reason="transformers not installed")
 
 
 @pytest.mark.nli
 def test_real_nli_entailed_claim():
-    from pipeline.stages.knowledge_extraction.grounding.grounding_filter import GroundingFilter, score_findings
+    from nlp_histo.pipeline.stages.knowledge_extraction.grounding.grounding_filter import GroundingFilter, score_findings
 
     gf = GroundingFilter(threshold=0.5)
     # Premise uses "predicts" — same verb as hypothesis — so the model correctly
@@ -41,7 +41,7 @@ def test_real_nli_entailed_claim():
 
 @pytest.mark.nli
 def test_real_nli_unentailed_claim():
-    from pipeline.stages.knowledge_extraction.grounding.grounding_filter import GroundingFilter, score_findings
+    from nlp_histo.pipeline.stages.knowledge_extraction.grounding.grounding_filter import GroundingFilter, score_findings
 
     gf = GroundingFilter(threshold=0.5)
     f = Finding(

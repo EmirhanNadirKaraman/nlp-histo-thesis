@@ -41,8 +41,8 @@ from types import SimpleNamespace
 
 from eval.paths import REPO_ROOT as _REPO_ROOT  # noqa: E402
 
-from pipeline.stages.knowledge_extraction.config import RelateConfig  # noqa: E402
-from pipeline.stages.knowledge_extraction.stages.relate_stage import (  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.config import RelateConfig  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.relate_stage import (  # noqa: E402
     _build_nli_text,
     _classify_pair,
     _get_nli_pipe,

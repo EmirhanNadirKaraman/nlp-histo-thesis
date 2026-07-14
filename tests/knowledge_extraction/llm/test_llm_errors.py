@@ -1,6 +1,6 @@
 """Tests for is_non_retryable_llm_error."""
 import pytest
-from pipeline.stages.knowledge_extraction.llm.llm_errors import is_non_retryable_llm_error
+from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_errors import is_non_retryable_llm_error
 
 
 class _Exc(Exception):

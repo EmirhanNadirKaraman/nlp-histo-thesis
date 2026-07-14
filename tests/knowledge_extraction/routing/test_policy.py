@@ -16,7 +16,7 @@ import sys
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.routing.policy import (
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.policy import (
     PolicyEvaluationResult,
     PolicyEvaluationStore,
     PolicySelectionResult,

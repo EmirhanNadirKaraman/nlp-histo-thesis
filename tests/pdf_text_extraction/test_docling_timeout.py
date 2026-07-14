@@ -11,10 +11,10 @@ import time
 
 import pytest
 
-from pipeline.stages.pdf_text_extraction.components.layout_extractor import (
+from nlp_histo.pipeline.stages.pdf_text_extraction.components.layout_extractor import (
     DoclingLayoutExtractor,
 )
-from pipeline.stages.pdf_text_extraction.config import DoclingConfig
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import DoclingConfig
 
 
 class _SleepConverter:

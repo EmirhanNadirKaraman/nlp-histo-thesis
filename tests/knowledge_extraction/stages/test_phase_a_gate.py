@@ -5,17 +5,17 @@ No LLM or NLI model required.
 """
 import pytest
 
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     CanonicalRule,
     DirectionEnum,
     RelationTypeEnum,
 )
-from pipeline.stages.knowledge_extraction.stages.normalize_stage import (
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.normalize_stage import (
     NormalizeStage,
     infer_direction,
     normalize_entity,
 )
-from pipeline.stages.knowledge_extraction.stages.relate_stage import (
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.relate_stage import (
     _classify_pair,
     _norm_outcome_expression,
     _should_compare,
@@ -180,7 +180,7 @@ def test_classify_pair_contradict_positive_vs_negative():
     b = b.model_copy(update={"direction": DirectionEnum.negative})
     label = _classify_pair(a, b, _high_scores(), _high_scores(),
                            entailment_threshold=0.55, contradiction_threshold=0.65)
-    from pipeline.stages.knowledge_extraction.models import RelationTypeLabel
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import RelationTypeLabel
     assert label == RelationTypeLabel.CONTRADICT
 
 
@@ -206,7 +206,7 @@ def test_normalize_entity(surface, expected):
 
 def test_normalize_stage_normalizes_entities():
     """NormalizeStage._norm() is exercised via normalize()."""
-    from pipeline.stages.knowledge_extraction.models import Finding
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import Finding
     stage = NormalizeStage()
     findings = [
         Finding(

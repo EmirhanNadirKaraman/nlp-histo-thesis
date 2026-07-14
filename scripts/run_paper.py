@@ -121,7 +121,7 @@ def _load_summarization_config(config_path: str | Path | None):
     ``knowledge_extraction`` block. Logs which path was taken so callers can see
     whether the YAML override actually applied.
     """
-    from pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
 
     if not config_path:
         logger.info("Summarisation config: defaults (no --config path)")
@@ -134,7 +134,7 @@ def _load_summarization_config(config_path: str | Path | None):
         )
         return KnowledgeExtractionConfig()
 
-    from pipeline.config_loader import load_config
+    from nlp_histo.pipeline.config_loader import load_config
 
     _pdf_cfg, sum_cfg = load_config(path)
     logger.info(
@@ -154,7 +154,7 @@ def _make_embed_fn(embedder_name: str):
     through cfg.agreement.embedder so the map_theta_sweep --embedder winner can
     be pinned in configs/run.yaml.
     """
-    from pipeline.stages.knowledge_extraction.agreement.providers import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
         GeminiEmbedder,
         OpenAIEmbedder,
     )
@@ -187,10 +187,10 @@ def build_runner(
     (no-op when None). ``config_path`` selects the YAML used to override
     ``KnowledgeExtractionConfig`` defaults; pass ``None`` to skip YAML loading.
     """
-    from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
-    from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
+    from nlp_histo.pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
     from dataclasses import replace as _dc_replace
-    from pipeline.stages.knowledge_extraction.llm.llm_providers import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers import (
         anthropic_direct_chat,
         gemini_direct_chat,
         openai_direct_chat,
@@ -276,9 +276,9 @@ def build_batch_runner(
     output_dir: Path = Path("out/summaries"),
 ):
     from dataclasses import replace as _dc_replace
-    from pipeline.stages.knowledge_extraction.batch import BatchKnowledgeExtractionRunner
-    from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
-    from pipeline.stages.knowledge_extraction.llm.llm_providers import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch import BatchKnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
+    from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers import (
         anthropic_direct_chat,
     )
 
@@ -458,7 +458,7 @@ def main():
         choices=["cheap", "real", "real_5", "haiku_only"],
         help="Cascade profile (required — no implicit default to prevent "
              "accidental spend). Registered in "
-             "pipeline/stages/knowledge_extraction/batch/voter_configs.py:\n"
+             "src/nlp_histo/pipeline/stages/knowledge_extraction/batch/voter_configs.py:\n"
              "  cheap      — Gemini + OpenAI only, no Claude. Smoke/dev runs.\n"
              "  real       — Gemini-Flash-Lite/GPT-4o-mini/GPT-4.1-nano at L1; "
              "Gemini-Flash + GPT-4.1-mini + Claude-Haiku at L2; Claude-Sonnet "
@@ -473,7 +473,7 @@ def main():
              f"{DEFAULT_CONFIG_PATH}). The knowledge_extraction block ("
              "knowledge_extraction.map, knowledge_extraction.grounding, "
              "knowledge_extraction.relate, knowledge_extraction.resolve, …) is read via "
-             "pipeline.config_loader.load_config. Pass an empty string "
+             "nlp_histo.pipeline.config_loader.load_config. Pass an empty string "
              "('--config \"\"') to skip YAML loading and use dataclass "
              "defaults — useful when scripting reproducible thesis runs.",
     )
@@ -508,7 +508,7 @@ def main():
         # Run BEFORE any LLM call so operators see component-level health
         # before paying for a cascade. Default-on for safety; pass
         # `--health-check no` for fast single-paper dev iteration.
-        from pipeline.stages.knowledge_extraction.observability.health_checks import run_health_checks
+        from nlp_histo.pipeline.stages.knowledge_extraction.observability.health_checks import run_health_checks
         # DB probe needs a real connection; reuse the run-side helper.
         try:
             db_for_health = _open_db_connection("health_check") if "_open_db_connection" in globals() else None
@@ -539,7 +539,7 @@ def main():
         pmcids = [pmcid]
 
     if args.dry_run:
-        from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
+        from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
         profile = get_profile(args.profile)
         mode = "sync" if args.sync else "batch"
         print(f"PMCIDs:  {pmcids}")
@@ -682,7 +682,7 @@ def _baseline_cost(usage: dict) -> float | None:
     which would surface as misleading negative savings for profiles where
     every cascade level uses the same model (e.g. ``smoke_haiku``).
     """
-    from pipeline.stages.knowledge_extraction.batch.voter_configs import make_l1_voters
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import make_l1_voters
     n_l1_voters = len(make_l1_voters())
     if not usage.get("l1"):
         return None
@@ -969,7 +969,7 @@ def _run_corpus_relate(
         return
 
     try:
-        from pipeline.stages.knowledge_extraction.stages.corpus_relate import (  # noqa: PLC0415
+        from nlp_histo.pipeline.stages.knowledge_extraction.stages.corpus_relate import (  # noqa: PLC0415
             CorpusRelateStage,
         )
         stage_kwargs: dict = {}
@@ -1020,8 +1020,8 @@ def _run_all_batch(
     skip_corpus_relate: bool = False,
 ) -> None:
     """Submit all papers simultaneously, poll together, finalize all."""
-    from pipeline.stages.knowledge_extraction.batch import BatchPhase
-    from pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch import BatchPhase
+    from nlp_histo.pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
 
     runner = build_batch_runner(
         profile_name=profile_name,
@@ -1134,8 +1134,8 @@ def _run_batch(
     config_path: str | Path | None = DEFAULT_CONFIG_PATH,
     skip_corpus_relate: bool = False,
 ) -> None:
-    from pipeline.stages.knowledge_extraction.batch import BatchPhase
-    from pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch import BatchPhase
+    from nlp_histo.pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
 
     logger.info("Building batch runner…")
     runner = build_batch_runner(

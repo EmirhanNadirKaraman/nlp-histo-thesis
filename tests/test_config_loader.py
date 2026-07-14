@@ -6,8 +6,8 @@ from textwrap import dedent
 
 import pytest
 
-from pipeline.config_loader import load_config
-from pipeline.stages.pdf_text_extraction.config import (
+from nlp_histo.pipeline.config_loader import load_config
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import (
     LogLevel,
     TableDetectorType,
 )
@@ -157,7 +157,7 @@ def test_agreement_config_defaults():
     here would silently change MAP agreement-gate behaviour without a YAML
     edit. Cite this test if anyone proposes changing a default outside a
     documented calibration sweep."""
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig
     cfg = AgreementConfig()
     assert cfg.tau == 0.15
     assert cfg.count_alpha == 0.25
@@ -212,10 +212,10 @@ def test_agreement_strategy_consumes_all_four_fields():
     ``BatchKnowledgeExtractionRunner`` at ``batch/runner.py:158``, ``:1148``) all
     funnel through this exact call. If this test passes, the runners forward
     the values by construction; no separate runner-build smoke test needed."""
-    from pipeline.stages.knowledge_extraction.agreement.embedding_similarity import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.agreement.embedding_similarity import (
         EmbeddingSimilarityStrategy,
     )
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig
     custom = AgreementConfig(
         tau=0.42, count_alpha=0.13, reuse_weight=0.07, contradiction_weight=0.99,
     )
@@ -234,7 +234,7 @@ def test_agreement_strategy_consumes_all_four_fields():
 
 def test_agreement_scorer_kind_default_is_embedding():
     """Default ``scorer_kind="embedding"`` preserves the historical hardcoded choice."""
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig
     assert AgreementConfig().scorer_kind == "embedding"
 
 
@@ -269,8 +269,8 @@ def test_agreement_scorer_kind_invalid_value_raises_at_scorer_build():
     both runners use, so the bad value is caught before any cascade work
     starts. The error message names the bad value and the expected set."""
     import pytest
-    from pipeline.stages.knowledge_extraction.agreement import SemanticAgreementScorer
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.agreement import SemanticAgreementScorer
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig
     bad = AgreementConfig(scorer_kind="bogus")  # loader-allowed; runtime-invalid
     with pytest.raises(ValueError, match=r"scorer_kind=.*bogus.*expected.*embedding.*hybrid"):
         SemanticAgreementScorer.from_agreement_config(bad, embed_fn=None)
@@ -286,12 +286,12 @@ def test_agreement_scorer_kind_dispatches_to_correct_strategy():
     Soft-alignment weights flow through ``AgreementConfig`` to either branch
     identically; the hybrid blend weights (``w_category`` etc.) stay at the
     ``HybridStructuredSimilarity`` ctor defaults until a follow-up promotion."""
-    from pipeline.stages.knowledge_extraction.agreement import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.agreement import (
         EmbeddingSimilarityStrategy,
         HybridStructuredSimilarity,
         SemanticAgreementScorer,
     )
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig
 
     emb = SemanticAgreementScorer.from_agreement_config(
         AgreementConfig(scorer_kind="embedding"), embed_fn=None,
@@ -318,7 +318,7 @@ def test_agreement_scorer_kind_dispatches_to_correct_strategy():
 def test_hybrid_config_defaults():
     """``HybridConfig()`` defaults match the historical
     ``HybridStructuredSimilarity`` ctor: 0.25/0.40/0.25/0.10 — and they sum to 1.0."""
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
     h = AgreementConfig().hybrid
     assert isinstance(h, HybridConfig)
     assert h.w_category == 0.25
@@ -365,10 +365,10 @@ def test_hybrid_strategy_consumes_hybrid_config():
     spot-check: an explicit ``w_category=…`` kwarg overrides only that field
     and leaves the other three at the config values (callers that built the
     strategy programmatically before this promotion shouldn't break)."""
-    from pipeline.stages.knowledge_extraction.agreement.hybrid_structured import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.agreement.hybrid_structured import (
         HybridStructuredSimilarity,
     )
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     cfg = AgreementConfig(
         hybrid=HybridConfig(
@@ -399,10 +399,10 @@ def test_embedding_strategy_ignores_hybrid_config():
     block — switching ``hybrid.w_*`` to extreme values must not perturb the
     embedding strategy's state. Asserts the strategy's soft-alignment weights
     are identical whether or not the hybrid block is at default."""
-    from pipeline.stages.knowledge_extraction.agreement.embedding_similarity import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.agreement.embedding_similarity import (
         EmbeddingSimilarityStrategy,
     )
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     cfg_default = AgreementConfig()
     cfg_extreme_hybrid = AgreementConfig(
@@ -433,7 +433,7 @@ def test_embedding_strategy_ignores_hybrid_config():
 
 def test_polarity_flag_default_is_true():
     """Default ``force_escalate_on_polarity_conflict=True`` preserves the B-051 safety guard."""
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig
     assert AgreementConfig().force_escalate_on_polarity_conflict is True
 
 
@@ -536,7 +536,7 @@ def test_seed_reaches_seed_pipeline(tmp_path: Path, monkeypatch):
     seeds (`random.seed`, `numpy.random.seed`, `torch.manual_seed`) is out
     of scope for this test.
     """
-    from pipeline.stages.pdf_text_extraction import runner as runner_mod
+    from nlp_histo.pipeline.stages.pdf_text_extraction import runner as runner_mod
 
     captured = {}
 

@@ -12,7 +12,7 @@ No live API calls.
 """
 from __future__ import annotations
 
-from pipeline.stages.knowledge_extraction.batch.models import BatchRequest
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import BatchRequest
 
 
 def _make_request(provider: str, model: str, custom_id: str) -> BatchRequest:
@@ -75,7 +75,7 @@ def test_dispatch_submit_level_uses_provider_model_grouping():
     by reverting to `req.provider` only."""
     import inspect
 
-    from pipeline.stages.knowledge_extraction.batch import dispatch
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch import dispatch
     source = inspect.getsource(dispatch.submit_level)
     assert "by_provider_model" in source, (
         "submit_level no longer groups by (provider, model) — B-020 regressed?"

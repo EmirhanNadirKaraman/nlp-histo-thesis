@@ -60,7 +60,7 @@ def load_findings_from_db(pmcid: str) -> list:
     """
     import spacy
     from nlp_histo.database import get_db_connection, Document, TextElement
-    from pipeline.stages.knowledge_extraction.models import Finding, FindingScope
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import Finding, FindingScope
 
     nlp = spacy.load("en_core_sci_sm")
     db = get_db_connection()
@@ -119,8 +119,8 @@ def main() -> None:
 
     pmcid = args.pmcid
 
-    from pipeline.stages.knowledge_extraction.stages.normalize_stage import NormalizeStage
-    from pipeline.stages.knowledge_extraction.stages.group_stage import GroupStage
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages.normalize_stage import NormalizeStage
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages.group_stage import GroupStage
 
     findings = load_findings_from_db(pmcid)
 

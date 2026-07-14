@@ -44,13 +44,13 @@ from eval.silver.analysis.map_theta_sweep import (  # noqa: E402
     _build_scorer,
     _replay,
 )
-from pipeline.stages.knowledge_extraction.agreement import AgreementChecker  # noqa: E402
-from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile  # noqa: E402
-from pipeline.stages.knowledge_extraction.cache import PipelineCache  # noqa: E402
-from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig  # noqa: E402
-from pipeline.stages.knowledge_extraction.stages.map_stage import MapStage  # noqa: E402
-from pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision  # noqa: E402
-from pipeline.stages.knowledge_extraction.models import AuditableSummary  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement import AgreementChecker  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.cache import PipelineCache  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage import MapStage  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditableSummary  # noqa: E402
 from eval.silver.analysis.run_new_summarization_sweeps import (  # noqa: E402
     BEST_FORCE_ESCALATE_POLARITY, BEST_REJECT_THETA, BEST_SINGLE_VOTER_POLICY,
     BEST_THETA, BEST_VOTER_SUBSET, _filtered_voter_cache,  # noqa: F401  (BEST_VOTER_SUBSET/_filtered used by importers)

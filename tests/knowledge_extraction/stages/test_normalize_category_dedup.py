@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.stages.normalize_stage import NormalizeStage
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.normalize_stage import NormalizeStage
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     DirectionEnum,
     Finding,
     FindingScope,
@@ -23,8 +23,8 @@ PMCID = "PMC12345"
 
 @pytest.fixture(autouse=True)
 def _disable_umls(monkeypatch):
-    from pipeline.stages.knowledge_extraction.entities import umls_resources
-    from pipeline.stages.knowledge_extraction.stages import normalize_stage
+    from nlp_histo.pipeline.stages.knowledge_extraction.entities import umls_resources
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages import normalize_stage
 
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
     umls_resources._reset_for_tests()

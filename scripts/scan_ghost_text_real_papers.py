@@ -24,11 +24,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from pipeline.stages.pdf_text_extraction.components.evidence_gatherer import (  # noqa: E402
+from nlp_histo.pipeline.stages.pdf_text_extraction.components.evidence_gatherer import (  # noqa: E402
     PyMuPDFEvidenceGatherer,
 )
-from pipeline.stages.pdf_text_extraction.config import TwoPassConfig  # noqa: E402
-from pipeline.stages.pdf_text_extraction.models.dto import (  # noqa: E402
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import TwoPassConfig  # noqa: E402
+from nlp_histo.pipeline.stages.pdf_text_extraction.models.dto import (  # noqa: E402
     BoundingBox,
     LayoutElement,
 )

@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.entities import umls_resources as ur_mod
+from nlp_histo.pipeline.stages.knowledge_extraction.entities import umls_resources as ur_mod
 
 
 def _reset_caches():
@@ -111,7 +111,7 @@ def test_pipeline_runner_pdf_routes_through_singleton():
     `spacy.load` directly. Routes through `get_small_nlp` instead."""
     import inspect
 
-    from pipeline.stages.pdf_text_extraction import runner as pdf_runner_mod
+    from nlp_histo.pipeline.stages.pdf_text_extraction import runner as pdf_runner_mod
     src = inspect.getsource(pdf_runner_mod.PipelineRunner._get_nlp)
     assert "get_small_nlp" in src, (
         "PipelineRunner._get_nlp must route through umls_resources.get_small_nlp — "
@@ -129,7 +129,7 @@ def test_load_paper_from_db_routes_through_singleton():
     must NOT call `spacy.load` directly."""
     import inspect
 
-    from pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
     src = inspect.getsource(KnowledgeExtractionRunner.load_paper_from_db)
     assert "get_small_nlp" in src, (
         "load_paper_from_db must route through umls_resources.get_small_nlp — "

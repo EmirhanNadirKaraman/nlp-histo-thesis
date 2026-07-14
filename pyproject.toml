@@ -61,16 +61,19 @@ where = ["src"]
 # unrelated distributions and make `import database` ambiguous.
 include = ["nlp_histo*"]
 
-# NOTE (migration, Phase A of the packaging split): `pipeline`,
-# `named_entity_recognition` and `eval` are still top-level directories and are
-# therefore NOT installed — they resolve only from the repository root (as they did
-# before, since nothing was previously installed either). They move under
-# `src/nlp_histo/` in the following phases, at which point the `synonyms.yaml`
-# package-data rule returns:
+# NOTE (migration): `named_entity_recognition` and `eval` are still top-level
+# directories and are therefore NOT installed — they resolve only from the
+# repository root. They move in the following phases.
+
+[tool.setuptools.package-data]
+# synonyms.yaml is the one non-Python file read at runtime from an installed
+# package (knowledge_extraction/stages/normalize_stage.py loads it at import via
+# importlib.resources — there is no hardcoded fallback, so a missing file means
+# an empty synonym map). Declared explicitly rather than with a glob: nothing
+# else under the package is a runtime resource, and a broad pattern would sweep
+# the co-located design docs into the wheel.
 #
-#   [tool.setuptools.package-data]
-#   "nlp_histo.pipeline.stages.knowledge_extraction.entities" = ["synonyms.yaml"]
-#
-# It is omitted for now rather than left pointing at a package that no longer
-# ships, which would silently declare data for a distribution member that does
-# not exist. `database` and `parsers` need no package data.
+# configs/*.yaml|json stay OUT deliberately: they live outside every package and
+# are still read repository-root-relative (nli_config.py, pricing.py). That
+# repository-root assumption is catalogued for the Phase F path pass.
+"nlp_histo.pipeline.stages.knowledge_extraction.entities" = ["synonyms.yaml"]

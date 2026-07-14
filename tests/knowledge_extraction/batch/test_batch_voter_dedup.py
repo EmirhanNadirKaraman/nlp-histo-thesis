@@ -13,14 +13,14 @@ from __future__ import annotations
 from pathlib import Path
 
 
-from pipeline.stages.knowledge_extraction.batch.dispatch import build_requests
-from pipeline.stages.knowledge_extraction.batch.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.dispatch import build_requests
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import (
     BatchHandle,
     BatchPhase,
     VoterBatchConfig,
 )
-from pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
-from pipeline.stages.knowledge_extraction.batch.voter_configs import (
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import (
     CLAUDE_HAIKU,
     CLAUDE_SONNET,
     GEMINI_L1,
@@ -223,9 +223,9 @@ def test_advance_merges_synthetic_l2_into_finalized(tmp_path):
     the only "raw_results" come from synthetic_results["l2"].
     """
     import json as _json
-    from pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
-    from pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
-    from pipeline.stages.knowledge_extraction.models import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import (
         AuditableSummary, AuditMetadata, Finding,
         DirectionEnum, RelationTypeEnum, FindingScope,
     )

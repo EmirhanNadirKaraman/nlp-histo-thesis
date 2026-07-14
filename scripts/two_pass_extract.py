@@ -29,14 +29,14 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from pipeline.stages.pdf_text_extraction.components.two_pass_extractor import (
+from nlp_histo.pipeline.stages.pdf_text_extraction.components.two_pass_extractor import (
     TwoPassTextExtractor,
 )
-from pipeline.stages.pdf_text_extraction.config import (
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import (
     DoclingConfig,
     TwoPassConfig,
 )
-from pipeline.stages.pdf_text_extraction.models.scored_node import TwoPassResult
+from nlp_histo.pipeline.stages.pdf_text_extraction.models.scored_node import TwoPassResult
 from nlp_histo.parsers.layout_utils import extract_text
 
 logging.basicConfig(

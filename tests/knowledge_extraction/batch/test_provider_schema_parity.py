@@ -20,14 +20,13 @@ from __future__ import annotations
 
 import ast
 import inspect
+from pathlib import Path
 
-from tests.paths import REPO_ROOT
+from nlp_histo.pipeline.stages.knowledge_extraction import batch
 
-
-
-_BATCH_DIR = (
-    REPO_ROOT / "pipeline" / "stages" / "knowledge_extraction" / "batch"
-)
+# Anchored to the installed package rather than a repository-relative path, so
+# this keeps reading the real batch sources wherever the package lives.
+_BATCH_DIR = Path(batch.__file__).parent
 
 
 def _read_source(filename: str) -> str:
@@ -116,7 +115,7 @@ def test_dispatch_passes_openai_tool_to_every_provider():
     for every provider — even Gemini-direct, which discards it. This keeps the
     cross-provider signature stable so re-enabling the schema in gemini_batch
     later doesn't require touching dispatch."""
-    from pipeline.stages.knowledge_extraction.batch import dispatch
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch import dispatch
     src = inspect.getsource(dispatch.submit_level)
     assert "OPENAI_MAP_TOOL" in src
     # The submit call shape — every provider gets the same two args.
@@ -129,7 +128,7 @@ def test_openai_strict_schema_validates_at_import():
     `_build_openai_tool` raises ValueError on any strict-mode violation."""
     # Re-import via fresh module load is overkill; the constant is already
     # built at module load time. The test passes by virtue of the import.
-    from pipeline.stages.knowledge_extraction.batch.dispatch import OPENAI_MAP_TOOL
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.dispatch import OPENAI_MAP_TOOL
     assert OPENAI_MAP_TOOL["function"]["strict"] is True
     params = OPENAI_MAP_TOOL["function"]["parameters"]
     assert params["additionalProperties"] is False

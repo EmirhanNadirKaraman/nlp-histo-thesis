@@ -4,7 +4,7 @@ No LLM or NLI model required.
 """
 import pytest
 
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     DirectionEnum,
     FindingGroup,
     FindingScope,
@@ -12,7 +12,7 @@ from pipeline.stages.knowledge_extraction.models import (
     RelationTypeEnum,
     SourceSpan,
 )
-from pipeline.stages.knowledge_extraction.stages.group_stage import (
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.group_stage import (
     GroupStage,
     is_groupable,
     _group_id,

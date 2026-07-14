@@ -47,7 +47,7 @@ _EMBED_INPUT = ["CD30 is positive in ALCL"]
 
 def _inventory() -> dict[str, list[str]]:
     """{provider: [chat model ids]} — deduped, in tier order."""
-    from pipeline.stages.knowledge_extraction.batch.voter_configs import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import (
         OPENAI_L1, OPENAI_L1_B, OPENAI_L2,
         GEMINI_L1, GEMINI_L2,
         CLAUDE_L2, CLAUDE_L3,
@@ -195,11 +195,11 @@ def cmd_sync_real() -> int:
     from eval.silver.data.jsonl_utils import read_jsonl
     from eval.silver.analysis.pipeline_sweep import case_to_file_data
     from eval.silver.data.schemas import SourceCase
-    from pipeline.stages.knowledge_extraction.stages.map_stage import _format_sentences
-    from pipeline.stages.knowledge_extraction.llm.llm_providers import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage import _format_sentences
+    from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers import (
         anthropic_direct_chat, gemini_direct_chat, openai_direct_chat,
     )
-    from pipeline.stages.knowledge_extraction.llm.prompts import build_map_chain
+    from nlp_histo.pipeline.stages.knowledge_extraction.llm.prompts import build_map_chain
 
     src = Path("eval/data/source_cases_related15.jsonl")
     if not src.exists():
@@ -259,8 +259,8 @@ def _batch_model(pname: str, inv: dict[str, list[str]]) -> str:
 
 
 def cmd_batch(wait: int) -> int:
-    from pipeline.stages.knowledge_extraction.batch.dispatch import OPENAI_MAP_TOOL, build_providers
-    from pipeline.stages.knowledge_extraction.batch.models import BatchRequest
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.dispatch import OPENAI_MAP_TOOL, build_providers
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import BatchRequest
     inv = _inventory()
     messages = [{"role": "user", "content": "Extract findings from: CD30 is positive in ALCL."}]
 
@@ -403,8 +403,8 @@ def cmd_list(limit: int) -> int:
 
 
 def cmd_batch_check(provider: str, batch_id: str) -> int:
-    from pipeline.stages.knowledge_extraction.batch.dispatch import build_providers
-    from pipeline.stages.knowledge_extraction.batch.models import ProviderJob
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.dispatch import build_providers
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import ProviderJob
     if provider not in {"openai", "claude", "gemini"}:
         print(f"unknown provider {provider!r} (expected openai|claude|gemini)", file=sys.stderr)
         return 2

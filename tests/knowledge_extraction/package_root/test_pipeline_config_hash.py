@@ -13,7 +13,7 @@ from __future__ import annotations
 import dataclasses
 from enum import Enum
 
-from pipeline.stages.knowledge_extraction.persistence import compute_pipeline_config_hash
+from nlp_histo.pipeline.stages.knowledge_extraction.persistence import compute_pipeline_config_hash
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -164,7 +164,7 @@ def test_canonicalize_direction_policy_version_changes_hash():
 
 def test_canonicalize_direction_policy_constant_is_defined():
     """The constant must live at the documented import location."""
-    from pipeline.stages.knowledge_extraction.models import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import (
         CANONICALIZE_DIRECTION_POLICY_VERSION,
     )
     assert isinstance(CANONICALIZE_DIRECTION_POLICY_VERSION, str)
@@ -189,7 +189,7 @@ def test_map_agreement_policy_version_changes_hash():
 
 def test_map_agreement_policy_constant_is_defined():
     """The constant must live at the documented import location."""
-    from pipeline.stages.knowledge_extraction.models import MAP_AGREEMENT_POLICY_VERSION
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import MAP_AGREEMENT_POLICY_VERSION
 
     assert isinstance(MAP_AGREEMENT_POLICY_VERSION, str)
     assert MAP_AGREEMENT_POLICY_VERSION  # non-empty
@@ -200,10 +200,14 @@ def test_both_runners_include_map_agreement_policy_version_in_thresholds():
     re-opens the stale-cache hole that B-051 cache-invalidation closes.
     Greps the runner source for the literal key to enforce parity.
     """
-    from tests.paths import REPO_ROOT
+    # Anchored to the installed module, not to a repository-relative path, so the
+    # guard keeps pointing at the real source wherever the package lives.
+    from pathlib import Path
 
-    sync_src = (REPO_ROOT / "pipeline/stages/knowledge_extraction/runner.py").read_text()
-    batch_src = (REPO_ROOT / "pipeline/stages/knowledge_extraction/batch/runner.py").read_text()
+    from nlp_histo.pipeline.stages.knowledge_extraction import batch, runner
+
+    sync_src = Path(runner.__file__).read_text()
+    batch_src = (Path(batch.__file__).parent / "runner.py").read_text()
     assert '"map_agreement_policy_version"' in sync_src, (
         "KnowledgeExtractionRunner._pipeline_config_hash must include "
         "'map_agreement_policy_version' in the thresholds dict (B-051)."

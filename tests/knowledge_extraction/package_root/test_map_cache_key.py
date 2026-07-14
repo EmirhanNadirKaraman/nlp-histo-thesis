@@ -10,8 +10,8 @@ treated as misses once the new metadata carries non-empty values.
 """
 from __future__ import annotations
 
-from pipeline.stages.knowledge_extraction.cache import PipelineCache
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.cache import PipelineCache
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     MAP_PROMPT_VERSION,
     MAP_SCHEMA_VERSION,
     MAP_STAGE_NAME,
@@ -93,7 +93,7 @@ def test_old_format_cache_entry_is_miss_after_schema_bump(tmp_path):
     # been the old key. We use the new key construction but with empty
     # backwards-compat fields to mimic what a pre-patch run would have written.
     old_meta = _meta(voter_config_hash="", nli_model_id="")
-    from pipeline.stages.knowledge_extraction.models import AuditableSummary, AuditMetadata
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditableSummary, AuditMetadata
     fake_result = AuditableSummary(
         chunk_id="C0",
         findings=[],

@@ -15,12 +15,12 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 
-from pipeline.stages.knowledge_extraction.agreement.checker import AgreementChecker
-from pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision, ScoreBundle
-from pipeline.stages.knowledge_extraction.models import AuditMetadata, AuditableSummary, Finding
-from pipeline.stages.knowledge_extraction.routing.models import GateOrigin, ReasonCode
-from pipeline.stages.knowledge_extraction.routing.router import MapOutputRouter
-from pipeline.stages.knowledge_extraction.routing.schema_validator import SchemaValidator
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.checker import AgreementChecker
+from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision, ScoreBundle
+from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditMetadata, AuditableSummary, Finding
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.models import GateOrigin, ReasonCode
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.router import MapOutputRouter
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.schema_validator import SchemaValidator
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────

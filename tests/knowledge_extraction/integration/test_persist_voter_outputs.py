@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from nlp_histo.database.models import SumMapVoterOutput
-from pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
+from nlp_histo.pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
 
 
 @pytest.fixture(autouse=True)

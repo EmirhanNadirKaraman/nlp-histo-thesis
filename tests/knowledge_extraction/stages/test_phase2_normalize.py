@@ -11,14 +11,14 @@ canonical form. Disabling UMLS keeps these "smoke tests" actually fast.
 """
 import pytest
 
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     DirectionEnum,
     Finding,
     FindingScope,
     NormalFinding,
     RelationTypeEnum,
 )
-from pipeline.stages.knowledge_extraction.stages.normalize_stage import NormalizeStage, normalize_entity
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.normalize_stage import NormalizeStage, normalize_entity
 
 
 PMCID = "PMC12345"
@@ -26,8 +26,8 @@ PMCID = "PMC12345"
 
 @pytest.fixture(autouse=True)
 def _disable_umls(monkeypatch):
-    from pipeline.stages.knowledge_extraction.entities import umls_resources
-    from pipeline.stages.knowledge_extraction.stages import normalize_stage
+    from nlp_histo.pipeline.stages.knowledge_extraction.entities import umls_resources
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages import normalize_stage
 
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
     umls_resources._reset_for_tests()

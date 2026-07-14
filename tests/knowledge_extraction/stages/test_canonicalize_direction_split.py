@@ -19,12 +19,12 @@ Tested invariants:
 """
 from __future__ import annotations
 
-from pipeline.stages.knowledge_extraction.stages.canonicalize_stage import (
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.canonicalize_stage import (
     CanonicalizeStage,
     _split_by_direction,
     _study_coverage,
 )
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     DirectionEnum,
     FindingGroup,
     FindingScope,

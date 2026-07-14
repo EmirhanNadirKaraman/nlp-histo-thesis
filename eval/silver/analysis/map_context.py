@@ -76,7 +76,7 @@ def _load_map_context(
         if not api_key:
             raise SystemExit("GOOGLE_API_KEY not set")
         from eval.silver.matching.embedders import GeminiEmbedder
-        from pipeline.stages.knowledge_extraction.agreement.providers import (
+        from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
             GeminiEmbedder as AgreementGeminiEmbedder,
         )
         embedder = GeminiEmbedder(api_key)
@@ -89,7 +89,7 @@ def _load_map_context(
             raise SystemExit("OPENAI_API_KEY not set")
         from eval.silver.matching.embedders import OpenAIEmbedder
         from eval.silver.matching.matcher import DEFAULT_CACHE_PATH, EMBEDDING_MODEL
-        from pipeline.stages.knowledge_extraction.agreement.providers import (
+        from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
             OpenAIEmbedder as AgreementOpenAIEmbedder,
         )
         embedder = OpenAIEmbedder(api_key)

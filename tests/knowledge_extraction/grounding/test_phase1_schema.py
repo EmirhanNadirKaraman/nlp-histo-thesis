@@ -5,11 +5,11 @@ No LLM or database required.
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.grounding.grounding_filter import (
+from nlp_histo.pipeline.stages.knowledge_extraction.grounding.grounding_filter import (
     filter_atomic_findings,
     score_findings,
 )
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     AtomicFinding,
     AuditableSummary,
     AuditMetadata,

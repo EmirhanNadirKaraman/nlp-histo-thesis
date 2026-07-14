@@ -45,10 +45,10 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from pipeline.stages.pdf_text_extraction import PipelineConfig, PipelineRunner  # noqa: F401  (kept for backwards-compat imports)
-from pipeline.stages.pdf_text_extraction.batch import ParallelBatchRunner
-from pipeline.stages.pdf_text_extraction.config import TableDetectorType
-from pipeline.stages.pdf_text_extraction.runner import _retarget_paths
+from nlp_histo.pipeline.stages.pdf_text_extraction import PipelineConfig, PipelineRunner  # noqa: F401  (kept for backwards-compat imports)
+from nlp_histo.pipeline.stages.pdf_text_extraction.batch import ParallelBatchRunner
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import TableDetectorType
+from nlp_histo.pipeline.stages.pdf_text_extraction.runner import _retarget_paths
 
 
 _DEFAULT_PDF_DIR = _REPO_ROOT / "eval" / "pdfs"

@@ -41,14 +41,14 @@ def check(name: str, fn) -> bool:
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
 def test_direction_enum_has_no_direction():
-    from pipeline.stages.knowledge_extraction.models import DirectionEnum
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import DirectionEnum
     values = {e.value for e in DirectionEnum}
     expected = {"positive", "negative", "absent", "partial", "unclear", "no_direction"}
     assert values == expected, f"DirectionEnum values mismatch: {values} vs {expected}"
 
 
 def test_relation_type_enum():
-    from pipeline.stages.knowledge_extraction.models import RelationTypeEnum
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import RelationTypeEnum
     values = {e.value for e in RelationTypeEnum}
     expected = {
         "has_feature", "expression", "prognostic", "comparative",
@@ -58,7 +58,7 @@ def test_relation_type_enum():
 
 
 def test_category_literal_values():
-    from pipeline.stages.knowledge_extraction.models import Finding
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import Finding
     cat_field = Finding.model_fields["category"]
     cat_values = set(getattr(cat_field.annotation, "__args__", ()))
     expected = {
@@ -69,7 +69,7 @@ def test_category_literal_values():
 
 
 def test_prompt_lists_match_enums():
-    from pipeline.stages.knowledge_extraction.llm import prompts
+    from nlp_histo.pipeline.stages.knowledge_extraction.llm import prompts
     src = prompts._MAP_SYSTEM
     # Direction values must each appear textually in the prompt
     for v in ("positive", "negative", "absent", "partial", "unclear", "no_direction"):
@@ -88,7 +88,7 @@ def test_prompt_lists_match_enums():
 
 
 def test_openai_strict_tool_builds_and_validates():
-    from pipeline.stages.knowledge_extraction.batch.dispatch import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.dispatch import (
         _build_openai_tool, validate_openai_strict_schema,
     )
     tool = _build_openai_tool()
@@ -100,7 +100,7 @@ def test_openai_strict_tool_builds_and_validates():
 
 def test_no_default_fields_in_finding_or_scope_schema():
     """Pydantic should not produce JSON `default` keys for Finding/FindingScope."""
-    from pipeline.stages.knowledge_extraction.models import AuditableSummary
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditableSummary
     schema = AuditableSummary.model_json_schema()
     bad: list[str] = []
 
@@ -125,7 +125,7 @@ def test_no_default_fields_in_finding_or_scope_schema():
 
 
 def test_minimal_auditable_summary():
-    from pipeline.stages.knowledge_extraction.models import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import (
         AuditableSummary, Finding, AuditMetadata,
         RelationTypeEnum, DirectionEnum,
     )
@@ -157,7 +157,7 @@ def test_minimal_auditable_summary():
 
 
 def test_legacy_null_direction_coerces_to_no_direction():
-    from pipeline.stages.knowledge_extraction.models import Finding, DirectionEnum
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import Finding, DirectionEnum
     f = Finding.model_validate({
         "category": "demographic",
         "claim": "MGA presents in seventh decade",
@@ -175,7 +175,7 @@ def test_legacy_null_direction_coerces_to_no_direction():
 
 
 def test_invalid_relation_type_coerces_to_unclear():
-    from pipeline.stages.knowledge_extraction.models import Finding, RelationTypeEnum
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import Finding, RelationTypeEnum
     f = Finding.model_validate({
         "category": "morphology",
         "claim": "X has Y",
@@ -193,7 +193,7 @@ def test_invalid_relation_type_coerces_to_unclear():
 
 
 def test_demographics_alias_repair():
-    from pipeline.stages.knowledge_extraction.models import Finding
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import Finding
     f = Finding.model_validate({
         "category": "demographics",  # legacy alias → demographic
         "claim": "GA more common in women",
@@ -212,7 +212,7 @@ def test_demographics_alias_repair():
 
 def test_bad_finding_logged_when_dropped():
     """Malformed item passed inside an AuditableSummary should be dropped *and* logged."""
-    from pipeline.stages.knowledge_extraction.models import AuditableSummary, AuditMetadata
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditableSummary, AuditMetadata
 
     # Reset log dir to a temp location to make this test self-contained
     import os
@@ -246,7 +246,7 @@ def test_bad_finding_logged_when_dropped():
 
 
 def test_profiles():
-    from pipeline.stages.knowledge_extraction.batch.voter_configs import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import (
         get_profile, list_profiles,
         GEMINI_L1, OPENAI_L1, OPENAI_L1_B,
         GEMINI_L2, OPENAI_L2, CLAUDE_L2, CLAUDE_L3,
@@ -276,7 +276,7 @@ def test_profiles():
 def test_no_profile_raises_when_unset():
     """get_profile() with no arg and NLP_HISTO_PROFILE unset → ValueError."""
     import os as _os
-    from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
 
     saved = _os.environ.pop("NLP_HISTO_PROFILE", None)
     try:
@@ -295,7 +295,7 @@ def test_no_profile_raises_when_unset():
 
 def test_unknown_profile_raises():
     """Typos in profile name must raise rather than silently pick default."""
-    from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
 
     try:
         get_profile("smoke_haiku")
@@ -306,14 +306,14 @@ def test_unknown_profile_raises():
 
 
 def test_version_constants():
-    from pipeline.stages.knowledge_extraction import models
+    from nlp_histo.pipeline.stages.knowledge_extraction import models
     assert models.MAP_SCHEMA_VERSION == "map_v10_nli_and_voter_config_in_key"
     assert models.MAP_PROMPT_VERSION == "map_prompt_v5_expression_absent_vs_negative"
     assert models.MAP_STAGE_NAME == "map"
 
 
 def test_cascade_signature_stable_and_sensitive():
-    from pipeline.stages.knowledge_extraction.models import compute_cascade_signature
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import compute_cascade_signature
     a = compute_cascade_signature([("openai", "gpt-4o-mini"), ("anthropic", "claude-haiku-4-5-20251001")])
     b = compute_cascade_signature([("openai", "gpt-4o-mini"), ("anthropic", "claude-haiku-4-5-20251001")])
     c = compute_cascade_signature([("anthropic", "claude-haiku-4-5-20251001"), ("openai", "gpt-4o-mini")])
@@ -326,8 +326,8 @@ def test_cascade_signature_stable_and_sensitive():
 def test_map_cache_key_includes_versions_and_cascade():
     import tempfile
     from pathlib import Path as _P
-    from pipeline.stages.knowledge_extraction.cache import PipelineCache
-    from pipeline.stages.knowledge_extraction.models import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.cache import PipelineCache
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import (
         MAP_PROMPT_VERSION, MAP_SCHEMA_VERSION, MAP_STAGE_NAME, MapRunMetadata,
     )
 
@@ -343,7 +343,7 @@ def test_map_cache_key_includes_versions_and_cascade():
         assert piece in key_a
 
     # Round-trip: set then get with matching metadata yields a hit.
-    from pipeline.stages.knowledge_extraction.models import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import (
         AuditMetadata, AuditableSummary, DirectionEnum, Finding, RelationTypeEnum,
     )
     f = Finding(
@@ -373,7 +373,7 @@ def test_map_cache_key_includes_versions_and_cascade():
 def test_map_run_metadata_summary_contains_required_fields():
     from langchain_core.runnables import RunnableLambda
 
-    from pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
 
     class _DummyLLM(RunnableLambda):
         model_name = "dummy-model"
@@ -405,7 +405,7 @@ def test_map_run_metadata_summary_contains_required_fields():
 def test_batch_handle_persists_versions():
     import tempfile
     from pathlib import Path as _P
-    from pipeline.stages.knowledge_extraction.batch.models import BatchHandle, BatchPhase
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import BatchHandle, BatchPhase
 
     h = BatchHandle(
         pmcid="PMC1", phase=BatchPhase.L1_SUBMITTED,

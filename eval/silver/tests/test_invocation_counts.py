@@ -15,10 +15,10 @@ import types
 
 import pytest
 
-import pipeline.stages.knowledge_extraction.agreement as agreement_mod
-import pipeline.stages.knowledge_extraction.models as models_mod
+import nlp_histo.pipeline.stages.knowledge_extraction.agreement as agreement_mod
+import nlp_histo.pipeline.stages.knowledge_extraction.models as models_mod
 import eval.silver.analysis.map_theta_sweep as mts
-from pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision
+from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision
 
 _DEC = {"KEEP": ChunkDecision.KEEP, "REJECT": ChunkDecision.REJECT,
         "ESCALATE": ChunkDecision.ESCALATE}

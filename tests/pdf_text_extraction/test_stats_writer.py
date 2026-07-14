@@ -17,10 +17,10 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.stages.pdf_text_extraction.config import PipelineConfig
-from pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, LayoutElement
-from pipeline.stages.pdf_text_extraction.models.scored_node import ScoredNode
-from pipeline.stages.pdf_text_extraction.outputs.stats_writer import (
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import PipelineConfig
+from nlp_histo.pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, LayoutElement
+from nlp_histo.pipeline.stages.pdf_text_extraction.models.scored_node import ScoredNode
+from nlp_histo.pipeline.stages.pdf_text_extraction.outputs.stats_writer import (
     DocStatsCollector,
     classify_reason,
     config_digest,
@@ -119,7 +119,7 @@ def test_config_digest_handles_non_dataclass_input() -> None:
 
 def test_config_digest_returns_unknown_on_internal_failure(monkeypatch) -> None:
     """If config_payload() raises, the digest helper must swallow + return 'unknown'."""
-    from pipeline.stages.pdf_text_extraction.outputs import stats_writer
+    from nlp_histo.pipeline.stages.pdf_text_extraction.outputs import stats_writer
 
     def _blow_up(_):
         raise RuntimeError("inject failure")

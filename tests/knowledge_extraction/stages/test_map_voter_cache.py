@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def stage_with_cache():
     stub_llm = MagicMock()
     stub_llm.temperature = 0.1
     with patch(
-        "pipeline.stages.knowledge_extraction.stages.map_stage.build_map_chain"
+        "nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage.build_map_chain"
     ) as mock_build:
         mock_build.side_effect = [MagicMock(), MagicMock(), MagicMock()]
         stage = MapStage(
@@ -97,7 +97,7 @@ def test_run_voters_caches_l1_result_and_l2_haiku_reuses_it():
     l1_chain.invoke.return_value = l1_result
 
     with patch(
-        "pipeline.stages.knowledge_extraction.stages.map_stage.build_map_chain"
+        "nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage.build_map_chain"
     ) as mock_build:
         mock_build.side_effect = [l1_chain, l2_chain, l3_chain]
         stage = MapStage(
@@ -151,7 +151,7 @@ def test_run_voters_does_not_dedup_different_temperatures():
     l2_chain.invoke.return_value = l2_result
 
     with patch(
-        "pipeline.stages.knowledge_extraction.stages.map_stage.build_map_chain"
+        "nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage.build_map_chain"
     ) as mock_build:
         mock_build.side_effect = [l1_chain, l2_chain, l3_chain]
         stage = MapStage(

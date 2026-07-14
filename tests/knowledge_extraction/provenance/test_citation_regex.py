@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.routing.schema_validator import _CITATION_RE as SCHEMA_RE
-from pipeline.stages.knowledge_extraction.provenance.validator import _CITATION_RE as PROV_RE
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.schema_validator import _CITATION_RE as SCHEMA_RE
+from nlp_histo.pipeline.stages.knowledge_extraction.provenance.validator import _CITATION_RE as PROV_RE
 
 
 @pytest.mark.parametrize("cite", [

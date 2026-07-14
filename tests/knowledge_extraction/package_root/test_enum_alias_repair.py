@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     DirectionEnum,
     Finding,
     RelationTypeEnum,
@@ -114,7 +114,7 @@ def test_cross_field_bleed_logged(monkeypatch, raw, recovered_value):
     in enum_observations.jsonl regardless of whether alias-repair recovered
     the finding. Lets us count exact loss per run."""
     captured: list[dict] = []
-    import pipeline.stages.knowledge_extraction.models as models_mod
+    import nlp_histo.pipeline.stages.knowledge_extraction.models as models_mod
 
     def _capture(**kw):
         captured.append(kw)
@@ -133,7 +133,7 @@ def test_non_bleed_unknown_still_tagged_unknown_value(monkeypatch):
     """A relation_type that is genuinely unknown (not a category-name) keeps
     its `unknown_value` reason — bleed detection must not over-fire."""
     captured: list[dict] = []
-    import pipeline.stages.knowledge_extraction.models as models_mod
+    import nlp_histo.pipeline.stages.knowledge_extraction.models as models_mod
 
     def _capture(**kw):
         captured.append(kw)

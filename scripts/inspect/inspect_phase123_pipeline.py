@@ -128,11 +128,11 @@ def main() -> None:
     chunk_size = 10
     max_sentences = args.chunks * chunk_size
 
-    from pipeline.stages.knowledge_extraction.cache import PipelineCache
-    from pipeline.stages.knowledge_extraction.grounding.grounding_filter import GroundingFilter, score_findings
-    from pipeline.stages.knowledge_extraction.stages.group_stage import GroupStage, is_groupable
-    from pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
-    from pipeline.stages.knowledge_extraction.stages.normalize_stage import NormalizeStage
+    from nlp_histo.pipeline.stages.knowledge_extraction.cache import PipelineCache
+    from nlp_histo.pipeline.stages.knowledge_extraction.grounding.grounding_filter import GroundingFilter, score_findings
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages.group_stage import GroupStage, is_groupable
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages.normalize_stage import NormalizeStage
 
     llm = build_llm()
     map_stage = MapStage(

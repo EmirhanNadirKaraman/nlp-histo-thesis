@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from pipeline.stages.pdf_text_extraction.components.artifact_filter import (
+from nlp_histo.pipeline.stages.pdf_text_extraction.components.artifact_filter import (
     ArtifactFilter,
 )
-from pipeline.stages.pdf_text_extraction.config import FilteringConfig
-from pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, LayoutElement
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import FilteringConfig
+from nlp_histo.pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, LayoutElement
 
 
 def _el(text: str, *, page: int = 1, etype: str = "TEXT", y1: float = 700.0,
@@ -53,7 +53,7 @@ def test_identity_preserved_under_dict_mutation():
         return list(dicts)
 
     with patch(
-        "pipeline.stages.pdf_text_extraction.components.artifact_filter.filter_artifacts",
+        "nlp_histo.pipeline.stages.pdf_text_extraction.components.artifact_filter.filter_artifacts",
         side_effect=mutating_filter,
     ):
         out = ArtifactFilter(FilteringConfig(apply_ner_filtering=False)).filter_elements(elements)

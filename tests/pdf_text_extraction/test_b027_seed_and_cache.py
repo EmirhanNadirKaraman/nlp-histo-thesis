@@ -21,8 +21,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pipeline.stages.pdf_text_extraction.config import PipelineConfig
-from pipeline.stages.pdf_text_extraction.models.dto import (
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import PipelineConfig
+from nlp_histo.pipeline.stages.pdf_text_extraction.models.dto import (
     BoundingBox,
     DetectedRegion,
     HierarchicalRow,
@@ -30,8 +30,8 @@ from pipeline.stages.pdf_text_extraction.models.dto import (
     LayoutResult,
     TableDetectionResult,
 )
-from pipeline.stages.pdf_text_extraction.runner import PipelineRunner
-from pipeline.stages.pdf_text_extraction.stage_cache import (
+from nlp_histo.pipeline.stages.pdf_text_extraction.runner import PipelineRunner
+from nlp_histo.pipeline.stages.pdf_text_extraction.stage_cache import (
     _StageCache,
     dump_hierarchical_rows,
     dump_layout_elements,
@@ -139,7 +139,7 @@ def test_corrupted_artifact_falls_through_and_overwrites(tmp_path, caplog):
     artifact.write_bytes(b"not json")
 
     with caplog.at_level(logging.WARNING,
-                          logger="pipeline.stages.pdf_text_extraction.stage_cache"):
+                          logger="nlp_histo.pipeline.stages.pdf_text_extraction.stage_cache"):
         result = cache.get_or_compute(
             stage_name="demo", pmcid="PMC1", config_hash="abc",
             compute_fn=compute, loader_fn=_trivial_load,
@@ -172,7 +172,7 @@ def test_hash_mismatch_invalidates_and_overwrites_sidecar_and_artifact(tmp_path,
     old_artifact_bytes = artifact.read_bytes()
 
     with caplog.at_level(logging.INFO,
-                          logger="pipeline.stages.pdf_text_extraction.stage_cache"):
+                          logger="nlp_histo.pipeline.stages.pdf_text_extraction.stage_cache"):
         cache.get_or_compute(
             stage_name="demo", pmcid="PMC1", config_hash="hash_new",
             compute_fn=compute, loader_fn=_trivial_load,
@@ -203,7 +203,7 @@ def test_sidecar_read_failure_treated_as_cache_invalid(tmp_path, caplog):
     sidecar.write_bytes(b"\xff\xfe\xfd")  # invalid UTF-8
 
     with caplog.at_level(logging.WARNING,
-                          logger="pipeline.stages.pdf_text_extraction.stage_cache"):
+                          logger="nlp_histo.pipeline.stages.pdf_text_extraction.stage_cache"):
         cache.get_or_compute(
             stage_name="demo", pmcid="PMC1", config_hash="abc",
             compute_fn=compute, loader_fn=_trivial_load,
@@ -244,7 +244,7 @@ def test_unexpected_loader_exception_propagates(tmp_path):
 def test_write_failure_propagates(tmp_path, monkeypatch):
     cache = _build_cache(tmp_path)
 
-    from pipeline.stages.pdf_text_extraction import stage_cache as sc
+    from nlp_histo.pipeline.stages.pdf_text_extraction import stage_cache as sc
 
     def boom(*_a, **_k):
         raise OSError("disk full")
@@ -267,7 +267,7 @@ def test_artifact_without_sidecar_logs_specific_message(tmp_path, caplog):
     # No sidecar.
 
     with caplog.at_level(logging.INFO,
-                          logger="pipeline.stages.pdf_text_extraction.stage_cache"):
+                          logger="nlp_histo.pipeline.stages.pdf_text_extraction.stage_cache"):
         cache.get_or_compute(
             stage_name="demo", pmcid="PMC1", config_hash="abc",
             compute_fn=lambda: {"x": 1}, loader_fn=_trivial_load,
@@ -583,7 +583,7 @@ def _build_runner_with_mocks(
     # the real `_steps_1_3_4_standard` runs (otherwise stubbing the whole
     # function would bypass that cache slot). Two-pass shadow returns
     # detection=None because `_process` wraps the deferred call itself.
-    from pipeline.stages.pdf_text_extraction.stage_cache import (
+    from nlp_histo.pipeline.stages.pdf_text_extraction.stage_cache import (
         StageName as _SN, load_table_detection as _ltd,
         dump_table_detection as _dtd,
     )
@@ -660,7 +660,7 @@ def test_runner_second_run_hits_three_caches_standard_path(tmp_path, caplog):
     runner2, _ = _build_runner_with_mocks(tmp_path, two_pass=False,
                                           raise_stages=True)
     with caplog.at_level(logging.INFO,
-                          logger="pipeline.stages.pdf_text_extraction.stage_cache"):
+                          logger="nlp_histo.pipeline.stages.pdf_text_extraction.stage_cache"):
         assert runner2.run_document(tmp_path / "fake.pdf", "PMC1") is True
 
     hits = [r for r in caplog.records if "CACHE HIT" in r.getMessage()]
@@ -683,7 +683,7 @@ def test_runner_two_pass_to_standard_invalidates(tmp_path, caplog):
     # change and all three stages should log CACHE STALE.
     runner2, counters2 = _build_runner_with_mocks(tmp_path, two_pass=False)
     with caplog.at_level(logging.INFO,
-                          logger="pipeline.stages.pdf_text_extraction.stage_cache"):
+                          logger="nlp_histo.pipeline.stages.pdf_text_extraction.stage_cache"):
         assert runner2.run_document(tmp_path / "fake.pdf", "PMC1") is True
 
     stales = [r for r in caplog.records if "CACHE STALE" in r.getMessage()]

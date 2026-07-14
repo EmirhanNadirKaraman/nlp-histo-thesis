@@ -51,8 +51,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, CroppedMedia  # noqa: E402
-from pipeline.stages.pdf_text_extraction.outputs.media_json_writer import MediaJsonWriter  # noqa: E402
+from nlp_histo.pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, CroppedMedia  # noqa: E402
+from nlp_histo.pipeline.stages.pdf_text_extraction.outputs.media_json_writer import MediaJsonWriter  # noqa: E402
 from nlp_histo.parsers.layout_utils import FIG_NUM_RE, TAB_NUM_RE, parse_caption_num  # noqa: E402
 
 VARIANT = "00_docling_offtheshelf"

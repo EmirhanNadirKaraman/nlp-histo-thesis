@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import logging
 
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     CanonicalRule,
     DirectionEnum,
     RelationTypeEnum,
 )
-from pipeline.stages.knowledge_extraction.provenance.paragraph_lookup import (
+from nlp_histo.pipeline.stages.knowledge_extraction.provenance.paragraph_lookup import (
     get_paragraph_for_rule,
     get_paragraphs_for_rules,
 )

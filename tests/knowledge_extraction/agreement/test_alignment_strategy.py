@@ -11,9 +11,9 @@ import types
 import numpy as np
 import pytest
 
-from pipeline.stages.knowledge_extraction.agreement.embedding import _align, _align_one_to_one
-from pipeline.stages.knowledge_extraction.agreement.semantic_scorer import SemanticAgreementScorer
-from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.embedding import _align, _align_one_to_one
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.semantic_scorer import SemanticAgreementScorer
+from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
 
 def _emb_from_sim(mat):

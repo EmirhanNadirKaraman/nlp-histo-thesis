@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     AuditableSummary,
     AuditMetadata,
     CanonicalRule,
@@ -29,7 +29,7 @@ from pipeline.stages.knowledge_extraction.models import (
     RelationTypeLabel,
     SourceSpan,
 )
-from pipeline.stages.knowledge_extraction.persistence import (
+from nlp_histo.pipeline.stages.knowledge_extraction.persistence import (
     RunArtifactWriter,
     RunManifest,
     _to_jsonable,
@@ -397,7 +397,7 @@ def test_writer_persists_full_synthetic_pipeline(tmp_path: Path):
 # ── Imports & disabled-by-default integration ────────────────────────────────
 
 def test_existing_summarization_imports_still_work():
-    mod = importlib.import_module("pipeline.stages.knowledge_extraction")
+    mod = importlib.import_module("nlp_histo.pipeline.stages.knowledge_extraction")
     for name in (
         "KnowledgeExtractionRunner", "KnowledgeExtractionConfig",
         "Finding", "RejectedFinding", "RunArtifactWriter", "RunManifest",
@@ -440,7 +440,7 @@ def test_writer_merges_with_existing_manifest_for_shared_run_id(tmp_path: Path):
 def test_runner_exposes_artifact_root_and_does_not_create_dirs_when_none(tmp_path: Path):
     """Smoke test: instantiate runner without LLMs (None values) and assert
     artifact_root defaults to None — no `runs/` directory created."""
-    from pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
 
     # We can't fully construct a runner without LLMs because MapStage requires
     # them. Instead inspect the signature to confirm the new args exist.
@@ -458,7 +458,7 @@ def test_runner_exposes_artifact_root_and_does_not_create_dirs_when_none(tmp_pat
 def test_persist_map_findings_reraises_on_db_error():
     """Regression for B-055: a failed bulk insert must propagate, not be
     swallowed into a silent 0-row run that still reports success."""
-    from pipeline.stages.knowledge_extraction.persistence import persist_map_findings
+    from nlp_histo.pipeline.stages.knowledge_extraction.persistence import persist_map_findings
 
     class _BoomEngine:
         def begin(self):
@@ -474,7 +474,7 @@ def test_persist_map_findings_reraises_on_db_error():
 
 def test_persist_map_findings_noop_when_no_db_id():
     """The db_id/db None guard returns before touching the DB (no raise)."""
-    from pipeline.stages.knowledge_extraction.persistence import persist_map_findings
+    from nlp_histo.pipeline.stages.knowledge_extraction.persistence import persist_map_findings
 
     class _BoomEngine:
         def begin(self):

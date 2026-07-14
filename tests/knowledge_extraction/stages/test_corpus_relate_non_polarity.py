@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.stages.corpus_relate import (
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.corpus_relate import (
     _should_compare_cross_paper,
 )
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     CanonicalRule,
     DirectionEnum,
     RelationTypeEnum,

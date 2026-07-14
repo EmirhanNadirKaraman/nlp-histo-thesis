@@ -12,11 +12,11 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.stages import normalize_stage as _ns
-from pipeline.stages.knowledge_extraction.stages.normalize_stage import (
+from nlp_histo.pipeline.stages.knowledge_extraction.stages import normalize_stage as _ns
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.normalize_stage import (
     NormalizeStage,
 )
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     AuditableSummary,
     AuditMetadata,
     DirectionEnum,

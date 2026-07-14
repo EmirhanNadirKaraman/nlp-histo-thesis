@@ -301,7 +301,7 @@ def _build_exp1_scorer_specs():
     """The 7 scorer ScorerSpecs for EXP 1 / EXP 4 (1 embedding + 6 hybrid blends)."""
     from eval.silver.analysis.map_theta_sweep import ScorerSpec
     from eval.silver.old_files.run_summarization_sweeps import HYBRID_BLEND_GRID
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     specs = [ScorerSpec("embedding_default", "embedding", AgreementConfig())]
     for label, (wc, we, wn, wv) in HYBRID_BLEND_GRID.items():
@@ -324,7 +324,7 @@ def _agreement_weight_grid_around(base_cfg) -> list:
     from eval.silver.old_files.run_summarization_sweeps import (
         TAU_GRID, COUNT_ALPHA_GRID, REUSE_WEIGHT_GRID, CONTRADICTION_WEIGHT_GRID,
     )
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig
 
     base_map = {
         "tau":                  base_cfg.tau,
@@ -439,7 +439,7 @@ def _run_branch_agreement_weights(
 
     from eval.silver.analysis.map_theta_sweep import run_sweep
     from eval.silver.analysis.map_context import _load_map_context
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     winner_scorer = s[f"BEST_{prefix}_SCORER"]
     scorer_kind = "hybrid" if winner_scorer.startswith("hybrid") else "embedding"
@@ -514,7 +514,7 @@ def _run_branch_polarity_flag(
 
     from eval.silver.analysis.map_theta_sweep import run_sweep, ScorerSpec
     from eval.silver.analysis.map_context import _load_map_context
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     winner_scorer = s[f"BEST_{prefix}_SCORER"]
     scorer_kind = "hybrid" if winner_scorer.startswith("hybrid") else "embedding"
@@ -666,7 +666,7 @@ def _run_exp_f(ctx: ExperimentContext) -> ExperimentResult:
 
     from eval.silver.analysis.map_theta_sweep import run_sweep, ScorerSpec
     from eval.silver.analysis.map_context import _load_map_context
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
     scorer_kind = "hybrid" if str(cfg["scorer"]).startswith("hybrid") else "embedding"
     hybrid_cfg = HybridConfig()
@@ -826,7 +826,7 @@ def _run_exp_b2(ctx):
 
     # Production voter model names (for the model_or_source column + cost).
     try:
-        from pipeline.stages.knowledge_extraction.batch.voter_configs import (
+        from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import (
             make_l1_voters, make_l2_voters, make_l3_voter,
         )
         l1_models = [v.model for v in make_l1_voters()]
@@ -1254,7 +1254,7 @@ def _b2_replay_cascade(
     agreement embedding cache is cold; warm caches → zero API calls.
     """
     from eval.silver.analysis.map_theta_sweep import _replay, ScorerSpec, _build_scorer
-    from pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
     from eval.silver.analysis.map_context import _load_map_context
 
     scorer_kind = "hybrid" if str(pfm.get("scorer", "")).startswith("hybrid") else "embedding"
@@ -1313,7 +1313,7 @@ def _b2_cascade_cost_per_chunk(
 ) -> float:
     """L1 fixed + esc × (L2 + L3), with L2 from the production profile."""
     try:
-        from pipeline.stages.knowledge_extraction.batch.voter_configs import make_l2_voters
+        from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import make_l2_voters
         l2_sum = sum(_B2_PER_VOTER_COST.get(v.model, 0.0) for v in make_l2_voters())
     except Exception:
         l2_sum = 0.0

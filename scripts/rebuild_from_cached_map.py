@@ -149,7 +149,7 @@ def _build_handle_from_cached_json(
     no-op when this id is None — without it the DB tables stay empty even
     when ``finalize()`` finishes cleanly and writes the JSON.
     """
-    from pipeline.stages.knowledge_extraction.batch.models import (  # noqa: PLC0415
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import (  # noqa: PLC0415
         BatchHandle, BatchPhase,
     )
 

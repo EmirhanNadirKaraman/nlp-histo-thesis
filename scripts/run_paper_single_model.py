@@ -54,7 +54,7 @@ from typing import TYPE_CHECKING
 from dotenv import load_dotenv
 
 if TYPE_CHECKING:
-    from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
 
 load_dotenv()
 
@@ -126,10 +126,10 @@ def build_batch_runners(
                     Its MAP cache is pre-populated with the batch results so MAP
                     is skipped entirely when process() is called.
     """
-    from pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
-    from pipeline.stages.knowledge_extraction.batch.models import VoterBatchConfig
-    from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
-    from pipeline.stages.knowledge_extraction.config import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import VoterBatchConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import (
         KnowledgeExtractionConfig, MapConfig, GroundingConfig,
     )
     from nlp_histo.database import get_db_connection
@@ -174,8 +174,8 @@ def build_runner(
     skip_ner: bool = False,
     model: str = "gemini",
 ) -> "KnowledgeExtractionRunner":
-    from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
-    from pipeline.stages.knowledge_extraction.config import (
+    from nlp_histo.pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import (
         KnowledgeExtractionConfig, MapConfig, GroundingConfig,
     )
     from nlp_histo.database import get_db_connection
@@ -266,8 +266,8 @@ def run_batch_mode(
     and the script picks up from where it left off.
     """
     import time
-    from pipeline.stages.knowledge_extraction.batch.models import BatchPhase
-    from pipeline.stages.knowledge_extraction.models import AuditableSummary
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import BatchPhase
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditableSummary
 
     logger.info("Building batch runners (Claude Haiku 4.5 + Gemini Flash Lite)…")
     batch_runner, sync_runner = build_batch_runners(
@@ -533,7 +533,7 @@ def main() -> None:
     if not args.no_corpus and not args.skip_nli and n_ok >= 2:
         logger.info("Running corpus-level relation stage…")
         try:
-            from pipeline.stages.knowledge_extraction.stages.corpus_relate import CorpusRelateStage
+            from nlp_histo.pipeline.stages.knowledge_extraction.stages.corpus_relate import CorpusRelateStage
             CorpusRelateStage().relate_from_dir(summaries_dir, corpus_json)
             ran_corpus = True
         except Exception as exc:

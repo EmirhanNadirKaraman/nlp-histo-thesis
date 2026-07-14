@@ -79,12 +79,12 @@ RELATE_CON_THRESHOLDS = [0.40, 0.50, 0.60, 0.70]
 # ── LLM / runner factory (mirrors run_paper_single_model.py) ──────────────────
 
 def _build_llm():
-    from pipeline.stages.knowledge_extraction.llm.llm_providers import gemini_direct_chat
+    from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers import gemini_direct_chat
     return gemini_direct_chat("gemini-2.5-flash-lite", max_tokens=16384, request_timeout=60)
 
 
 def _build_runner(config, output_dir: Path, force_rerun: bool = False):
-    from pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
+    from nlp_histo.pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
     llm = _build_llm()
     return KnowledgeExtractionRunner(
         voter_llms=[llm],
@@ -279,7 +279,7 @@ def run_prime(cases: list[SourceCase], prime_dir: Path,
     Uses grounding.threshold=0.0 so every finding is scored but nothing dropped.
     MAP LLM calls are cached under prime_dir/llm_cache/.
     """
-    from pipeline.stages.knowledge_extraction.config import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import (
         KnowledgeExtractionConfig, MapConfig, GroundingConfig,
     )
 
@@ -427,9 +427,9 @@ def _build_corpus_nli_pairs(
         logger.info("Loaded %d cached corpus NLI pairs from %s", len(pairs), cache_path)
         return pairs
 
-    from pipeline.stages.knowledge_extraction.models import CanonicalRule
-    from pipeline.stages.knowledge_extraction.stages.relate_stage import RelateStage
-    from pipeline.stages.knowledge_extraction.stages.corpus_relate import _should_compare_cross_paper
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import CanonicalRule
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages.relate_stage import RelateStage
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages.corpus_relate import _should_compare_cross_paper
 
     all_rules: list[CanonicalRule] = []
     id_to_pmcid: dict[str, str] = {}

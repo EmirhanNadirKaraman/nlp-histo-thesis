@@ -28,9 +28,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from pipeline.stages.pdf_text_extraction.components.layout_extractor import DoclingLayoutExtractor
-from pipeline.stages.pdf_text_extraction.components.text_assembler import HierarchicalTextAssembler
-from pipeline.stages.pdf_text_extraction.config import TextAssemblyConfig
+from nlp_histo.pipeline.stages.pdf_text_extraction.components.layout_extractor import DoclingLayoutExtractor
+from nlp_histo.pipeline.stages.pdf_text_extraction.components.text_assembler import HierarchicalTextAssembler
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import TextAssemblyConfig
 
 CACHE_DIR  = Path("out/prefilter_compare/layout_cache")
 OUTPUT_DIR = Path("out/prefilter_compare")

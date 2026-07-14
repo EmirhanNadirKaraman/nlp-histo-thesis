@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from sqlalchemy import func
 from nlp_histo.database import get_db_connection, TextElement, Document, Entity
-from pipeline.stages.knowledge_extraction.entities import umls_resources
+from nlp_histo.pipeline.stages.knowledge_extraction.entities import umls_resources
 
 
 def load_ner_model():

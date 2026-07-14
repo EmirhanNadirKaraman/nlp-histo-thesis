@@ -20,8 +20,8 @@ import logging
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.batch import runner as runner_mod
-from pipeline.stages.knowledge_extraction.batch.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.batch import runner as runner_mod
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import (
     BatchHandle,
     BatchPhase,
     ProviderJob,
@@ -116,7 +116,7 @@ def test_partial_failure_emits_per_job_warning(monkeypatch, tmp_path, caplog):
     mini._l3 = None
     mini._l2 = []
 
-    with caplog.at_level(logging.WARNING, logger="pipeline.stages.knowledge_extraction.batch.runner"):
+    with caplog.at_level(logging.WARNING, logger="nlp_histo.pipeline.stages.knowledge_extraction.batch.runner"):
         runner_mod.BatchKnowledgeExtractionRunner.advance(mini, handle)
 
     messages = "\n".join(rec.getMessage() for rec in caplog.records)
@@ -153,7 +153,7 @@ def test_completed_jobs_only_emits_no_warnings(monkeypatch, tmp_path, caplog):
     mini._l3 = None
     mini._l2 = []
 
-    with caplog.at_level(logging.WARNING, logger="pipeline.stages.knowledge_extraction.batch.runner"):
+    with caplog.at_level(logging.WARNING, logger="nlp_histo.pipeline.stages.knowledge_extraction.batch.runner"):
         runner_mod.BatchKnowledgeExtractionRunner.advance(mini, handle)
 
     messages = "\n".join(rec.getMessage() for rec in caplog.records)

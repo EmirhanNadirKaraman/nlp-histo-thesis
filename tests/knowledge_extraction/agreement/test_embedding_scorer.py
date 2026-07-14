@@ -24,7 +24,7 @@ import math
 import numpy as np
 import pytest
 
-from pipeline.stages.knowledge_extraction.agreement.embedding import (
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.embedding import (
     EmbeddingScorer,
     _align,
     _align_precomputed,
@@ -35,14 +35,14 @@ from pipeline.stages.knowledge_extraction.agreement.embedding import (
     _polarity_contradiction_ratio,
     _reuse_factor,
 )
-from pipeline.stages.knowledge_extraction.agreement.embedding_similarity import (
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.embedding_similarity import (
     EmbeddingSimilarityStrategy,
 )
-from pipeline.stages.knowledge_extraction.interfaces.scoring import (
+from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import (
     AgreementContext,
     VoterContext,
 )
-from pipeline.stages.knowledge_extraction.models import AuditMetadata, AuditableSummary, Finding
+from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditMetadata, AuditableSummary, Finding
 
 PMCID = "PMC00000001"
 
@@ -813,7 +813,7 @@ class TestComputeMatrixWithBreakdown:
 
 class TestPairwiseScoreBreakdownFields:
     def test_default_breakdown_fields_are_none(self):
-        from pipeline.stages.knowledge_extraction.observability.models import PairwiseScore
+        from nlp_histo.pipeline.stages.knowledge_extraction.observability.models import PairwiseScore
         ps = PairwiseScore(voter_i=0, voter_j=1, score=0.9)
         assert ps.claim_count_a is None
         assert ps.claim_count_b is None
@@ -822,7 +822,7 @@ class TestPairwiseScoreBreakdownFields:
         assert ps.grounding_factor is None
 
     def test_breakdown_fields_can_be_set(self):
-        from pipeline.stages.knowledge_extraction.observability.models import PairwiseScore
+        from nlp_histo.pipeline.stages.knowledge_extraction.observability.models import PairwiseScore
         ps = PairwiseScore(
             voter_i=0, voter_j=1, score=0.7,
             claim_count_a=3, claim_count_b=2,
@@ -840,12 +840,12 @@ class TestPairwiseScoreBreakdownFields:
 
 class TestVoterTraceGroundingSource:
     def test_default_grounding_source_is_fallback(self):
-        from pipeline.stages.knowledge_extraction.observability.models import VoterTrace
+        from nlp_histo.pipeline.stages.knowledge_extraction.observability.models import VoterTrace
         vt = VoterTrace(voter_index=0, finding_count=3, grounding_pass_fraction=1.0, mean_evidence_length=1.0)
         assert vt.grounding_source == "fallback"
 
     def test_grounding_source_validated(self):
-        from pipeline.stages.knowledge_extraction.observability.models import VoterTrace
+        from nlp_histo.pipeline.stages.knowledge_extraction.observability.models import VoterTrace
         vt = VoterTrace(voter_index=0, finding_count=3, grounding_pass_fraction=0.8,
                         mean_evidence_length=2.0, grounding_source="validated")
         assert vt.grounding_source == "validated"
@@ -855,8 +855,8 @@ class TestVoterTraceGroundingSource:
 
 class TestRoutingDecisionGroundingContexts:
     def test_field_exists_and_defaults_none(self):
-        from pipeline.stages.knowledge_extraction.routing.models import RoutingDecision, GateOrigin, ReasonCode
-        from pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision
+        from nlp_histo.pipeline.stages.knowledge_extraction.routing.models import RoutingDecision, GateOrigin, ReasonCode
+        from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision
         decision = RoutingDecision(
             decision=ChunkDecision.KEEP,
             gate_origin=GateOrigin.AGREEMENT_GATE,
@@ -866,8 +866,8 @@ class TestRoutingDecisionGroundingContexts:
         assert decision.voter_grounding_contexts is None
 
     def test_field_can_be_set(self):
-        from pipeline.stages.knowledge_extraction.routing.models import RoutingDecision, GateOrigin, ReasonCode
-        from pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision, VoterContext
+        from nlp_histo.pipeline.stages.knowledge_extraction.routing.models import RoutingDecision, GateOrigin, ReasonCode
+        from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision, VoterContext
         vcs = [VoterContext(grounding_pass_fraction=0.9, mean_evidence_length=2.0)]
         decision = RoutingDecision(
             decision=ChunkDecision.KEEP,

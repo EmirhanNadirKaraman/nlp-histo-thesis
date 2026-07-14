@@ -44,14 +44,14 @@ logging.basicConfig(
 def _trace(msg: str) -> None:
     print(f"[test] {msg}", flush=True, file=sys.stderr)
 
-from pipeline.stages.knowledge_extraction.batch.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import (
     BatchHandle,
     BatchPhase,
     VoterBatchConfig,
 )
-from pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
-from pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.runner import BatchKnowledgeExtractionRunner
+from nlp_histo.pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     AuditableSummary,
     AuditMetadata,
     DirectionEnum,

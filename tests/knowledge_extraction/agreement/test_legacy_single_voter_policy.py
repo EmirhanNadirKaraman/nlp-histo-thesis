@@ -22,12 +22,12 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.agreement.checker import AgreementChecker
-from pipeline.stages.knowledge_extraction.interfaces.scoring import (
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.checker import AgreementChecker
+from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import (
     ChunkDecision,
     ScoreBundle,
 )
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     AuditableSummary,
     AuditMetadata,
     DirectionEnum,
@@ -179,7 +179,7 @@ def test_n3_uses_normal_agreement_logic():
 
 def test_legacy_and_router_policies_are_independent_fields():
     """Storing opposite policies on each object must not cross-contaminate."""
-    from pipeline.stages.knowledge_extraction.routing import MapOutputRouter
+    from nlp_histo.pipeline.stages.knowledge_extraction.routing import MapOutputRouter
 
     checker_escalate = AgreementChecker(
         scorer=_RaisingScorerStub(), single_voter_policy="escalate",
@@ -211,8 +211,8 @@ def test_router_n_eligible_1_unaffected_by_agreement_checker_policy():
     eligible voter and confirms the outcome reflects the router's policy
     even when the wrapped AgreementChecker carries the opposite policy.
     """
-    from pipeline.stages.knowledge_extraction.routing import MapOutputRouter
-    from pipeline.stages.knowledge_extraction.routing.router import VoterClassification
+    from nlp_histo.pipeline.stages.knowledge_extraction.routing import MapOutputRouter
+    from nlp_histo.pipeline.stages.knowledge_extraction.routing.router import VoterClassification
 
     # Router policy=KEEP, AgreementChecker policy=ESCALATE — they must not mix.
     router = MapOutputRouter(

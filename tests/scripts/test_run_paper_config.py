@@ -126,7 +126,7 @@ def test_grounding_threshold_changes_pipeline_config_hash(
     """Run A vs Run B parity: the per-paper pipeline_config_hash MUST diverge
     when grounding.threshold flips. Otherwise the cached result short-circuit
     would silently serve Run-A summaries to a Run-B invocation."""
-    from pipeline.stages.knowledge_extraction.persistence import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.persistence import (
         compute_pipeline_config_hash,
     )
 

@@ -17,8 +17,8 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.stages.pdf_text_extraction.config import PipelineConfig
-from pipeline.stages.pdf_text_extraction.outputs.manifest_writer import (
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import PipelineConfig
+from nlp_histo.pipeline.stages.pdf_text_extraction.outputs.manifest_writer import (
     RunManifestWriter,
     _git_info,
     make_run_id,

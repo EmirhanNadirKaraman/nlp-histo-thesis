@@ -6,8 +6,8 @@ import re
 
 import pytest
 
-from pipeline.utils import memory_logging
-from pipeline.utils.memory_logging import MemoryLogger
+from nlp_histo.pipeline.utils import memory_logging
+from nlp_histo.pipeline.utils.memory_logging import MemoryLogger
 
 
 _MEMORY_PREFIX = "MEMORY "

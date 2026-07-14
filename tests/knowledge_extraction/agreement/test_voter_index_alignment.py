@@ -11,12 +11,12 @@ single source of truth for producer attribution.
 """
 from __future__ import annotations
 
-from pipeline.stages.knowledge_extraction.agreement.decision import (
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.decision import (
     evaluate_chunk,
     make_decision_record,
     producer_from_outcome,
 )
-from pipeline.stages.knowledge_extraction.interfaces.scoring import (
+from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import (
     ChunkDecision,
     ScoreBundle,
 )
@@ -115,7 +115,7 @@ def test_b041_router_path_maps_back_to_original_indices():
     Survivor list = [v1, v2]; router strips survivor 0 as UNUSABLE, eligible=[1]
     (router's survivor index). Mapped through voter_indices=[1,2] → original [2].
     """
-    from pipeline.stages.knowledge_extraction.routing.models import GateOrigin, RoutingDecision
+    from nlp_histo.pipeline.stages.knowledge_extraction.routing.models import GateOrigin, RoutingDecision
 
     class _FakeRouter:
         def route(self, voters, chunk, pmcid, source_text):

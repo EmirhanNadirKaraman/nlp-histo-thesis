@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.batch.gemini_batch import GeminiBatchProvider, _ID_SEP
-from pipeline.stages.knowledge_extraction.batch.models import ProviderJob
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.gemini_batch import GeminiBatchProvider, _ID_SEP
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.models import ProviderJob
 
 
 def _provider(inline_responses):

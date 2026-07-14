@@ -22,7 +22,7 @@ import pytest
 
 def test_extract_usage_metadata_standard_shape():
     """LangChain ≥0.3 standardised AIMessage.usage_metadata field."""
-    from pipeline.stages.knowledge_extraction.costing.invocation_usage import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.costing.invocation_usage import (
         extract_usage_from_message,
     )
     msg = SimpleNamespace(
@@ -37,7 +37,7 @@ def test_extract_usage_metadata_standard_shape():
 
 def test_extract_response_metadata_token_usage_fallback():
     """Older OpenAI shape: response_metadata['token_usage']['prompt_tokens']."""
-    from pipeline.stages.knowledge_extraction.costing.invocation_usage import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.costing.invocation_usage import (
         extract_usage_from_message,
     )
     msg = SimpleNamespace(
@@ -49,7 +49,7 @@ def test_extract_response_metadata_token_usage_fallback():
 
 
 def test_extract_returns_missing_when_no_usage():
-    from pipeline.stages.knowledge_extraction.costing.invocation_usage import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.costing.invocation_usage import (
         extract_usage_from_message,
     )
     msg = SimpleNamespace(usage_metadata=None, response_metadata={})
@@ -60,7 +60,7 @@ def test_extract_returns_missing_when_no_usage():
 def test_unwrap_handles_dict_and_bare_schema():
     """unwrap_structured_output supports both shapes — chain may or may not
     have been built with include_raw=True."""
-    from pipeline.stages.knowledge_extraction.costing.invocation_usage import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.costing.invocation_usage import (
         unwrap_structured_output,
     )
     raw_msg = SimpleNamespace(usage_metadata={"input_tokens": 1, "output_tokens": 2})
@@ -86,7 +86,7 @@ def test_unwrap_handles_dict_and_bare_schema():
 
 @pytest.fixture
 def fake_auditable_summary():
-    from pipeline.stages.knowledge_extraction.models import AuditableSummary, AuditMetadata
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditableSummary, AuditMetadata
     return AuditableSummary(
         chunk_id="chunk-0",
         findings=[],
@@ -116,7 +116,7 @@ def test_invoke_l3_records_usage_from_structured_output_raw(fake_auditable_summa
     """When build_map_chain returns include_raw dicts, MapStage records a
     non-zero InvocationUsage from the raw AIMessage even though no LangChain
     callbacks fire (with_structured_output strips them)."""
-    from pipeline.stages.knowledge_extraction.stages import map_stage
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages import map_stage
 
     fake_chain = _make_fake_chain(
         {"input_tokens": 4242, "output_tokens": 99}, fake_auditable_summary,
@@ -160,7 +160,7 @@ def test_invoke_l3_records_missing_when_raw_absent(fake_auditable_summary):
     """Back-compat path: chain returns bare schema (no include_raw). The
     record is still emitted, tagged usage_source='missing' so reports can
     surface the gap rather than silently returning $0."""
-    from pipeline.stages.knowledge_extraction.stages import map_stage
+    from nlp_histo.pipeline.stages.knowledge_extraction.stages import map_stage
 
     class _BareChain:
         def invoke(self, _inp, config=None):

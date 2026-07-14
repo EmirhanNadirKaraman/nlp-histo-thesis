@@ -34,9 +34,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from pipeline.stages.pdf_text_extraction.components.layout_extractor import DoclingLayoutExtractor
-from pipeline.stages.pdf_text_extraction.components.text_assembler import HierarchicalTextAssembler
-from pipeline.stages.pdf_text_extraction.config import DoclingConfig, OcrEngine, TextAssemblyConfig
+from nlp_histo.pipeline.stages.pdf_text_extraction.components.layout_extractor import DoclingLayoutExtractor
+from nlp_histo.pipeline.stages.pdf_text_extraction.components.text_assembler import HierarchicalTextAssembler
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import DoclingConfig, OcrEngine, TextAssemblyConfig
 
 OUTPUT_DIR = Path("out/docling_compare")
 CACHE_ROOT = OUTPUT_DIR / "layout_cache"

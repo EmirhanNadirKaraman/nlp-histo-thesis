@@ -18,8 +18,8 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
-from pipeline.stages.pdf_text_extraction.batch import ParallelBatchRunner  # noqa: E402
-from pipeline.stages.pdf_text_extraction.config import (  # noqa: E402
+from nlp_histo.pipeline.stages.pdf_text_extraction.batch import ParallelBatchRunner  # noqa: E402
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import (  # noqa: E402
     CroppingConfig,
     DatabaseConfig,
     DoclingConfig,

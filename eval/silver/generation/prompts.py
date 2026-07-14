@@ -16,7 +16,7 @@ restructured so the two are resynced deliberately.
 """
 from __future__ import annotations
 
-from pipeline.stages.knowledge_extraction.llm.prompts import _MAP_SYSTEM
+from nlp_histo.pipeline.stages.knowledge_extraction.llm.prompts import _MAP_SYSTEM
 
 PROMPT_VERSION = "v4"
 

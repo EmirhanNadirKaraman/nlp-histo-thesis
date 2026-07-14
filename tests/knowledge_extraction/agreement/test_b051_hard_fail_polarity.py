@@ -23,16 +23,16 @@ from __future__ import annotations
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.agreement.checker import AgreementChecker
-from pipeline.stages.knowledge_extraction.agreement.polarity_conflict import (
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.checker import AgreementChecker
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.polarity_conflict import (
     detect_polarity_conflict,
 )
-from pipeline.stages.knowledge_extraction.interfaces.scoring import (
+from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import (
     ChunkDecision,
     ScoreBundle,
 )
-from pipeline.stages.knowledge_extraction.interfaces.scoring import VoterContext
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import VoterContext
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     AuditableSummary,
     AuditMetadata,
     DirectionEnum,
@@ -40,7 +40,7 @@ from pipeline.stages.knowledge_extraction.models import (
     FindingScope,
     RelationTypeEnum,
 )
-from pipeline.stages.knowledge_extraction.routing.models import GateOrigin, ReasonCode
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.models import GateOrigin, ReasonCode
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -252,8 +252,8 @@ def test_b051_router_path_polarity_conflict_reason_code():
     Co-emitting INSUFFICIENT_AGREEMENT or ESCALATED_DUE_TO_LOW_AGREEMENT would
     lie about the cause (the score was high; only the structural check failed).
     """
-    from pipeline.stages.knowledge_extraction.interfaces.scoring import AgreementContext
-    from pipeline.stages.knowledge_extraction.routing.router import MapOutputRouter
+    from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import AgreementContext
+    from nlp_histo.pipeline.stages.knowledge_extraction.routing.router import MapOutputRouter
 
     pos = _voter(_finding(direction=DirectionEnum.positive))
     neg = _voter(_finding(direction=DirectionEnum.negative))

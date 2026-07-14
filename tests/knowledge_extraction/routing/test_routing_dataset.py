@@ -8,10 +8,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.agreement.checker import AgreementChecker
-from pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision, ScoreBundle
-from pipeline.stages.knowledge_extraction.models import AuditMetadata, AuditableSummary, Finding
-from pipeline.stages.knowledge_extraction.routing.routing_dataset import (
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.checker import AgreementChecker
+from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import ChunkDecision, ScoreBundle
+from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditMetadata, AuditableSummary, Finding
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.routing_dataset import (
     RoutingDataset,
     RoutingRecord,
 )
@@ -162,8 +162,8 @@ class TestMapStageRoutingCollector:
     """Verify that _cascade() writes RoutingRecord to collector on the router path."""
 
     def _make_map_stage(self, routing_collector=None, agreement_decision=ChunkDecision.KEEP):
-        from pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
-        from pipeline.stages.knowledge_extraction.routing.router import MapOutputRouter
+        from nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
+        from nlp_histo.pipeline.stages.knowledge_extraction.routing.router import MapOutputRouter
 
         mock_voter_llm = MagicMock()
         mock_escalation_llm = MagicMock()
@@ -192,7 +192,7 @@ class TestMapStageRoutingCollector:
 
         router = MapOutputRouter(agreement_checker=mock_checker)
 
-        with patch("pipeline.stages.knowledge_extraction.stages.map_stage.build_map_chain") as mock_build:
+        with patch("nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage.build_map_chain") as mock_build:
             # 2 L1 voters + 2 L2 voters + 1 L3 escalation = 5 build_map_chain calls
             mock_build.side_effect = [
                 mock_voter_chain,

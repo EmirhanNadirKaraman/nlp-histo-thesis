@@ -54,8 +54,8 @@ from .bridge_one_case_proof import (  # noqa: E402
 )
 from eval.silver.analysis.map_context import CACHE_PATH, _load_map_context  # noqa: E402
 from eval.silver.analysis.map_theta_sweep import _build_scorer, _replay  # noqa: E402
-from pipeline.stages.knowledge_extraction.agreement import AgreementChecker  # noqa: E402
-from pipeline.stages.knowledge_extraction.models import AuditableSummary  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement import AgreementChecker  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditableSummary  # noqa: E402
 
 STAGING_DIR = _REPO_ROOT / "out" / "summaries" / "bridge_staging"
 SUMMARIES_DIR = _REPO_ROOT / "out" / "summaries" / "summaries"

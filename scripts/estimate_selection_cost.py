@@ -135,7 +135,7 @@ def build_pricing(profile_name: str | None,
     _REPO_ROOT = Path(__file__).resolve().parents[1]
     if str(_REPO_ROOT) not in sys.path:
         sys.path.insert(0, str(_REPO_ROOT))
-    from pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
+    from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import get_profile
 
     prof = get_profile(profile_name)
     tier_to_voters = {
@@ -631,7 +631,7 @@ def main() -> int:
 
     # ── Shared setup (price book + sentencizer + tokenizer) ─────────────────
     logger.info("Loading price book + cascade profile…")
-    from pipeline.stages.knowledge_extraction.costing import PriceBook
+    from nlp_histo.pipeline.stages.knowledge_extraction.costing import PriceBook
     book = PriceBook.load(args.prices)
     pricing, resolved_profile = build_pricing(args.profile, book)
     discount = book.batch_discount_multiplier if args.batch else 1.0

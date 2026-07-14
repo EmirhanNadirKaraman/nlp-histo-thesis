@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 import pytest
 
-from pipeline.stages.pdf_text_extraction import runner as runner_mod
+from nlp_histo.pipeline.stages.pdf_text_extraction import runner as runner_mod
 
 
 # ── _parse_args defaults ──────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ class _CapturedConfig:
 
 def _run_main_and_capture(argv: list[str]) -> _CapturedConfig:
     captured = _CapturedConfig()
-    with patch("pipeline.stages.pdf_text_extraction.batch.ParallelBatchRunner",
+    with patch("nlp_histo.pipeline.stages.pdf_text_extraction.batch.ParallelBatchRunner",
                captured):
         runner_mod.main(argv)
     return captured

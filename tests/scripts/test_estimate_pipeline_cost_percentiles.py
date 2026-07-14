@@ -28,7 +28,7 @@ from estimate_pipeline_cost_percentiles import (  # noqa: E402
     load_observed_escalation_rates,
     pick_percentile,
 )
-from pipeline.stages.knowledge_extraction.config import MapConfig  # noqa: E402
+from nlp_histo.pipeline.stages.knowledge_extraction.config import MapConfig  # noqa: E402
 
 
 # ── CHUNK_SIZE / CHUNK_OVERLAP sourced from MapConfig ────────────────────────

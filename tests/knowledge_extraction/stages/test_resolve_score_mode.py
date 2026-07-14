@@ -8,8 +8,8 @@ Confirms that:
 """
 from __future__ import annotations
 
-from pipeline.stages.knowledge_extraction.stages.resolve_stage import ResolveStage
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.resolve_stage import ResolveStage
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     CanonicalRule,
     DirectionEnum,
     Relation,

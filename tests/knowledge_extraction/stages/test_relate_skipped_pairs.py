@@ -19,15 +19,15 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.observability.artifact_models import SkippedPair
-from pipeline.stages.knowledge_extraction.stages import relate_stage as _rs
-from pipeline.stages.knowledge_extraction.stages.relate_stage import RelateStage
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.observability.artifact_models import SkippedPair
+from nlp_histo.pipeline.stages.knowledge_extraction.stages import relate_stage as _rs
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.relate_stage import RelateStage
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     CanonicalRule,
     DirectionEnum,
     RelationTypeEnum,
 )
-from pipeline.stages.knowledge_extraction.persistence import (
+from nlp_histo.pipeline.stages.knowledge_extraction.persistence import (
     RunArtifactWriter,
     persist_relate_artifacts,
 )

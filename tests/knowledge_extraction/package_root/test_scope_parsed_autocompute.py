@@ -5,7 +5,7 @@ recomputes it from the other sub-fields. The LLM's emitted value is ignored.
 """
 from __future__ import annotations
 
-from pipeline.stages.knowledge_extraction.models import FindingScope
+from nlp_histo.pipeline.stages.knowledge_extraction.models import FindingScope
 
 
 def test_empty_scope_has_scope_parsed_false() -> None:

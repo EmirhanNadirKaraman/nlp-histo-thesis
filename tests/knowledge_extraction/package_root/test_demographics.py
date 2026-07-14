@@ -10,7 +10,7 @@ import logging
 import pytest
 from pydantic import ValidationError
 
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     AuditableSummary,
     AuditMetadata,
     Finding,
@@ -19,8 +19,8 @@ from pipeline.stages.knowledge_extraction.models import (
     RelationTypeEnum,
     SourceSpan,
 )
-from pipeline.stages.knowledge_extraction.stages.group_stage import _group_id
-from pipeline.stages.knowledge_extraction.routing.schema_validator import (
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.group_stage import _group_id
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.schema_validator import (
     SchemaValidator,
     _VALID_CATEGORIES,
 )
@@ -83,7 +83,7 @@ def test_valid_categories_includes_demographic():
 
 def test_schema_validator_accepts_demographic():
     """SchemaValidator passes a demographic finding without INVALID_CATEGORY."""
-    from pipeline.stages.knowledge_extraction.routing.models import ReasonCode
+    from nlp_histo.pipeline.stages.knowledge_extraction.routing.models import ReasonCode
 
     summary = AuditableSummary(
         chunk_id="PMC123|0",
@@ -137,7 +137,7 @@ def test_demographic_prognosis_different_group_id():
 
 def test_finding_alias_repaired_via_constructor(caplog):
     """Legacy 'demographics' alias is repaired to 'demographic' when constructing Finding directly."""
-    with caplog.at_level(logging.WARNING, logger="pipeline.stages.knowledge_extraction.models"):
+    with caplog.at_level(logging.WARNING, logger="nlp_histo.pipeline.stages.knowledge_extraction.models"):
         f = Finding(
             category="demographics",
             claim="Male predominance",
@@ -170,7 +170,7 @@ def test_finding_alias_repaired_via_model_validate(caplog):
             "uncited_sentences": [],
         },
     })
-    with caplog.at_level(logging.WARNING, logger="pipeline.stages.knowledge_extraction.models"):
+    with caplog.at_level(logging.WARNING, logger="nlp_histo.pipeline.stages.knowledge_extraction.models"):
         summary = AuditableSummary.model_validate(json.loads(raw_json))
     assert summary.findings[0].category == "demographic"
     assert "demographics" in caplog.text

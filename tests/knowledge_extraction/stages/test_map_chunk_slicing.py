@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
-from pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
-from pipeline.stages.knowledge_extraction.models import AuditMetadata, AuditableSummary
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
+from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditMetadata, AuditableSummary
 
 
 def _make_sentences(n: int) -> list[dict]:
@@ -37,7 +37,7 @@ def _make_stage() -> MapStage:
     )
 
 
-@patch("pipeline.stages.knowledge_extraction.stages.map_stage.MapStage._cascade")
+@patch("nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage.MapStage._cascade")
 def test_limit_chunks_processes_only_n(mock_cascade):
     stage = _make_stage()
     mock_cascade.side_effect = lambda chunk, pmcid, chunk_id, **_: (_make_summary(chunk_id), ("test", "mock"))
@@ -49,7 +49,7 @@ def test_limit_chunks_processes_only_n(mock_cascade):
     assert mock_cascade.call_count == 2
 
 
-@patch("pipeline.stages.knowledge_extraction.stages.map_stage.MapStage._cascade")
+@patch("nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage.MapStage._cascade")
 def test_start_chunk_skips_first_k(mock_cascade):
     stage = _make_stage()
     mock_cascade.side_effect = lambda chunk, pmcid, chunk_id, **_: (_make_summary(chunk_id), ("test", "mock"))
@@ -60,7 +60,7 @@ def test_start_chunk_skips_first_k(mock_cascade):
     assert mock_cascade.call_count == 3  # chunks 2,3,4
 
 
-@patch("pipeline.stages.knowledge_extraction.stages.map_stage.MapStage._cascade")
+@patch("nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage.MapStage._cascade")
 def test_start_and_limit_combined(mock_cascade):
     stage = _make_stage()
     mock_cascade.side_effect = lambda chunk, pmcid, chunk_id, **_: (_make_summary(chunk_id), ("test", "mock"))
@@ -71,7 +71,7 @@ def test_start_and_limit_combined(mock_cascade):
     assert mock_cascade.call_count == 2
 
 
-@patch("pipeline.stages.knowledge_extraction.stages.map_stage.MapStage._cascade")
+@patch("nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage.MapStage._cascade")
 def test_chunk_ids_are_absolute(mock_cascade):
     """chunk_id for chunk at absolute position k must be C{k+1}."""
     captured_ids = []

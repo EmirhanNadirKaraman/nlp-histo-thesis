@@ -49,7 +49,7 @@ from eval.silver.analysis.map_theta_sweep import (  # reused engine + voter defi
 )
 from eval.silver.matching.matcher import SIMILARITY_THRESHOLD
 from eval.silver.analysis.map_context import _load_map_context
-from pipeline.stages.knowledge_extraction.config import AgreementConfig
+from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig
 
 
 def _voter_labels() -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:

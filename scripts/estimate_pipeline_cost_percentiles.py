@@ -44,9 +44,9 @@ from sqlalchemy import func, distinct
 
 from nlp_histo.database import get_db_connection
 from nlp_histo.database.models import Document, TextElement, Figure, Table
-from pipeline.stages.knowledge_extraction.config import MapConfig
-from pipeline.stages.knowledge_extraction.costing import PriceBook
-from pipeline.stages.knowledge_extraction.batch.voter_configs import (
+from nlp_histo.pipeline.stages.knowledge_extraction.config import MapConfig
+from nlp_histo.pipeline.stages.knowledge_extraction.costing import PriceBook
+from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import (
     CascadeProfile, get_profile, list_profiles,
 )
 

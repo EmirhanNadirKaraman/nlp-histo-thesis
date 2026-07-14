@@ -13,10 +13,10 @@ from pathlib import Path
 from typing import Any
 
 
-from pipeline.stages.pdf_text_extraction.config import PipelineConfig
-from pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, LayoutElement
-from pipeline.stages.pdf_text_extraction.models.scored_node import ScoredNode
-from pipeline.stages.pdf_text_extraction.runner import PipelineRunner
+from nlp_histo.pipeline.stages.pdf_text_extraction.config import PipelineConfig
+from nlp_histo.pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, LayoutElement
+from nlp_histo.pipeline.stages.pdf_text_extraction.models.scored_node import ScoredNode
+from nlp_histo.pipeline.stages.pdf_text_extraction.runner import PipelineRunner
 
 
 def _build_runner(tmp_path: Path) -> PipelineRunner:

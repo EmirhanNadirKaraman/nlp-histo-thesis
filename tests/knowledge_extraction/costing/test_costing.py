@@ -5,13 +5,13 @@ import json
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.costing import (
+from nlp_histo.pipeline.stages.knowledge_extraction.costing import (
     LLMUsageRecord, PriceBook, UsageCollector,
     load_records, write_cost_reports,
 )
-from pipeline.stages.knowledge_extraction.costing.models import normalize_token_usage
-from pipeline.stages.knowledge_extraction.costing.report import build_report_from_records
-from pipeline.stages.knowledge_extraction.costing.pricing import ModelPrice
+from nlp_histo.pipeline.stages.knowledge_extraction.costing.models import normalize_token_usage
+from nlp_histo.pipeline.stages.knowledge_extraction.costing.report import build_report_from_records
+from nlp_histo.pipeline.stages.knowledge_extraction.costing.pricing import ModelPrice
 
 from tests.paths import SCRIPTS
 
@@ -92,7 +92,7 @@ def test_missing_price_returns_none():
             captured.append(record.getMessage())
 
     h = _Capture(level=logging.WARNING)
-    lg = logging.getLogger("pipeline.stages.knowledge_extraction.costing.pricing")
+    lg = logging.getLogger("nlp_histo.pipeline.stages.knowledge_extraction.costing.pricing")
     lg.addHandler(h)
     try:
         assert book.cost("nope", 1000, 1000) is None
@@ -285,7 +285,7 @@ def test_empty_records_returns_empty_report():
 
 
 def test_config_default_enables_cost_report():
-    from pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig
     cfg = KnowledgeExtractionConfig()
     assert cfg.cost.enable_cost_report is True
 
@@ -405,7 +405,7 @@ def test_total_savings_marked_unavailable_when_any_missing(tmp_path):
 
 def test_umls_disabled_env_skips_load(monkeypatch):
     """Env var kill-switch must short-circuit before any spacy import."""
-    from pipeline.stages.knowledge_extraction.entities import umls_resources
+    from nlp_histo.pipeline.stages.knowledge_extraction.entities import umls_resources
     umls_resources._reset_for_tests()
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
     nlp = umls_resources.get_nlp()
@@ -415,7 +415,7 @@ def test_umls_disabled_env_skips_load(monkeypatch):
 
 def test_get_nlp_caches_load_result(monkeypatch):
     """Second call must hit the cached None without re-probing."""
-    from pipeline.stages.knowledge_extraction.entities import umls_resources
+    from nlp_histo.pipeline.stages.knowledge_extraction.entities import umls_resources
     umls_resources._reset_for_tests()
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
     assert umls_resources.get_nlp() is None
@@ -427,11 +427,11 @@ def test_get_nlp_caches_load_result(monkeypatch):
 
 def test_skip_enrichment_env_no_ops(monkeypatch):
     """--skip-umls-enrichment env var skips before any model load attempt."""
-    from pipeline.stages.knowledge_extraction.entities import umls_resources
-    from pipeline.stages.knowledge_extraction.entities.entity_linker import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.entities import umls_resources
+    from nlp_histo.pipeline.stages.knowledge_extraction.entities.entity_linker import (
         enrich_rules_with_cuis,
     )
-    from pipeline.stages.knowledge_extraction.models import (
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import (
         CanonicalRule, DirectionEnum, RelationTypeEnum,
     )
 
@@ -457,7 +457,7 @@ def test_skip_enrichment_env_no_ops(monkeypatch):
 
 def test_config_disable_round_trips():
     from dataclasses import replace
-    from pipeline.stages.knowledge_extraction.config import CostConfig, KnowledgeExtractionConfig
+    from nlp_histo.pipeline.stages.knowledge_extraction.config import CostConfig, KnowledgeExtractionConfig
     cfg = KnowledgeExtractionConfig(cost=CostConfig(enable_cost_report=False))
     cfg2 = replace(cfg, cost=replace(cfg.cost, write_usage_jsonl=False))
     assert cfg2.cost.enable_cost_report is False

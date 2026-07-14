@@ -15,13 +15,13 @@ from unittest.mock import patch
 
 import pytest
 
-from pipeline.stages.knowledge_extraction.stages.corpus_relate import CorpusRelateStage
+from nlp_histo.pipeline.stages.knowledge_extraction.stages.corpus_relate import CorpusRelateStage
 
-from pipeline.stages.knowledge_extraction.models import (
+from nlp_histo.pipeline.stages.knowledge_extraction.models import (
     CorpusRelation,
     RelationTypeLabel,
 )
-from pipeline.stages.knowledge_extraction.models import Relation
+from nlp_histo.pipeline.stages.knowledge_extraction.models import Relation
 
 
 # ── Minimal fixture builders ───────────────────────────────────────────────────

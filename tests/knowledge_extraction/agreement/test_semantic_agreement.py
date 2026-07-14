@@ -24,29 +24,29 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from pipeline.stages.knowledge_extraction.agreement.category_jaccard import CategoryJaccardScorer
-from pipeline.stages.knowledge_extraction.agreement.checker import AgreementChecker
-from pipeline.stages.knowledge_extraction.agreement.embedding import EmbeddingScorer
-from pipeline.stages.knowledge_extraction.agreement.embedding_similarity import (
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.category_jaccard import CategoryJaccardScorer
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.checker import AgreementChecker
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.embedding import EmbeddingScorer
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.embedding_similarity import (
     EmbeddingSimilarityStrategy,
 )
-from pipeline.stages.knowledge_extraction.agreement.hybrid_structured import (
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.hybrid_structured import (
     HybridStructuredSimilarity,
     _evidence_jaccard,
 )
-from pipeline.stages.knowledge_extraction.agreement.lexical_similarity import (
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.lexical_similarity import (
     LexicalSimilarityStrategy,
 )
-from pipeline.stages.knowledge_extraction.agreement.semantic_scorer import SemanticAgreementScorer
-from pipeline.stages.knowledge_extraction.interfaces.scoring import (
+from nlp_histo.pipeline.stages.knowledge_extraction.agreement.semantic_scorer import SemanticAgreementScorer
+from nlp_histo.pipeline.stages.knowledge_extraction.interfaces.scoring import (
     AgreementContext,
     ChunkDecision,
     ScoreBundle,
     VoterContext,
 )
-from pipeline.stages.knowledge_extraction.models import AuditMetadata, AuditableSummary, Finding
-from pipeline.stages.knowledge_extraction.routing.models import GateOrigin, ReasonCode
-from pipeline.stages.knowledge_extraction.routing.router import MapOutputRouter
+from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditMetadata, AuditableSummary, Finding
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.models import GateOrigin, ReasonCode
+from nlp_histo.pipeline.stages.knowledge_extraction.routing.router import MapOutputRouter
 
 
 # ── Shared helpers ──────────────────────────────────────────────────────────────
@@ -367,7 +367,7 @@ class TestAgreementCheckerBest:
 class TestCascadeRejectPath:
     def test_reject_calls_escalation_not_none(self):
         """Router REJECT must fall back to the escalation model, not drop chunk."""
-        from pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
+        from nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage import MapStage
 
         mock_voter_llm = MagicMock()
         mock_escalation_llm = MagicMock()
@@ -379,7 +379,7 @@ class TestCascadeRejectPath:
 
         # Patch build_map_chain so we can control voter and escalation outputs
         with patch(
-            "pipeline.stages.knowledge_extraction.stages.map_stage.build_map_chain"
+            "nlp_histo.pipeline.stages.knowledge_extraction.stages.map_stage.build_map_chain"
         ) as mock_build:
             voter_chain = MagicMock()
             voter_chain.invoke.return_value = _summary([_finding()])
@@ -405,7 +405,7 @@ class TestCascadeRejectPath:
         }
 
         # Router says REJECT
-        from pipeline.stages.knowledge_extraction.routing.models import (
+        from nlp_histo.pipeline.stages.knowledge_extraction.routing.models import (
             GateOrigin,
             RoutingDecision,
         )
