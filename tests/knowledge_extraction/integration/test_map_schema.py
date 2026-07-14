@@ -3,7 +3,7 @@ Local checks for Task 1 — schema/enums/strict-tool/coercion/profiles.
 
 Run with::
 
-    python tests/knowledge_extraction/test_map_schema.py
+    python tests/knowledge_extraction/integration/test_map_schema.py
 
 Exits non-zero on any failure. Logs are written under ``logs/`` so you can
 inspect what was coerced.
@@ -15,7 +15,7 @@ import sys
 import traceback
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 
 
