@@ -202,7 +202,7 @@ def test_both_runners_include_map_agreement_policy_version_in_thresholds():
     """
     from pathlib import Path
 
-    repo = Path(__file__).resolve().parents[2]
+    repo = Path(__file__).resolve().parents[3]
     sync_src = (repo / "pipeline/stages/knowledge_extraction/runner.py").read_text()
     batch_src = (repo / "pipeline/stages/knowledge_extraction/batch/runner.py").read_text()
     assert '"map_agreement_policy_version"' in sync_src, (
