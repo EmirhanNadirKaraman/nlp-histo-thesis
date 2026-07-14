@@ -1,112 +1,112 @@
 """
-Merge Entities by UMLS CUI
+Export Disease Entities by UMLS CUI
 
-Groups all text elements (sentences) by UMLS Concept Unique Identifier (CUI).
-For each UMLS concept, creates a separate JSON file with all sentences where that concept appears.
+Combines functionality of merge_entities_by_umls.py and copy_relevant_files.py.
+Directly queries disease-related entities and exports them grouped by UMLS CUI.
 
-Output: Separate JSON files (one per CUI) with structure:
-{
-  "umls_cui": "C0004057",
-  "canonical_name": "Aspirin",
-  "entity_label": "CHEMICAL",
-  "total_occurrences": 42,
-  "unique_entity_texts": ["aspirin", "Aspirin", "ASA"],
-  "sentences": [
-    {
-      "pmcid": "PMC1234567",
-      "text_element_id": 123,
-      "sentence": "Patients were treated with aspirin daily.",
-      "section": "Methods > Treatment",
-      "entity_text": "aspirin",
-      "start_char": 28,
-      "end_char": 35,
-      "umls_score": 0.98
-    },
-    ...
-  ]
-}
+This is more efficient than:
+1. Generating ALL entity files
+2. Copying only disease-related ones
 
-Files are saved as: {output_dir}/{CUI}_{canonical_name}.json
+Instead, it:
+1. Queries only disease-related entities (filtered by semantic types)
+2. Groups by UMLS CUI
+3. Exports JSON and TXT files for each concept
 
 Usage:
     Run from inside `named_entity_recognition/`: the default output directory is
     CWD-relative, so this keeps the files where they have always been written
-    (`named_entity_recognition/umls_entities_lg/`). The `cd` is not needed for
+    (`named_entity_recognition/disease_entities_lg/`). The `cd` is not needed for
     imports — the editable install provides those.
 
     cd named_entity_recognition
-    python -m named_entity_recognition.merge_entities_by_umls
-    python -m named_entity_recognition.merge_entities_by_umls --output-dir results/umls
-    python -m named_entity_recognition.merge_entities_by_umls --pmcid PMC1234567
-    python -m named_entity_recognition.merge_entities_by_umls --min-occurrences 5
+    python -m nlp_histo.ner.export_disease_entities
+    python -m nlp_histo.ner.export_disease_entities --output-dir disease_entities
+    python -m nlp_histo.ner.export_disease_entities --min-occurrences 5
+    python -m nlp_histo.ner.export_disease_entities --semantic-types T047 T191
 """
 
-import sys
 import json
+import argparse
+from collections.abc import Sequence
 from pathlib import Path
 from collections import defaultdict
 
+from sqlalchemy.dialects.postgresql import array
 from nlp_histo.database import get_db_connection, Entity, TextElement, Document
+from nlp_histo.ner.enums import UMLS_DISEASE_TYPES
 
 
-def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit=None, model_name=None):
+def export_disease_entities(
+    output_dir: str = None,
+    min_occurrences: int = 1,
+    semantic_types: list = None,
+    limit: int = None,
+    pmcid: str = None,
+    model_name: str = None
+):
     """
-    Merge all sentences where each UMLS entry occurs.
-    Creates separate JSON and TXT files for each UMLS CUI.
+    Query disease-related entities and export grouped by UMLS CUI.
 
     Args:
-        pmcid: Optional PMCID to filter results (processes all documents if None)
-        min_occurrences: Minimum number of occurrences to include a CUI
-        output_dir: Output directory for output files (one file per CUI).
-                    If None, auto-generates based on model_name.
-        limit: Optional limit to process only first N documents
+        output_dir: Output directory for JSON/TXT files. If None, auto-generates based on model_name.
+        min_occurrences: Minimum occurrences to include a CUI
+        semantic_types: List of TUI codes to filter (default: all disease types)
+        limit: Limit to first N documents
+        pmcid: Filter to specific PMCID
         model_name: Optional model name to filter entities (e.g., 'en_core_sci_lg')
 
     Returns:
-        dict: Merged entity data grouped by UMLS CUI
+        dict: Exported entity data grouped by UMLS CUI
     """
     # Auto-generate output directory based on model name if not specified
     if output_dir is None:
         if model_name:
-            # Extract short name: en_core_sci_lg -> lg, en_core_sci_sm -> sm
             if model_name.endswith('_lg'):
-                output_dir = "umls_entities_lg"
+                output_dir = "disease_entities_lg"
             elif model_name.endswith('_sm'):
-                output_dir = "umls_entities_sm"
+                output_dir = "disease_entities_sm"
             else:
-                output_dir = f"umls_entities_{model_name}"
+                output_dir = f"disease_entities_{model_name}"
         else:
-            output_dir = "umls_entities"
+            output_dir = "disease_entities"
+    print("=" * 80)
+    print("Disease Entity Exporter")
+    print("=" * 80)
 
-    print("="*80)
-    print("UMLS Entity Merger - Separate JSON Files")
-    print("="*80)
     if model_name:
         print(f"Model filter: {model_name}")
-    if limit:
-        print(f"Filter: First {limit} documents")
-    elif pmcid:
+
+    # Use default disease types if not specified
+    if semantic_types is None:
+        semantic_types = list(UMLS_DISEASE_TYPES.keys())
+
+    # Show which semantic types we're filtering
+    print(f"Semantic types filter ({len(semantic_types)}):")
+    for tui in semantic_types:
+        name = UMLS_DISEASE_TYPES.get(tui, "Unknown")
+        print(f"  {tui}: {name}")
+
+    print(f"\nMinimum occurrences: {min_occurrences}")
+    print(f"Output directory: {output_dir}/")
+
+    if pmcid:
         print(f"Filter: PMCID {pmcid}")
+    elif limit:
+        print(f"Filter: First {limit} documents")
     else:
         print("Filter: All documents")
-    print(f"Minimum occurrences: {min_occurrences}")
-    print(f"Output directory: {output_dir}/")
-    print("="*80 + "\n")
 
-    # Create output directory if it doesn't exist
+    print("=" * 80 + "\n")
+
+    # Create output directory
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
     db = get_db_connection()
 
     with db.session_scope() as session:
-        # Get document IDs to filter by (if limit is specified)
-        doc_ids = None
-        if limit:
-            doc_ids = [doc.id for doc in session.query(Document.id).limit(limit).all()]
-            print(f"Processing entities from {len(doc_ids)} documents\n")
-
-        # Build query
+        # Build query for disease entities with their text context
         query = (
             session.query(
                 Entity.umls_cui,
@@ -116,6 +116,7 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
                 Entity.start_char,
                 Entity.end_char,
                 Entity.umls_score,
+                Entity.semantic_types,
                 TextElement.id.label('text_element_id'),
                 TextElement.text_content,
                 TextElement.path_string,
@@ -123,19 +124,25 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
             )
             .join(TextElement, Entity.text_element_id == TextElement.id)
             .join(Document, TextElement.document_id == Document.id)
-            .filter(Entity.umls_cui.isnot(None))  # Only entities with UMLS mapping
+            .filter(Entity.umls_cui.isnot(None))
+            # Filter by semantic types using array overlap operator
+            .filter(Entity.semantic_types.op('&&')(array(semantic_types)))
         )
 
         # Filter by model name if specified
         if model_name:
             query = query.filter(Entity.model_name == model_name)
 
-        # Filter by document IDs if limit specified
-        if doc_ids:
-            query = query.filter(Document.id.in_(doc_ids))
-        # Filter by PMCID if specified
-        elif pmcid:
+        # Apply optional filters
+        if pmcid:
             query = query.filter(Document.pmcid == pmcid)
+        elif limit:
+            # Get document IDs to filter by
+            doc_ids = [
+                doc.id for doc in session.query(Document.id).limit(limit).all()
+            ]
+            query = query.filter(Document.id.in_(doc_ids))
+            print(f"Processing entities from {len(doc_ids)} documents\n")
 
         # Order by CUI for consistent output
         query = query.order_by(Entity.umls_cui)
@@ -146,10 +153,11 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
         umls_groups = defaultdict(lambda: {
             "canonical_name": None,
             "entity_label": None,
+            "semantic_types": None,
             "total_occurrences": 0,
             "unique_entity_texts": set(),
             "sentences": [],
-            "seen_sentences": set()  # Track unique sentence texts
+            "seen_sentences": set()
         })
 
         row_count = 0
@@ -161,6 +169,7 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
             if umls_groups[cui]["canonical_name"] is None:
                 umls_groups[cui]["canonical_name"] = row.canonical_name
                 umls_groups[cui]["entity_label"] = row.entity_label
+                umls_groups[cui]["semantic_types"] = row.semantic_types
 
             # Add entity text variant
             umls_groups[cui]["unique_entity_texts"].add(row.entity_text)
@@ -181,15 +190,16 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
                     "umls_score": float(row.umls_score) if row.umls_score else None
                 })
 
+            # Progress indicator
+            if row_count % 10000 == 0:
+                print(f"  Processed {row_count} rows, {len(umls_groups)} unique CUIs...")
+
         if row_count == 0:
-            print("No entities with UMLS mappings found.")
-            if pmcid:
-                print(f"\nMake sure document {pmcid} has been processed with NER.")
-                print("The maintained batch NER workflow populates the `entities` table:")
-                print("  python -m named_entity_recognition.batch_ner")
+            print("No disease entities found matching the criteria.")
             return {}
 
-        print(f"Processed {row_count} entity occurrences with UMLS mappings\n")
+        print(f"\nProcessed {row_count} entity occurrences")
+        print(f"Found {len(umls_groups)} unique disease CUIs\n")
 
         # Filter by minimum occurrences and convert sets to lists
         print(f"Filtering CUIs with at least {min_occurrences} occurrences...")
@@ -197,30 +207,34 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
 
         for cui, data in umls_groups.items():
             if data["total_occurrences"] >= min_occurrences:
-                # Sort sentences by text_element_id
-                sorted_sentences = sorted(data["sentences"], key=lambda x: x["text_element_id"])
+                sorted_sentences = sorted(
+                    data["sentences"], key=lambda x: x["text_element_id"]
+                )
 
                 filtered_data[cui] = {
                     "canonical_name": data["canonical_name"],
                     "entity_label": data["entity_label"],
+                    "semantic_types": data["semantic_types"],
                     "total_occurrences": data["total_occurrences"],
                     "unique_entity_texts": sorted(list(data["unique_entity_texts"])),
                     "sentences": sorted_sentences
                 }
 
-        print(f"Retained {len(filtered_data)} unique UMLS concepts\n")
+        print(f"Retained {len(filtered_data)} CUIs after filtering\n")
 
-        # Save each UMLS CUI to separate file(s)
+        # Save each UMLS CUI to separate files
         print(f"Writing {len(filtered_data)} JSON and TXT files to {output_dir}/...")
 
         for cui, data in filtered_data.items():
-            # Create safe filename from CUI
+            # Create safe filename
             safe_filename = cui.replace('/', '_').replace('\\', '_')
 
-            # Use canonical name in filename if available
             if data["canonical_name"]:
-                canonical_safe = data["canonical_name"][:50]  # Limit length
-                canonical_safe = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in canonical_safe)
+                canonical_safe = data["canonical_name"][:50]
+                canonical_safe = "".join(
+                    c if c.isalnum() or c in (' ', '-', '_') else '_'
+                    for c in canonical_safe
+                )
                 canonical_safe = canonical_safe.replace(' ', '_')
                 base_filename = f"{safe_filename}_{canonical_safe}"
             else:
@@ -233,122 +247,117 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
                     "umls_cui": cui,
                     "canonical_name": data["canonical_name"],
                     "entity_label": data["entity_label"],
+                    "semantic_types": data["semantic_types"],
                     "total_occurrences": data["total_occurrences"],
                     "unique_entity_texts": data["unique_entity_texts"],
                     "sentences": data["sentences"]
                 }, f, indent=2, ensure_ascii=False)
 
-            # Save TXT file (combined sentences with blank lines)
+            # Save TXT file
             txt_path = output_path / f"{base_filename}.txt"
             with open(txt_path, 'w', encoding='utf-8') as f:
-                # Write header
                 f.write(f"UMLS CUI: {cui}\n")
                 f.write(f"Canonical Name: {data['canonical_name']}\n")
                 f.write(f"Entity Label: {data['entity_label']}\n")
+                f.write(f"Semantic Types: {data['semantic_types']}\n")
                 f.write(f"Total Occurrences: {data['total_occurrences']}\n")
                 f.write(f"Unique Sentences: {len(data['sentences'])}\n")
                 f.write(f"Text Variants: {', '.join(data['unique_entity_texts'])}\n")
                 f.write("=" * 80 + "\n\n")
 
-                # Write all unique sentences with blank lines between them
                 for sentence_data in data["sentences"]:
                     f.write(sentence_data["sentence"])
                     f.write("\n\n")
 
-        files_saved = len(filtered_data) * 2
-        print(f"✓ Saved {files_saved} files to {output_dir}/\n")
+        print(f"✓ Saved {len(filtered_data) * 2} files to {output_dir}/\n")
 
-        # Print summary statistics
-        print("="*80)
+        # Print summary
+        print("=" * 80)
         print("Summary Statistics")
-        print("="*80)
-        print(f"Unique UMLS concepts: {len(filtered_data)}")
+        print("=" * 80)
+        print(f"Unique disease CUIs: {len(filtered_data)}")
 
         if filtered_data:
             total_occurrences = sum(d["total_occurrences"] for d in filtered_data.values())
+            total_sentences = sum(len(d["sentences"]) for d in filtered_data.values())
             print(f"Total entity occurrences: {total_occurrences}")
+            print(f"Total unique sentences: {total_sentences}")
 
-            # Top 10 most frequent concepts
+            # Top 10 most frequent
             top_concepts = sorted(
                 filtered_data.items(),
                 key=lambda x: x[1]["total_occurrences"],
                 reverse=True
             )[:10]
 
-            print("\nTop 10 Most Frequent UMLS Concepts:")
+            print("\nTop 10 Most Frequent Disease Concepts:")
             print("-" * 80)
             for i, (cui, data) in enumerate(top_concepts, 1):
                 canonical = data["canonical_name"] or "Unknown"
                 label = data["entity_label"]
                 count = data["total_occurrences"]
                 unique_sents = len(data["sentences"])
-                variants = len(data["unique_entity_texts"])
+                sem_types = data["semantic_types"]
                 print(f"{i:2d}. {canonical[:40]:<40} [{label}]")
-                print(f"    CUI: {cui}")
-                print(f"    Total occurrences: {count} | Unique sentences: {unique_sents} | Text variants: {variants}")
-                print(f"    Variants: {', '.join(data['unique_entity_texts'][:5])}")
-                if variants > 5:
-                    print(f"              ... and {variants - 5} more")
+                print(f"    CUI: {cui} | Types: {sem_types}")
+                print(f"    Occurrences: {count} | Unique sentences: {unique_sents}")
                 print()
 
-        print("="*80 + "\n")
+        print("=" * 80 + "\n")
 
         return filtered_data
 
 
-def main():
-    """Main function."""
-    import argparse
-
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Merge entities by UMLS CUI and generate JSON and TXT output",
+        description="Export disease-related entities grouped by UMLS CUI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Run from inside named_entity_recognition/ — the default output directory is
-CWD-relative, so this writes to named_entity_recognition/umls_entities_lg/ as
+CWD-relative, so this writes to named_entity_recognition/disease_entities_lg/ as
 before.  (The cd is only for the output location, not for imports.)
 
   cd named_entity_recognition
 
 Examples:
-  # Process all documents (creates both JSON and TXT files)
-  python -m named_entity_recognition.merge_entities_by_umls
+  # Export all disease entities
+  python -m nlp_histo.ner.export_disease_entities
 
-  # Filter by model (auto-sets output dir to umls_entities_lg)
-  python -m named_entity_recognition.merge_entities_by_umls --model en_core_sci_lg
-
-  # Process specific document
-  python -m named_entity_recognition.merge_entities_by_umls --pmcid PMC1448691
-
-  # Filter by minimum occurrences (only CUIs with 10+ mentions)
-  python -m named_entity_recognition.merge_entities_by_umls --min-occurrences 10
+  # Filter by model (auto-sets output dir to disease_entities_lg)
+  python -m nlp_histo.ner.export_disease_entities --model en_core_sci_lg
 
   # Custom output directory
-  python -m named_entity_recognition.merge_entities_by_umls --output-dir results/umls_concepts
+  python -m nlp_histo.ner.export_disease_entities --output-dir results/diseases
+
+  # Filter by minimum occurrences
+  python -m nlp_histo.ner.export_disease_entities --min-occurrences 10
+
+  # Specific semantic types only (diseases and neoplasms)
+  python -m nlp_histo.ner.export_disease_entities --semantic-types T047 T191
+
+  # Process specific document
+  python -m nlp_histo.ner.export_disease_entities --pmcid PMC1448691
+
+  # Limit to first N documents
+  python -m nlp_histo.ner.export_disease_entities --limit 50
+
+Available semantic types:
+  T047 - Disease or Syndrome
+  T191 - Neoplastic Process
+  T048 - Mental or Behavioral Dysfunction
+  T037 - Injury or Poisoning
+  T046 - Pathologic Function
+  T020 - Congenital Abnormality
+  T184 - Sign or Symptom
+  T033 - Finding
         """
     )
 
     parser.add_argument(
-        '--pmcid',
-        type=str,
-        help='Process only this PMCID (default: all documents)'
-    )
-    parser.add_argument(
-        '--min-occurrences',
-        type=int,
-        default=1,
-        help='Minimum occurrences to include a UMLS concept (default: 1)'
-    )
-    parser.add_argument(
         '--output-dir',
         type=str,
         default=None,
-        help='Output directory for output files (default: auto-based on model)'
-    )
-    parser.add_argument(
-        '--limit',
-        type=int,
-        help='Process only first N documents (default: all documents)'
+        help='Output directory for JSON/TXT files (default: auto-based on model)'
     )
     parser.add_argument(
         '--model',
@@ -356,32 +365,41 @@ Examples:
         default='en_core_sci_lg',
         help='Filter by model name (default: en_core_sci_lg). Output dir auto-set if not specified.'
     )
+    parser.add_argument(
+        '--min-occurrences',
+        type=int,
+        default=1,
+        help='Minimum occurrences to include a CUI (default: 1)'
+    )
+    parser.add_argument(
+        '--semantic-types',
+        nargs='+',
+        type=str,
+        help='TUI codes to filter (default: all disease types). Example: T047 T191'
+    )
+    parser.add_argument(
+        '--pmcid',
+        type=str,
+        help='Process only this PMCID'
+    )
+    parser.add_argument(
+        '--limit',
+        type=int,
+        help='Limit to first N documents'
+    )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    try:
-        merge_entities_by_umls(
-            pmcid=args.pmcid,
-            min_occurrences=args.min_occurrences,
-            output_dir=args.output_dir,
-            limit=args.limit,
-            model_name=args.model
-        )
-    except Exception as e:
-        print(f"\n❌ Error: {e}\n")
-        print("="*80)
-        print("Troubleshooting:")
-        print("="*80)
-        print("\n  1. Populate the `entities` table with the batch NER workflow")
-        print("     (run from the repository root):")
-        print("     python -m named_entity_recognition.batch_ner")
-        print("\n  2. Check the database connection and schema (read-only; creates nothing):")
-        print("     python -m database.init_db --check-only")
-        print("\n  3. This command and `export_disease_entities` consume the UMLS-linked")
-        print("     entities written by `batch_ner` — if it reports none, NER has not run.")
-        print("="*80 + "\n")
-        sys.exit(1)
+    export_disease_entities(
+        output_dir=args.output_dir,
+        min_occurrences=args.min_occurrences,
+        semantic_types=args.semantic_types,
+        limit=args.limit,
+        pmcid=args.pmcid,
+        model_name=args.model
+    )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

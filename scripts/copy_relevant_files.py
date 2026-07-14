@@ -12,7 +12,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from nlp_histo.database import get_db_connection, Entity
 from sqlalchemy.dialects.postgresql import array 
-from named_entity_recognition.enums import UMLS_DISEASE_TYPES
+from nlp_histo.ner.enums import UMLS_DISEASE_TYPES
 
 def copy_disease_files(source_dir="umls_entities/", dest_dir="relevant_json/"):
     """

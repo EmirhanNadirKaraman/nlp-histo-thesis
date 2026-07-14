@@ -1,5 +1,6 @@
 import argparse
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from datetime import datetime
 import threading
@@ -9,19 +10,22 @@ from tqdm import tqdm
 
 from sqlalchemy import func
 from nlp_histo.database import get_db_connection, Document, TextElement
-from named_entity_recognition.ner import run_ner_on_db, load_ner_model, load_linker_model
+from nlp_histo.ner.ner import run_ner_on_db, load_ner_model, load_linker_model
+from nlp_histo.ner.cache_paths import (
+    CACHE_FILENAME,
+    ENV_VAR,
+    ensure_parent,
+    resolve_entity_cache_path,
+)
 
-# Cache file path
-CACHE_FILE = Path(__file__).parent / "entity_linking_cache.json"
-
-
-def load_entity_cache() -> dict:
-    """Load entity linking cache from disk."""
-    if CACHE_FILE.exists():
+def load_entity_cache(cache_path: Path | None = None) -> dict:
+    """Load the entity-linking cache from disk (empty mapping when absent)."""
+    path = resolve_entity_cache_path(cache_path)
+    if path.exists():
         try:
-            with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 cache = json.load(f)
-            print(f"✓ Loaded {len(cache)} cached entity mappings from {CACHE_FILE.name}")
+            print(f"✓ Loaded {len(cache)} cached entity mappings from {path}")
             return cache
         except Exception as e:
             print(f"⚠ Could not load cache: {e}")
@@ -29,12 +33,14 @@ def load_entity_cache() -> dict:
     return {}
 
 
-def save_entity_cache(cache: dict):
-    """Save entity linking cache to disk."""
+def save_entity_cache(cache: dict, cache_path: Path | None = None):
+    """Save the entity-linking cache, creating its directory only now — at write time."""
+    path = resolve_entity_cache_path(cache_path)
     try:
-        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
+        ensure_parent(path)
+        with open(path, 'w', encoding='utf-8') as f:
             json.dump(cache, f, ensure_ascii=False)
-        print(f"✓ Saved {len(cache)} entity mappings to {CACHE_FILE.name}")
+        print(f"✓ Saved {len(cache)} entity mappings to {path}")
     except Exception as e:
         print(f"⚠ Could not save cache: {e}")
 
@@ -105,14 +111,16 @@ def process_document_worker(args):
         }
 
 
-def batch_process_all_documents(min_chars: int = 50, force: bool = False, limit: int = None, order_by: str = None, save_interval: int = 50):
+def batch_process_all_documents(min_chars: int = 50, force: bool = False, limit: int = None,
+                                order_by: str = None, save_interval: int = 50,
+                                cache_path: Path | None = None):
     db = get_db_connection()
 
     # 1. LOAD PERSISTENT CACHE
     print("="*80)
     print("Loading Entity Linking Cache...")
     print("="*80)
-    entity_cache = load_entity_cache()
+    entity_cache = load_entity_cache(cache_path)
     cache_lock = threading.Lock()
 
     # 2. PRE-LOAD MODELS
@@ -213,7 +221,7 @@ def batch_process_all_documents(min_chars: int = 50, force: bool = False, limit:
                             new_since_save = len(entity_cache) - last_save_size
                             if new_since_save >= save_interval:
                                 with cache_lock:
-                                    save_entity_cache(entity_cache)
+                                    save_entity_cache(entity_cache, cache_path)
                                     last_save_size = len(entity_cache)
 
                     except Exception as e:
@@ -243,7 +251,7 @@ def batch_process_all_documents(min_chars: int = 50, force: bool = False, limit:
     print("="*80)
     new_cache_entries = len(entity_cache) - initial_cache_size
     print(f"New cache entries this run: {new_cache_entries}")
-    save_entity_cache(entity_cache)
+    save_entity_cache(entity_cache, cache_path)
 
     # Print detailed result breakdown
     if results:
@@ -268,7 +276,7 @@ def batch_process_all_documents(min_chars: int = 50, force: bool = False, limit:
     print("="*80)
 
 
-if __name__ == "__main__":
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Batch process NER for all documents')
     parser.add_argument('--min-chars', type=int, default=50, help='Minimum characters for entity text (default: 50)')
     parser.add_argument('--force', '-f', action='store_true', help='Force reprocess documents that already have entities')
@@ -277,12 +285,26 @@ if __name__ == "__main__":
                         help='Order documents by sentence count: sentences/sentences-asc (smallest first), sentences-desc (largest first)')
     parser.add_argument('--save-interval', type=int, default=50,
                         help='Save cache every N new entity mappings (default: 50, set to 0 to disable)')
-    args = parser.parse_args()
+    parser.add_argument('--entity-cache', type=Path, default=None,
+                        help=f'Entity-linking cache file. Default: ${ENV_VAR}, else '
+                             f'$XDG_CACHE_HOME/nlp-histo/{CACHE_FILENAME} (~/.cache/…).')
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Parse arguments and run the batch. Importing this module runs nothing."""
+    args = build_parser().parse_args(argv)
 
     batch_process_all_documents(
         min_chars=args.min_chars,
         force=args.force,
         limit=args.limit,
         order_by=args.order_by,
-        save_interval=args.save_interval
+        save_interval=args.save_interval,
+        cache_path=args.entity_cache,
     )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -639,7 +639,7 @@ class KnowledgeExtractionRunner:
                 t0 = time.perf_counter()
                 mem.checkpoint("NER", "before")
                 try:
-                    from named_entity_recognition.ner import run_ner_on_db
+                    from nlp_histo.ner.ner import run_ner_on_db
                     run_ner_on_db(pmcid, save_to_db=True, force=False)
                     logger.info("[%s] NER done [%.1fs]", pmcid, time.perf_counter() - t0)
                     mem.checkpoint("NER", "after")

@@ -142,13 +142,13 @@ def test_load_paper_from_db_routes_through_singleton():
 
 
 def test_ner_module_routes_through_singleton():
-    """B-054 regression guard: `named_entity_recognition/ner.py`'s
+    """B-054 regression guard: `src/nlp_histo/ner/ner.py`'s
     `load_ner_model()` and `load_linker_model()` must NOT call
     `spacy.load` directly — both used to issue a fresh `spacy.load(
     "en_core_sci_lg")` per call, reloading ~2.6 GB once per paper from
     `runner.py:run_ner_on_db(pmcid)`."""
     import inspect
-    from named_entity_recognition import ner
+    from nlp_histo.ner import ner
 
     for fn_name in ("load_ner_model", "load_linker_model"):
         fn = getattr(ner, fn_name)

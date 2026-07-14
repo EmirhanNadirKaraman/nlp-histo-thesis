@@ -660,7 +660,7 @@ class BatchKnowledgeExtractionRunner:
             if self._run_ner and self._db is not None:
                 logger.info("[%s] NER — running entity extraction + UMLS linking", pmcid)
                 try:
-                    from named_entity_recognition.ner import run_ner_on_db  # noqa: PLC0415
+                    from nlp_histo.ner.ner import run_ner_on_db  # noqa: PLC0415
                     run_ner_on_db(pmcid, save_to_db=True, force=False)
                 except Exception as ner_exc:
                     logger.warning("[%s] NER failed (non-fatal): %s", pmcid, ner_exc)

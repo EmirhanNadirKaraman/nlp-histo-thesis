@@ -401,5 +401,5 @@ if __name__ == "__main__":
             print("Preview complete — nothing was written to the database.")
             print("The maintained batch NER workflow populates the `entities` table")
             print("(run from the repository root):")
-            print("  python -m named_entity_recognition.batch_ner")
+            print("  python -m nlp_histo.ner.batch_ner")
         print("="*80)
