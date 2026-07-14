@@ -18,15 +18,14 @@ from pathlib import Path
 
 import pytest
 
-
-REPO_ROOT = Path(__file__).resolve().parent.parent
+from tests.paths import REPO_ROOT, SCRIPTS
 
 
 @pytest.fixture()
 def run_paper_module():
     """Import ``scripts/run_paper.py`` by path without triggering its argparse main."""
     spec = importlib.util.spec_from_file_location(
-        "run_paper_under_test", REPO_ROOT / "scripts" / "run_paper.py",
+        "run_paper_under_test", SCRIPTS / "run_paper.py",
     )
     assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)

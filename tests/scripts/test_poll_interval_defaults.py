@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import importlib.util
 import inspect
-from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-_RUN_PAPER_PATH = _REPO_ROOT / "scripts" / "run_paper.py"
+from tests.paths import SCRIPTS
+
+_RUN_PAPER_PATH = SCRIPTS / "run_paper.py"
 
 
 def _load_run_paper():

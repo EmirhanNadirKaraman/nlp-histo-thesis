@@ -35,7 +35,7 @@ from typing import Any
 # Support both ``python scripts/eval/compute_proxy_metrics.py`` (script form)
 # and ``from compute_proxy_metrics import ...`` (test form). We don't add a
 # ``scripts/__init__.py`` because other code in ``scripts/`` is loaded via
-# importlib by name (e.g. tests/test_poll_interval_defaults.py).
+# importlib by name (e.g. tests/scripts/test_poll_interval_defaults.py).
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import _lib  # type: ignore  # noqa: E402
