@@ -113,7 +113,7 @@ nlp-histo/
 ├── database/                           # SQLAlchemy ORM (models.py) + connection mgmt; schema via Alembic
 ├── alembic/                            # Schema migrations (head: 0014)
 │
-├── named_entity_recognition/           # live: ner.py + enums.py (used by the KE pipeline) + retained gen-1 standalone CLIs (batch_ner, merge/export)
+├── src/nlp_histo/ner/                  # scispaCy + UMLS entity extraction (installed)
 │
 ├── eval/                               # Evaluation harness (measures the two pipelines)
 │   ├── llm_judge/  silver/             #   Opus silver labels + matching + MAP-cascade calibration
@@ -146,29 +146,43 @@ scispaCy caps at `<3.13`.)
 ```bash
 # 1. Dependencies — requirements.txt is the tested source of truth
 python -m pip install -r requirements.txt
-# requirements.txt covers the production pipelines (PDF extraction +
-# the multi-provider knowledge_extraction cascade, which uses direct provider APIs).
-# The langchain/* packages are only needed for the legacy
-# legacy/langchain-summarization/ prototype, which is no longer the production path.
 
 # 2. The project itself, in editable mode
 python -m pip install -e . --no-deps
 ```
 
 `--no-deps` is deliberate: `pyproject.toml` does **not** duplicate the dependency list,
-so `requirements.txt` stays the single tested manifest. Installing the project makes
-`pipeline`, `database`, `parsers` and `named_entity_recognition` importable as normal
-packages, without the per-file `sys.path` bootstraps that direct-run scripts would
-otherwise need.
+so `requirements.txt` stays the single tested manifest.
 
-`eval` is **intentionally not installed**. It is run from the repository root as
-`python -m eval.…` (a top-level distribution package literally named `eval` would be a
-generic-name collision).
+Installing the project provides **one** importable package, `nlp_histo`, and **one**
+console command, `nlp-histo`:
 
-> **Run commands from the repository root.** Editable installation fixes *imports*; it
-> does not make the project location-independent. The pipeline's `PathConfig` and the
-> evaluation harness read repository-root-relative data paths (`out/`, `files/`,
-> `configs/`, `eval/data/`), so a different working directory will not find them.
+```bash
+nlp-histo --help                # db · acquire · ingest · ner · knowledge · replay
+nlp-histo db init               # create + verify the schema
+nlp-histo ingest --pdf-dir files/organized_pdfs
+nlp-histo knowledge --profile cheap --pmcid PMC1448691 --sync   # ⚠ costs money
+nlp-histo replay chapter9 --artifact-root .                     # offline, free
+```
+
+The commands work from **any** directory — the package no longer needs the repository
+as its working directory in order to import. Full command reference:
+[`docs/HOW_TO_RUN.md`](docs/HOW_TO_RUN.md); layout and the ships/doesn't-ship boundary:
+[`docs/STRUCTURE.md`](docs/STRUCTURE.md).
+
+`eval/` (the thesis experiments and frozen artifacts) and `scripts/` are
+**repository-only** — they are not installed and never enter the wheel. They import
+`nlp_histo` and are run from the repository root (`python -m eval.…`,
+`python scripts/foo.py`).
+
+LangChain **is** a production dependency: the knowledge-extraction voter cascade builds
+its chat models through `langchain_openai` / `langchain_*` in
+`src/nlp_histo/pipeline/stages/knowledge_extraction/llm/llm_providers.py`.
+
+> **Working directory.** Installed commands import from anywhere. What *is* relative to
+> where you run is **generated output** (`out/…`, overridable with `--out-root`) and the
+> repository-only experiment drivers, which read `eval/data/` and must be run from the
+> repository root.
 
 ### 2. Set Up Database
 
@@ -187,7 +201,7 @@ cp .env.example .env
 # (DB_PASSWORD must be present; leave it empty for peer/trust authentication.)
 
 # 3. Create and verify the schema
-python -m database.init_db
+nlp-histo db init
 ```
 
 **Ownership matters.** `<admin-role>` is any PostgreSQL role permitted to create
@@ -202,7 +216,7 @@ copy `<admin-role>` literally, and do not assume the role is called `postgres`.
 schema-creation rights on the new database. Assigning ownership with `-O` is the
 recommended and simpler setup.)*
 
-`python -m database.init_db` connects as `DB_USER`, creates the ORM-managed schema
+`nlp-histo db init` connects as `DB_USER`, creates the ORM-managed schema
 (`database/models.py`), and then verifies it. On success it reports the number of
 tables verified.
 
@@ -214,8 +228,8 @@ instead of attempting an automatic repair**, and creates nothing.
 Verification modes:
 
 ```bash
-python -m database.init_db --check-only   # verify only; creates nothing
-python -m database.init_db --smoke        # initialize, then a minimal ORM round trip
+nlp-histo db check                        # verify only; creates nothing
+python -m nlp_histo.database.init_db --smoke   # initialize, then a minimal ORM round trip
 ```
 
 `--smoke` inserts one `Document` + `TextElement`, reads them back through the ORM,
@@ -238,7 +252,7 @@ python tarball_extractor.py
 python pdf_organizer.py
 
 # Process and ingest to database (production pipeline; see HOW_TO_RUN.md §2 for flags)
-cd .. && python -m pipeline.stages.pdf_text_extraction.runner
+cd .. && nlp-histo ingest
 ```
 
 ### 4. (Historical) standalone NER utilities — gen-1
@@ -261,7 +275,7 @@ so no `cd` is needed to make imports work.
 # From the repository root — populates the `entities` table (scispaCy + UMLS
 # linking). Writes DB rows; its cache is anchored next to the module, not to the
 # working directory.
-python -m named_entity_recognition.batch_ner
+nlp-histo ner extract
 
 # The two exporters default to a *CWD-relative* output directory, so run them from
 # inside the package directory to keep writing where they always have:
@@ -271,10 +285,10 @@ python -m named_entity_recognition.batch_ner
 cd named_entity_recognition
 
 # Export per-UMLS-concept JSON/TXT (all concepts) — reads DB, writes files
-python -m named_entity_recognition.merge_entities_by_umls
+nlp-histo ner merge
 
 # ...or the disease-filtered subset — reads DB, writes files
-python -m named_entity_recognition.export_disease_entities
+nlp-histo ner export
 
 cd ..
 ```
@@ -298,13 +312,13 @@ via `get_profile`); see HOW_TO_RUN.md §3.
 
 ```bash
 # Single paper, sync (live) mode — pmcid is positional
-python scripts/run_paper.py PMC1234567 --sync --profile cheap --health-check no
+nlp-histo knowledge PMC1234567 --sync --profile cheap --health-check no
 
 # Single paper, async batch mode (cheaper)
-python scripts/run_paper.py PMC1234567 --batch --profile real --health-check no
+nlp-histo knowledge PMC1234567 --batch --profile real --health-check no
 
 # A whole calibration set from a YAML selection
-python scripts/run_paper.py --from-selection configs/paper_selection/related15.yaml --batch --profile real --health-check no
+nlp-histo knowledge --from-selection configs/paper_selection/related15.yaml --batch --profile real --health-check no
 ```
 
 > The old notebook stack under `legacy/langchain-summarization/` is legacy and kept for
@@ -407,7 +421,7 @@ written via `pipeline/stages/knowledge_extraction/persistence.py`. See
 
 The current runtime schema is defined by the SQLAlchemy models in `database/models.py`.
 `create_tables()` calls `Base.metadata.create_all()` and is the mechanism that
-**initializes a new database**; `python -m database.init_db` is the maintained command
+**initializes a new database**; `nlp-histo db init` is the maintained command
 that wraps it with configuration validation and schema verification.
 
 Alembic currently manages **incremental historical changes**, not complete
@@ -432,7 +446,7 @@ already exist, and it does **not** currently reproduce the ORM schema exactly. T
 
 ### Named Entity Recognition
 - **UMLS Linking**: Maps extracted entities to UMLS concepts (CUI)
-- **Persistent Cache**: on-disk entity-linking cache (`named_entity_recognition/entity_linking_cache.json`, ~30 MB) avoids redundant UMLS lookups
+- **Persistent Cache**: on-disk entity-linking cache (`~/.cache/nlp-histo/entity_linking_cache.json`, ~30 MB; see docs/HOW_TO_RUN.md §8 to reuse the old one) avoids redundant UMLS lookups
 - **Semantic Types**: Filters entities by UMLS semantic types (diseases, chemicals, etc.)
 - **Token Counting (historical)**: `legacy/langchain-summarization/count_tokens.py` estimates costs for the archived LangChain map-reduce-rules prototype, not the current pipeline
 
