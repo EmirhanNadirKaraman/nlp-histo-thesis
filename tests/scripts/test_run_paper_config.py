@@ -12,27 +12,19 @@ No LLM / API calls. No DB writes.
 
 from __future__ import annotations
 
-import importlib.util
-import sys
 from pathlib import Path
 
 import pytest
 
-from tests.paths import REPO_ROOT, SCRIPTS
+from tests.paths import REPO_ROOT
 
 
 @pytest.fixture()
 def run_paper_module():
-    """Import ``scripts/run_paper.py`` by path without triggering its argparse main."""
-    spec = importlib.util.spec_from_file_location(
-        "run_paper_under_test", SCRIPTS / "run_paper.py",
-    )
-    assert spec is not None and spec.loader is not None
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = mod
-    spec.loader.exec_module(mod)
-    yield mod
-    sys.modules.pop(spec.name, None)
+    """The knowledge workflow, imported from the installed package."""
+    from nlp_histo.workflows import knowledge
+
+    yield knowledge
 
 
 def _write_minimal_summarization_yaml(path: Path, *, grounding_threshold) -> None:

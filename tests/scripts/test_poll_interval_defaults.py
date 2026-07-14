@@ -11,23 +11,16 @@ breaks the moment a new parameter is added before `poll_interval`.
 """
 from __future__ import annotations
 
-import importlib.util
 import inspect
 
-from tests.paths import SCRIPTS
 
-_RUN_PAPER_PATH = SCRIPTS / "run_paper.py"
 
 
 def _load_run_paper():
-    # `scripts/` is a flat directory with no `__init__.py`, so a normal
-    # `from scripts import run_paper` import collides with the unrelated
-    # `scripts` package shipped in site-packages. Load the file directly
-    # by its filesystem path instead.
-    spec = importlib.util.spec_from_file_location("run_paper", _RUN_PAPER_PATH)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    # The implementation is an installed module now — no path loading needed.
+    from nlp_histo.workflows import knowledge
+
+    return knowledge
 
 
 def test_poll_interval_defaults_agree():

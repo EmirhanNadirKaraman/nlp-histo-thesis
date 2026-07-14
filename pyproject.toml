@@ -48,6 +48,11 @@ extend-exclude = [
 "eval/**" = ["E402"]
 "tests/**" = ["E402"]
 
+[project.scripts]
+# One console command with subcommands, not one binary per script: the workflows are
+# stages of a single pipeline, so `nlp-histo --help` is the discovery surface.
+nlp-histo = "nlp_histo.cli.main:main"
+
 [tool.setuptools]
 # src layout: only what lives under src/ is installable. Everything else in the
 # repository (experiment drivers, developer tools, tests, thesis artifacts) is

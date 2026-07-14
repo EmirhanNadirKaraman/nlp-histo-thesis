@@ -3,11 +3,11 @@ from pathlib import Path
 from typing import Tuple
 
 
-# =================CONFIGURATION =================
-SOURCE_DIR = "processed_corpus"         # Folder with extracted papers (one subfolder per PMCID)
-PDF_OUTPUT_DIR = "organized_pdfs"       # Folder for all PDF files
-XML_OUTPUT_DIR = "organized_xmls"       # Folder for all XML files
-# ================================================
+# Historical defaults, kept only so callers can reproduce the documented layout.
+# Nothing here is resolved against the working directory.
+DEFAULT_SOURCE_DIRNAME = "processed_corpus"
+DEFAULT_PDF_DIRNAME = "organized_pdfs"
+DEFAULT_XML_DIRNAME = "organized_xmls"
 
 
 def organize_files(source_dir: Path, pdf_dir: Path, xml_dir: Path) -> Tuple[int, int]:
@@ -99,36 +99,30 @@ def organize_files(source_dir: Path, pdf_dir: Path, xml_dir: Path) -> Tuple[int,
     return pdf_count, xml_count
 
 
-def main():
-    """Main organization process."""
-    source_dir = Path(SOURCE_DIR)
-    pdf_dir = Path(PDF_OUTPUT_DIR)
-    xml_dir = Path(XML_OUTPUT_DIR)
+def organize_pdfs(
+    input_dir: Path,
+    pdf_dir: Path,
+    xml_dir: Path,
+) -> tuple[int, int]:
+    """Flatten the extracted corpus in *input_dir* into *pdf_dir* / *xml_dir*.
 
-    # Validate source directory exists
-    if not source_dir.exists():
-        print(f"Error: Source directory '{SOURCE_DIR}' not found.")
-        print("Make sure you've run tarball_extractor.py first.")
-        return
+    Returns ``(pdf_count, xml_count)``. Raises ``FileNotFoundError`` naming the path
+    when the input directory is missing, before anything is written. Copy semantics
+    (``shutil.copy2``, per-PMCID naming) are unchanged.
+    """
+    input_dir = Path(input_dir)
 
-    print(f"Organizing files from: {source_dir}")
+    if not input_dir.exists():
+        raise FileNotFoundError(
+            f"Extracted-corpus directory not found: {input_dir} "
+            "(run `nlp-histo acquire unpack` first)"
+        )
+
+    print(f"Organizing files from: {input_dir}")
     print(f"PDF output: {pdf_dir}")
     print(f"XML output: {xml_dir}")
-    print()
 
-    try:
-        pdf_count, xml_count = organize_files(source_dir, pdf_dir, xml_dir)
+    pdf_count, xml_count = organize_files(input_dir, Path(pdf_dir), Path(xml_dir))
 
-        print(f"\n{'='*50}")
-        print("Organization complete!")
-        print(f"Total PDFs organized: {pdf_count}")
-        print(f"Total XMLs organized: {xml_count}")
-        print(f"{'='*50}")
-
-    except Exception as e:
-        print(f"Error during organization: {e}")
-        raise
-
-
-if __name__ == "__main__":
-    main()
+    print(f"\nOrganization complete — {pdf_count} PDFs, {xml_count} XMLs.")
+    return pdf_count, xml_count

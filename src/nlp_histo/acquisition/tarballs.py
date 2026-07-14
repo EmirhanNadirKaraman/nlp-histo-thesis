@@ -3,10 +3,11 @@ import shutil
 from pathlib import Path
 
 
-# =================CONFIGURATION =================
-SOURCE_DIR = "histopathology_papers"   # Folder where you downloaded the .tar.gz files
-DEST_DIR = "processed_corpus"          # Folder where you want the extracted files
-# ================================================
+# Historical defaults, kept only so callers can reproduce the documented layout.
+# Nothing in this module resolves them against the working directory: every entry
+# point takes explicit input and output paths.
+DEFAULT_SOURCE_DIRNAME = "histopathology_papers"
+DEFAULT_DEST_DIRNAME = "processed_corpus"
 
 
 def extract_tarball(tar_path: Path, dest_dir: Path) -> bool:
@@ -86,30 +87,44 @@ def extract_tarball(tar_path: Path, dest_dir: Path) -> bool:
         return False
 
 
-def main():
-    """Main extraction process."""
-    source_dir = Path(SOURCE_DIR)
-    dest_dir = Path(DEST_DIR)
+def unpack_tarballs(
+    input_dir: Path,
+    output_dir: Path,
+    *,
+    overwrite: bool = False,
+) -> int:
+    """Extract every ``*.tar.gz`` in *input_dir* into *output_dir*.
 
-    # Create destination directory
-    dest_dir.mkdir(parents=True, exist_ok=True)
+    Returns the number of tarballs extracted successfully. Validates before it
+    mutates: a missing input directory raises ``FileNotFoundError`` naming the path,
+    and the output directory is created only once there is something to extract.
 
-    # Find all tarballs
-    tar_files = sorted(source_dir.glob("*.tar.gz"))
+    Extraction semantics (flattening, per-PMCID subfolders, media handling) are
+    unchanged — this only makes the paths explicit.
+    """
+    input_dir = Path(input_dir)
+    output_dir = Path(output_dir)
 
+    if not input_dir.exists():
+        raise FileNotFoundError(f"Tarball directory not found: {input_dir}")
+
+    tar_files = sorted(input_dir.glob("*.tar.gz"))
     if not tar_files:
-        print(f"No .tar.gz files found in {SOURCE_DIR}")
-        return
+        print(f"No .tar.gz files found in {input_dir}")
+        return 0
 
-    print(f"Found {len(tar_files)} tarballs. Starting extraction...")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"Found {len(tar_files)} tarballs. Extracting into {output_dir}...")
 
     success_count = 0
     for tar_path in tar_files:
-        if extract_tarball(tar_path, dest_dir):
+        target = output_dir / tar_path.name.removesuffix(".tar.gz")
+        if target.exists() and not overwrite:
+            print(f"↷ {target.name} already extracted — skipping (use --overwrite to force)")
+            continue
+        if extract_tarball(tar_path, output_dir):
             success_count += 1
 
-    print(f"\nExtraction finished: {success_count}/{len(tar_files)} successful.")
-
-
-if __name__ == "__main__":
-    main()
+    print(f"\nExtracted {success_count}/{len(tar_files)} tarballs into {output_dir}.")
+    return success_count

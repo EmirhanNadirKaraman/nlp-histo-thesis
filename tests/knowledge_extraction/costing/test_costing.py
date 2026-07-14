@@ -13,7 +13,6 @@ from nlp_histo.pipeline.stages.knowledge_extraction.costing.models import normal
 from nlp_histo.pipeline.stages.knowledge_extraction.costing.report import build_report_from_records
 from nlp_histo.pipeline.stages.knowledge_extraction.costing.pricing import ModelPrice
 
-from tests.paths import SCRIPTS
 
 
 # ── Token normalization ─────────────────────────────────────────────────────
@@ -350,14 +349,10 @@ def test_callback_no_usage_present_is_silent():
 
 
 def _load_run_paper_module():
-    """Load scripts/run_paper.py as a module. scripts/ is not a package."""
-    import importlib.util
-    spec = importlib.util.spec_from_file_location(
-        "run_paper_script", SCRIPTS / "run_paper.py",
-    )
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    """The knowledge workflow, imported from the installed package."""
+    from nlp_histo.workflows import knowledge
+
+    return knowledge
 
 
 def test_baseline_unavailable_when_no_l1_usage():
