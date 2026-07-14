@@ -30,8 +30,14 @@ import sqlalchemy as sa
 
 from .models import Base
 
-# Same .env location and convention as database/db_connection.py — one config source.
-_ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
+# Same .env resolution as db_connection.py — one config source. Searched upward from
+# the working directory (NOT relative to this file: the package is installed), and
+# overridable with NLP_HISTO_ENV_FILE.
+def _env_path() -> Path:
+    from dotenv import find_dotenv
+
+    explicit = os.getenv("NLP_HISTO_ENV_FILE")
+    return Path(explicit or find_dotenv(usecwd=True) or ".env")
 
 #: Variables that must be set explicitly. ``DB_CONFIG`` in db_connection.py silently
 #: defaults every one of these, so we check the *environment*, not the resolved config.
@@ -80,7 +86,7 @@ class SchemaReport:
 
 def load_env(env_path: Path | None = None) -> None:
     """Load the project's .env using the same convention as db_connection.py."""
-    path = _ENV_PATH if env_path is None else env_path
+    path = _env_path() if env_path is None else env_path
     try:
         from dotenv import load_dotenv
     except ImportError:  # pragma: no cover - dotenv is a hard dependency in practice
@@ -100,7 +106,7 @@ def validate_config(env: Mapping[str, str]) -> dict[str, str]:
     if missing:
         raise ConfigError(
             "missing database configuration: " + ", ".join(sorted(missing))
-            + f"\n  Copy .env.example to .env and set them ({_ENV_PATH})."
+            + f"\n  Copy .env.example to .env and set them ({_env_path()})."
         )
 
     port = env["DB_PORT"].strip()

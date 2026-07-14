@@ -13,11 +13,16 @@ from .models import Base
 # Load .env file automatically when this module is imported
 # This way, all scripts that use the database don't need to load it themselves
 try:
-    from dotenv import load_dotenv
-    # Look for .env file in project root (parent of database folder)
-    env_path = Path(__file__).parent.parent / '.env'
-    if env_path.exists():
-        load_dotenv(env_path)
+    from dotenv import find_dotenv, load_dotenv
+
+    # Search UPWARD FROM THE WORKING DIRECTORY, never relative to this file: the
+    # package is installed (site-packages, or src/nlp_histo/ in a checkout), so a
+    # file-relative walk finds nothing and silently leaves DB_CONFIG on its
+    # postgres/postgres@localhost defaults. NLP_HISTO_ENV_FILE overrides.
+    _explicit = os.getenv("NLP_HISTO_ENV_FILE")
+    _found = _explicit or find_dotenv(usecwd=True)
+    if _found and Path(_found).exists():
+        load_dotenv(_found)
 except ImportError:
     # python-dotenv not installed - will use environment variables or defaults
     pass
