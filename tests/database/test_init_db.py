@@ -10,8 +10,8 @@ from sqlalchemy.dialects import postgresql
 
 import pytest
 
-from database import init_db
-from database.init_db import (
+from nlp_histo.database import init_db
+from nlp_histo.database.init_db import (
     CURRENT,
     DRIFTED,
     EMPTY,
@@ -85,7 +85,7 @@ def wire(monkeypatch):
         # Patch init_db's own indirection — never the global sqlalchemy module.
         monkeypatch.setattr(init_db, "_inspector", lambda _engine: next(seq))
         monkeypatch.setattr(init_db, "load_env", lambda *a, **k: None)
-        import database.db_connection as dbc
+        import nlp_histo.database.db_connection as dbc
         monkeypatch.setattr(dbc, "get_db_connection", lambda *a, **k: db)
         monkeypatch.setattr(dbc, "close_db_connection", lambda: None)
         full_env = {"DB_HOST": "h", "DB_PORT": "5432", "DB_NAME": "d",
@@ -265,7 +265,7 @@ def test_missing_config_exits_two_without_connecting(monkeypatch, capsys):
 
     def fail(*_a, **_k):                            # must never be reached
         raise AssertionError("must not connect when configuration is missing")
-    import database.db_connection as dbc
+    import nlp_histo.database.db_connection as dbc
     monkeypatch.setattr(dbc, "get_db_connection", fail)
 
     assert init_db.main([]) == 2

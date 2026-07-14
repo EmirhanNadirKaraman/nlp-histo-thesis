@@ -16,8 +16,8 @@ from typing import List, Optional
 
 from pipeline.stages.pdf_text_extraction.config import TextAssemblyConfig
 from pipeline.stages.pdf_text_extraction.models.dto import HierarchicalRow, LayoutResult
-from parsers.layout_utils import extract_text
-from parsers.text_processing import is_reference_entry
+from nlp_histo.parsers.layout_utils import extract_text
+from nlp_histo.parsers.text_processing import is_reference_entry
 
 logger = logging.getLogger(__name__)
 

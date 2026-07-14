@@ -10,7 +10,7 @@ in document order; only same-path runs that are adjacent get stitched.
 """
 from __future__ import annotations
 
-from parsers.layout_utils import extract_text
+from nlp_histo.parsers.layout_utils import extract_text
 
 
 def _header(text: str, level: int) -> dict:

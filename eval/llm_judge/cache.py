@@ -64,7 +64,7 @@ class JudgeCache:
         Callers must pass the result through parse_*_result() to derive fields
         such as fields_changed, is_correct, and F1 metrics.
         """
-        from database import LlmJudgeCache  # noqa: PLC0415
+        from nlp_histo.database import LlmJudgeCache  # noqa: PLC0415
 
         with self._db.session_scope() as session:
             row = session.query(LlmJudgeCache).filter_by(cache_key=key).first()
@@ -93,7 +93,7 @@ class JudgeCache:
         task:
             Task name, e.g. "q1_precision".
         """
-        from database import LlmJudgeCache  # noqa: PLC0415
+        from nlp_histo.database import LlmJudgeCache  # noqa: PLC0415
         from sqlalchemy.dialects.postgresql import insert  # noqa: PLC0415
 
         pmcid: str | None = request_payload.get("pmcid")
@@ -143,7 +143,7 @@ class JudgeCache:
 
         Returns the number of rows deleted.
         """
-        from database import LlmJudgeCache  # noqa: PLC0415
+        from nlp_histo.database import LlmJudgeCache  # noqa: PLC0415
 
         with self._db.session_scope() as session:
             q = session.query(LlmJudgeCache).filter_by(
@@ -163,7 +163,7 @@ class JudgeCache:
 
     def count(self) -> int:
         """Return total number of rows in the cache table."""
-        from database import LlmJudgeCache  # noqa: PLC0415
+        from nlp_histo.database import LlmJudgeCache  # noqa: PLC0415
 
         with self._db.session_scope() as session:
             return session.query(LlmJudgeCache).count()

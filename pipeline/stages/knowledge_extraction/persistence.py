@@ -595,7 +595,7 @@ def create_pipeline_run(db, pmcid: str, run_id: str, config_snapshot: dict) -> i
     if db is None:
         return None
     try:
-        from database import Document, PipelineRun  # noqa: PLC0415
+        from nlp_histo.database import Document, PipelineRun  # noqa: PLC0415
         with db.session_scope() as session:
             doc = session.query(Document).filter_by(pmcid=pmcid).first()
             run = PipelineRun(
@@ -625,7 +625,7 @@ def finish_pipeline_run(
     if db_id is None or db is None:
         return
     try:
-        from database import PipelineRun  # noqa: PLC0415
+        from nlp_histo.database import PipelineRun  # noqa: PLC0415
         with db.session_scope() as session:
             run = session.query(PipelineRun).filter_by(id=db_id).first()
             if run is not None:
@@ -643,7 +643,7 @@ def clear_normalized_run_data(db, db_id: int, pmcid: str) -> None:
     if db is None:
         return
     try:
-        from database.models import (  # noqa: PLC0415
+        from nlp_histo.database.models import (  # noqa: PLC0415
             SumCanonicalRule, SumFinalRule, SumFindingGroup, SumGroupMember,
             SumNormalFinding, SumNormalFindingSpan, SumRelation,
         )
@@ -706,7 +706,7 @@ def replace_verbatim_from_db(db, chunk_summaries: list) -> None:
     if not te_ids:
         return
     try:
-        from database import TextElement  # noqa: PLC0415
+        from nlp_histo.database import TextElement  # noqa: PLC0415
         te_map: dict[int, str] = {}
         with db.session_scope() as session:
             rows = (
@@ -755,7 +755,7 @@ def persist_map_findings(db, db_id: int | None, pmcid: str, chunk_summaries: lis
         pmcid, len(chunk_summaries), total_findings, db_id,
     )
     try:
-        from database.models import SumMapFinding  # noqa: PLC0415
+        from nlp_histo.database.models import SumMapFinding  # noqa: PLC0415
         from .models import FindingScope  # noqa: PLC0415
         rows = []
         for cs in chunk_summaries:
@@ -825,7 +825,7 @@ def persist_normal_findings(
     clear_normalized_run_data(db, db_id, pmcid)
     nf_id_map: dict[str, int] = {}
     try:
-        from database.models import SumNormalFinding, SumNormalFindingSpan  # noqa: PLC0415
+        from nlp_histo.database.models import SumNormalFinding, SumNormalFindingSpan  # noqa: PLC0415
         from .models import FindingScope  # noqa: PLC0415
         # Dedupe by normal_id (last-wins, matching the in-memory ``nf_by_id`` dict):
         # the pipeline treats normal_id as unique and the DB enforces
@@ -886,7 +886,7 @@ def persist_finding_groups(
         return {}
     group_id_map: dict[str, int] = {}
     try:
-        from database.models import SumFindingGroup, SumGroupMember  # noqa: PLC0415
+        from nlp_histo.database.models import SumFindingGroup, SumGroupMember  # noqa: PLC0415
         with db.session_scope() as session:
             for fg in finding_groups:
                 row = SumFindingGroup(
@@ -943,7 +943,7 @@ def persist_canonical_rules(
         return {}
     cr_id_map: dict[str, int] = {}
     try:
-        from database.models import SumCanonicalRule  # noqa: PLC0415
+        from nlp_histo.database.models import SumCanonicalRule  # noqa: PLC0415
         rows = []
         for cr in canonical_rules:
             fg_db_id = fg_db_id_map.get(cr.group_id)
@@ -993,7 +993,7 @@ def persist_relations(
     if db_id is None or db is None:
         return
     try:
-        from database.models import SumRelation  # noqa: PLC0415
+        from nlp_histo.database.models import SumRelation  # noqa: PLC0415
         rows = []
         for rel in relations:
             rows.append(SumRelation(
@@ -1026,7 +1026,7 @@ def persist_final_rules(
     if db_id is None or db is None:
         return
     try:
-        from database.models import SumFinalRule  # noqa: PLC0415
+        from nlp_histo.database.models import SumFinalRule  # noqa: PLC0415
         rows = []
         for fr in final_rules:
             rows.append(SumFinalRule(
@@ -1065,7 +1065,7 @@ def persist_rejection_summary(db, db_id: int | None, rejection_summary) -> None:
     if db_id is None or db is None:
         return
     try:
-        from database.models import SumRejectionSummary, SumRejectedFinding  # noqa: PLC0415
+        from nlp_histo.database.models import SumRejectionSummary, SumRejectedFinding  # noqa: PLC0415
         with db.session_scope() as session:
             summary_row = SumRejectionSummary(
                 pipeline_run_id                = db_id,

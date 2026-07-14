@@ -132,7 +132,7 @@ def build_batch_runners(
     from pipeline.stages.knowledge_extraction.config import (
         KnowledgeExtractionConfig, MapConfig, GroundingConfig,
     )
-    from database import get_db_connection
+    from nlp_histo.database import get_db_connection
 
     haiku  = VoterBatchConfig(model="claude-haiku-4-5-20251001",  provider="claude")
     sonnet = VoterBatchConfig(model="claude-sonnet-4-6", provider="claude")
@@ -178,7 +178,7 @@ def build_runner(
     from pipeline.stages.knowledge_extraction.config import (
         KnowledgeExtractionConfig, MapConfig, GroundingConfig,
     )
-    from database import get_db_connection
+    from nlp_histo.database import get_db_connection
 
     llm = build_llm(model)
 
@@ -205,8 +205,8 @@ def build_runner(
 # ── DB helpers ─────────────────────────────────────────────────────────────────
 
 def _fetch_all_pmcids() -> list[str]:
-    from database import get_db_connection
-    from database.models import Document
+    from nlp_histo.database import get_db_connection
+    from nlp_histo.database.models import Document
 
     db = get_db_connection()
     with db.session_scope() as session:

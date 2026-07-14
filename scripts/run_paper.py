@@ -99,7 +99,7 @@ def _open_db_connection(caller_label: str):
     work on machines without a configured Postgres.
     """
     try:
-        from database import get_db_connection  # noqa: PLC0415
+        from nlp_histo.database import get_db_connection  # noqa: PLC0415
         return get_db_connection()
     except Exception as exc:  # noqa: BLE001
         logger.warning(

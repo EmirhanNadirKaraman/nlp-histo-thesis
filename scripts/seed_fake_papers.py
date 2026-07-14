@@ -48,7 +48,7 @@ from pathlib import Path
 # Make the repo importable when running as `python scripts/seed_fake_papers.py`.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from database import get_db_connection, Document, TextElement  # noqa: E402
+from nlp_histo.database import get_db_connection, Document, TextElement  # noqa: E402
 
 logger = logging.getLogger("seed_fake_papers")
 

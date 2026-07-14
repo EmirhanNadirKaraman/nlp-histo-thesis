@@ -32,7 +32,7 @@ except ImportError:
     print("ERROR: PyMuPDF is required. Install with: pip install PyMuPDF")
     sys.exit(1)
 
-from database import get_db_connection, Document
+from nlp_histo.database import get_db_connection, Document
 
 
 def load_blacklist(blacklist_file: Path) -> Set[str]:

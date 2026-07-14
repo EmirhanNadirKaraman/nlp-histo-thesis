@@ -42,8 +42,8 @@ if str(_REPO_ROOT) not in sys.path:
 
 from sqlalchemy import func, distinct
 
-from database import get_db_connection
-from database.models import Document, TextElement, Figure, Table
+from nlp_histo.database import get_db_connection
+from nlp_histo.database.models import Document, TextElement, Figure, Table
 from pipeline.stages.knowledge_extraction.config import MapConfig
 from pipeline.stages.knowledge_extraction.costing import PriceBook
 from pipeline.stages.knowledge_extraction.batch.voter_configs import (

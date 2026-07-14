@@ -54,7 +54,7 @@ load_dotenv()
 
 from sqlalchemy import func  # noqa: E402
 
-from database import (  # noqa: E402
+from nlp_histo.database import (  # noqa: E402
     get_db_connection,
     PipelineRun,
     SumMapFinding,

@@ -1,5 +1,5 @@
 from sqlalchemy import text
-from database import get_db_connection
+from nlp_histo.database import get_db_connection
 
 
 def create_index():

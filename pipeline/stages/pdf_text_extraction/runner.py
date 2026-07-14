@@ -469,7 +469,7 @@ class PipelineRunner:
 
     def _already_in_db(self, pmcid: str) -> bool:
         try:
-            from database import get_db_connection, Document  # type: ignore
+            from nlp_histo.database import get_db_connection, Document  # type: ignore
             db = get_db_connection(database_url=self._cfg.database.db_url)
             with db.session_scope() as session:
                 return session.query(Document).filter_by(pmcid=pmcid).first() is not None

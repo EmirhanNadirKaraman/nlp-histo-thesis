@@ -46,7 +46,7 @@ import json
 from pathlib import Path
 from collections import defaultdict
 
-from database import get_db_connection, Entity, TextElement, Document
+from nlp_histo.database import get_db_connection, Entity, TextElement, Document
 
 
 def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit=None, model_name=None):

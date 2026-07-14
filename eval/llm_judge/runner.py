@@ -74,7 +74,7 @@ class RunConfig:
 
 def run(cfg: RunConfig) -> None:
     """Main entry point for the evaluation harness."""
-    from database import get_db_connection
+    from nlp_histo.database import get_db_connection
 
     cfg.results_dir.mkdir(parents=True, exist_ok=True)
 

@@ -45,8 +45,8 @@ def fetch_sizes() -> list[dict]:
     """Return one row per Document with text_element / figure / table counts."""
     from sqlalchemy import func
 
-    from database import get_db_connection
-    from database.models import Document, Figure, Table, TextElement
+    from nlp_histo.database import get_db_connection
+    from nlp_histo.database.models import Document, Figure, Table, TextElement
 
     db = get_db_connection()
     with db.session_scope() as session:

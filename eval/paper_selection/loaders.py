@@ -81,12 +81,12 @@ class DBLoader:
     def _get_db(self):
         if self._db is not None:
             return self._db
-        from database import get_db_connection
+        from nlp_histo.database import get_db_connection
         self._db = get_db_connection()
         return self._db
 
     def list_pmcids(self) -> list[str]:
-        from database import Document
+        from nlp_histo.database import Document
         db = self._get_db()
         t0 = time.perf_counter()
         with db.session_scope() as session:
@@ -96,7 +96,7 @@ class DBLoader:
         return pmcids
 
     def load_paper(self, pmcid: str) -> RawPaper | None:
-        from database import Document, Entity, Figure, Table, TextElement
+        from nlp_histo.database import Document, Entity, Figure, Table, TextElement
         db = self._get_db()
         with db.session_scope() as session:
             doc = session.query(Document).filter_by(pmcid=pmcid).one_or_none()

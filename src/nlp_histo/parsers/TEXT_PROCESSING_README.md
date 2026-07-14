@@ -22,7 +22,7 @@ PDF extractors sometimes split paragraphs when they encounter tables or figures:
 
 **Solution:**
 ```python
-from parsers.text_processing import ContextAwareStitcher
+from nlp_histo.parsers.text_processing import ContextAwareStitcher
 
 stitcher = ContextAwareStitcher()
 result = stitcher.reconstruct_paragraphs(paragraphs)
@@ -42,7 +42,7 @@ result = stitcher.reconstruct_paragraphs(paragraphs)
 Detects if text is a bibliography/reference entry.
 
 ```python
-from parsers.text_processing import is_reference_entry
+from nlp_histo.parsers.text_processing import is_reference_entry
 
 # Returns True for references
 is_reference_entry("1. Smith J, Jones A. Nature. 2020;123:456.")
@@ -66,7 +66,7 @@ is_reference_entry("The results were significant.")
 Removes in-text citation numbers while preserving reference list numbers.
 
 ```python
-from parsers.text_processing import remove_citations
+from nlp_histo.parsers.text_processing import remove_citations
 
 # Removes in-text citations
 remove_citations("The study found. 12 These results")
@@ -93,7 +93,7 @@ remove_citations("14. Smith et al. 2020")
 Convenience function combining multiple cleaning operations.
 
 ```python
-from parsers.text_processing import clean_text
+from nlp_histo.parsers.text_processing import clean_text
 
 # Remove citations and skip references
 clean_text("The study found. 12 These results")
@@ -111,7 +111,7 @@ clean_text("1. Smith J. Nature. 2020", remove_refs=True)
 ### Example 1: Clean Extracted Text
 
 ```python
-from parsers.text_processing import ContextAwareStitcher, clean_text
+from nlp_histo.parsers.text_processing import ContextAwareStitcher, clean_text
 
 # Extract text from PDF (using any parser)
 text_elements = extract_from_pdf("paper.pdf")
@@ -127,7 +127,7 @@ cleaned = [clean_text(text) for text in stitched]
 ### Example 2: Filter References
 
 ```python
-from parsers.text_processing import is_reference_entry
+from nlp_histo.parsers.text_processing import is_reference_entry
 
 # Separate narrative from references
 narrative = [elem for elem in text_elements if not is_reference_entry(elem['text'])]
@@ -137,7 +137,7 @@ references = [elem for elem in text_elements if is_reference_entry(elem['text'])
 ### Example 3: Pipeline Processing
 
 ```python
-from parsers.text_processing import ContextAwareStitcher, remove_citations, is_reference_entry
+from nlp_histo.parsers.text_processing import ContextAwareStitcher, remove_citations, is_reference_entry
 
 def process_extracted_text(text_elements):
     """Complete text processing pipeline."""
@@ -188,7 +188,7 @@ def process_extracted_text(text_elements):
 
 ```python
 # Test stitcher
-from parsers.text_processing import ContextAwareStitcher
+from nlp_histo.parsers.text_processing import ContextAwareStitcher
 
 stitcher = ContextAwareStitcher()
 test_paras = [
@@ -200,13 +200,13 @@ result = stitcher.reconstruct_paragraphs(test_paras)
 assert result == ["The results show that the treatment was effective.", "Table 1: Data"]
 
 # Test reference detection
-from parsers.text_processing import is_reference_entry
+from nlp_histo.parsers.text_processing import is_reference_entry
 
 assert is_reference_entry("1. Smith J. Nature. 2020") == True
 assert is_reference_entry("Normal paragraph") == False
 
 # Test citation removal
-from parsers.text_processing import remove_citations
+from nlp_histo.parsers.text_processing import remove_citations
 
 assert remove_citations("Text. 12 More") == "Text. More"
 ```

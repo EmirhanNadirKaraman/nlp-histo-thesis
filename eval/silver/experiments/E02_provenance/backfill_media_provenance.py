@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from database import Document, Figure, Table, get_db_connection
+from nlp_histo.database import Document, Figure, Table, get_db_connection
 
 _JSON_DIR = _REPO_ROOT / "out" / "json"
 _KINDS = [("tables", Table), ("figures", Figure)]   # media-JSON key → ORM model

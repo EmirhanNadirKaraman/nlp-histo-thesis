@@ -43,8 +43,8 @@ logger = logging.getLogger(__name__)
 
 
 def list_pmcids() -> None:
-    from database import get_db_connection
-    from database.models import Document
+    from nlp_histo.database import get_db_connection
+    from nlp_histo.database.models import Document
 
     db = get_db_connection()
     with db.session_scope() as session:
@@ -62,7 +62,7 @@ def list_pmcids() -> None:
 
 def load_sentences(pmcid: str) -> list[dict]:
     import spacy
-    from database import get_db_connection, Document, TextElement
+    from nlp_histo.database import get_db_connection, Document, TextElement
 
     nlp = spacy.load("en_core_sci_sm")
     db = get_db_connection()

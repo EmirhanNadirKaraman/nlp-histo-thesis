@@ -4,7 +4,7 @@ import sys
 from tqdm import tqdm
 
 from sqlalchemy import func
-from database import get_db_connection, TextElement, Document, Entity
+from nlp_histo.database import get_db_connection, TextElement, Document, Entity
 from pipeline.stages.knowledge_extraction.entities import umls_resources
 
 

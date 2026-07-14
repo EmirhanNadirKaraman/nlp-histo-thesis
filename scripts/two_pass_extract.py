@@ -37,7 +37,7 @@ from pipeline.stages.pdf_text_extraction.config import (
     TwoPassConfig,
 )
 from pipeline.stages.pdf_text_extraction.models.scored_node import TwoPassResult
-from parsers.layout_utils import extract_text
+from nlp_histo.parsers.layout_utils import extract_text
 
 logging.basicConfig(
     level=logging.INFO,

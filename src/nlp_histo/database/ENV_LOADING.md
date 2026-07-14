@@ -17,7 +17,7 @@ except ImportError:
 **After:** It's automatic! Just import from database:
 ```python
 # The .env file is loaded automatically
-from database import get_db_connection
+from nlp_histo.database import get_db_connection
 ```
 
 ---
@@ -63,13 +63,13 @@ try:
 except ImportError:
     pass
 
-from database import get_db_connection  # Finally!
+from nlp_histo.database import get_db_connection  # Finally!
 ```
 
 **After:**
 ```python
 # Just import!
-from database import get_db_connection  # .env loaded automatically
+from nlp_histo.database import get_db_connection  # .env loaded automatically
 ```
 
 ### ✅ **Can't Forget**
@@ -92,8 +92,8 @@ Works exactly the same way, just cleaner:
 
 ```python
 # Any of these will automatically load .env:
-from database import get_db_connection
-from database import Document, TextElement
+from nlp_histo.database import get_db_connection
+from nlp_histo.database import Document, TextElement
 # (DB ingestion now lives in pipeline/stages/pdf_text_extraction/outputs/db_ingester.py)
 
 # .env is already loaded by the time you import
@@ -112,13 +112,13 @@ If you're writing new scripts that use the database:
 from dotenv import load_dotenv
 load_dotenv()
 
-from database import get_db_connection
+from nlp_histo.database import get_db_connection
 ```
 
 **Just do this:**
 ```python
 # ✅ NEW WAY - Simple!
-from database import get_db_connection
+from nlp_histo.database import get_db_connection
 ```
 
 ---

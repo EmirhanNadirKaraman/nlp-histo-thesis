@@ -31,8 +31,8 @@ load_dotenv(str(_REPO_ROOT / ".env"))
 
 from sqlalchemy import distinct, func
 
-from database import Document, Figure, Table, TextElement, get_db_connection
-from database.models import TextElementFigureReference, TextElementTableReference
+from nlp_histo.database import Document, Figure, Table, TextElement, get_db_connection
+from nlp_histo.database.models import TextElementFigureReference, TextElementTableReference
 
 REPORTS_DIR = _REPO_ROOT / "eval" / "reports"
 

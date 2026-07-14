@@ -33,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 
 def list_pmcids() -> None:
-    from database import get_db_connection
-    from database.models import Document
+    from nlp_histo.database import get_db_connection
+    from nlp_histo.database.models import Document
 
     db = get_db_connection()
     with db.session_scope() as session:
@@ -59,7 +59,7 @@ def load_findings_from_db(pmcid: str) -> list:
     even before a live MAP run.
     """
     import spacy
-    from database import get_db_connection, Document, TextElement
+    from nlp_histo.database import get_db_connection, Document, TextElement
     from pipeline.stages.knowledge_extraction.models import Finding, FindingScope
 
     nlp = spacy.load("en_core_sci_sm")

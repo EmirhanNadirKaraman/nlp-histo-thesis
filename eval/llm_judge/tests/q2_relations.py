@@ -44,7 +44,7 @@ def build_q2_requests(
     show_pipeline_label: bool = False,
 ) -> tuple[list[JudgeRequest], list[dict]]:
     """Build judge requests for Q2. Returns (requests, skipped)."""
-    from database import SumRelation, SumCanonicalRule  # noqa: PLC0415
+    from nlp_histo.database import SumRelation, SumCanonicalRule  # noqa: PLC0415
 
     seed = stable_seed(global_seed, pmcid, str(run_id), TASK)
 

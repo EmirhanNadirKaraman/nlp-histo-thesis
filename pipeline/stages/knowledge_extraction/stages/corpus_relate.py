@@ -430,7 +430,7 @@ class CorpusRelateStage:
         rule_meta: dict[str, dict] = {}
 
         try:
-            from database.models import SumCanonicalRule  # noqa: PLC0415
+            from nlp_histo.database.models import SumCanonicalRule  # noqa: PLC0415
             from sqlalchemy import func  # noqa: PLC0415
 
             with db.session_scope() as session:
@@ -493,7 +493,7 @@ class CorpusRelateStage:
     ) -> None:
         """Delete all corpus relations touching pmcid, then insert the new ones."""
         try:
-            from database.models import SumCorpusRelation  # noqa: PLC0415
+            from nlp_histo.database.models import SumCorpusRelation  # noqa: PLC0415
             from sqlalchemy import or_  # noqa: PLC0415
 
             corpus_run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
@@ -519,7 +519,7 @@ class CorpusRelateStage:
         self, corpus_relations: list[CorpusRelation], corpus_run_id: str
     ) -> list:
         """Convert CorpusRelation objects to SumCorpusRelation ORM rows."""
-        from database.models import SumCorpusRelation  # noqa: PLC0415
+        from nlp_histo.database.models import SumCorpusRelation  # noqa: PLC0415
         return [
             SumCorpusRelation(
                 corpus_run_id            = corpus_run_id,
@@ -560,7 +560,7 @@ class CorpusRelateStage:
     def _persist_to_db(self, corpus_relations: list[CorpusRelation]) -> None:
         """Replace ALL corpus relations in the DB (batch mode)."""
         try:
-            from database.models import SumCorpusRelation  # noqa: PLC0415
+            from nlp_histo.database.models import SumCorpusRelation  # noqa: PLC0415
             corpus_run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
             rows = self._to_db_rows(corpus_relations, corpus_run_id)
             with self._db.session_scope() as session:
@@ -845,7 +845,7 @@ def _main() -> None:
     db = None
     if not args.no_save_to_db:
         try:
-            from database import get_db_connection  # noqa: PLC0415
+            from nlp_histo.database import get_db_connection  # noqa: PLC0415
             db = get_db_connection()
             print("DB connection established for corpus relation persistence.")
         except Exception as exc:  # noqa: BLE001

@@ -48,18 +48,29 @@ extend-exclude = [
 "eval/**" = ["E402"]
 "tests/**" = ["E402"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-# Whitelist — everything else (eval, scripts, tests, legacy, reports, docs, out)
-# is excluded by omission. `eval` is deliberately NOT installed: it is run as
-# `python -m eval.…` from the repository root (installing a top-level package
-# literally named `eval` would be a generic-name collision), and
-# eval/silver/old_files/ has no __init__.py, so packages.find would silently drop it.
-include = ["pipeline*", "database*", "parsers*", "named_entity_recognition*"]
+[tool.setuptools]
+# src layout: only what lives under src/ is installable. Everything else in the
+# repository (experiment drivers, developer tools, tests, thesis artifacts) is
+# repository-only and imports the installed package — never the reverse.
+package-dir = { "" = "src" }
 
-[tool.setuptools.package-data]
-# synonyms.yaml is the only non-Python file loaded at runtime from an installed
-# package (pipeline/stages/knowledge_extraction/stages/normalize_stage.py:41, read at
-# import). configs/*.yaml stay OUT: they live outside every package and are read
-# repo-root-relative, which the supported editable install resolves correctly.
-"pipeline.stages.knowledge_extraction.entities" = ["synonyms.yaml"]
+[tool.setuptools.packages.find]
+where = ["src"]
+# Single installed namespace. The repository no longer exposes generic top-level
+# packages (`database`, `parsers`, …) to the environment: they would collide with
+# unrelated distributions and make `import database` ambiguous.
+include = ["nlp_histo*"]
+
+# NOTE (migration, Phase A of the packaging split): `pipeline`,
+# `named_entity_recognition` and `eval` are still top-level directories and are
+# therefore NOT installed — they resolve only from the repository root (as they did
+# before, since nothing was previously installed either). They move under
+# `src/nlp_histo/` in the following phases, at which point the `synonyms.yaml`
+# package-data rule returns:
+#
+#   [tool.setuptools.package-data]
+#   "nlp_histo.pipeline.stages.knowledge_extraction.entities" = ["synonyms.yaml"]
+#
+# It is omitted for now rather than left pointing at a package that no longer
+# ships, which would silently declare data for a distribution member that does
+# not exist. `database` and `parsers` need no package data.

@@ -23,8 +23,8 @@ try:
 except ImportError:
     pass
 
-from database.db_connection import get_database_url  # noqa: E402
-from database.models import Base  # noqa: E402
+from nlp_histo.database.db_connection import get_database_url  # noqa: E402
+from nlp_histo.database.models import Base  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Alembic config object — gives access to alembic.ini values.

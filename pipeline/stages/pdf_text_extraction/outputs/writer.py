@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from pipeline.stages.pdf_text_extraction.models.dto import CroppedMedia, HierarchicalRow
-from parsers.layout_utils import save_text
+from nlp_histo.parsers.layout_utils import save_text
 
 logger = logging.getLogger(__name__)
 

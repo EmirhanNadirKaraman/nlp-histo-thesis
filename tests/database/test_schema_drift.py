@@ -31,7 +31,7 @@ import pytest
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-from database.models import Base
+from nlp_histo.database.models import Base
 
 from tests.paths import REPO_ROOT as _REPO_ROOT
 _VERSIONS = _REPO_ROOT / "alembic" / "versions"

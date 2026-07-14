@@ -50,8 +50,8 @@ from dotenv import load_dotenv
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from database import Document, TextElement, get_db_connection
-from database.models import (
+from nlp_histo.database import Document, TextElement, get_db_connection
+from nlp_histo.database.models import (
     PipelineRun,
     SumCanonicalRule,
     SumFinalRule,

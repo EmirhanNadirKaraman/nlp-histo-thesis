@@ -32,7 +32,7 @@ from pathlib import Path
 from collections import defaultdict
 
 from sqlalchemy.dialects.postgresql import array
-from database import get_db_connection, Entity, TextElement, Document
+from nlp_histo.database import get_db_connection, Entity, TextElement, Document
 from named_entity_recognition.enums import UMLS_DISEASE_TYPES
 
 

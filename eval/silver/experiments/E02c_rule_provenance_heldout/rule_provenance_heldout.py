@@ -48,7 +48,7 @@ from dotenv import load_dotenv
 
 load_dotenv(str(_REPO_ROOT / ".env"))
 
-from database import Document, TextElement, get_db_connection
+from nlp_histo.database import Document, TextElement, get_db_connection
 
 REPORTS_DIR = _REPO_ROOT / "eval" / "reports"
 

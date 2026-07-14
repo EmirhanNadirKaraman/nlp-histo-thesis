@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
 from sqlalchemy import func
-from database import get_db_connection, Document, TextElement
+from nlp_histo.database import get_db_connection, Document, TextElement
 from named_entity_recognition.ner import run_ner_on_db, load_ner_model, load_linker_model
 
 # Cache file path

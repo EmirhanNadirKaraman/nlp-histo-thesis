@@ -6,7 +6,7 @@ regex caps the citation-index run at 1–3 digits so years survive.
 """
 from __future__ import annotations
 
-from parsers.text_processing import remove_citations
+from nlp_histo.parsers.text_processing import remove_citations
 
 
 def test_year_after_period_preserved():

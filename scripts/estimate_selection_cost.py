@@ -263,7 +263,7 @@ def load_paper_stats(pmcid: str, bucket: str, *,
     pre-fix — interleaves sections (the B-039 bug).
     """
     import time as _time
-    from database import get_db_connection, Document, TextElement
+    from nlp_histo.database import get_db_connection, Document, TextElement
 
     t0 = _time.perf_counter()
     db = get_db_connection()

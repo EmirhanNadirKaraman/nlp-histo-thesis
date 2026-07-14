@@ -116,7 +116,7 @@ def build_corpus_index_from_db(session) -> dict[str, list[dict]]:
     Returns an empty dict if no rows exist.
     """
     try:
-        from database.models import SumCorpusRelation  # noqa: PLC0415
+        from nlp_histo.database.models import SumCorpusRelation  # noqa: PLC0415
 
         rows = (
             session.query(SumCorpusRelation)
@@ -326,7 +326,7 @@ def build_data_from_db(pmcid: str, run_id: str, session) -> dict | None:
     (rules_provenance, master_summary) are omitted — the remaining content
     is sufficient for build_context() to produce a full inspector page.
     """
-    from database.models import (  # noqa: PLC0415
+    from nlp_histo.database.models import (  # noqa: PLC0415
         PipelineRun, SumMapFinding, SumCanonicalRule,
         SumRelation, SumFinalRule, SumNormalFinding, SumNormalFindingSpan,
         TextElement,
@@ -629,7 +629,7 @@ def _lookup_paragraphs(rules: list[dict]) -> dict[str, str | None]:
     if not te_ids:
         return {}
     try:
-        from database import get_db_connection  # noqa: PLC0415
+        from nlp_histo.database import get_db_connection  # noqa: PLC0415
         from sqlalchemy import text  # noqa: PLC0415
         db = get_db_connection()
     except Exception as exc:  # noqa: BLE001 — DB missing is non-fatal

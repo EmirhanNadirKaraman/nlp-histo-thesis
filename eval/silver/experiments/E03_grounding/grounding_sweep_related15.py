@@ -106,7 +106,7 @@ def main() -> None:
     # 1b. Reconcile with production: replace LLM-paraphrased verbatim_support with the
     #     real cited paragraph from the DB (mirrors runner.py _replace_verbatim_from_db),
     #     so grounding scores real source text rather than paraphrases.
-    from database import get_db_connection
+    from nlp_histo.database import get_db_connection
     from pipeline.stages.knowledge_extraction.persistence import replace_verbatim_from_db
     replace_verbatim_from_db(get_db_connection(), case_outputs)
 

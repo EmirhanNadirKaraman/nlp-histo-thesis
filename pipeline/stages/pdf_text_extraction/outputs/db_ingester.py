@@ -40,7 +40,7 @@ class PostgresDatabaseIngester:
 
     def _get_db(self):
         if self._db is None:
-            from database import get_db_connection  # type: ignore
+            from nlp_histo.database import get_db_connection  # type: ignore
             self._db = get_db_connection(database_url=self._db_url)
         return self._db
 
@@ -66,8 +66,8 @@ class PostgresDatabaseIngester:
             tables:   Cropped table metadata.
             pdf_path: Path to the source PDF (stored in documents.file_path).
         """
-        from database import Document, Figure, Table, TextElement  # type: ignore
-        from database.models import (  # type: ignore
+        from nlp_histo.database import Document, Figure, Table, TextElement  # type: ignore
+        from nlp_histo.database.models import (  # type: ignore
             TextElementFigureReference,
             TextElementTableReference,
         )

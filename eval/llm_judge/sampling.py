@@ -69,7 +69,7 @@ def select_papers(
     max_words: int,
 ) -> list[PaperSample]:
     """Select n papers: latest successful run per PMCID, word-count filtered."""
-    from database import Document, TextElement  # noqa: PLC0415
+    from nlp_histo.database import Document, TextElement  # noqa: PLC0415
 
     rows = session.execute(text(
         "SELECT DISTINCT ON (pmcid) pmcid, id AS run_id "
@@ -141,7 +141,7 @@ def sample_paragraphs(
     exclude boilerplate sections (acknowledgements, funding, etc.) and very
     short paragraphs.
     """
-    from database import SumMapFinding, TextElement, Document  # noqa: PLC0415
+    from nlp_histo.database import SumMapFinding, TextElement, Document  # noqa: PLC0415
 
     doc = session.query(Document).filter_by(pmcid=pmcid).first()
     if doc is None:

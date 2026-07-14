@@ -878,7 +878,7 @@ class KnowledgeExtractionRunner:
         Returns:
             dict with keys ``pmcid`` and ``sentences_with_provenance``.
         """
-        from database import get_db_connection, Document, TextElement  # type: ignore
+        from nlp_histo.database import get_db_connection, Document, TextElement  # type: ignore
         from .entities.umls_resources import get_small_nlp
 
         # B-038 fix: route through the process-wide small-model singleton so
@@ -1062,7 +1062,7 @@ class KnowledgeExtractionRunner:
         if not records:
             return
         try:
-            from database.models import SumMapVoterOutput
+            from nlp_histo.database.models import SumMapVoterOutput
             rows = [
                 SumMapVoterOutput(
                     pipeline_run_id = db_id,

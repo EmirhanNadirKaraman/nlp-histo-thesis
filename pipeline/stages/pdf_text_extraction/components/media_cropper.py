@@ -36,7 +36,7 @@ from typing import List, Optional, Tuple
 
 from pipeline.stages.pdf_text_extraction.config import CroppingConfig
 from pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, CroppedMedia, LayoutResult, TableDetectionResult
-from parsers.layout_utils import (
+from nlp_histo.parsers.layout_utils import (
     FIG_NUM_RE,
     TAB_NUM_RE,
     nearest_caption,

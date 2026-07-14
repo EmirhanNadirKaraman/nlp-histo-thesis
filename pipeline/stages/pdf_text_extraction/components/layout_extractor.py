@@ -33,7 +33,7 @@ from typing import Optional
 
 from pipeline.stages.pdf_text_extraction.config import DoclingConfig
 from pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, LayoutElement, LayoutResult
-from parsers.layout_utils import CAPTION_PATTERN, _deduplicate_caption
+from nlp_histo.parsers.layout_utils import CAPTION_PATTERN, _deduplicate_caption
 
 logger = logging.getLogger(__name__)
 

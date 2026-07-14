@@ -53,7 +53,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, CroppedMedia  # noqa: E402
 from pipeline.stages.pdf_text_extraction.outputs.media_json_writer import MediaJsonWriter  # noqa: E402
-from parsers.layout_utils import FIG_NUM_RE, TAB_NUM_RE, parse_caption_num  # noqa: E402
+from nlp_histo.parsers.layout_utils import FIG_NUM_RE, TAB_NUM_RE, parse_caption_num  # noqa: E402
 
 VARIANT = "00_docling_offtheshelf"
 PDF_DIR = _REPO_ROOT / "eval" / "pdfs"

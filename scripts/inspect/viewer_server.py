@@ -87,7 +87,7 @@ def _make_env() -> Environment:
 # ── DB helpers ─────────────────────────────────────────────────────────────────
 
 def _get_db():
-    from database import get_db_connection  # noqa: PLC0415
+    from nlp_histo.database import get_db_connection  # noqa: PLC0415
     return get_db_connection()
 
 
@@ -97,7 +97,7 @@ def _index_rows_from_db(session) -> list[dict]:
     Counts come from the DB directly (no JSON loading).
     """
     from sqlalchemy import func  # noqa: PLC0415
-    from database.models import (  # noqa: PLC0415
+    from nlp_histo.database.models import (  # noqa: PLC0415
         PipelineRun, SumFinalRule, SumCanonicalRule,
         SumRelation, SumMapFinding,
     )
@@ -201,7 +201,7 @@ def index():
 @app.route("/paper/<pmcid>")
 def paper_latest(pmcid: str):
     """Redirect to the latest successful run for this PMCID."""
-    from database.models import PipelineRun  # noqa: PLC0415
+    from nlp_histo.database.models import PipelineRun  # noqa: PLC0415
     db = _get_db()
     with db.session_scope() as session:
         run = (
@@ -242,7 +242,7 @@ def paper_run(pmcid: str, run_id: str):
         abort(404, description=f"Run {run_id!r} not found for PMCID {pmcid!r}")
 
     # Inject available run list for the run-selector dropdown
-    from database.models import PipelineRun  # noqa: PLC0415
+    from nlp_histo.database.models import PipelineRun  # noqa: PLC0415
     db = _get_db()
     with db.session_scope() as session:
         all_runs = (
@@ -292,7 +292,7 @@ def reload_corpus():
 @app.route("/api/runs")
 def api_runs():
     """Return all pipeline runs as JSON (newest first)."""
-    from database.models import PipelineRun  # noqa: PLC0415
+    from nlp_histo.database.models import PipelineRun  # noqa: PLC0415
     db = _get_db()
     with db.session_scope() as session:
         runs = (

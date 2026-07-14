@@ -538,7 +538,7 @@ class PipelineConfig:
 
         if self.database.enabled and not self.database.db_url:
             try:
-                from database.db_connection import get_database_url  # type: ignore
+                from nlp_histo.database.db_connection import get_database_url  # type: ignore
                 self.database.db_url = get_database_url()
             except Exception:
                 raise ValueError(

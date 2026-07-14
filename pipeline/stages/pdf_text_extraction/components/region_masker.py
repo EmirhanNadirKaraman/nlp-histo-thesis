@@ -30,7 +30,7 @@ from typing import List, Optional
 
 from pipeline.stages.pdf_text_extraction.config import MaskingConfig
 from pipeline.stages.pdf_text_extraction.models.dto import BoundingBox, LayoutResult, TableDetectionResult
-from parsers.layout_utils import MIN_ANCHOR_H, nlp_is_meaningful
+from nlp_histo.parsers.layout_utils import MIN_ANCHOR_H, nlp_is_meaningful
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +219,7 @@ class PyMuPDFRegionMasker:
             Path to the masked PDF (written next to the source or into output_dir).
         """
         import fitz  # type: ignore
-        from parsers.layout_utils import merge_rects
+        from nlp_histo.parsers.layout_utils import merge_rects
 
         out_dir = self._output_dir or pdf_path.parent
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -282,7 +282,7 @@ class PyMuPDFRegionMasker:
         :meth:`mask`.
         """
         import fitz  # type: ignore
-        from parsers.layout_utils import merge_rects
+        from nlp_histo.parsers.layout_utils import merge_rects
 
         fig_regions = [
             el.bbox for el in layout.elements if el.type in self._FIGURE_TYPES

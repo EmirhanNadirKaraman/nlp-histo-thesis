@@ -96,7 +96,7 @@ class HybridTableDetector:
         self, results: List[TableDetectionResult], pdf_path: Path
     ) -> TableDetectionResult:
         """Union per-page bounding boxes from all detectors using merge_rects."""
-        from parsers.layout_utils import merge_rects
+        from nlp_histo.parsers.layout_utils import merge_rects
 
         # Collect page_dims from the first result that has them
         page_dims: dict = {}

@@ -107,7 +107,7 @@ def main():
     if args.db:
         from dotenv import load_dotenv
         load_dotenv(str(_REPO / ".env"))
-        from database import TextElement, get_db_connection
+        from nlp_histo.database import TextElement, get_db_connection
         _db = get_db_connection()
 
         def te_resolver(te_id):  # noqa: F811

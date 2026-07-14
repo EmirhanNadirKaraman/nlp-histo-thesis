@@ -7,7 +7,7 @@ was dead code — paragraphs got fragmented at abbreviation boundaries.
 """
 import pytest
 
-from parsers.text_processing import ContextAwareStitcher
+from nlp_histo.parsers.text_processing import ContextAwareStitcher
 
 
 @pytest.fixture

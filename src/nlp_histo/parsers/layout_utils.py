@@ -371,7 +371,7 @@ def is_relevant_para(text: str, nlp=None) -> bool:
       • ≥ 20 words → auto-pass
       • 4–19 words → must have a biomedical entity OR a verb
     """
-    from parsers.text_processing import is_reference_entry
+    from nlp_histo.parsers.text_processing import is_reference_entry
     t = text.strip()
     if not t:
         return False
@@ -411,7 +411,7 @@ def _reference_list_skip_set(elements) -> set:
     match ``is_reference_entry``.  This catches reference lists that Docling
     extracts as list elements rather than plain TEXT paragraphs.
     """
-    from parsers.text_processing import is_reference_entry
+    from nlp_histo.parsers.text_processing import is_reference_entry
 
     skip: set = set()
     i, n = 0, len(elements)
@@ -463,7 +463,7 @@ def extract_text(
         with_sources:  If True, rows are 5-tuples that include source_chunks — the
                        list of pre-stitch texts merged into each output paragraph.
     """
-    from parsers.text_processing import remove_citations, ContextAwareStitcher
+    from nlp_histo.parsers.text_processing import remove_citations, ContextAwareStitcher
 
     overlap_fn    = centroid_inside if use_centroid else bbox_overlaps
     picture_pages = build_picture_pages(elements)

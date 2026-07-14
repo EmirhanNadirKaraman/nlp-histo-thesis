@@ -10,7 +10,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from database import get_db_connection, Entity
+from nlp_histo.database import get_db_connection, Entity
 from sqlalchemy.dialects.postgresql import array 
 from named_entity_recognition.enums import UMLS_DISEASE_TYPES
 

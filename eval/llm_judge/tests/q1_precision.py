@@ -63,7 +63,7 @@ def build_q1_requests(
     global_seed: int,
 ) -> tuple[list[JudgeRequest], list[dict]]:
     """Build judge requests for Q1. Returns (requests, skipped)."""
-    from database import SumMapFinding  # noqa: PLC0415
+    from nlp_histo.database import SumMapFinding  # noqa: PLC0415
 
     seed = stable_seed(global_seed, pmcid, str(run_id), TASK)
 

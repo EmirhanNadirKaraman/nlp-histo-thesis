@@ -42,8 +42,8 @@ def sample_source_cases(
 
     ``seed`` is frozen at 42 so the silver source-case set is reproducible.
     """
-    from database import get_db_connection
-    from database.models import TextElement, Document
+    from nlp_histo.database import get_db_connection
+    from nlp_histo.database.models import TextElement, Document
 
     db = get_db_connection()
     with db.session_scope() as session:
@@ -101,8 +101,8 @@ def sample_papers_source_cases(
     complete set of paragraphs for each selected paper — giving the pipeline
     per-paper context for RELATE/RESOLVE calibration.
     """
-    from database import get_db_connection
-    from database.models import Document
+    from nlp_histo.database import get_db_connection
+    from nlp_histo.database.models import Document
 
     db = get_db_connection()
     with db.session_scope() as session:

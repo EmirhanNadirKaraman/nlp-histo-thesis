@@ -521,7 +521,7 @@ class TwoPassTextExtractor:
         """
         try:
             import fitz  # type: ignore
-            from parsers.layout_utils import merge_rects
+            from nlp_histo.parsers.layout_utils import merge_rects
 
             out_dir = self._masked_pdf_dir or self._cache_dir or pdf_path.parent
             out_dir.mkdir(parents=True, exist_ok=True)

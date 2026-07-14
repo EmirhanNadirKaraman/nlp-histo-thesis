@@ -21,8 +21,8 @@ def export_pipeline_outputs(
     Uses the most recent successful pipeline run per pmcid.
     Writes pipeline_findings.jsonl — one line per case.
     """
-    from database import get_db_connection
-    from database.models import PipelineRun, SumMapFinding
+    from nlp_histo.database import get_db_connection
+    from nlp_histo.database.models import PipelineRun, SumMapFinding
 
     cases = list(read_jsonl(source_cases_path, SourceCase))
     logger.info("Exporting pipeline findings for %d cases", len(cases))
