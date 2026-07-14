@@ -82,3 +82,8 @@ include = ["nlp_histo*"]
 # are still read repository-root-relative (nli_config.py, pricing.py). That
 # repository-root assumption is catalogued for the Phase F path pass.
 "nlp_histo.pipeline.stages.knowledge_extraction.entities" = ["synonyms.yaml"]
+# Immutable application defaults: the model price table and the NLI model registry.
+# Read via importlib.resources, overridable with NLP_HISTO_MODEL_PRICES /
+# NLP_HISTO_NLI_MODELS. configs/run.yaml stays OUT — that is the user's run
+# configuration, supplied with --config, not an application default.
+"nlp_histo.resources" = ["model_prices.json", "nli_models.yaml"]

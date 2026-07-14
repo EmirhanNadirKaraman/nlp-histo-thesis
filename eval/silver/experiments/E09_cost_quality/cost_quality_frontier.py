@@ -68,7 +68,11 @@ def _latest(pattern: str) -> Path:
 
 
 def _price_lookup() -> dict:
-    raw = json.loads((_REPO_ROOT / "configs" / "model_prices.json").read_text())["models"]
+    from nlp_histo.pipeline.stages.knowledge_extraction.costing.pricing import (
+        default_price_path,
+    )
+
+    raw = json.loads(default_price_path().read_text(encoding="utf-8"))["models"]
     def price(model: str) -> float:
         if model in raw:
             m = raw[model]

@@ -26,9 +26,20 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_PRICE_PATH = (
-    Path(__file__).resolve().parents[6] / "configs" / "model_prices.json"
-)
+def default_price_path():
+    """The packaged price table, or NLP_HISTO_MODEL_PRICES if set.
+
+    Shipped as package data and read via importlib.resources — an installed wheel has
+    no repository tree, so locating it by filesystem depth silently yields an empty
+    price book (every cost renders as n/a).
+    """
+    import os
+    from importlib import resources
+
+    override = os.getenv("NLP_HISTO_MODEL_PRICES")
+    if override:
+        return Path(override).expanduser()
+    return resources.files("nlp_histo.resources").joinpath("model_prices.json")
 
 
 @dataclass(frozen=True)
@@ -65,8 +76,8 @@ class PriceBook:
     @classmethod
     def load(cls, path: Path | str | None = None) -> PriceBook:
         """Load a price book from JSON. Returns an empty book if the file is missing."""
-        p = Path(path) if path is not None else DEFAULT_PRICE_PATH
-        if not p.exists():
+        p = Path(path) if path is not None else default_price_path()
+        if not p.is_file():
             logger.warning(
                 "PriceBook: %s does not exist — proceeding with no prices "
                 "(token usage will be reported, dollar costs will be omitted).",

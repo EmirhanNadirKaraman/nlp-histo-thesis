@@ -22,12 +22,20 @@ logger = logging.getLogger(__name__)
 
 # Repository-level resource, anchored to this file rather than the working directory:
 # grounding -> knowledge_extraction -> stages -> pipeline -> <repo root>/configs/…
-# `configs/` lives outside every installed package, so it cannot be package data; an
-# editable install keeps `__file__` in the source tree, so this resolves correctly from
-# any working directory under the supported install contract.
-_CONFIG_PATH = (
-    Path(__file__).resolve().parents[6] / "configs" / "nli_models.yaml"
-)
+# The NLI model registry is an immutable application default and ships inside the
+# package. It is read through importlib.resources: an installed wheel has no
+# repository above it, so a parents[n] walk would resolve to a stranger's directory
+# (empirically: from a wheel it landed on /private/tmp/configs/nli_models.yaml and
+# silently fell back). NLP_HISTO_NLI_MODELS overrides with an external file.
+def _config_path():
+    import os
+    from importlib import resources
+
+    override = os.getenv("NLP_HISTO_NLI_MODELS")
+    if override:
+        return Path(override).expanduser()
+    return resources.files("nlp_histo.resources").joinpath("nli_models.yaml")
+
 
 _FALLBACK_HF_ID = "pritamdeka/PubMedBERT-MNLI-MedNLI"
 _FALLBACK_BATCH_SIZE = 16
@@ -43,10 +51,10 @@ class NLIModelSpec:
 
 @lru_cache(maxsize=1)
 def _load_registry() -> tuple[dict[str, NLIModelSpec], str]:
-    if not _CONFIG_PATH.exists():
+    if not _config_path().is_file():
         logger.warning(
             "NLI registry %s missing; using built-in fallback (%s).",
-            _CONFIG_PATH, _FALLBACK_HF_ID,
+            _config_path(), _FALLBACK_HF_ID,
         )
         fallback = NLIModelSpec(
             key="fallback", hf_id=_FALLBACK_HF_ID,
@@ -54,7 +62,7 @@ def _load_registry() -> tuple[dict[str, NLIModelSpec], str]:
         )
         return {"fallback": fallback}, "fallback"
 
-    data = yaml.safe_load(_CONFIG_PATH.read_text(encoding="utf-8"))
+    data = yaml.safe_load(_config_path().read_text(encoding="utf-8"))
     raw_models = data.get("models") or {}
     models = {
         key: NLIModelSpec(
@@ -68,7 +76,7 @@ def _load_registry() -> tuple[dict[str, NLIModelSpec], str]:
     default_key = data.get("default")
     if default_key not in models:
         raise ValueError(
-            f"{_CONFIG_PATH}: default key {default_key!r} not found in models."
+            f"{_config_path()}: default key {default_key!r} not found in models."
         )
     return models, default_key
 
