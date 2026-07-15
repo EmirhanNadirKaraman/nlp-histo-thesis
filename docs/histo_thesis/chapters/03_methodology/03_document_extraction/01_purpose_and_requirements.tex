@@ -4,14 +4,16 @@ The document extraction pipeline sits between the raw paper corpus, filtered and
 
 Its purpose is to transform the source files into structured document elements that can be stored and reused in the downstream stages. This pipeline is necessary because PDFs are unstructured~\parencite{ramakrishnan2012layoutawaretextextraction, tiedemann2014improvedtextextraction, hansen2019datadrivenrecognitionextraction}. Downstream reuse of these elements requires each element to have a structure and a stable identity, and to be re-derivable from its source. Since the pipeline must process the full corpus of 977 papers, each paper is extracted independently and dispatched through a thread-pool batch runner.
 
+\medskip{}
+
 For each paper, the pipeline produces: 
 
 \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
-    \item \textbf{Text elements.} A sequence of body paragraphs and headings, each carrying the surrounding section context.
+    \item \textbf{Text elements.} A sequence of body paragraphs, each carrying the section-heading path it appears under, its depth, and its position within that section.
     
     \item \textbf{Section structure.} A recoverable nested hierarchy of section titles, under which each text element appears.
     
-    \item \textbf{Figures and tables.} A stable identifier per figure and table, the page and bounding boxes in which they appear, and their captions for later reference. Tables, in addition to captions, have footnotes: each table footnote is captured within the table crop (§\ref{subsec:doc-table-and-figure-handling}), so a separate record of table footnotes is not created.
+    \item \textbf{Figures and tables.} A stable identifier per figure and table, the page and bounding boxes in which they appear, and their captions, where caption-matching is successful, for later reference. Tables, in addition to captions, have footnotes: each table footnote is captured within the table crop (§\ref{subsec:doc-table-and-figure-handling}), so a separate record of table footnotes is not created.
     
     \item \textbf{Cross-references.} References from each text element to the figures and tables it cites are recorded, making it possible to navigate from a claim's verbatim sentence to the table or figure it discusses. 
     

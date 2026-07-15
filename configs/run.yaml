@@ -77,7 +77,7 @@ pdf_extraction:
 
   table_detector: hybrid        # tatr | docling | hybrid | vlm
 
-summarization:
+knowledge_extraction:
   map:
     theta: 0.9                  # E07 map_theta CONFIRMED
     reject_theta: 0.2           # E07 map_theta (5-voter, 2026-06-22): reject=0.2 weakly dominates 0.1 (the (0.0,0.1] band is empty for the 5-voter ensemble; the lowest-consensus chunk sits in (0.1,0.2])

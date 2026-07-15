@@ -8,6 +8,6 @@ The main operation in this stage is paragraph merging. In journal articles, it w
 
 Citation markers such as "[1,2,3]", double-spaces, and URLs are detected with regular expressions and removed before merging --- otherwise an intervening marker could prevent two fragments that should be joined from being merged.
 
-The merging rule is purely syntactic: it only examines tokens and punctuation, not sentence meaning. Therefore, it can either over-merge or fail to merge when it should. This is an accepted trade-off. The heuristic recovers common page-break and column-break cases without adding a second semantic parser. 
+The merging rule is purely syntactic: it only examines tokens and punctuation, not sentence meaning. Therefore, it can either over-merge or fail to merge when it should. This is an accepted trade-off. The heuristic recovers common page-break and column-break cases without adding a semantic parser on top of Docling. 
 
 The result is a list of hierarchical rows, each pairing the merged paragraph text with its section path. These rows are the textual units over which the knowledge-extraction pipeline operates. Assigning each row to its position within the section, linking the figures and tables it cites, and writing into the database are explained in Subsection~\ref{subsec:doc-provenance-preserving-storage}. 

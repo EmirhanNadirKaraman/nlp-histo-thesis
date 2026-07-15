@@ -57,9 +57,10 @@ Natural language inference (NLI) is used in two downstream components, and both 
         \bottomrule
     \end{tabular}
     \end{table}
+
+    The \texttt{scope\_aware} mode is the input format used in production, based on the assumption that it helps with more ambiguous cases in real papers, where two claims might look similar on the surface but are about different diseases or entities. As the production format, it is evaluated here to check whether the bracketed scope prefix degrades the performance of a classifier fine-tuned on natural-language sentence pairs. It does not: the accuracy moves from $0.927$ to $0.923$. However, this experiment cannot show whether scope information is beneficial: both claims in each pair of the synthetic dataset share the same disease or entity context, so they receive the same prefix. Similar claims with different contexts do not exist in the synthetic claim-pair set by construction, making it impossible to test the intended use of the \texttt{scope\_aware} mode. 
     
-    The \texttt{scope\_aware} mode performs marginally worse with a difference of $0.004$ in accuracy, but it is the mode used in production, based on the assumption that it would help more ambiguous cases on real papers, where two claims might look similar on the surface, but are about different diseases or entities. A diagnostic joint sweep over (\texttt{entailment\_threshold} $\times$ 
-    \texttt{contradiction\_threshold}), both in ranges $\{0.4, 0.5, \dots, 0.9\}$ confirms that the result obtained with default, frozen thresholds at 0.5/0.5 is within a fraction of a percent of the optimum (entailment threshold~0.4, contradiction threshold~0.9: macro-F1 0.9307), so no further calibration for the two NLI thresholds was run, preserving the out-of-sample property of the evaluation set.
+    A diagnostic joint sweep over (\texttt{entailment\_threshold} $\times$ \texttt{contradiction\_threshold}), both in ranges $\{0.4, 0.5, \dots, 0.9\}$ confirms that the result obtained with default, frozen thresholds at 0.5/0.5 is within a fraction of a percent of the optimum (entailment threshold~0.4, contradiction threshold~0.9: macro-F1 0.9307), so no further calibration for the two NLI thresholds was run, preserving the out-of-sample property of the evaluation set.
 
 \end{itemize}
 
