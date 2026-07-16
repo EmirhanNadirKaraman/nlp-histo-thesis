@@ -27,6 +27,7 @@ Usage:
 """
 
 import json
+import sys
 import argparse
 from collections.abc import Sequence
 from pathlib import Path
@@ -34,7 +35,8 @@ from collections import defaultdict
 
 from sqlalchemy.dialects.postgresql import array
 from nlp_histo.database import get_db_connection, Entity, TextElement, Document
-from nlp_histo.ner.enums import UMLS_DISEASE_TYPES
+from nlp_histo.ner.enums import DEFAULT_MODEL_NAME, UMLS_DISEASE_TYPES
+from nlp_histo.ner.model_filter import NoMatchingEntitiesError, check_model_filter
 
 
 def export_disease_entities(
@@ -54,7 +56,9 @@ def export_disease_entities(
         semantic_types: List of TUI codes to filter (default: all disease types)
         limit: Limit to first N documents
         pmcid: Filter to specific PMCID
-        model_name: Optional model name to filter entities (e.g., 'en_core_sci_lg')
+        model_name: Optional model name to filter entities. This is spaCy's
+                    ``nlp.meta["name"]`` as stored in entities.model_name —
+                    'core_sci_lg', NOT the package name 'en_core_sci_lg' (B-115).
 
     Returns:
         dict: Exported entity data grouped by UMLS CUI
@@ -195,6 +199,8 @@ def export_disease_entities(
                 print(f"  Processed {row_count} rows, {len(umls_groups)} unique CUIs...")
 
         if row_count == 0:
+            # See B-115: only report emptiness when the filter matches existing data.
+            check_model_filter(session, model_name)
             print("No disease entities found matching the criteria.")
             return {}
 
@@ -324,7 +330,7 @@ Examples:
   python -m nlp_histo.ner.export_disease_entities
 
   # Filter by model (auto-sets output dir to disease_entities_lg)
-  python -m nlp_histo.ner.export_disease_entities --model en_core_sci_lg
+  python -m nlp_histo.ner.export_disease_entities --model core_sci_lg
 
   # Custom output directory
   python -m nlp_histo.ner.export_disease_entities --output-dir results/diseases
@@ -362,8 +368,9 @@ Available semantic types:
     parser.add_argument(
         '--model',
         type=str,
-        default='en_core_sci_lg',
-        help='Filter by model name (default: en_core_sci_lg). Output dir auto-set if not specified.'
+        default=DEFAULT_MODEL_NAME,
+        help=f'Filter by model name (default: {DEFAULT_MODEL_NAME}). Output dir auto-set '
+             'if not specified.'
     )
     parser.add_argument(
         '--min-occurrences',
@@ -390,14 +397,20 @@ Available semantic types:
 
     args = parser.parse_args(argv)
 
-    export_disease_entities(
-        output_dir=args.output_dir,
-        min_occurrences=args.min_occurrences,
-        semantic_types=args.semantic_types,
-        limit=args.limit,
-        pmcid=args.pmcid,
-        model_name=args.model
-    )
+    try:
+        export_disease_entities(
+            output_dir=args.output_dir,
+            min_occurrences=args.min_occurrences,
+            semantic_types=args.semantic_types,
+            limit=args.limit,
+            pmcid=args.pmcid,
+            model_name=args.model
+        )
+    except NoMatchingEntitiesError as e:
+        # A filter that matches nothing while data exists is an error, not an
+        # empty result (B-115).
+        print(f"\n❌ {e}\n", file=sys.stderr)
+        return 1
     return 0
 
 

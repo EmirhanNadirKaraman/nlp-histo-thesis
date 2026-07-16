@@ -48,6 +48,8 @@ from pathlib import Path
 from collections import defaultdict
 
 from nlp_histo.database import get_db_connection, Entity, TextElement, Document
+from nlp_histo.ner.enums import DEFAULT_MODEL_NAME
+from nlp_histo.ner.model_filter import NoMatchingEntitiesError, check_model_filter
 
 
 def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit=None, model_name=None):
@@ -61,7 +63,9 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
         output_dir: Output directory for output files (one file per CUI).
                     If None, auto-generates based on model_name.
         limit: Optional limit to process only first N documents
-        model_name: Optional model name to filter entities (e.g., 'en_core_sci_lg')
+        model_name: Optional model name to filter entities. This is spaCy's
+                    ``nlp.meta["name"]`` as stored in entities.model_name —
+                    'core_sci_lg', NOT the package name 'en_core_sci_lg' (B-115).
 
     Returns:
         dict: Merged entity data grouped by UMLS CUI
@@ -183,6 +187,9 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
                 })
 
         if row_count == 0:
+            # An empty result is only honest if the filter matches data that exists;
+            # otherwise it is a mismatch and must not read as success (B-115).
+            check_model_filter(session, model_name)
             print("No entities with UMLS mappings found.")
             if pmcid:
                 print(f"\nMake sure document {pmcid} has been processed with NER.")
@@ -316,7 +323,7 @@ Examples:
   python -m nlp_histo.ner.merge_entities_by_umls
 
   # Filter by model (auto-sets output dir to umls_entities_lg)
-  python -m nlp_histo.ner.merge_entities_by_umls --model en_core_sci_lg
+  python -m nlp_histo.ner.merge_entities_by_umls --model core_sci_lg
 
   # Process specific document
   python -m nlp_histo.ner.merge_entities_by_umls --pmcid PMC1448691
@@ -354,8 +361,9 @@ Examples:
     parser.add_argument(
         '--model',
         type=str,
-        default='en_core_sci_lg',
-        help='Filter by model name (default: en_core_sci_lg). Output dir auto-set if not specified.'
+        default=DEFAULT_MODEL_NAME,
+        help=f'Filter by model name (default: {DEFAULT_MODEL_NAME}). Output dir auto-set '
+             'if not specified.'
     )
 
     args = parser.parse_args(argv)
@@ -368,6 +376,11 @@ Examples:
             limit=args.limit,
             model_name=args.model
         )
+    except NoMatchingEntitiesError as e:
+        # Its message is already actionable, and the generic advice below would
+        # mislead: the entities table IS populated, just under another model name.
+        print(f"\n❌ {e}\n", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         print(f"\n❌ Error: {e}\n")
         print("="*80)

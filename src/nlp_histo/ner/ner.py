@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 from sqlalchemy import func
 from nlp_histo.database import get_db_connection, TextElement, Document, Entity
+from nlp_histo.ner.enums import DEFAULT_MODEL_NAME
 from nlp_histo.pipeline.stages.knowledge_extraction.entities import umls_resources
 
 
@@ -175,7 +176,8 @@ def run_ner_on_db(pmcid: str, min_chars: int = 50, save_to_db: bool = False, for
     # scispaCy loads before bailing — concretely visible in the runner log as
     # "NER done [136.4s]" on a paper that did zero inference (B-054).
     # The model name used to key existing entities matches what the singleton
-    # exposes via `nlp.meta["name"]` ("core_sci_lg" for en_core_sci_lg).
+    # exposes via `nlp.meta["name"]` ("core_sci_lg" for en_core_sci_lg) — the same
+    # value `ner merge` / `ner export` must filter on (DEFAULT_MODEL_NAME, B-115).
     if save_to_db and not force:
         with db.session_scope() as session:
             existing_count = (
@@ -183,11 +185,11 @@ def run_ner_on_db(pmcid: str, min_chars: int = 50, save_to_db: bool = False, for
                 .join(TextElement)
                 .join(Document)
                 .filter(Document.pmcid == pmcid)
-                .filter(Entity.model_name == "core_sci_lg")
+                .filter(Entity.model_name == DEFAULT_MODEL_NAME)
                 .scalar()
             )
         if existing_count > 0:
-            print(f"⚠ Document {pmcid} already has {existing_count} entities from model 'core_sci_lg'.")
+            print(f"⚠ Document {pmcid} already has {existing_count} entities from model '{DEFAULT_MODEL_NAME}'.")
             print("Skipping processing. Use --force to reprocess and replace.\n")
             return []
 
