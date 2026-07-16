@@ -103,7 +103,7 @@ model download, or the repository — it opens no connection and writes nothing.
 | Variable | Purpose |
 |---|---|
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | database connection (usually via `.env`) |
-| `NLP_HISTO_ENV_FILE` | explicit path to the `.env` file |
+| `NLP_HISTO_ENV_FILE` | which `.env` file to read — **selects the file; does not win over already-set variables** (see below) |
 | `NLP_HISTO_ENTITY_CACHE` | entity-linking cache file (see §8) |
 | `NLP_HISTO_OPENAI_EMBEDDING_CACHE`, `NLP_HISTO_GEMINI_EMBEDDING_CACHE` | embedding caches |
 | `NLP_HISTO_MODEL_PRICES`, `NLP_HISTO_NLI_MODELS` | override the packaged defaults |
@@ -112,6 +112,26 @@ model download, or the repository — it opens no connection and writes nothing.
 
 `.env` is searched **upward from your working directory**, not next to the installed
 package. Copy `.env.example` to `.env` and fill it in.
+
+**Precedence — a real variable already in your environment beats the file.** The order is
+*environment variable* → *`.env` file* → *built-in default*, which is deliberate: it is how
+you override a file value for one command (`DB_NAME=other nlp-histo db check`).
+
+But it applies to `NLP_HISTO_ENV_FILE` too, and that surprises people:
+`NLP_HISTO_ENV_FILE` chooses **which file is read**, not whose values win. If `DB_NAME` is
+already exported — by `source .env`, direnv, docker-compose, CI secrets, or an IDE run
+configuration — then pointing `NLP_HISTO_ENV_FILE` at a scratch config **will not** move
+you off your production database, and nothing will say so. That nearly wrote a test ingest
+into the 977-paper corpus during the §7 verification (BUGS.md B-113).
+
+```bash
+env | grep '^DB_'                    # what is already set?
+env -u DB_NAME nlp-histo db check    # run with an inherited value cleared
+nlp-histo db check                   # prints: Target: user@host:port/database
+```
+
+`db init` and `db check` echo the resolved target; `ingest` and `ner` do not — so check
+with `db check` before pointing a write at a non-default database.
 
 ## 5. Database
 
@@ -179,11 +199,24 @@ disk: out/text (1) · out/figures (10 PNGs) · out/json (1) · out/docling_full 
 
 The counts match the established corpus for the same paper exactly (14 text elements,
 10 figures, 0 tables), and `unique_path` has the documented
-`{PMCID}/{section}/{position}` shape. Two things worth knowing, both matching production
-rather than deviating from it: `documents.title` is left `NULL` (it is NULL for all 977
-papers in the established corpus), and `ingest` writes no `pipeline_runs` row. Also note a
-missing `--pdf-dir` does **not** error — the run finds 0 PDFs, writes a run manifest, and
-exits 0.
+`{PMCID}/{section}/{position}` shape.
+
+Three things worth knowing, none of them faults in this run:
+
+* **`ingest` writes no `pipeline_runs` row — by design.** That table tracks
+  `KnowledgeExtractionRunner.process()` (§9) and is the FK root of the `sum_*` tables; the
+  established database holds 33 rows against 977 ingested papers. Ingest's provenance is
+  `out/run_metadata/run_{ISO}_{uuid}.json` plus per-document `{pmcid}_stats.json`.
+* **`documents.title` is left `NULL`** — as are `journal` and `publication_year`, for all
+  977 papers in the established corpus. Nothing consumes them (BUGS.md B-114).
+* **A missing `--pdf-dir` does not error** — the run finds 0 PDFs, writes a run manifest,
+  and exits 0.
+
+> **⚠ Before running `ingest` against anything but your default database, prove the
+> target.** An explicit `NLP_HISTO_ENV_FILE` does **not** override `DB_*` variables
+> already exported in your shell, so a run aimed at a scratch database can silently write
+> to your production corpus — this very nearly happened during the verification above.
+> Check first: `env | grep '^DB_'`, and see BUGS.md B-113.
 
 ## 8. Named-entity recognition
 
