@@ -6,9 +6,17 @@ and started hitting the NCBI API. That cannot live in an installed package — a
 import must never perform network I/O. The loop is now :func:`download_papers`, and
 both paths are explicit arguments.
 
-Network behaviour is unchanged: same NCBI OA endpoint, same ``tgz`` link selection,
-same ``ftp://`` → ``https://`` scheme fix, same 0.5 s politeness delay, same
-skip-and-continue handling for papers outside the OA subset.
+Network behaviour: same NCBI OA endpoint, same ``tgz`` link selection, same
+``ftp://`` → ``https://`` scheme fix, same 0.5 s politeness delay, same skip-and-continue
+handling for papers outside the OA subset.
+
+⚠ **NCBI's OA API currently advertises paths it does not serve.** Every legacy FTP tree
+was moved under ``/pub/pmc/deprecated/`` (NCBI readme, updated 2026-04-10) while
+``oa.fcgi`` still returns the pre-move URLs, so the advertised link 404s for every paper.
+:func:`candidate_urls` therefore tries the advertised URL first and the relocated one
+second. **NCBI will delete the legacy files in August 2026**; after that this module
+stops working and must move to the AWS OA service
+(https://pmc.ncbi.nlm.nih.gov/tools/cloud/). See BUGS.md B-118.
 """
 from __future__ import annotations
 
@@ -104,12 +112,55 @@ def get_download_link(pmcid: str) -> str | None:
         return None
 
 
-def download_file(url: str, filename: str | Path) -> bool:
+def candidate_urls(advertised: str) -> List[str]:
+    """The URLs worth trying for an OA package the API advertises, in order.
+
+    NCBI moved every legacy FTP tree under ``/pub/pmc/deprecated/`` (their readme, updated
+    2026-04-10) but ``oa.fcgi`` still advertises the *pre-move* paths, so the advertised
+    URL 404s for every paper — verified 0/5 across 2010–2025 publications, with the same
+    file present at 7 556 375 bytes under ``deprecated/`` (B-118).
+
+    The advertised URL is tried **first** so this repairs itself the day NCBI updates its
+    API, and the relocation is a fallback rather than a hard-coded assumption.
+
+    ⚠ **The fallback has an expiry date.** NCBI states the legacy files "will be removed
+    in August 2026". After that both candidates 404 and acquisition fails loudly — which
+    is correct, and is the signal to migrate to the AWS OA service
+    (https://pmc.ncbi.nlm.nih.gov/tools/cloud/). See THESIS.md.
+    """
+    https = advertised.replace("ftp://", "https://", 1) if advertised.startswith("ftp://") else advertised
+    urls = [https]
+    if "/pub/pmc/" in https and "/pub/pmc/deprecated/" not in https:
+        urls.append(https.replace("/pub/pmc/", "/pub/pmc/deprecated/", 1))
+    return urls
+
+
+def download_package(advertised_url: str, target: Path) -> bool:
+    """Fetch one OA package, trying each candidate URL. True when a valid archive landed.
+
+    Only the final attempt reports its failure: an intermediate miss is expected while
+    NCBI's API points at the old tree, and printing it for all 1093 papers would bury the
+    signal.
+    """
+    candidates = candidate_urls(advertised_url)
+    for index, url in enumerate(candidates):
+        is_last = index == len(candidates) - 1
+        if download_file(url, target, quiet=not is_last):
+            if index > 0:
+                print(f"   ↪ via NCBI's relocated legacy tree ({url}) — temporary, see B-118")
+            return True
+    return False
+
+
+def download_file(url: str, filename: str | Path, *, quiet: bool = False) -> bool:
     """Stream a single file to disk. Returns True only if a valid archive landed.
 
     A download that produced nothing usable is removed: leaving a zero-byte or corrupt
     file behind would make the next run's ``target.exists()`` check *skip* it, so one bad
     fetch would poison every retry. Successful archives are never touched.
+
+    ``quiet`` suppresses only the failure message — for callers trying several candidate
+    URLs, where an early miss is expected rather than newsworthy.
     """
     filename = Path(filename)
     try:
@@ -119,17 +170,19 @@ def download_file(url: str, filename: str | Path) -> bool:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
     except Exception as e:
-        print(f"❌ Failed to download {url}: {e}")
+        if not quiet:
+            print(f"❌ Failed to download {url}: {e}")
         filename.unlink(missing_ok=True)  # a partial write is not a resumable result
         return False
 
     if not is_valid_archive(filename):
         size = filename.stat().st_size if filename.is_file() else 0
-        print(
-            f"❌ Downloaded {filename.name} but it is not a usable .tar.gz "
-            f"({size} bytes) — discarding. The server returned 200 with a body that is "
-            f"empty, truncated, or not an archive (an error page, perhaps)."
-        )
+        if not quiet:
+            print(
+                f"❌ Downloaded {filename.name} but it is not a usable .tar.gz "
+                f"({size} bytes) — discarding. The server returned 200 with a body that "
+                f"is empty, truncated, or not an archive (an error page, perhaps)."
+            )
         filename.unlink(missing_ok=True)
         return False
 
@@ -187,12 +240,9 @@ def download_papers(
         ftp_link = get_download_link(pmcid)
 
         if ftp_link:
-            # NCBI advertises ftp:// links; requests speaks HTTPS, and the hosts
-            # serve the same paths over TLS.
-            if ftp_link.startswith("ftp://"):
-                ftp_link = ftp_link.replace("ftp://", "https://")
-
-            if download_file(ftp_link, target):
+            # The advertised URL first, then NCBI's relocated legacy tree — see
+            # candidate_urls(). The scheme fix lives there too.
+            if download_package(ftp_link, target):
                 succeeded += 1
             else:
                 failed += 1

@@ -24,7 +24,11 @@ import tarfile
 import pytest
 
 from nlp_histo.acquisition import downloader
-from nlp_histo.acquisition.downloader import DownloadReport, is_valid_archive
+from nlp_histo.acquisition.downloader import (
+    DownloadReport,
+    candidate_urls,
+    is_valid_archive,
+)
 from nlp_histo.cli.main import main
 
 
@@ -140,6 +144,72 @@ def test_valid_archive_is_kept(tmp_path, monkeypatch) -> None:
     target = tmp_path / "PMC1.tar.gz"
     assert downloader.download_file("https://x/PMC1.tar.gz", target) is True
     assert target.is_file() and target.stat().st_size > 0
+
+
+# ── B-118: NCBI moved the packages; the API still advertises the old path ─────
+
+_ADVERTISED = "ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_package/e5/a1/PMC8395919.tar.gz"
+_RELOCATED = "https://ftp.ncbi.nlm.nih.gov/pub/pmc/deprecated/oa_package/e5/a1/PMC8395919.tar.gz"
+
+
+def test_candidates_are_advertised_first_then_relocated() -> None:
+    """Order matters: the advertised URL is tried first so this self-heals the day NCBI
+    fixes its API, rather than pinning us to a directory they intend to delete."""
+    assert candidate_urls(_ADVERTISED) == [
+        "https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_package/e5/a1/PMC8395919.tar.gz",
+        _RELOCATED,
+    ]
+
+
+def test_ftp_scheme_is_rewritten_to_https() -> None:
+    assert all(u.startswith("https://") for u in candidate_urls(_ADVERTISED))
+
+
+def test_an_already_relocated_url_is_not_double_rewritten() -> None:
+    """Guard the string surgery: inserting deprecated/ twice would 404 on both tries."""
+    assert candidate_urls(_RELOCATED) == [_RELOCATED]
+
+
+def test_a_non_pmc_url_gets_no_fallback() -> None:
+    """The relocation is a PMC fact, not a general one."""
+    assert candidate_urls("https://example.org/thing.tar.gz") == ["https://example.org/thing.tar.gz"]
+
+
+def test_download_package_falls_back_when_the_advertised_url_404s(tmp_path, monkeypatch) -> None:
+    """Today's reality: advertised 404s, relocated serves the archive."""
+    good = _real_targz_bytes()
+    seen = []
+
+    def _get(url, **k):
+        seen.append(url)
+        return _FakeResponse(good) if "/deprecated/" in url else _FakeResponse(b"", 404)
+
+    monkeypatch.setattr(downloader.requests, "get", _get)
+    target = tmp_path / "PMC8395919.tar.gz"
+    assert downloader.download_package(_ADVERTISED, target) is True
+    assert target.is_file()
+    assert len(seen) == 2 and "/deprecated/" in seen[1], "must try advertised before relocated"
+
+
+def test_download_package_does_not_fall_back_when_advertised_works(tmp_path, monkeypatch) -> None:
+    """When NCBI repairs its API, the fallback must go quiet on its own."""
+    seen = []
+
+    def _get(url, **k):
+        seen.append(url)
+        return _FakeResponse(_real_targz_bytes())
+
+    monkeypatch.setattr(downloader.requests, "get", _get)
+    assert downloader.download_package(_ADVERTISED, tmp_path / "x.tar.gz") is True
+    assert len(seen) == 1, "the advertised URL worked; nothing else should be requested"
+
+
+def test_download_package_fails_when_both_candidates_fail(tmp_path, monkeypatch, capsys) -> None:
+    """After August 2026 NCBI deletes the legacy tree — this must fail loudly, not
+    silently produce an empty corpus."""
+    monkeypatch.setattr(downloader.requests, "get", lambda url, **k: _FakeResponse(b"", 404))
+    assert downloader.download_package(_ADVERTISED, tmp_path / "x.tar.gz") is False
+    assert "Failed to download" in capsys.readouterr().out
 
 
 # ── run-level reports ─────────────────────────────────────────────────────────
