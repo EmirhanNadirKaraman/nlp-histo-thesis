@@ -20,6 +20,7 @@ assurance is worth less than an honest inventory, so here is the inventory.
 | 5 | `db check`, `db init` | verified against a live PostgreSQL — including `db init` against an **empty** database (21 tables created from the ORM, exit 0, ~1 s) |
 | 6 | `acquire organize` missing-input failure | verified (exit 1, names the path) |
 | 7 | `ingest` | **verified end-to-end** on one 8-page PDF into an isolated database — exit 0, 33 s, 14 text elements + 10 figures, matching the established corpus exactly |
+| 8 | `ner extract` / `merge` / `export` | **verified end-to-end** on that document — 865 entities (749 with UMLS CUIs) → 762 merged files → 89 disease CUIs. `merge`/`export` produced nothing before the B-115 fix |
 | 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
 | 10 | `replay chapter9` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable |
 | 11 | `pytest`, `ruff check .` | verified — 1565 passed, 0 failed; ruff clean |
@@ -31,9 +32,9 @@ assurance is worth less than an honest inventory, so here is the inventory.
   framework 3.12 install; imports and the console script resolve, but the documented
   install was not re-run from scratch.
 * **§6** — `acquire download` / `unpack`. No bulk download was performed against NCBI.
-* **§8 `ner`** — **dispatch and flag names confirmed by reading the forwarded parser**
-  (`batch_ner.py:288` `--entity-cache`), and the entity-cache migration advice checked
-  against `ner/cache_paths.py`, but **no `ner` command was run**.
+* **§8's entity-cache migration advice** — the paths and resolution order were checked
+  against `ner/cache_paths.py`, and `ner extract` was run against a *copy* of the cache;
+  the documented `export NLP_HISTO_ENTITY_CACHE=…` line itself was not exercised.
 * **§12** — `E14 --theta-frontier` (the plain E14 run is verified).
 * **§13** — the B-102 limitation, carried forward from an earlier audit.
 
@@ -243,13 +244,27 @@ Otherwise NER starts with a cold cache and recomputes the UMLS links.
 As with `ingest`, `ner` forwards its options: `nlp-histo ner extract -- --help` lists the
 real ones (`--entity-cache`, `--limit`, `--force`, …).
 
-> **Partly verified (2026-07-16).** Confirmed by inspection: the 30 MB cache is still at
-> `named_entity_recognition/entity_linking_cache.json` (the module's `.py` files moved to
-> `src/nlp_histo/ner/`; the data file did not), `--entity-cache` exists
-> (`batch_ner.py:288`), and the resolution order matches `ner/cache_paths.py` — explicit
-> flag → `$NLP_HISTO_ENTITY_CACHE` → `$XDG_CACHE_HOME/nlp-histo/…` → `~/.cache/nlp-histo/…`.
-> **No `ner` command was executed** (they write to the database), so the migration advice
-> is reasoned from the code, not demonstrated.
+`merge` and `export` filter on `entities.model_name`, which holds spaCy's
+`nlp.meta["name"]` — **`core_sci_lg`**, not the package name `en_core_sci_lg` (the `en` is
+`meta["lang"]`). The default is correct; pass `--model` only to select a different stored
+model. A `--model` that matches nothing now **fails (exit 1)** naming what is available,
+rather than reporting an empty result as success — that silent no-op was B-115, and it
+meant these two commands had never emitted a file.
+
+*Verified end-to-end 2026-07-16* — all three commands, documented form, on the ingested
+document above, in the same isolated database:
+
+```
+nlp-histo ner extract --entity-cache <copy>   → exit 0 · 85 s · 1 processed, 0 errors
+    DB: 865 entities · 749 with UMLS CUIs · across all 14 text elements
+    cache: 280 790 → 280 790 entries (+0 new) — fully warm, no recomputation
+nlp-histo ner merge                            → exit 0 · 749 occurrences · 762 files
+nlp-histo ner export                           → exit 0 · 89 disease CUIs · 178 files
+```
+
+Spot-checked as meaningful rather than merely present: `C0002989 "Epithelioid hemangioma
+of skin"` for a paper on cutaneous epithelioid angiomatous nodule. The run used a **copy**
+of the entity cache; the original was verified unchanged (identical SHA-256).
 
 ## 9. Knowledge extraction — ⚠ this costs money
 
