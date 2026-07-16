@@ -153,8 +153,11 @@ def test_acquire_download_dispatches_with_explicit_paths(monkeypatch, tmp_path) 
 
     from nlp_histo.acquisition.downloader import DownloadReport
 
-    def _fake_download(pmcid_file, output_dir, *, overwrite=False):
-        seen.update(file=Path(pmcid_file), out=Path(output_dir), overwrite=overwrite)
+    def _fake_download(pmcid_file, output_dir, *, overwrite=False, source="aws"):
+        seen.update(
+            file=Path(pmcid_file), out=Path(output_dir),
+            overwrite=overwrite, source=source,
+        )
         # Mirror the real signature: a DownloadReport, not a bare count. Any `failed`
         # would make the CLI exit non-zero (B-117).
         return DownloadReport(requested=1, succeeded=1, failed=0, skipped=0)
@@ -167,6 +170,7 @@ def test_acquire_download_dispatches_with_explicit_paths(monkeypatch, tmp_path) 
     assert seen["file"] == ids
     assert seen["out"] == tmp_path / "tars"
     assert seen["overwrite"] is False
+    assert seen["source"] == "aws", "the durable backend is the default (B-118)"
 
 
 def test_ner_extract_forwards_entity_cache_flag(monkeypatch, tmp_path) -> None:

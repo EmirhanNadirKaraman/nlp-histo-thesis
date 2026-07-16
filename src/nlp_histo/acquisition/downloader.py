@@ -112,6 +112,118 @@ def get_download_link(pmcid: str) -> str | None:
         return None
 
 
+# ── AWS Open-Access dataset (the successor to the FTP tarballs) ───────────────
+#
+# NLM publishes the OA Subset on AWS, free and without login
+# (https://pmc.ncbi.nlm.nih.gov/tools/cloud/, https://registry.opendata.aws/ncbi-pmc).
+# It is the durable route: the FTP tree it replaces is deleted in August 2026 (B-118).
+#
+# Layout differs from FTP in two ways that matter:
+#   * no tarball — the PDF, XML, text and figures are individual objects;
+#   * objects live under a VERSIONED prefix, "PMC8395919.1/", so a PMCID alone does not
+#     determine the URL. The version is discovered by listing the prefix.
+AWS_OA_BUCKET = "https://pmc-oa-opendata.s3.amazonaws.com"
+_S3_NS = {"s3": "http://s3.amazonaws.com/doc/2006-03-01/"}
+
+_PDF_MAGIC = b"%PDF"
+
+
+def _object_version(key: str) -> int:
+    """Article version from an S3 key, e.g. ``PMC8395919.1/…`` → 1. ``-1`` if unparsable."""
+    head = key.split("/", 1)[0]
+    try:
+        return int(head.rsplit(".", 1)[1])
+    except (IndexError, ValueError):
+        return -1
+
+
+def aws_object_keys(pmcid: str) -> List[str]:
+    """Keys for the newest version of *pmcid*, or ``[]`` when it is not in the dataset.
+
+    The trailing dot in the prefix matters: ``PMC839591.`` must not match
+    ``PMC8395919…``. Only the highest version's objects are returned — a paper with a
+    v1 and a v2 should yield v2, not a mixture.
+    """
+    r = requests.get(
+        f"{AWS_OA_BUCKET}?list-type=2&prefix={pmcid}.&max-keys=1000", timeout=60
+    )
+    r.raise_for_status()
+    root = ET.fromstring(r.content)
+    keys = [c.find("s3:Key", _S3_NS).text for c in root.findall(".//s3:Contents", _S3_NS)]
+    if not keys:
+        return []
+    newest = max(_object_version(k) for k in keys)
+    return [k for k in keys if _object_version(k) == newest]
+
+
+def download_paper_aws(pmcid: str, corpus_dir: Path, *, overwrite: bool = False) -> str:
+    """Fetch one paper's PDF + XML from AWS into ``corpus_dir/<pmcid>/``.
+
+    Writes the layout ``acquire unpack`` *produces*, so ``acquire organize`` consumes it
+    unchanged and the tarball step is simply not needed on this route.
+
+    Returns ``"succeeded"``, ``"failed"`` or ``"skipped"`` — the same three-way outcome
+    the FTP path reports (B-117), so neither source can turn a miss into a success.
+    """
+    dest = corpus_dir / pmcid
+    if dest.is_dir() and any(dest.glob("*.pdf")) and not overwrite:
+        print(f"↷ {pmcid} already downloaded — skipping (use --overwrite to force)")
+        return "skipped"
+
+    try:
+        keys = aws_object_keys(pmcid)
+    except Exception as e:  # noqa: BLE001 — a lookup failure is a failure, not a skip
+        print(f"❌ {pmcid}: AWS listing failed: {e}")
+        return "failed"
+
+    if not keys:
+        print(f"⚠️ {pmcid} is not in the AWS Open Access dataset.")
+        return "skipped"
+
+    wanted = [k for k in keys if k.lower().endswith((".pdf", ".xml"))]
+    if not any(k.lower().endswith(".pdf") for k in wanted):
+        # In the dataset but carrying no PDF: that is a real gap for a PDF pipeline, and
+        # must not be silently counted as success.
+        print(f"❌ {pmcid}: present in the dataset but has no PDF ({len(keys)} objects).")
+        return "failed"
+
+    dest.mkdir(parents=True, exist_ok=True)
+    for key in wanted:
+        magic = _PDF_MAGIC if key.lower().endswith(".pdf") else None
+        if not download_object(f"{AWS_OA_BUCKET}/{key}", dest / Path(key).name, magic=magic):
+            return "failed"
+    print(f"✅ Downloaded: {pmcid} ({len(wanted)} file(s)) → {dest}")
+    return "succeeded"
+
+
+def download_object(url: str, target: Path, *, magic: bytes | None = None) -> bool:
+    """Stream one object to disk; verify it is non-empty and starts with *magic*.
+
+    Same reasoning as the archive check: a 200 carrying an error page is not a PDF, and
+    only looks like one if nobody reads the first four bytes. Unusable files are removed
+    so a re-run refetches instead of skipping.
+    """
+    target = Path(target)
+    try:
+        with requests.get(url, stream=True, timeout=120) as r:
+            r.raise_for_status()
+            with open(target, "wb") as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+    except Exception as e:  # noqa: BLE001
+        print(f"❌ Failed to download {url}: {e}")
+        target.unlink(missing_ok=True)
+        return False
+
+    if target.stat().st_size == 0 or (magic and target.open("rb").read(len(magic)) != magic):
+        print(f"❌ {target.name}: not the expected content ({target.stat().st_size} bytes) — discarding.")
+        target.unlink(missing_ok=True)
+        return False
+    return True
+
+
+# ── legacy FTP tarballs (works until NCBI deletes them, August 2026) ──────────
+
 def candidate_urls(advertised: str) -> List[str]:
     """The URLs worth trying for an OA package the API advertises, in order.
 
@@ -195,8 +307,17 @@ def download_papers(
     output_dir: Path,
     *,
     overwrite: bool = False,
+    source: str = "aws",
 ) -> DownloadReport:
-    """Download the OA package for every PMCID in *pmcid_file* into *output_dir*.
+    """Download every PMCID in *pmcid_file* into *output_dir*.
+
+    ``source="aws"`` (default) pulls individual PDF/XML objects from NLM's AWS Open-Access
+    dataset into ``output_dir/<pmcid>/`` — the layout ``acquire unpack`` produces, so
+    ``organize`` follows directly and no unpack step is needed.
+
+    ``source="ftp"`` fetches the legacy ``.tar.gz`` packages into ``output_dir`` and still
+    requires ``acquire unpack``. **NCBI deletes that tree in August 2026** (B-118); it is
+    kept only so a mid-migration corpus can still be resumed.
 
     Returns a :class:`DownloadReport`. Validates its inputs before creating anything: a
     missing PMCID file raises ``FileNotFoundError`` with the offending path, and no
@@ -226,10 +347,26 @@ def download_papers(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Processing {len(pmc_ids)} papers into {output_dir}...")
+    if source not in ("aws", "ftp"):
+        raise ValueError(f"unknown source {source!r}; expected 'aws' or 'ftp'")
+
+    print(f"Processing {len(pmc_ids)} papers into {output_dir} (source={source})...")
+    if source == "ftp":
+        print(
+            "⚠ The FTP tarball route is deprecated upstream: NCBI deletes these files in "
+            "August 2026 (B-118). Prefer --source aws."
+        )
     succeeded = failed = skipped = 0
 
     for pmcid in pmc_ids:
+        if source == "aws":
+            outcome = download_paper_aws(pmcid, output_dir, overwrite=overwrite)
+            succeeded += outcome == "succeeded"
+            failed += outcome == "failed"
+            skipped += outcome == "skipped"
+            time.sleep(REQUEST_DELAY_SEC)
+            continue
+
         target = output_dir / f"{pmcid}.tar.gz"
         if target.exists() and not overwrite:
             print(f"↷ {pmcid} already downloaded — skipping (use --overwrite to force)")

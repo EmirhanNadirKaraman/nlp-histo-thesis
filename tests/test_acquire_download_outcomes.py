@@ -212,18 +212,112 @@ def test_download_package_fails_when_both_candidates_fail(tmp_path, monkeypatch,
     assert "Failed to download" in capsys.readouterr().out
 
 
-# ── run-level reports ─────────────────────────────────────────────────────────
+# ── AWS backend (B-118's durable successor) ───────────────────────────────────
+
+def _s3_listing(*keys: str) -> bytes:
+    body = "".join(f"<Contents><Key>{k}</Key><Size>1</Size></Contents>" for k in keys)
+    return (
+        '<?xml version="1.0"?><ListBucketResult '
+        'xmlns="http://s3.amazonaws.com/doc/2006-03-01/">' + body + "</ListBucketResult>"
+    ).encode()
+
+
+class _XmlResponse:
+    def __init__(self, content): self.content, self.status_code = content, 200
+    def raise_for_status(self): pass
+
+
+def test_aws_picks_the_newest_version_only(monkeypatch) -> None:
+    """A paper with v1 and v2 must yield v2's objects, never a mixture."""
+    monkeypatch.setattr(
+        downloader.requests, "get",
+        lambda *a, **k: _XmlResponse(_s3_listing(
+            "PMC8395919.1/PMC8395919.1.pdf", "PMC8395919.1/PMC8395919.1.xml",
+            "PMC8395919.2/PMC8395919.2.pdf", "PMC8395919.2/PMC8395919.2.xml",
+        )),
+    )
+    keys = downloader.aws_object_keys("PMC8395919")
+    assert keys == ["PMC8395919.2/PMC8395919.2.pdf", "PMC8395919.2/PMC8395919.2.xml"]
+
+
+def test_aws_absent_paper_is_skipped_not_failed(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(downloader.requests, "get", lambda *a, **k: _XmlResponse(_s3_listing()))
+    assert downloader.download_paper_aws("PMC404", tmp_path) == "skipped"
+
+
+def test_aws_listing_error_is_a_failure_not_a_skip(tmp_path, monkeypatch) -> None:
+    """A lookup that errored tells us nothing — it must not be read as 'not in the set'."""
+    def _boom(*a, **k):
+        raise ConnectionError("network down")
+    monkeypatch.setattr(downloader.requests, "get", _boom)
+    assert downloader.download_paper_aws("PMC1", tmp_path) == "failed"
+
+
+def test_aws_paper_without_a_pdf_is_a_failure(tmp_path, monkeypatch) -> None:
+    """A PDF pipeline getting no PDF is a gap, not a success."""
+    monkeypatch.setattr(
+        downloader.requests, "get",
+        lambda *a, **k: _XmlResponse(_s3_listing("PMC1.1/PMC1.1.xml", "PMC1.1/PMC1.1.txt")),
+    )
+    assert downloader.download_paper_aws("PMC1", tmp_path) == "failed"
+
+
+def test_aws_writes_the_layout_organize_expects(tmp_path, monkeypatch) -> None:
+    """corpus/<PMCID>/ with the PDF+XML — exactly what unpack produces, so organize
+    consumes it unchanged and no tarball step is needed."""
+    listing = _s3_listing("PMC1.1/PMC1.1.pdf", "PMC1.1/PMC1.1.xml", "PMC1.1/fig1.jpg")
+
+    def _get(url, **k):
+        if "list-type=2" in url:
+            return _XmlResponse(listing)
+        return _FakeResponse(b"%PDF-1.4 body" if url.endswith(".pdf") else b"<article/>")
+
+    monkeypatch.setattr(downloader.requests, "get", _get)
+    assert downloader.download_paper_aws("PMC1", tmp_path) == "succeeded"
+    assert (tmp_path / "PMC1" / "PMC1.1.pdf").is_file()
+    assert (tmp_path / "PMC1" / "PMC1.1.xml").is_file()
+    assert not (tmp_path / "PMC1" / "fig1.jpg").exists(), "only PDF+XML are needed"
+
+
+def test_aws_rejects_a_pdf_that_is_not_a_pdf(tmp_path, monkeypatch) -> None:
+    """A 200 carrying an error page must not land as a PDF (same lesson as B-117)."""
+    listing = _s3_listing("PMC1.1/PMC1.1.pdf")
+
+    def _get(url, **k):
+        return _XmlResponse(listing) if "list-type=2" in url else _FakeResponse(b"<html>nope</html>")
+
+    monkeypatch.setattr(downloader.requests, "get", _get)
+    assert downloader.download_paper_aws("PMC1", tmp_path) == "failed"
+    assert not (tmp_path / "PMC1" / "PMC1.1.pdf").exists()
+
+
+def test_aws_already_downloaded_is_skipped(tmp_path, monkeypatch) -> None:
+    (tmp_path / "PMC1").mkdir()
+    (tmp_path / "PMC1" / "PMC1.1.pdf").write_bytes(b"%PDF")
+    monkeypatch.setattr(
+        downloader.requests, "get",
+        lambda *a, **k: pytest.fail("must not hit the network for an existing paper"),
+    )
+    assert downloader.download_paper_aws("PMC1", tmp_path) == "skipped"
+
+
+def test_unknown_source_is_rejected(tmp_path) -> None:
+    with pytest.raises(ValueError, match="unknown source"):
+        downloader.download_papers(_pmcid_file(tmp_path, "PMC1"), tmp_path / "o", source="carrier-pigeon")
+
+
+# ── run-level reports (FTP backend; the AWS equivalents are above) ────────────
 
 def test_total_success(tmp_path, monkeypatch) -> None:
     _serve(monkeypatch, _real_targz_bytes())
-    r = downloader.download_papers(_pmcid_file(tmp_path, "PMC1", "PMC2"), tmp_path / "out")
+    r = downloader.download_papers(_pmcid_file(tmp_path, "PMC1", "PMC2"), tmp_path / "out", source="ftp")
     assert (r.requested, r.succeeded, r.failed, r.skipped) == (2, 2, 0, 0)
     assert r.ok
 
 
 def test_total_failure(tmp_path, monkeypatch) -> None:
     _serve(monkeypatch, b"", status=404)
-    r = downloader.download_papers(_pmcid_file(tmp_path, "PMC1", "PMC2"), tmp_path / "out")
+    r = downloader.download_papers(_pmcid_file(tmp_path, "PMC1", "PMC2"), tmp_path / "out", source="ftp")
     assert (r.succeeded, r.failed) == (0, 2)
     assert not r.ok
 
@@ -237,7 +331,7 @@ def test_partial_failure_is_not_ok_and_keeps_the_good_file(tmp_path, monkeypatch
         lambda url, **k: _FakeResponse(good) if "PMC1." in url else _FakeResponse(b"", 404),
     )
     out = tmp_path / "out"
-    r = downloader.download_papers(_pmcid_file(tmp_path, "PMC1", "PMC2"), out)
+    r = downloader.download_papers(_pmcid_file(tmp_path, "PMC1", "PMC2"), out, source="ftp")
     assert (r.succeeded, r.failed) == (1, 1)
     assert not r.ok, "a partial failure must not report success"
     assert (out / "PMC1.tar.gz").is_file(), "the successful archive must be preserved"
@@ -246,7 +340,7 @@ def test_partial_failure_is_not_ok_and_keeps_the_good_file(tmp_path, monkeypatch
 def test_not_in_oa_subset_is_skipped_not_failed(tmp_path, monkeypatch) -> None:
     """NCBI answering 'no package' is an answer, not a denial."""
     monkeypatch.setattr(downloader, "get_download_link", lambda p: None)
-    r = downloader.download_papers(_pmcid_file(tmp_path, "PMC1", "PMC2"), tmp_path / "out")
+    r = downloader.download_papers(_pmcid_file(tmp_path, "PMC1", "PMC2"), tmp_path / "out", source="ftp")
     assert (r.succeeded, r.failed, r.skipped) == (0, 0, 2)
     assert r.ok
 
@@ -259,7 +353,7 @@ def test_already_present_is_skipped(tmp_path, monkeypatch) -> None:
         downloader, "get_download_link",
         lambda p: pytest.fail("must not look up an already-downloaded paper"),
     )
-    r = downloader.download_papers(_pmcid_file(tmp_path, "PMC1"), out)
+    r = downloader.download_papers(_pmcid_file(tmp_path, "PMC1"), out, source="ftp")
     assert (r.succeeded, r.failed, r.skipped) == (0, 0, 1)
     assert r.ok
 

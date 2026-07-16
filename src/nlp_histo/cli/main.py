@@ -39,7 +39,8 @@ def _acquire(args: argparse.Namespace) -> int:
         from nlp_histo.acquisition.downloader import download_papers
 
         report = download_papers(
-            args.pmcid_file, args.output_dir, overwrite=args.overwrite
+            args.pmcid_file, args.output_dir,
+            overwrite=args.overwrite, source=args.source,
         )
         # ANY failure fails the run, even beside successes: a corpus quietly missing the
         # papers NCBI said it had is worse than a red exit code. The return value used to
@@ -139,13 +140,19 @@ def build_parser() -> argparse.ArgumentParser:
     acquire = sub.add_parser("acquire", help="Download and prepare the PMC corpus.")
     acq_sub = acquire.add_subparsers(dest="acquire_command", metavar="<subcommand>")
 
-    dl = acq_sub.add_parser("download", help="Download OA article packages for a PMCID list.")
+    dl = acq_sub.add_parser("download", help="Download OA articles for a PMCID list.")
     dl.add_argument("--pmcid-file", type=_path, required=True,
                     help="Text file of PMCIDs, one per line.")
     dl.add_argument("--output-dir", type=_path, required=True,
-                    help="Directory to write <PMCID>.tar.gz into.")
+                    help="aws: corpus directory, written as <PMCID>/ — feed it straight "
+                         "to `acquire organize`. ftp: directory for <PMCID>.tar.gz, which "
+                         "still needs `acquire unpack`.")
+    dl.add_argument("--source", choices=("aws", "ftp"), default="aws",
+                    help="aws (default): NLM's AWS Open-Access dataset — PDF+XML per "
+                         "paper, no tarball, no unpack step. ftp: the legacy tarballs, "
+                         "which NCBI deletes in August 2026 (B-118).")
     dl.add_argument("--overwrite", action="store_true",
-                    help="Re-download tarballs that already exist (default: skip).")
+                    help="Re-download papers that already exist (default: skip).")
 
     un = acq_sub.add_parser("unpack", help="Extract downloaded tarballs.")
     un.add_argument("--input-dir", type=_path, required=True, help="Directory of *.tar.gz.")
