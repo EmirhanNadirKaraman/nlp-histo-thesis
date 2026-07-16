@@ -31,7 +31,12 @@ def _complete_artifact_root(root: Path) -> Path:
     primer.mkdir(parents=True)
     (primer / "voter_cache.json").write_text("{}")
     (root / "eval" / "data" / "silver_findings_related15.jsonl").write_text('{"a": 1}\n')
+    # Both embedders are exercised by the replay — 05 loads the map context with
+    # "openai", 06/10/12 with "gemini" — so both caches are required (B-112).
     (root / "eval" / "data" / "embedding_cache_openai.sqlite").write_bytes(
+        SQLITE_HEADER + b"\x00" * 16
+    )
+    (root / "eval" / "data" / "embedding_cache_gemini.sqlite").write_bytes(
         SQLITE_HEADER + b"\x00" * 16
     )
 
@@ -82,6 +87,7 @@ def test_the_orchestrator_and_rubric_report_are_required(tmp_path: Path) -> None
         "eval/data/map_primer/voter_cache.json",
         "eval/data/silver_findings_related15.jsonl",
         "eval/data/embedding_cache_openai.sqlite",
+        "eval/data/embedding_cache_gemini.sqlite",
         "scripts/eval/run_summarization_experiments.py",
         "reports/stage6_PR.md",
     ],

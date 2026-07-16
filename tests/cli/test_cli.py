@@ -269,6 +269,10 @@ def test_replay_umls_gate_runs_before_any_output_exists(tmp_path, monkeypatch) -
     from nlp_histo.workflows import replay
 
     monkeypatch.setattr(replay, "validate_artifacts", lambda root: [])
+    # The embedding-cache gate (B-112) also runs in configure(); stub it so this test
+    # isolates the UMLS ordering guarantee. Its own ordering is covered in
+    # test_replay_embedding_cache_preflight.py.
+    monkeypatch.setattr(replay, "validate_embedding_cache_entries", lambda root: None)
     out_dir = tmp_path / "replay-out"
     seen: dict[str, bool] = {}
 
@@ -288,6 +292,7 @@ def test_replay_succeeds_normally_when_umls_is_available(tmp_path, monkeypatch) 
 
     monkeypatch.setattr(replay, "validate_artifacts", lambda root: [])
     monkeypatch.setattr(replay, "_require_umls_or_refuse", lambda: None)
+    monkeypatch.setattr(replay, "validate_embedding_cache_entries", lambda root: None)
     ran: list[bool] = []
     monkeypatch.setattr(replay, "_run_replay", lambda: ran.append(True))
 

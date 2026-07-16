@@ -130,8 +130,15 @@ REQUIRED_ARTIFACTS: tuple[RequiredArtifact, ...] = (
     ),
     RequiredArtifact(
         Path("eval") / "data" / "embedding_cache_openai.sqlite",
-        "frozen embedding cache — REQUIRED: without it the matcher misses and issues "
-        "PAID embedding calls in a workflow documented as offline and free",
+        "frozen OpenAI embedding cache — REQUIRED: without it the matcher misses and "
+        "issues PAID embedding calls in a workflow documented as free (analyses 05, 10)",
+        kind="sqlite",
+    ),
+    RequiredArtifact(
+        Path("eval") / "data" / "embedding_cache_gemini.sqlite",
+        "frozen Gemini embedding cache — REQUIRED: analyses 06/10/12 load the map context "
+        "with the gemini embedder, so a miss here issues PAID Gemini calls. Was absent "
+        "from this list until B-112, leaving the paid-call guard half-enforced",
         kind="sqlite",
     ),
     RequiredArtifact(
@@ -160,12 +167,130 @@ REQUIRED_ARTIFACTS: tuple[RequiredArtifact, ...] = (
 #   eval/reports/exp_{1,4}_*_scorer_full_*.csv → 04_theta_heatmap
 OPTIONAL_INPUTS = (Path("eval") / "reports",)
 
-FROZEN_EMBEDDING_CACHE = Path("eval") / "data" / "embedding_cache_openai.sqlite"
+# Both embedders are used: 05 loads the map context with "openai", 06/10/12 with
+# "gemini". Both caches must therefore be complete, and both must resolve from the
+# artifact root — not from eval.paths.REPO_ROOT, which is where `_load_map_context`'s
+# own fallbacks point (B-112).
+FROZEN_EMBEDDING_CACHES: dict[str, Path] = {
+    "openai": Path("eval") / "data" / "embedding_cache_openai.sqlite",
+    "gemini": Path("eval") / "data" / "embedding_cache_gemini.sqlite",
+}
+# Retained for callers that predate the two-cache split.
+FROZEN_EMBEDDING_CACHE = FROZEN_EMBEDDING_CACHES["openai"]
+
+VOTER_CACHE_PATH = Path("eval") / "data" / "map_primer" / "voter_cache.json"
 
 
-def frozen_embedding_cache() -> Path:
+def frozen_embedding_cache(kind: str = "openai") -> Path:
     """The embedding cache inside the supplied artifact root — never the user cache."""
-    return _REPO_ROOT / FROZEN_EMBEDDING_CACHE
+    try:
+        relative = FROZEN_EMBEDDING_CACHES[kind]
+    except KeyError:  # pragma: no cover — programming error, not user input
+        raise ValueError(
+            f"unknown embedder kind {kind!r}; expected one of "
+            f"{sorted(FROZEN_EMBEDDING_CACHES)}"
+        ) from None
+    return _REPO_ROOT / relative
+
+
+class EmbeddingCacheIncompleteError(RuntimeError):
+    """A frozen embedding cache is missing entries this replay would need.
+
+    Distinct from a missing file (that is a plain artifact-validation failure): the
+    file is present and is a real SQLite database, but does not contain every claim the
+    run will embed — so proceeding would fall through to PAID calls (B-112).
+    """
+
+
+def _required_claim_texts(root: Path) -> list[str]:
+    """Every text the agreement pre-warm will embed, derived from the voter cache.
+
+    Mirrors ``map_theta_sweep._prewarm_agreement_cache``'s extraction exactly — same
+    levels, same shapes (l1/l2 map to *lists* of outputs, l3 to a single output),
+    same silent skip of unparseable rows. If the two ever diverge, the preflight would
+    validate a different set than the run embeds, which is worse than not checking.
+
+    Uses only packaged code (`AuditableSummary`, `_claims`) so the preflight does not
+    depend on repository-only `eval` modules.
+    """
+    from nlp_histo.pipeline.stages.knowledge_extraction.agreement.embedding import _claims
+    from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditableSummary
+
+    voter_cache = json.loads((root / VOTER_CACHE_PATH).read_text(encoding="utf-8"))
+    texts: set[str] = set()
+    for entry in voter_cache.values():
+        for level in ("l1", "l2"):
+            for data in entry.get(level, {}).values():
+                for d in (data or []):
+                    if d:
+                        try:
+                            texts.update(_claims(AuditableSummary.model_validate(d)))
+                        except Exception:
+                            pass
+        for d in entry.get("l3", {}).values():
+            if d:
+                try:
+                    texts.update(_claims(AuditableSummary.model_validate(d)))
+                except Exception:
+                    pass
+    return sorted(texts)
+
+
+def validate_embedding_cache_entries(root: Path) -> None:
+    """Refuse to start unless BOTH frozen caches already hold every required entry.
+
+    Checking that the SQLite files merely exist is not enough: an empty or partial cache
+    is a valid database, and `make_embedding_cache` happily creates one. The run would
+    then miss and bill. So the entries themselves are checked, up front, for both
+    embedders — before any analysis runs and before anything is written.
+
+    Reports counts and paths only. The texts are claim content, and there are ~15k of
+    them; neither belongs in an error message.
+    """
+    from nlp_histo.evaluation.matching.matcher import (
+        EMBEDDING_MODEL,
+        GEMINI_EMBEDDING_MODEL,
+        make_embedding_cache,
+    )
+
+    models = {"openai": EMBEDDING_MODEL, "gemini": GEMINI_EMBEDDING_MODEL}
+    texts = _required_claim_texts(root)
+    if not texts:
+        raise EmbeddingCacheIncompleteError(
+            f"No claim texts could be read from {root / VOTER_CACHE_PATH}.\n"
+            "The voter cache is present but yielded nothing to validate, so cache "
+            "completeness cannot be established. Refusing to start."
+        )
+
+    problems: list[str] = []
+    for kind, relative in FROZEN_EMBEDDING_CACHES.items():
+        path = root / relative
+        try:
+            cache = make_embedding_cache(path, models[kind])
+            missing = sum(1 for t in texts if cache.get(t) is None)
+        except Exception as exc:  # unreadable/corrupt DB — treat as incomplete, never as OK
+            problems.append(
+                f"  - {kind}: cache could not be read ({type(exc).__name__}: {exc})\n"
+                f"    {path}"
+            )
+            continue
+        if missing:
+            problems.append(
+                f"  - {kind}: {missing} of {len(texts)} required entries missing\n"
+                f"    {path}"
+            )
+
+    if problems:
+        raise EmbeddingCacheIncompleteError(
+            "Frozen embedding cache validation failed:\n\n"
+            + "\n\n".join(problems)
+            + "\n\nThe chapter-9 replay is documented as API-free. Embedding these "
+              "entries at run time would issue PAID OpenAI/Gemini calls, so it refuses "
+              "to start instead.\n"
+              "Both caches must be supplied complete, under --artifact-root, at:\n"
+            + "\n".join(f"  {rel}" for rel in FROZEN_EMBEDDING_CACHES.values())
+            + "\n\nNothing has been written."
+        )
 
 
 def validate_artifacts(root: Path) -> list[str]:
@@ -216,9 +341,10 @@ def configure(artifact_root: Path, output_dir: Path | None = None) -> None:
     repository checkout, or any copy of the frozen thesis artifacts with that layout.
     Raises ``FileNotFoundError`` naming what is missing, before writing anything.
 
-    Also probes the UMLS linker and raises ``UmlsUnavailableError`` when it is
-    unusable — before the output directory exists, so a run that cannot be correct
-    leaves nothing behind (B-107).
+    Also probes the UMLS linker (``UmlsUnavailableError``, B-107) and validates that both
+    frozen embedding caches already hold every entry the run needs
+    (``EmbeddingCacheIncompleteError``, B-112) — both before the output directory exists,
+    so a run that cannot be correct, or cannot be free, leaves nothing behind.
     """
     global _REPO_ROOT, OUT_DIR, LOG_DIR, LOG_PATH
 
@@ -237,6 +363,7 @@ def configure(artifact_root: Path, output_dir: Path | None = None) -> None:
         )
 
     _require_umls_or_refuse()
+    validate_embedding_cache_entries(root)
 
     _REPO_ROOT = root
     OUT_DIR = (
@@ -977,7 +1104,11 @@ def analyse_bootstrap_ci() -> AnalysisResult:
 
     try:
         from eval.silver.analysis.map_context import _load_map_context
-        _load_map_context(cascade_cfg["embedder"], embed_cache_path=None)
+        _load_map_context(
+            cascade_cfg["embedder"],
+            embed_cache_path=str(frozen_embedding_cache(cascade_cfg["embedder"])),
+            strict_cache_only=True,
+        )
         # Replay only dev-split cases.
         # _replay returns a dict; we adapt below.
         # Note: this path may not be straightforwardly per-case-emitting;
@@ -1149,7 +1280,11 @@ def analyse_exp_f_test_split() -> AnalysisResult:
     spec = ScorerSpec("final_gemini_hybrid_entity_heavy", "hybrid", agreement_cfg)
 
     try:
-        map_ctx = _load_map_context("gemini", embed_cache_path=None)
+        map_ctx = _load_map_context(
+            "gemini",
+            embed_cache_path=str(frozen_embedding_cache("gemini")),
+            strict_cache_only=True,
+        )
     except Exception as exc:
         return AnalysisResult(
             name=name, status="error",
@@ -1648,7 +1783,11 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
 
     # Load agreement embedder (Gemini, cached).
     try:
-        map_ctx = _load_map_context("gemini", embed_cache_path=None)
+        map_ctx = _load_map_context(
+            "gemini",
+            embed_cache_path=str(frozen_embedding_cache("gemini")),
+            strict_cache_only=True,
+        )
         agreement_embed_fn = map_ctx.agreement_embed_fn
     except Exception as exc:
         return AnalysisResult(
@@ -2106,7 +2245,11 @@ def analyse_real_profile_grounding_polarity() -> AnalysisResult:
         return assign_split(cid) == "dev"
 
     try:
-        map_ctx = _load_map_context("gemini", embed_cache_path=None)
+        map_ctx = _load_map_context(
+            "gemini",
+            embed_cache_path=str(frozen_embedding_cache("gemini")),
+            strict_cache_only=True,
+        )
         agreement_embed_fn = map_ctx.agreement_embed_fn
     except Exception as exc:
         return AnalysisResult(
@@ -2374,8 +2517,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     """Parse arguments, bind the artifact paths, run the replay. Importing runs nothing.
 
-    Exit codes: 0 = ran; 2 = artifact tree unusable; 3 = UMLS linker unavailable.
-    Both non-zero paths refuse before anything is written.
+    Exit codes: 0 = ran; 2 = artifact tree unusable; 3 = UMLS linker unavailable;
+    4 = a frozen embedding cache is incomplete. Every non-zero path refuses before
+    anything is written.
     """
     from nlp_histo.pipeline.stages.knowledge_extraction.entities.umls_resources import (
         UmlsUnavailableError,
@@ -2390,6 +2534,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     except UmlsUnavailableError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 3
+    except EmbeddingCacheIncompleteError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 4
     _run_replay()
     return 0
 

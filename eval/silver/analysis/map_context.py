@@ -44,6 +44,41 @@ from nlp_histo.evaluation.schemas import SilverCaseResult
 __all__ = ["_MapContext", "_load_map_context", "CACHE_PATH", "SILVER_PATH"]
 
 
+class CacheOnlyViolation(RuntimeError):
+    """A cache-only context tried to embed text that was not in the frozen cache.
+
+    Raised instead of calling a provider. Callers that advertise themselves as
+    API-free (the chapter-9 replay) pass ``strict_cache_only=True`` so an unexpected
+    miss — a race, a malformed row, an incomplete preflight — fails loudly rather than
+    silently spending money (B-112).
+    """
+
+
+class _NoLiveEmbedding:
+    """Stands in for an embedder in cache-only mode; raises if anything calls it.
+
+    The provider is never constructed, so no API key is needed and no request can be
+    issued: the guarantee is structural, not a matter of an unset environment variable.
+    """
+
+    def __init__(self, embedder_kind: str, role: str) -> None:
+        self._kind = embedder_kind
+        self._role = role
+
+    def __call__(self, texts):
+        n = len(texts) if hasattr(texts, "__len__") else "?"
+        raise CacheOnlyViolation(
+            f"cache-only mode: the {self._role} embedder ({self._kind}) was asked to embed "
+            f"{n} uncached text(s). Refusing — this workflow is documented as API-free, and "
+            f"embedding them would issue PAID {self._kind} calls.\n"
+            f"The frozen embedding cache is incomplete for these inputs; it must be "
+            f"regenerated or supplied in full. No text is echoed here by design."
+        )
+
+    def __repr__(self) -> str:  # pragma: no cover — diagnostics only
+        return f"_NoLiveEmbedding(kind={self._kind!r}, role={self._role!r})"
+
+
 @dataclass
 class _MapContext:
     voter_cache: dict
@@ -59,12 +94,23 @@ def _load_map_context(
     embed_cache_path: Optional[str],
     cache_path: Path = CACHE_PATH,
     silver_path: Path = SILVER_PATH,
+    strict_cache_only: bool = False,
 ) -> _MapContext:
     """Load voter cache + silver + the gemini/openai embedder and pre-warm the
     agreement cache. Mirrors map_theta_sweep's sweep-mode setup (no LLM calls).
 
     ``cache_path`` / ``silver_path`` default to the related15 primer/silver but can
-    point at another split (e.g. heldout15) for held-out evaluation."""
+    point at another split (e.g. heldout15) for held-out evaluation.
+
+    ``embed_cache_path`` should be passed **explicitly** by callers that own their own
+    artifact tree (the chapter-9 replay resolves it from ``--artifact-root``). The
+    ``_FROZEN_*`` fallbacks below are anchored to the *repository*, which is wrong for
+    anyone running against a copied tree — see B-112.
+
+    ``strict_cache_only=True`` constructs no provider at all: every embedding must come
+    from the frozen cache, and any miss raises ``CacheOnlyViolation`` instead of issuing
+    a paid call. Use it for workflows advertised as API-free. It also removes the need
+    for an API key on those paths, since no client is built."""
     if not cache_path.exists():
         raise SystemExit(
             f"voter cache not found: {cache_path}\n"
@@ -79,30 +125,38 @@ def _load_map_context(
     silver_by_case = {rec.case_id: rec for rec in read_jsonl(silver_path, SilverCaseResult)}
 
     if embedder_kind == "gemini":
-        api_key = os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            raise SystemExit("GOOGLE_API_KEY not set")
-        from nlp_histo.evaluation.matching.embedders import GeminiEmbedder
-        from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
-            GeminiEmbedder as AgreementGeminiEmbedder,
-        )
-        embedder = GeminiEmbedder(api_key)
         path = Path(embed_cache_path) if embed_cache_path else _FROZEN_GEMINI_CACHE
         embed_cache = make_embedding_cache(path, GEMINI_EMBEDDING_MODEL)
-        raw_agreement_fn = AgreementGeminiEmbedder()
+        if strict_cache_only:
+            embedder = _NoLiveEmbedding("gemini", "matcher")
+            raw_agreement_fn = _NoLiveEmbedding("gemini", "agreement")
+        else:
+            api_key = os.environ.get("GOOGLE_API_KEY")
+            if not api_key:
+                raise SystemExit("GOOGLE_API_KEY not set")
+            from nlp_histo.evaluation.matching.embedders import GeminiEmbedder
+            from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
+                GeminiEmbedder as AgreementGeminiEmbedder,
+            )
+            embedder = GeminiEmbedder(api_key)
+            raw_agreement_fn = AgreementGeminiEmbedder()
     else:
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            raise SystemExit("OPENAI_API_KEY not set")
-        from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
         from nlp_histo.evaluation.matching.matcher import EMBEDDING_MODEL
-        from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
-            OpenAIEmbedder as AgreementOpenAIEmbedder,
-        )
-        embedder = OpenAIEmbedder(api_key)
         path = Path(embed_cache_path) if embed_cache_path else _FROZEN_OPENAI_CACHE
         embed_cache = make_embedding_cache(path, EMBEDDING_MODEL)
-        raw_agreement_fn = AgreementOpenAIEmbedder()
+        if strict_cache_only:
+            embedder = _NoLiveEmbedding("openai", "matcher")
+            raw_agreement_fn = _NoLiveEmbedding("openai", "agreement")
+        else:
+            api_key = os.environ.get("OPENAI_API_KEY")
+            if not api_key:
+                raise SystemExit("OPENAI_API_KEY not set")
+            from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
+            from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
+                OpenAIEmbedder as AgreementOpenAIEmbedder,
+            )
+            embedder = OpenAIEmbedder(api_key)
+            raw_agreement_fn = AgreementOpenAIEmbedder()
 
     _prewarm_agreement_cache(voter_cache, raw_agreement_fn, embed_cache)
     agreement_embed_fn = _make_cached_embed_fn(embed_cache, raw_agreement_fn)
