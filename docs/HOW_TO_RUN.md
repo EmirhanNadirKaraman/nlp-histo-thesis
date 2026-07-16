@@ -93,17 +93,68 @@ then → §8 NER, §9 knowledge extraction, or any SQL against the 977 papers.
 the PDFs from NLM's AWS dataset → **§7** ingests them → **§9** re-runs knowledge
 extraction. **§9 costs money.** You do not need the PDFs shipped to you: §6 fetches them.
 
-> **Where the bundles live.** The replay bundle and the PostgreSQL dump are hosted on
-> **TUM's institutional storage** — ask the author for the link and access. They are not
-> in this repository: the caches and dump are too large for git, and the PDFs they derive
-> from are mostly not redistributable.
->
-> Verify what you received against the bundle's `SHA256SUMS` before running anything. The
-> replay's preflight already refuses an *incomplete* cache — it checks every required
-> entry, not just that the file exists, and exits 4 rather than falling through to paid
-> calls (B-112). What it cannot see is a cache that is complete but *wrong* — every entry
-> present, values corrupted in transit — which would produce plausible numbers. That is
-> what the checksums are for.
+### Getting the replay bundle
+
+| | |
+|---|---|
+| **File** | `nlp-histo-replay-artifacts-ec11eec.tar.gz` |
+| **Size** | 1,244,628,904 bytes (1.2 GB) |
+| **Source commit** | `ec11eec` |
+| **SHA-256** | `cded4299ac1a47cf8b857f5796731a27d3b66eac234a1acf306771e73d3e45d3` |
+
+* **Primary — LRZ Sync+Share:** <https://syncandshare.lrz.de/getlink/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles>
+* **Mirror — Google Drive:** <https://drive.google.com/drive/folders/1uo-iGOb3df11LqjQRbCwoyRsiVDMJkpY?usp=sharing>
+
+**Both locations hold the identical archive** — verified 2026-07-16 by downloading from
+each and comparing SHA-256 against the build machine: all three match
+(`cded4299…`), as do the `.sha256` and `.manifest.json` sidecars.
+
+**No account is needed.** Both are read-only links that serve anonymously — you do not
+sign in, and you cannot write through either. Note what that means: **anyone holding a URL
+can download the bundle.** It is unlisted rather than access-controlled, and it is not
+publicly indexed, archived, or assigned a DOI. The bundle holds derived artifacts —
+embeddings, summaries, cascade decisions — and **no publisher PDFs**, which is why link
+sharing is acceptable here; the PDFs are not redistributable and are not in it (§6
+re-acquires them instead).
+
+```bash
+# ── download ────────────────────────────────────────────────────────────────
+# LRZ: the browser link is JavaScript-driven; this fetches the folder as one zip.
+curl -L -o lrz-bundle.zip \
+  "https://syncandshare.lrz.de/dl/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles.dir"
+unzip lrz-bundle.zip
+
+# Google Drive mirror: a 1.2 GB file triggers Drive's virus-scan interstitial, so a plain
+# curl silently saves an HTML page named like the archive. Use the confirm parameter:
+FILE_ID=1SOWdAhhy0ZFqwlMjG3X3EFvgNQyKhIxW
+curl -L -o nlp-histo-replay-artifacts-ec11eec.tar.gz \
+  "https://drive.usercontent.google.com/download?id=${FILE_ID}&export=download&confirm=t"
+# or just download it from the browser link above.
+
+# ── validate BEFORE trusting it ─────────────────────────────────────────────
+shasum -a 256 -c nlp-histo-replay-artifacts-ec11eec.tar.gz.sha256
+#   → nlp-histo-replay-artifacts-ec11eec.tar.gz: OK
+file nlp-histo-replay-artifacts-ec11eec.tar.gz    # must say "gzip compressed data",
+                                                  # not "HTML document" (see Drive, above)
+
+# ── extract over a clean clone so the paths line up ──────────────────────────
+tar -xzf nlp-histo-replay-artifacts-ec11eec.tar.gz -C /path/to/nlp-histo
+
+# ── artifact preflight (fails loudly and itemised if anything is missing) ────
+cd /path/to/nlp-histo
+nlp-histo replay chapter9 --artifact-root . --output-dir /tmp/replay-out
+#   exit 0 → 9 CSVs;  exit 2 → artifact tree unusable;  exit 3 → UMLS unreachable;
+#   exit 4 → an embedding cache is incomplete
+```
+
+The archive also carries `MANIFEST.json` (per-file path, byte size, SHA-256) if you want
+to check individual artifacts rather than only the whole archive.
+
+**Why checksum at all, given the preflight?** The replay already refuses an *incomplete*
+cache — it validates every required entry, not merely that the file exists, and exits 4
+rather than falling through to paid calls (B-112). What it cannot see is a cache that is
+complete but *wrong*: every entry present, values corrupted in transit. That produces
+plausible numbers. The checksum is what closes that gap.
 
 ---
 
