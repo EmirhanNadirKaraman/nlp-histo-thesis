@@ -54,6 +54,8 @@ def _real_targz_bytes() -> bytes:
 class _FakeResponse:
     def __init__(self, body: bytes, status: int = 200):
         self._body, self.status_code = body, status
+        # `.content` for the non-streamed XML fetch; `iter_content` for streamed objects.
+        self.content = body
 
     def __enter__(self):
         return self
@@ -262,33 +264,44 @@ def test_aws_paper_without_a_pdf_is_a_failure(tmp_path, monkeypatch) -> None:
     assert downloader.download_paper_aws("PMC1", tmp_path) == "failed"
 
 
+_JATS = (
+    '<article xmlns:xlink="http://www.w3.org/1999/xlink">'
+    '<self-uri content-type="pmc-pdf" xlink:href="paper-08-00036.pdf"/></article>'
+).encode()
+
+
 def test_aws_writes_the_layout_organize_expects(tmp_path, monkeypatch) -> None:
-    """corpus/<PMCID>/ with the PDF+XML — exactly what unpack produces, so organize
-    consumes it unchanged and no tarball step is needed."""
+    """corpus/<PMCID>/ with a publisher-named PDF and <PMCID>.nxml — exactly what unpack
+    produces, so organize consumes it unchanged and both sources reach the same document
+    ID. The AWS object name (PMC1.1.pdf) must NOT survive: it would mint PMC1.1 (B-119).
+    """
     listing = _s3_listing("PMC1.1/PMC1.1.pdf", "PMC1.1/PMC1.1.xml", "PMC1.1/fig1.jpg")
 
     def _get(url, **k):
         if "list-type=2" in url:
             return _XmlResponse(listing)
-        return _FakeResponse(b"%PDF-1.4 body" if url.endswith(".pdf") else b"<article/>")
+        return _FakeResponse(b"%PDF-1.4 body" if url.endswith(".pdf") else _JATS)
 
     monkeypatch.setattr(downloader.requests, "get", _get)
     assert downloader.download_paper_aws("PMC1", tmp_path) == "succeeded"
-    assert (tmp_path / "PMC1" / "PMC1.1.pdf").is_file()
-    assert (tmp_path / "PMC1" / "PMC1.1.xml").is_file()
+    assert (tmp_path / "PMC1" / "paper-08-00036.pdf").is_file(), "named from the JATS self-uri"
+    assert (tmp_path / "PMC1" / "PMC1.nxml").is_file(), "unpack names the XML <PMCID>.nxml"
+    assert not (tmp_path / "PMC1" / "PMC1.1.pdf").exists(), "the versioned name must not survive"
     assert not (tmp_path / "PMC1" / "fig1.jpg").exists(), "only PDF+XML are needed"
 
 
 def test_aws_rejects_a_pdf_that_is_not_a_pdf(tmp_path, monkeypatch) -> None:
     """A 200 carrying an error page must not land as a PDF (same lesson as B-117)."""
-    listing = _s3_listing("PMC1.1/PMC1.1.pdf")
+    listing = _s3_listing("PMC1.1/PMC1.1.pdf", "PMC1.1/PMC1.1.xml")
 
     def _get(url, **k):
-        return _XmlResponse(listing) if "list-type=2" in url else _FakeResponse(b"<html>nope</html>")
+        if "list-type=2" in url:
+            return _XmlResponse(listing)
+        return _FakeResponse(_JATS) if url.endswith(".xml") else _FakeResponse(b"<html>nope</html>")
 
     monkeypatch.setattr(downloader.requests, "get", _get)
     assert downloader.download_paper_aws("PMC1", tmp_path) == "failed"
-    assert not (tmp_path / "PMC1" / "PMC1.1.pdf").exists()
+    assert not (tmp_path / "PMC1" / "paper-08-00036.pdf").exists()
 
 
 def test_aws_already_downloaded_is_skipped(tmp_path, monkeypatch) -> None:

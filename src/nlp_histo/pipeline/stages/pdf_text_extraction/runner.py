@@ -71,6 +71,7 @@ import traceback
 from pathlib import Path
 from typing import List, Optional
 
+from nlp_histo.document_id import canonical_document_id
 from nlp_histo.pipeline.stages.pdf_text_extraction.blacklist import BlacklistManager
 from nlp_histo.pipeline.stages.pdf_text_extraction.config import PipelineConfig, TableDetectorType
 from nlp_histo.pipeline.stages.pdf_text_extraction.models.dto import LayoutResult
@@ -1006,7 +1007,8 @@ class PipelineRunner:
                 run_id=run_id,
             )
             attempted = [
-                (pmcid_fn(p) if pmcid_fn else p.stem) for p in pdfs
+                (pmcid_fn(p) if pmcid_fn else canonical_document_id(p.stem))
+                for p in pdfs
             ]
             manifest.set_input(
                 runner="PipelineRunner.run_batch",
@@ -1025,7 +1027,11 @@ class PipelineRunner:
         stats = {"processed": 0, "failed": 0, "skipped": 0}
 
         for pdf_path in pdfs:
-            pmcid = pmcid_fn(pdf_path) if pmcid_fn else pdf_path.stem
+            # canonical_document_id, not the bare stem: AWS names its objects
+            # PMC8395919.1.pdf, and a version suffix in the document ID would
+            # duplicate a paper the corpus already holds under its FTP-derived ID
+            # (B-119). Publisher components are preserved untouched.
+            pmcid = pmcid_fn(pdf_path) if pmcid_fn else canonical_document_id(pdf_path.stem)
             ok = self.run_document(pdf_path, pmcid, run_id=run_id)
             if ok:
                 stats["processed"] += 1

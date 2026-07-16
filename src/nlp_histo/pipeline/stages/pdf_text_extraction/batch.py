@@ -37,6 +37,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from nlp_histo.document_id import canonical_document_id
+
 from tqdm import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm
 
@@ -198,7 +200,8 @@ class ParallelBatchRunner:
         )
 
         work = [
-            (pdf, pmcid_fn(pdf) if pmcid_fn else pdf.stem)
+            # See runner.run_batch: a version suffix must never become a document ID.
+            (pdf, pmcid_fn(pdf) if pmcid_fn else canonical_document_id(pdf.stem))
             for pdf in paths
         ]
 

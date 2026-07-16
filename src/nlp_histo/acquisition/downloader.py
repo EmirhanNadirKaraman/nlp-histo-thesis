@@ -20,6 +20,7 @@ stops working and must move to the AWS OA service
 """
 from __future__ import annotations
 
+import json
 import tarfile
 import time
 import xml.etree.ElementTree as ET
@@ -128,6 +129,73 @@ _S3_NS = {"s3": "http://s3.amazonaws.com/doc/2006-03-01/"}
 _PDF_MAGIC = b"%PDF"
 
 
+class UnresolvablePdfName(RuntimeError):
+    """The article's JATS XML does not authoritatively name its PDF.
+
+    Raised rather than guessed at: inventing a filename would mint a document ID that
+    silently differs from the FTP-derived one for the same paper, which is a duplicate
+    corpus entry rather than an error anyone would notice (B-119).
+    """
+
+
+def publisher_pdf_filename(xml_bytes: bytes) -> str:
+    """The publisher's PDF filename, from the JATS ``self-uri`` element.
+
+    This is the authoritative mapping — the same name the FTP tarball carried — so an AWS
+    download reaches the same document ID as an FTP one. Example::
+
+        <self-uri content-type="pmc-pdf" xlink:href="dermatopathology-08-00036.pdf"/>
+
+    The value is **untrusted**: it is publisher-supplied text that becomes a path we
+    write to. Everything below is a rejection, not a repair — a surprising value means we
+    do not understand the article, and guessing is how you get a wrong identifier or a
+    write outside the corpus directory.
+    """
+    XLINK_HREF = "{http://www.w3.org/1999/xlink}href"
+    try:
+        root = ET.fromstring(xml_bytes)
+    except ET.ParseError as e:
+        raise UnresolvablePdfName(f"JATS XML is unparsable: {e}") from e
+
+    hrefs = [
+        el.get(XLINK_HREF)
+        for el in root.iter()
+        if el.tag.rsplit("}", 1)[-1] == "self-uri" and el.get("content-type") == "pmc-pdf"
+    ]
+    hrefs = [h for h in hrefs if h]
+
+    if not hrefs:
+        raise UnresolvablePdfName(
+            "no <self-uri content-type='pmc-pdf'> in the JATS XML — the article does not "
+            "name its own PDF, so no authoritative filename exists"
+        )
+    if len(set(hrefs)) > 1:
+        raise UnresolvablePdfName(
+            f"ambiguous: {len(set(hrefs))} different pmc-pdf self-uri values {sorted(set(hrefs))!r}"
+        )
+
+    href = hrefs[0].strip()
+    if not href:
+        raise UnresolvablePdfName("pmc-pdf self-uri is empty")
+    if "://" in href or href.startswith("//"):
+        raise UnresolvablePdfName(f"pmc-pdf self-uri is a URL, not a filename: {href!r}")
+    if href.startswith("/") or (len(href) > 1 and href[1] == ":"):
+        raise UnresolvablePdfName(f"pmc-pdf self-uri is an absolute path: {href!r}")
+    if ".." in href.split("/"):
+        raise UnresolvablePdfName(f"pmc-pdf self-uri traverses upward: {href!r}")
+
+    # A nested reference ("supplementary/paper.pdf") reduces to its filename: the tarball
+    # flattened these too, and by this point the value is known to be relative and
+    # traversal-free, so taking the last component cannot escape the paper directory.
+    name = href.rsplit("/", 1)[-1]
+
+    if not name.lower().endswith(".pdf"):
+        raise UnresolvablePdfName(f"pmc-pdf self-uri is not a PDF: {href!r}")
+    if name in (".", "..") or "\x00" in name:
+        raise UnresolvablePdfName(f"pmc-pdf self-uri is not a usable filename: {href!r}")
+    return name
+
+
 def _object_version(key: str) -> int:
     """Article version from an S3 key, e.g. ``PMC8395919.1/…`` → 1. ``-1`` if unparsable."""
     head = key.split("/", 1)[0]
@@ -140,27 +208,49 @@ def _object_version(key: str) -> int:
 def aws_object_keys(pmcid: str) -> List[str]:
     """Keys for the newest version of *pmcid*, or ``[]`` when it is not in the dataset.
 
-    The trailing dot in the prefix matters: ``PMC839591.`` must not match
-    ``PMC8395919…``. Only the highest version's objects are returned — a paper with a
-    v1 and a v2 should yield v2, not a mixture.
+    The trailing dot in the prefix matters: ``PMC839591.`` must not match ``PMC8395919…``.
+
+    Version selection is **numeric**, so v10 beats v9 — a lexical ``max`` would pick
+    ``.9`` and quietly serve a superseded article.
+
+    Pagination is followed to exhaustion. S3 caps a response at 1000 keys and signals
+    more with ``IsTruncated``; ignoring it would silently drop objects — for a
+    figure-heavy article, possibly the PDF itself — and the result would look like a
+    complete listing.
     """
-    r = requests.get(
-        f"{AWS_OA_BUCKET}?list-type=2&prefix={pmcid}.&max-keys=1000", timeout=60
-    )
-    r.raise_for_status()
-    root = ET.fromstring(r.content)
-    keys = [c.find("s3:Key", _S3_NS).text for c in root.findall(".//s3:Contents", _S3_NS)]
+    keys: List[str] = []
+    token: str | None = None
+    while True:
+        url = f"{AWS_OA_BUCKET}?list-type=2&prefix={pmcid}.&max-keys=1000"
+        if token:
+            url += f"&continuation-token={requests.utils.quote(token, safe='')}"
+        r = requests.get(url, timeout=60)
+        r.raise_for_status()
+        root = ET.fromstring(r.content)
+        keys.extend(
+            c.find("s3:Key", _S3_NS).text for c in root.findall(".//s3:Contents", _S3_NS)
+        )
+        truncated = (root.findtext("s3:IsTruncated", default="false", namespaces=_S3_NS) or "").lower()
+        token = root.findtext("s3:NextContinuationToken", namespaces=_S3_NS)
+        if truncated != "true" or not token:
+            break
+
     if not keys:
         return []
-    newest = max(_object_version(k) for k in keys)
+    newest = max(_object_version(k) for k in keys)  # int comparison: v10 > v9
     return [k for k in keys if _object_version(k) == newest]
 
 
 def download_paper_aws(pmcid: str, corpus_dir: Path, *, overwrite: bool = False) -> str:
     """Fetch one paper's PDF + XML from AWS into ``corpus_dir/<pmcid>/``.
 
-    Writes the layout ``acquire unpack`` *produces*, so ``acquire organize`` consumes it
-    unchanged and the tarball step is simply not needed on this route.
+    Reproduces exactly what ``acquire unpack`` produces from a tarball — the XML as
+    ``<PMCID>.nxml``, the PDF under the **publisher's** filename — so ``acquire organize``
+    consumes it unchanged and both sources reach the *same* document ID. AWS names its
+    objects ``PMC8395919.1.pdf``; using that would mint ``PMC8395919.1`` as a new document
+    ID and duplicate a paper the corpus already holds (B-119).
+
+    The XML is fetched **first**, because it is what names the PDF.
 
     Returns ``"succeeded"``, ``"failed"`` or ``"skipped"`` — the same three-way outcome
     the FTP path reports (B-117), so neither source can turn a miss into a success.
@@ -180,19 +270,55 @@ def download_paper_aws(pmcid: str, corpus_dir: Path, *, overwrite: bool = False)
         print(f"⚠️ {pmcid} is not in the AWS Open Access dataset.")
         return "skipped"
 
-    wanted = [k for k in keys if k.lower().endswith((".pdf", ".xml"))]
-    if not any(k.lower().endswith(".pdf") for k in wanted):
-        # In the dataset but carrying no PDF: that is a real gap for a PDF pipeline, and
-        # must not be silently counted as success.
+    pdf_keys = [k for k in keys if k.lower().endswith(".pdf")]
+    xml_keys = [k for k in keys if k.lower().endswith(".xml")]
+    if not pdf_keys:
+        # In the dataset but carrying no PDF: a real gap for a PDF pipeline, not a success.
         print(f"❌ {pmcid}: present in the dataset but has no PDF ({len(keys)} objects).")
         return "failed"
+    if not xml_keys:
+        print(f"❌ {pmcid}: no JATS XML, so the publisher's PDF filename cannot be resolved.")
+        return "failed"
 
+    # 1. XML first — it is the authority on the PDF's name.
+    try:
+        r = requests.get(f"{AWS_OA_BUCKET}/{xml_keys[0]}", timeout=120)
+        r.raise_for_status()
+        xml_bytes = r.content
+        pdf_name = publisher_pdf_filename(xml_bytes)
+    except UnresolvablePdfName as e:
+        # Refuse rather than invent: a fabricated name yields a document ID that silently
+        # disagrees with the FTP-derived one for the same paper.
+        print(f"❌ {pmcid}: {e}")
+        return "failed"
+    except Exception as e:  # noqa: BLE001
+        print(f"❌ {pmcid}: could not fetch the JATS XML: {e}")
+        return "failed"
+
+    # 2. Write the unpack-equivalent layout.
     dest.mkdir(parents=True, exist_ok=True)
-    for key in wanted:
-        magic = _PDF_MAGIC if key.lower().endswith(".pdf") else None
-        if not download_object(f"{AWS_OA_BUCKET}/{key}", dest / Path(key).name, magic=magic):
-            return "failed"
-    print(f"✅ Downloaded: {pmcid} ({len(wanted)} file(s)) → {dest}")
+    (dest / f"{pmcid}.nxml").write_bytes(xml_bytes)
+    if not download_object(f"{AWS_OA_BUCKET}/{pdf_keys[0]}", dest / pdf_name, magic=_PDF_MAGIC):
+        return "failed"
+
+    # 3. Provenance: the AWS key and the publisher name are not recoverable from the
+    # renamed files, and `organize` ignores non-pdf/xml files, so this rides along safely.
+    (dest / "_source.json").write_text(
+        json.dumps(
+            {
+                "source": "aws",
+                "bucket": AWS_OA_BUCKET,
+                "version": _object_version(pdf_keys[0]),
+                "aws_pdf_key": pdf_keys[0],
+                "aws_xml_key": xml_keys[0],
+                "publisher_pdf_filename": pdf_name,
+                "document_id": f"{pmcid}_{Path(pdf_name).stem}",
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    print(f"✅ Downloaded: {pmcid} → {dest} (pdf={pdf_name})")
     return "succeeded"
 
 
