@@ -192,7 +192,9 @@ nlp-histo acquire organize --input-dir  files/corpus \
 
 `download` defaults to `--source aws`: NLM publishes the OA Subset on AWS (free, no
 login), and it writes `files/corpus/<PMCID>/` directly — the layout `unpack` produces —
-so **`unpack` is not needed on this route**.
+so **`unpack` is not needed on this route**. AWS carries **no announced retirement date**,
+unlike the FTP tree; that is not a guarantee of permanence, only the absence of a
+published end-date.
 
 The legacy FTP tarballs remain available with `--source ftp`, for resuming a corpus
 started that way. **They are deleted in August 2026** (B-118), and that route still needs
@@ -205,12 +207,20 @@ nlp-histo acquire unpack   --input-dir  files/tarballs --output-dir files/corpus
 nlp-histo acquire organize --input-dir  files/corpus  --pdf-dir … --xml-dir …
 ```
 
-Both sources serve the same bytes — verified: the AWS PDF for `PMC8395919` has the same
-SHA-256 and the same 5 733 574 bytes as the one inside the FTP tarball. They differ only
-in naming: AWS objects are `PMC8395919.1.pdf` (the article version), while the tarball
-carried the publisher's filename, so a PDF's stem — and hence the PMCID `ingest` derives
-— reads `PMC8395919.1` rather than `PMC8395919_dermatopathology-08-00036`. A from-scratch
-AWS corpus is self-consistent; **don't mix sources within one corpus**.
+**Both sources reach the same document ID.** AWS names its objects `PMC8395919.1.pdf`
+(`.1` = article version), which would mint `PMC8395919.1` as a *new* document ID and
+duplicate a paper the corpus already holds. So the AWS route reads the article's JATS
+`self-uri` — the authoritative record of the publisher's filename, the same one the
+tarball carried — and writes `corpus/<PMCID>/dermatopathology-08-00036.pdf` +
+`<PMCID>.nxml`. `organize` then yields `PMC8395919_dermatopathology-08-00036.pdf` from
+either route, so **resuming an FTP-built corpus with AWS is safe** and creates no
+duplicate (BUGS.md B-119). If an article does not authoritatively name its PDF, that
+article **fails** rather than acquiring a mismatched identifier.
+
+Content equivalence was **spot-checked on one paper**, not proven for the corpus: for
+`PMC8395919` the AWS PDF and the FTP tarball's PDF have the same SHA-256 and the same
+5 733 574 bytes. That establishes equivalence for the tested article; it is not a claim
+about all 1093.
 
 Every path is explicit — nothing is resolved against a hidden default. Re-running skips
 work already done; pass `--overwrite` to force. A missing input fails immediately with
