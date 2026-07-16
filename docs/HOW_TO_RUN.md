@@ -56,7 +56,7 @@ nlp-histo acquire download | unpack | organize   build the corpus from PMC
 nlp-histo ingest                            PDF → text + figures + tables → DB
 nlp-histo ner extract | merge | export      scispaCy/UMLS entities
 nlp-histo knowledge                         LLM knowledge extraction   ⚠ COSTS MONEY
-nlp-histo replay chapter9                   offline thesis replay      (free)
+nlp-histo replay chapter9                   thesis replay from frozen artifacts (free)
 ```
 
 `--help` works for every command and subcommand without a database, an API key, a
@@ -145,12 +145,26 @@ Otherwise NER starts with a cold cache and recomputes the UMLS links.
 ## 9. Knowledge extraction — ⚠ this costs money
 
 ```bash
-nlp-histo knowledge --profile cheap --pmcid PMC1448691 --sync --health-check no
-nlp-histo knowledge --profile real  --all --source-cases eval/data/source_cases_related15.jsonl
+nlp-histo knowledge PMC1448691 --profile cheap --sync --health-check no
+nlp-histo knowledge --all --profile real --batch --health-check no \
+                    --source-cases eval/data/source_cases_related15.jsonl
 ```
 
-`--profile` is required — there is no implicit default, precisely so a run cannot spend
-money by accident. `cheap` avoids the premium tier.
+The PMCID is a **positional** argument — there is no `--pmcid` flag.
+
+**Three flags are required and have no defaults** — `--profile`, `--health-check`, and
+exactly one of `--sync` / `--batch`. That is deliberate: it is what stops a paid run
+starting by accident. `cheap` avoids the premium tier; `--batch` is async (roughly half
+the price) and is the right mode for a full `--all` corpus run, `--sync` for a single
+paper.
+
+**Check any paid command with `--dry-run` first** — it prints the resolved config and
+exits before a single API call, so you can confirm the whole invocation is right for free:
+
+```bash
+nlp-histo knowledge --profile real --all --batch --health-check no \
+                    --source-cases eval/data/source_cases_related15.jsonl --dry-run
+```
 
 * `--config PATH` — run configuration (default `configs/run.yaml`, relative to your
   working directory). It is *your* file, not an application default, so it is not
@@ -158,16 +172,52 @@ money by accident. `cheap` avoids the premium tier.
 * `--source-cases PATH` — the frozen calibration selection used by `--all` / `--sample`.
   A repository artifact; not packaged. A missing file fails **before** any paid call.
 
-*Verified here:* `--help`, flag parsing, and the missing-file preflight (it exits before
-any provider is constructed). No API call was made during the migration.
+*Verified 2026-07-16:* both commands above were run **exactly as written** with
+`--dry-run` appended, under a guard that raises on any billable host — each resolves its
+full cascade config and exits 0 without contacting a provider. Also verified: `--help`,
+and the missing-`--source-cases` preflight (exits non-zero before any provider is
+constructed). No API call has been made.
 
-## 10. Offline chapter-9 replay — free
+Both commands in this section were previously wrong — they used a non-existent `--pmcid`
+flag and omitted required arguments, so neither could run (BUGS.md B-105). They are now
+checked by `--dry-run` rather than by inspection.
+
+## 10. Chapter-9 replay — free (no paid API calls)
 
 ```bash
 nlp-histo replay chapter9 --artifact-root . --output-dir /tmp/replay-out
 ```
 
-Offline: no API key, no database, no model inference, no cost.
+No API key, no database, **no cost** — no paid provider is ever called (verified
+2026-07-16: the only hosts contacted are `huggingface.co` and
+`s3-us-west-2.amazonaws.com`, both free model downloads).
+
+> **API-free does not mean offline. UMLS-dependent replay currently requires network
+> access even when the model artifacts have already been downloaded.** That access is a
+> free model/metadata fetch from `s3-us-west-2.amazonaws.com` — it incurs **no paid
+> model or API usage**. Without it the replay now **refuses to start (exit 3)** rather
+> than silently skipping CUI work; see BUGS.md B-107.
+
+**It requires network on every run, and it runs model inference.** It uses two models —
+scispaCy `en_core_sci_lg` + the UMLS KB (from S3) and `pritamdeka/PubMedBERT-MNLI-MedNLI`
+(from HuggingFace) — and runs the NLI model locally (on MPS/CUDA where available). A cold
+machine downloads several hundred MB; a warm one still needs the network, for a reason
+worth knowing:
+
+* **HuggingFace caches properly.** Once downloaded, the NLI model loads offline (verified
+  2026-07-16 against a real DNS failure — no `HF_HUB_OFFLINE` needed).
+* **scispaCy does not.** Its cache filename is `sha256(url).sha256(etag)`, and the ETag
+  comes from a live `requests.head()` against S3 on **every** load
+  (`scispacy/file_cache.py:119,126`). With no network it cannot compute the filename, so
+  it cannot find a fully-downloaded 2.1 GB cache that is already on disk. **Pre-fetching
+  does not make the replay offline-capable** — nothing you download changes this.
+
+**If the linker is unreachable the replay now refuses to start**, exits **3**, and writes
+nothing — naming the affected outputs (`06_exp_f_test_split`,
+`12_real_profile_grounding_polarity`) and the real cause. It previously logged a single
+`WARNING UMLS: linker unavailable`, exited 0, and wrote plausible-but-wrong tables; that
+silent path is fixed (BUGS.md B-107). Exit codes: `0` ran · `2` artifact tree unusable ·
+`3` UMLS linker unavailable. Both non-zero paths refuse before anything is written.
 
 `--artifact-root` is **required**, and it is a **repository-shaped artifact tree**, not a
 flat bundle: the *code* comes from the installed package, the tree supplies only *data*.
@@ -212,6 +262,13 @@ python -m pytest              # full suite
 ruff check .
 ```
 
+Both are clean as of 2026-07-16: `ruff check .` passes, and `pytest` is **1565 passed,
+0 failed** (~2–4 min). Two `tests/test_config_loader.py` failures found during that day's
+verification were stale assertions pinning the pre-calibration agreement defaults, and
+have been corrected to the calibrated E06/E08 winner that `configs/run.yaml` ships —
+the config was right, the tests were not (BUGS.md B-110). Nine regression tests were
+added alongside the B-107 fail-hard fix and the B-111 passthrough fix.
+
 ## 12. Repository-only commands (must run from the repository root)
 
 The thesis experiments are **not** installed and never enter the wheel. They import the
@@ -224,6 +281,22 @@ python -m eval.silver.experiments.E14_heldout.heldout_eval --theta-frontier
 python -m eval.silver.analysis.map_theta_sweep --help
 python eval/sweeps/grounding.py
 ```
+
+**These are free**, despite reading like paid commands: every embedding is served from
+the frozen sqlite caches (`eval/data/embedding_cache_{openai,gemini}.sqlite`), which
+were verified on 2026-07-16 to yield **0 cache misses**. No paid endpoint is contacted.
+Two caveats before you run them:
+
+* **They still require `GOOGLE_API_KEY` to be set**, even though they never call Google:
+  `map_context.py` exits with `GOOGLE_API_KEY not set` before it reaches the cache
+  (BUGS.md B-109). Any non-empty value satisfies it.
+* **`eval/sweeps/grounding.py` overwrites the tracked `eval/results/grounding_sweep.md`**
+  with numbers from whatever is currently in `out/summaries` — it does not reproduce the
+  committed 5-paper version. Expect a dirty worktree; `git checkout eval/results/` to
+  restore (BUGS.md B-108).
+
+Each of these loads scispaCy + the UMLS KB (several GB of RSS). **Run them one at a
+time** — concurrent runs will exhaust memory on a 16–32 GB machine.
 
 ## 13. Known limitations
 

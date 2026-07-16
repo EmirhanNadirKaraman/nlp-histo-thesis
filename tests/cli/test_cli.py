@@ -102,6 +102,31 @@ def test_knowledge_help_states_that_it_costs_money(capsys) -> None:
     assert "paid" in out.lower()
 
 
+def test_explicit_passthrough_reaches_the_workflow_help(monkeypatch) -> None:
+    """`nlp-histo ingest -- --help` forwards `--help` to the runner, dropping the `--`.
+
+    The `--` must not be forwarded: argparse reads it as the positional separator and
+    then rejects `--help` as an unrecognized positional (B-111). The CLI's own ingest
+    help advertises this invocation, so it has to work.
+    """
+    forwarded: list[list[str]] = []
+    from nlp_histo.pipeline.stages.pdf_text_extraction import runner
+
+    monkeypatch.setattr(runner, "main", lambda argv=None: forwarded.append(list(argv or [])))
+    main(["ingest", "--", "--help"])
+    assert forwarded == [["--help"]]
+
+
+def test_plain_help_after_command_is_the_clis_own(monkeypatch) -> None:
+    """Without an explicit `--`, `--help` belongs to this CLI, not the workflow —
+    that is what keeps the knowledge cost warning reachable."""
+    from nlp_histo.pipeline.stages.pdf_text_extraction import runner
+
+    monkeypatch.setattr(runner, "main", lambda argv=None: pytest.fail("must not dispatch"))
+    with pytest.raises(SystemExit):
+        main(["ingest", "--help"])
+
+
 # ── dispatch reaches the intended workflow ────────────────────────────────────
 
 def test_db_init_dispatches_to_init_db(monkeypatch) -> None:
@@ -204,3 +229,70 @@ def test_replay_missing_artifacts_is_a_clear_error(tmp_path, capsys) -> None:
     # every missing input is reported in one pass, each with why it is needed
     assert "embedding_cache_openai.sqlite" in err
     assert "Required for:" in err
+
+
+# ── B-107: a UMLS failure must stop the replay, not shade its numbers ──────────
+
+def test_replay_refuses_and_exits_nonzero_when_umls_is_unavailable(tmp_path, capsys, monkeypatch) -> None:
+    """Previously: one WARNING, exit 0, and wrong 06/12 tables on disk."""
+    from nlp_histo.workflows import replay
+    from nlp_histo.pipeline.stages.knowledge_extraction.entities.umls_resources import (
+        UmlsUnavailableError,
+    )
+
+    # Artifact validation must pass so we reach the UMLS gate, not stop short of it.
+    monkeypatch.setattr(replay, "validate_artifacts", lambda root: [])
+
+    def _unavailable() -> None:
+        raise UmlsUnavailableError(
+            "The chapter-9 replay requires the UMLS entity linker, which is unavailable.\n"
+            "  - 06_exp_f_test_split.csv / .json\n"
+            "Nothing has been written."
+        )
+
+    monkeypatch.setattr(replay, "_require_umls_or_refuse", _unavailable)
+
+    out_dir = tmp_path / "replay-out"
+    rc = replay.main([
+        "--artifact-root", str(tmp_path), "--output-dir", str(out_dir),
+    ])
+
+    assert rc == 3, "a UMLS failure must exit non-zero"
+    err = capsys.readouterr().err
+    assert "UMLS" in err and "06_exp_f_test_split" in err
+    assert not out_dir.exists(), "refused run must not leave an output directory behind"
+
+
+def test_replay_umls_gate_runs_before_any_output_exists(tmp_path, monkeypatch) -> None:
+    """Ordering is the guarantee: the gate must fire before the output tree is made,
+    so a refused run cannot leave partial CSVs that read like results."""
+    from nlp_histo.workflows import replay
+
+    monkeypatch.setattr(replay, "validate_artifacts", lambda root: [])
+    out_dir = tmp_path / "replay-out"
+    seen: dict[str, bool] = {}
+
+    def _probe() -> None:
+        seen["out_dir_existed_at_probe_time"] = out_dir.exists()
+
+    monkeypatch.setattr(replay, "_require_umls_or_refuse", _probe)
+    monkeypatch.setattr(replay, "_run_replay", lambda: None)
+
+    assert replay.main(["--artifact-root", str(tmp_path), "--output-dir", str(out_dir)]) == 0
+    assert seen["out_dir_existed_at_probe_time"] is False
+
+
+def test_replay_succeeds_normally_when_umls_is_available(tmp_path, monkeypatch) -> None:
+    """The working path is unchanged: gate passes, replay runs, exit 0."""
+    from nlp_histo.workflows import replay
+
+    monkeypatch.setattr(replay, "validate_artifacts", lambda root: [])
+    monkeypatch.setattr(replay, "_require_umls_or_refuse", lambda: None)
+    ran: list[bool] = []
+    monkeypatch.setattr(replay, "_run_replay", lambda: ran.append(True))
+
+    rc = replay.main([
+        "--artifact-root", str(tmp_path), "--output-dir", str(tmp_path / "o"),
+    ])
+    assert rc == 0
+    assert ran == [True]

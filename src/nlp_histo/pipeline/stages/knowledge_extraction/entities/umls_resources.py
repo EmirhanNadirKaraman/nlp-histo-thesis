@@ -10,7 +10,15 @@ Every component that needs the linker must obtain it through ``get_nlp()`` so
 the model is loaded at most once per process.
 
 The loader is silent-failing: if scispaCy / the model is unavailable,
-``get_nlp()`` returns ``None`` and callers must degrade gracefully.
+``get_nlp()`` returns ``None`` and callers must degrade gracefully. That is
+deliberate for the live per-paper pipeline, which is allowed to skip CUI work
+and carry on.
+
+It is **not** acceptable for workflows whose published numbers depend on CUI
+enrichment: silently skipping the linker there produces plausible-but-wrong
+output that reports success (B-107). Those callers must use ``require_umls()``,
+which probes the loader and raises ``UmlsUnavailableError`` instead of degrading.
+``get_nlp()``'s return-``None`` contract is unchanged.
 """
 from __future__ import annotations
 
@@ -33,6 +41,10 @@ _mem: MemoryLogger = get_default_memory_logger()
 _NLP = None
 _LINKER = None
 _AVAILABLE: bool | None = None       # None = not probed; True/False after
+# Why the last load attempt failed. ``_AVAILABLE=False`` alone cannot distinguish
+# "deliberately disabled via the kill-switch" from "tried to load and broke", and
+# require_umls() must report those differently.
+_FAILURE_REASON: str | None = None
 _LOAD_LOCK = threading.Lock()
 
 # Small-model singleton — separate cache from the linker-attached `_NLP`.
@@ -95,7 +107,7 @@ def get_nlp(
     Returns ``None`` when scispaCy/UMLS is unavailable or has been disabled.
     Thread-safe: concurrent first-callers block on the load lock.
     """
-    global _NLP, _LINKER, _AVAILABLE
+    global _NLP, _LINKER, _AVAILABLE, _FAILURE_REASON
 
     if _AVAILABLE is not None:
         if _AVAILABLE and _NLP is not None:
@@ -153,6 +165,11 @@ def get_nlp(
             return _NLP
 
         except Exception as exc:
+            # Record the cause verbatim. A no-network machine surfaces this as a
+            # requests.ConnectionError wrapping urllib3's NameResolutionError over a
+            # socket.gaierror — require_umls() replays it to the user, since "why"
+            # is the whole diagnostic (B-107).
+            _FAILURE_REASON = f"{type(exc).__name__}: {exc}"
             logger.warning(
                 "UMLS: linker unavailable — downstream stages will skip CUI work: %s",
                 exc,
@@ -170,6 +187,83 @@ def get_linker():
 
 def is_available() -> bool:
     return bool(_AVAILABLE)
+
+
+def failure_reason() -> str | None:
+    """Why the last load attempt failed.
+
+    ``None`` when the loader has not been probed, succeeded, or was disabled via the
+    kill-switch (which is not a failure). Use ``umls_disabled()`` to tell those apart.
+    """
+    return _FAILURE_REASON
+
+
+class UmlsUnavailableError(RuntimeError):
+    """A caller that REQUIRES the UMLS linker could not have it.
+
+    Raised only by ``require_umls()``. ``get_nlp()`` keeps returning ``None`` so the
+    live pipeline's deliberate skip-CUI-and-continue path is unaffected.
+    """
+
+
+# Having the artifacts on disk is not sufficient, which is the single most
+# counter-intuitive part of a UMLS failure — so require_umls() always says it.
+_CACHE_IS_NOT_ENOUGH = (
+    "Note: a warm cache does not make this work offline. scispaCy resolves its cache\n"
+    "filename from the REMOTE ETag — get_from_cache() issues an unconditional\n"
+    "requests.head(url) and builds the name as sha256(url).sha256(etag)\n"
+    "(scispacy/file_cache.py). With no network the filename cannot be computed, so a\n"
+    "byte-complete ~/.scispacy/datasets (≈2.1 GB) is unusable. Pre-downloading the\n"
+    "model does NOT fix this.\n"
+    "\n"
+    "The network access needed here is a FREE model/metadata fetch from\n"
+    "s3-us-west-2.amazonaws.com. It is not a paid model or API call, and this command\n"
+    "still makes no paid requests."
+)
+
+
+def require_umls(*, context: str, affected_outputs: tuple[str, ...] = ()) -> None:
+    """Probe the linker; raise ``UmlsUnavailableError`` unless it is usable.
+
+    For workflows whose published numbers depend on CUI enrichment. Call it *before*
+    writing anything, so a run that cannot be correct cannot leave output behind.
+
+    ``context`` names the workflow in the error; ``affected_outputs`` names the
+    artifacts that would have been wrong.
+    """
+    get_nlp()  # idempotent: loads on first call, replays the cached verdict after.
+    if is_available():
+        return
+
+    if umls_disabled():
+        cause = (
+            f"UMLS is disabled via ${_DISABLE_ENV}.\n"
+            f"\n"
+            f"Unset it to run {context}. The kill-switch exists for low-RAM machines and "
+            f"for workflows that tolerate missing CUIs — this one does not."
+        )
+        remedy = ""
+    else:
+        cause = f"The scispaCy/UMLS linker could not be initialised:\n\n  {failure_reason()}"
+        remedy = f"\n\n{_CACHE_IS_NOT_ENOUGH}"
+
+    affected = ""
+    if affected_outputs:
+        affected = "\n\nAffected outputs — these depend on CUI enrichment and would be wrong:\n" + "\n".join(
+            f"  - {name}" for name in affected_outputs
+        )
+
+    raise UmlsUnavailableError(
+        f"{context} requires the UMLS entity linker, which is unavailable.\n"
+        f"\n"
+        f"{cause}"
+        f"{affected}"
+        f"\n\n"
+        f"Refusing to run: without the linker, CUI enrichment is skipped and the numbers\n"
+        f"below would still be produced, still exit 0, and still look correct (B-107).\n"
+        f"Nothing has been written."
+        f"{remedy}"
+    )
 
 
 def get_small_nlp(model_name: str = "en_core_sci_sm"):
@@ -240,7 +334,8 @@ def get_small_nlp(model_name: str = "en_core_sci_sm"):
 # Test / reset hook (do not call from production code).
 
 def _reset_for_tests() -> None:
-    global _NLP, _LINKER, _AVAILABLE
+    global _NLP, _LINKER, _AVAILABLE, _FAILURE_REASON
     _NLP = None
     _LINKER = None
     _AVAILABLE = None
+    _FAILURE_REASON = None

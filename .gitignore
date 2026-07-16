@@ -262,7 +262,14 @@ eval/data/*
 !eval/data/relation_claim_pairs_300.meta.json
 !eval/data/relation_claim_pairs_calibration.jsonl
 !eval/data/relation_claim_pairs_evaluation.jsonl
-eval/reports/
+# Per-experiment report artifacts (E01…E14, corpus_stats, old_reports, …) stay local:
+# they are regenerable outputs, not sources. RESULTS.md is the exception — it is the
+# documented experiment record, cited by .claude/CLAUDE.md alongside eval/README.md and
+# eval/EXPERIMENTS.md (both already tracked), so it is committed with them.
+# NOTE: the pattern must be `eval/reports/*`, not `eval/reports/` — git cannot re-include
+# a file whose parent *directory* is excluded, so the negation below would silently fail.
+eval/reports/*
+!eval/reports/RESULTS.md
 
 # E13: generated per-batch prompt files (template lives in prepare_manual_batches.py)
 eval/prompts/relation_pairs/*_prompt.txt

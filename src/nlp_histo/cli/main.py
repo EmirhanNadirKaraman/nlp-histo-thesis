@@ -182,10 +182,17 @@ def _split_forwarded(argv: list[str]) -> tuple[list[str], list[str]]:
 
     `--help` immediately after the command path is ours (it prints this CLI's help,
     including the cost warning); anything else goes to the workflow.
+
+    A leading `--` forces everything after it to the workflow, `--help` included — that
+    is how the workflow's own options are discovered (`nlp-histo ingest -- --help`).
+    The `--` must be dropped rather than forwarded: argparse would read it as the
+    positional separator and then reject `--help` as an unrecognized positional.
     """
     for path, consumed in _FORWARDING.items():
         if tuple(argv[:consumed]) == path:
             rest = argv[consumed:]
+            if rest[:1] == ["--"]:
+                return list(path), rest[1:]
             if rest[:1] and rest[0] in ("-h", "--help"):
                 return argv, []
             return list(path), rest

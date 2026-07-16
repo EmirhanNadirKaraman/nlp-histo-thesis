@@ -239,10 +239,11 @@ def test_agreement_scorer_kind_default_is_embedding():
 
 
 def test_agreement_scorer_kind_loaded_from_run_yaml():
-    """Shipped ``configs/run.yaml`` pins ``scorer_kind: embedding`` (current
-    production default). Drift detector for accidental YAML edits."""
+    """Shipped ``configs/run.yaml`` pins ``scorer_kind: hybrid`` (the E06 family_refine
+    winner), overriding the dataclass default of ``embedding``. Drift detector for
+    accidental YAML edits."""
     _, sumcfg = load_config(Path("configs/run.yaml"))
-    assert sumcfg.agreement.scorer_kind == "embedding"
+    assert sumcfg.agreement.scorer_kind == "hybrid"
 
 
 def test_agreement_scorer_kind_yaml_override_to_hybrid(tmp_path: Path):
@@ -329,15 +330,15 @@ def test_hybrid_config_defaults():
 
 
 def test_hybrid_config_loaded_from_run_yaml():
-    """Shipped ``configs/run.yaml`` pins the production-default hybrid weights.
-    Drift detector for accidental YAML edits that would silently shift the
-    Stage 1b baseline."""
+    """Shipped ``configs/run.yaml`` pins the E06 entity-heavy blend, not the
+    ``HybridConfig`` dataclass defaults. Drift detector for accidental YAML edits
+    that would silently shift the Stage 1b baseline."""
     _, sumcfg = load_config(Path("configs/run.yaml"))
     h = sumcfg.agreement.hybrid
-    assert h.w_category == 0.25
-    assert h.w_embedding == 0.40
-    assert h.w_entity == 0.25
-    assert h.w_evidence == 0.10
+    assert h.w_category == 0.15
+    assert h.w_embedding == 0.30
+    assert h.w_entity == 0.50
+    assert h.w_evidence == 0.05
 
 
 def test_hybrid_config_yaml_override(tmp_path: Path):

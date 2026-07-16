@@ -181,12 +181,44 @@ def validate_artifacts(root: Path) -> list[str]:
     return problems
 
 
+# Analyses whose numbers move when CUI enrichment is skipped. Established empirically
+# on 2026-07-16: an all-network-blocked replay exited 0 and diverged from the frozen
+# baseline on exactly these two, while the other seven stayed byte-identical (B-107).
+UMLS_DEPENDENT_OUTPUTS: tuple[str, ...] = (
+    "06_exp_f_test_split.csv / .json",
+    "12_real_profile_grounding_polarity.csv / .json",
+)
+
+
+def _require_umls_or_refuse() -> None:
+    """Refuse to start unless the UMLS linker is usable.
+
+    The replay reaches the linker indirectly — analyses 06 and 12 call through
+    ``map_theta_sweep``/``_load_map_context`` into ``normalize_stage``, whose
+    ``get_nlp()`` returns ``None`` and caches an empty CUI rather than raising. That is
+    correct for the live pipeline and wrong here: the replay's whole purpose is
+    reproducing published numbers, so a skipped linker must stop the run, not shade it.
+    """
+    from nlp_histo.pipeline.stages.knowledge_extraction.entities.umls_resources import (
+        require_umls,
+    )
+
+    require_umls(
+        context="The chapter-9 replay",
+        affected_outputs=UMLS_DEPENDENT_OUTPUTS,
+    )
+
+
 def configure(artifact_root: Path, output_dir: Path | None = None) -> None:
     """Bind the replay to an artifact tree and an output directory.
 
     ``artifact_root`` is the directory that contains ``out/`` and ``eval/`` — i.e. a
     repository checkout, or any copy of the frozen thesis artifacts with that layout.
     Raises ``FileNotFoundError`` naming what is missing, before writing anything.
+
+    Also probes the UMLS linker and raises ``UmlsUnavailableError`` when it is
+    unusable — before the output directory exists, so a run that cannot be correct
+    leaves nothing behind (B-107).
     """
     global _REPO_ROOT, OUT_DIR, LOG_DIR, LOG_PATH
 
@@ -203,6 +235,8 @@ def configure(artifact_root: Path, output_dir: Path | None = None) -> None:
               f"tree (given: {root}). The source code comes from the installed package; "
               "only these artifacts are supplied."
         )
+
+    _require_umls_or_refuse()
 
     _REPO_ROOT = root
     OUT_DIR = (
@@ -2299,8 +2333,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="nlp-histo replay chapter9",
         description=(
-            "Chapter-9 offline replay: recompute the thesis tables from frozen "
-            "artifacts. Offline — no API key, no database, no model download, no cost.\n"
+            "Chapter-9 replay: recompute the thesis tables from frozen artifacts.\n"
+            "No API key, no database, no paid call of any kind.\n"
+            "\n"
+            "API-free does not mean offline: this requires network access even when the\n"
+            "model artifacts are already downloaded. scispaCy resolves its cache via the\n"
+            "remote S3 ETag, so a warm ~/.scispacy cannot be used offline. That fetch is\n"
+            "free. Without it the replay refuses to start (exit 3) rather than silently\n"
+            "skipping CUI work and reporting wrong numbers as success.\n"
             "\n"
             "--artifact-root is a REPOSITORY-SHAPED artifact tree, not a flat bundle. "
             "The code comes from the installed package; the tree supplies only data:\n"
@@ -2332,13 +2372,24 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Parse arguments, bind the artifact paths, run the replay. Importing runs nothing."""
+    """Parse arguments, bind the artifact paths, run the replay. Importing runs nothing.
+
+    Exit codes: 0 = ran; 2 = artifact tree unusable; 3 = UMLS linker unavailable.
+    Both non-zero paths refuse before anything is written.
+    """
+    from nlp_histo.pipeline.stages.knowledge_extraction.entities.umls_resources import (
+        UmlsUnavailableError,
+    )
+
     args = build_parser().parse_args(argv)
     try:
         configure(args.artifact_root, args.output_dir)
     except FileNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    except UmlsUnavailableError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 3
     _run_replay()
     return 0
 
