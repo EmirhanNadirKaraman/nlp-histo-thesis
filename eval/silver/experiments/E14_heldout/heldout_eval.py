@@ -96,9 +96,15 @@ def main() -> int:
 
     print(f"E14 held-out generalization — frozen cascade (θ{THETA}/reject{REJECT}, hybrid) on heldout15")
     print(f"  primer={Path(args.primer).relative_to(_REPO_ROOT)}  silver={Path(args.silver).name}")
+    # strict_cache_only: E14 is documented as free — every embedding must come from the
+    # frozen gemini cache, and a miss must raise rather than quietly issue PAID calls.
+    # Without it, no provider construction is prevented and an unexpected miss bills; the
+    # cache being complete today is luck, not a guarantee (same reasoning as B-112, which
+    # covered the replay's call sites but not this repository-only one).
     ctx = _load_map_context(
         "gemini", embed_cache_path=None,
         cache_path=Path(args.primer), silver_path=Path(args.silver),
+        strict_cache_only=True,
     )
     scorer = _build_scorer(_frozen_spec(), ctx.agreement_embed_fn)
     # SHIPPED config = the calibrated voter selection (BEST_VOTER_SUBSET; drop_l2_2 = 5-voter,
