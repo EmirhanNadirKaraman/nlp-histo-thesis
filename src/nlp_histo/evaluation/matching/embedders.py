@@ -108,3 +108,44 @@ class GeminiEmbedder:
 
     def __repr__(self) -> str:
         return f"GeminiEmbedder(model={self.model!r})"
+
+
+class CacheOnlyViolation(RuntimeError):
+    """A cache-only context tried to embed text that was not in the frozen cache.
+
+    Raised instead of calling a provider. Workflows that advertise themselves as API-free
+    — the chapter-9 replay, the frozen eval experiments — use :class:`NoLiveEmbedding` so
+    an unexpected miss (a race, a malformed row, an incomplete preflight) fails loudly
+    rather than silently spending money (B-112, B-109).
+    """
+
+
+class NoLiveEmbedding:
+    """Stands in for an embedder where every embedding must come from the cache.
+
+    Constructing it needs no API key and builds no client, so a workflow using it *cannot*
+    reach a provider — the guarantee is structural rather than a matter of an unset
+    environment variable or a credential that happens to be absent.
+
+    Safe wherever the caller consults the cache first and only calls the embedder for
+    misses (``matcher.embed_texts``, ``map_theta_sweep._make_cached_embed_fn``): with a
+    complete cache it is never invoked, and with an incomplete one it raises instead of
+    billing.
+    """
+
+    def __init__(self, embedder_kind: str, role: str) -> None:
+        self._kind = embedder_kind
+        self._role = role
+
+    def __call__(self, texts):
+        n = len(texts) if hasattr(texts, "__len__") else "?"
+        raise CacheOnlyViolation(
+            f"cache-only mode: the {self._role} embedder ({self._kind}) was asked to embed "
+            f"{n} uncached text(s). Refusing — this workflow is documented as API-free, and "
+            f"embedding them would issue PAID {self._kind} calls.\n"
+            f"The frozen embedding cache is incomplete for these inputs; it must be "
+            f"regenerated or supplied in full. No text is echoed here by design."
+        )
+
+    def __repr__(self) -> str:  # pragma: no cover — diagnostics only
+        return f"NoLiveEmbedding(kind={self._kind!r}, role={self._role!r})"

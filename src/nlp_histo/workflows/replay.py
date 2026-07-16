@@ -1032,7 +1032,6 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     """
     name = "05_bootstrap_ci_cascade_vs_sonnet"
     try:
-        from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
         from nlp_histo.evaluation.jsonl_utils import read_jsonl
         from nlp_histo.evaluation.schemas import SilverCaseResult
         from nlp_histo.evaluation.split import assign_split
@@ -1148,22 +1147,19 @@ def analyse_bootstrap_ci() -> AnalysisResult:
             notes=f"Cascade replay setup failed: {exc}",
         )
 
-    # Run matcher per-case for both baselines under the OpenAI matcher
-    # embedder (the production matcher).
-    import os
+    # Run matcher per-case for both baselines. Cache-only: the production matcher's
+    # embeddings all come from the frozen cache, so no client and no key.
     try:
         from nlp_histo.evaluation.matching.matcher import make_embedding_cache as _make_cache
-        from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
+        from nlp_histo.evaluation.matching.embedders import NoLiveEmbedding
         cache_obj = _make_cache(frozen_embedding_cache())
-        api_key = os.environ.get("OPENAI_API_KEY", "")
-        if not api_key:
-            return AnalysisResult(
-                name=name, status="error",
-                notes=("OPENAI_API_KEY not set in the environment; matcher "
-                       "embedder constructor requires a non-empty key even "
-                       "though the cache is warm. Source `.env` and re-run."),
-            )
-        embedder = OpenAIEmbedder(api_key=api_key)
+        # Cache-only: no API key, no client. The matcher consults the cache first and
+        # only calls the embedder for misses (matcher.embed_texts), so with the validated
+        # cache this is never invoked — and if it ever were, it raises instead of billing.
+        # This previously demanded OPENAI_API_KEY and constructed a real OpenAIEmbedder
+        # that a warm cache never called, so a clean clone without .env produced 8 of 9
+        # tables and an error about a key it did not need (B-109).
+        embedder = NoLiveEmbedding("openai", "matcher")
     except Exception as exc:
         return AnalysisResult(
             name=name, status="error",
@@ -1735,7 +1731,6 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
     discards them by design).
     """
     name = "10_cascade_vs_sonnet_gap_ci"
-    import os
     try:
         from nlp_histo.evaluation.jsonl_utils import read_jsonl
         from nlp_histo.evaluation.schemas import SilverCaseResult
@@ -1766,15 +1761,10 @@ def analyse_paired_bootstrap_ci() -> AnalysisResult:
     # Load matcher (OpenAI embedder + cache).
     try:
         from nlp_histo.evaluation.matching.matcher import make_embedding_cache
-        from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
-        api_key = os.environ.get("OPENAI_API_KEY", "")
-        if not api_key:
-            return AnalysisResult(
-                name=name, status="error",
-                notes="OPENAI_API_KEY missing; matcher embedder needs it.",
-            )
+        from nlp_histo.evaluation.matching.embedders import NoLiveEmbedding
         matcher_cache = make_embedding_cache(frozen_embedding_cache())
-        matcher_embedder = OpenAIEmbedder(api_key=api_key)
+        # Cache-only — see analysis 05: no key, no client, raises rather than bills (B-109).
+        matcher_embedder = NoLiveEmbedding("openai", "matcher")
     except Exception as exc:
         return AnalysisResult(
             name=name, status="error",

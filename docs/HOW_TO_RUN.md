@@ -632,11 +632,12 @@ the primary heldout15 number, matching `eval/reports/RESULTS.md`'s pinned *"held
 strict-F1 0.7128 vs calibration 0.7160, gap −0.0032"*. E14 now runs strict cache-only, so
 that freedom from paid calls is structural rather than a property of the current cache.
 
-Two caveats before you run them:
+**No API key of any kind is needed** — verified 2026-07-16 by running all three with every
+provider credential unset. They previously exited with `GOOGLE_API_KEY not set` before
+reaching the cache, demanding a key they never used (B-109, fixed).
 
-* **They still require `GOOGLE_API_KEY` to be set**, even though they never call Google:
-  `map_context.py` exits with `GOOGLE_API_KEY not set` before it reaches the cache
-  (BUGS.md B-109). Any non-empty value satisfies it.
+One caveat before you run them:
+
 * **`eval/sweeps/grounding.py` overwrites the tracked `eval/results/grounding_sweep.md`**
   with numbers from whatever is currently in `out/summaries` — it does not reproduce the
   committed 5-paper version. Expect a dirty worktree; `git checkout eval/results/` to

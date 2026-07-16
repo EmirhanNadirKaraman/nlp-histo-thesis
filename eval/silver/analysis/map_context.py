@@ -41,42 +41,18 @@ from nlp_histo.evaluation.matching.matcher import (
 )
 from nlp_histo.evaluation.schemas import SilverCaseResult
 
-__all__ = ["_MapContext", "_load_map_context", "CACHE_PATH", "SILVER_PATH"]
+__all__ = ["_MapContext", "_load_map_context", "CACHE_PATH", "SILVER_PATH",
+           "CacheOnlyViolation"]
 
 
-class CacheOnlyViolation(RuntimeError):
-    """A cache-only context tried to embed text that was not in the frozen cache.
-
-    Raised instead of calling a provider. Callers that advertise themselves as
-    API-free (the chapter-9 replay) pass ``strict_cache_only=True`` so an unexpected
-    miss — a race, a malformed row, an incomplete preflight — fails loudly rather than
-    silently spending money (B-112).
-    """
-
-
-class _NoLiveEmbedding:
-    """Stands in for an embedder in cache-only mode; raises if anything calls it.
-
-    The provider is never constructed, so no API key is needed and no request can be
-    issued: the guarantee is structural, not a matter of an unset environment variable.
-    """
-
-    def __init__(self, embedder_kind: str, role: str) -> None:
-        self._kind = embedder_kind
-        self._role = role
-
-    def __call__(self, texts):
-        n = len(texts) if hasattr(texts, "__len__") else "?"
-        raise CacheOnlyViolation(
-            f"cache-only mode: the {self._role} embedder ({self._kind}) was asked to embed "
-            f"{n} uncached text(s). Refusing — this workflow is documented as API-free, and "
-            f"embedding them would issue PAID {self._kind} calls.\n"
-            f"The frozen embedding cache is incomplete for these inputs; it must be "
-            f"regenerated or supplied in full. No text is echoed here by design."
-        )
-
-    def __repr__(self) -> str:  # pragma: no cover — diagnostics only
-        return f"_NoLiveEmbedding(kind={self._kind!r}, role={self._role!r})"
+# The cache-only guard lives in packaged code (nlp_histo.evaluation.matching.embedders)
+# so the chapter-9 replay can use it without importing this repository-only module, and
+# so there is exactly one definition of "must not reach a provider" (B-109, B-112).
+# Re-exported here under the original names for existing callers.
+from nlp_histo.evaluation.matching.embedders import (  # noqa: E402
+    CacheOnlyViolation,
+    NoLiveEmbedding as _NoLiveEmbedding,
+)
 
 
 @dataclass
