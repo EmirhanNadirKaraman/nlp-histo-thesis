@@ -14,7 +14,7 @@ assurance is worth less than an honest inventory, so here is the inventory.
 
 | § | Command | Status |
 |---|---|---|
-| 2 | `nlp-histo --help`, `import nlp_histo` from any directory | verified |
+| 2 | wheel build + install, `nlp-histo --help`, `import nlp_histo` | **verified from a fresh venv outside the repository** — wheel-only, no source tree / editable / `PYTHONPATH`; all 11 entry points and both packaged resources load |
 | 3 | every command/subcommand `--help` (15) | verified, all exit 0 |
 | 4 | the eight `NLP_HISTO_*` env vars | verified present in `src/` |
 | 5 | `db check`, `db init` | verified against a live PostgreSQL — including `db init` against an **empty** database (21 tables created from the ORM, exit 0, ~1 s) |
@@ -28,9 +28,10 @@ assurance is worth less than an honest inventory, so here is the inventory.
 
 **Not executed — do not read these as verified:**
 
-* **§2** — the `venv` sequence and the `python -m build` wheel path. This machine runs a
-  framework 3.12 install; imports and the console script resolve, but the documented
-  install was not re-run from scratch.
+* **§2's dependency resolution** — `pip install -r requirements.txt` was not run into the
+  fresh venv (multi-GB torch/docling download; this machine is disk-constrained). The
+  wheel build, install, imports, entry points and packaged resources **were** verified
+  from a throwaway venv outside the repository.
 * **§6** — `acquire download` / `unpack`. No bulk download was performed against NCBI.
 * **§8's entity-cache migration advice** — the paths and resolution order were checked
   against `ner/cache_paths.py`, and `ner extract` was run against a *copy* of the cache;
@@ -68,12 +69,21 @@ This installs one package — `nlp_histo` — and one console command, `nlp-hist
 Nothing else in the repository is installed: `eval/`, `scripts/` and `tests/` are
 repository-only.
 
-From a built wheel (no source tree needed):
+From a built wheel — the package itself needs no source tree, but **the dependencies are
+not in the wheel**:
 
 ```bash
-python -m build                       # writes dist/nlp_histo-*.whl
+python -m build                             # writes dist/nlp_histo-*.whl
+python -m pip install -r requirements.txt   # STILL REQUIRED — see below
 python -m pip install dist/nlp_histo-*.whl
 ```
+
+`pyproject.toml` deliberately declares **no** `dependencies`: `requirements.txt` is the
+pinned, tested set, and the wheel's only metadata requirement is `Requires-Python`. So
+`pip install dist/nlp_histo-*.whl` on its own resolves nothing else — you get a package
+that imports and prints help, and then fails on the first real command with
+`ModuleNotFoundError: No module named 'sqlalchemy'`. Install `requirements.txt` into the
+same environment (BUGS.md B-116).
 
 Verify:
 
@@ -84,6 +94,23 @@ python -c "import nlp_histo; print(nlp_histo.__file__)"
 
 Both work from **any** directory — the package does not need the repository as its
 working directory in order to import.
+
+*Verified 2026-07-16* in a throwaway venv **outside** the repository (Python 3.12.0), from
+the wheel alone — no source tree, no editable install, no `PYTHONPATH`:
+
+```
+python -m build                    → nlp_histo-0.1.0-py3-none-any.whl (483 KB)
+pip install …/nlp_histo-0.1.0-py3-none-any.whl
+  → "Would install nlp-histo-0.1.0" and nothing else — the wheel has no dependencies
+import nlp_histo   → …/fresh-venv/lib/python3.12/site-packages/nlp_histo/__init__.py
+nlp-histo --help + all 11 command/subcommand --help  → exit 0
+packaged resources load: model_prices.json (1437 B), nli_models.yaml (1558 B)
+nlp-histo db check → ModuleNotFoundError: sqlalchemy   ← the wheel carries no deps
+```
+
+Not exercised: installing `requirements.txt` into that fresh venv (a multi-GB
+torch/docling resolution) — so the wheel's *packaging* is verified end-to-end, its
+*dependency resolution* is not.
 
 ## 3. The command surface
 
