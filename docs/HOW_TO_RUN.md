@@ -24,7 +24,7 @@ assurance is worth less than an honest inventory, so here is the inventory.
 | 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
 | 10 | `replay chapter9` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable |
 | 11 | `pytest`, `ruff check .` | verified — 1565 passed, 0 failed; ruff clean |
-| 12 | E04, `sweeps/grounding.py`, E14, `map_theta_sweep --help` | verified free (0 cache misses, no paid host) |
+| 12 | E04, `sweeps/grounding.py`, E14 (incl. `--theta-frontier`), `map_theta_sweep --help` | verified free (0 cache misses, no paid host). `E14 --theta-frontier` reproduces **byte-identically** to the 2026-06-25 baseline |
 
 **Not executed — do not read these as verified:**
 
@@ -32,11 +32,17 @@ assurance is worth less than an honest inventory, so here is the inventory.
   fresh venv (multi-GB torch/docling download; this machine is disk-constrained). The
   wheel build, install, imports, entry points and packaged resources **were** verified
   from a throwaway venv outside the repository.
-* **§6** — `acquire download` / `unpack`. No bulk download was performed against NCBI.
+* **§6 `acquire download` / `unpack`** — **blocked upstream, not skipped.** The documented
+  `download` was run against NCBI for one PMCID: the OA API advertised
+  `oa_package/fa/c8/PMC10047158.tar.gz` — the exact path NCBI's own committed index
+  `files/oa_file_list.csv` lists — and the HTTPS GET returned **404**. It is unresolved
+  whether that is specific to this paper or means `acquire download` is broken for every
+  paper (BUGS.md *"Topic — NCBI OA package 404"*). `unpack` has no offline input — tarballs
+  are deleted after `organize` — so it is unverified too. `organize`'s failure path is
+  verified; its happy path was verified earlier on a fixture.
 * **§8's entity-cache migration advice** — the paths and resolution order were checked
   against `ner/cache_paths.py`, and `ner extract` was run against a *copy* of the cache;
   the documented `export NLP_HISTO_ENTITY_CACHE=…` line itself was not exercised.
-* **§12** — `E14 --theta-frontier` (the plain E14 run is verified).
 * **§13** — the B-102 limitation, carried forward from an earlier audit.
 
 Where a command needs something this machine does not have, that is stated at the command
@@ -195,8 +201,27 @@ Every path is explicit — nothing is resolved against a hidden default. Re-runn
 work already done; pass `--overwrite` to force. A missing input fails immediately with
 the offending path.
 
-*Verified here:* `acquire organize` end-to-end on a temporary fixture. `download` was
-not run against NCBI (no bulk downloading during the migration).
+`download` exits **1** when a non-empty request fetches nothing — it previously printed
+`Done — 0 tarball(s)` and exited 0, so a wholly failed run read as success (BUGS.md
+B-117). A *partial* result is still success: papers outside the OA subset are reported
+per-PMCID and are expected.
+
+> **⚠ `download` did not work when last tried (2026-07-16) — upstream, not local.** One
+> request for one PMCID: NCBI's OA API advertised
+> `oa_package/fa/c8/PMC10047158.tar.gz` — byte-for-byte the path NCBI's own index
+> (`files/oa_file_list.csv`) lists — and
+> `https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_package/fa/c8/PMC10047158.tar.gz` returned
+> **404**. Whether that is specific to this paper, or means the `ftp://`→`https://` rewrite
+> at `downloader.py:107` has lapsed and acquisition is broken for **every** paper, is
+> unresolved — settling it needs more requests than were authorised. The existing corpus
+> (1132 PDFs) proves the path worked historically, not that it works now. See BUGS.md
+> *"Topic — NCBI OA package 404"* before attempting a from-scratch acquisition.
+
+*Verified 2026-07-16:* `acquire organize` end-to-end on a temporary fixture, and its
+missing-input failure path. `download` was exercised for a single PMCID (above) — its
+argument handling, OA lookup and failure reporting are verified; a successful fetch is
+not. `unpack` is unverified: no tarball exists offline to feed it, because they are
+deleted after `organize`.
 
 ## 7. Ingest PDFs
 
@@ -492,6 +517,17 @@ python eval/sweeps/grounding.py
 **These are free**, despite reading like paid commands: every embedding is served from
 the frozen sqlite caches (`eval/data/embedding_cache_{openai,gemini}.sqlite`), which
 were verified on 2026-07-16 to yield **0 cache misses**. No paid endpoint is contacted.
+
+*Verified 2026-07-16, all four, under a guard that raises on any billable host:* E04,
+`eval/sweeps/grounding.py`, `map_theta_sweep --help`, and
+`E14_heldout.heldout_eval --theta-frontier` (exit 0, 248 s, zero paid blocks, zero cache
+misses; the only host contacted was `s3-us-west-2.amazonaws.com` for the free scispaCy
+KB). E14's frontier CSV is **byte-identical** to the 2026-06-25 baseline — 7 rows, 0
+differing cells — is monotonic in θ (0.40→0.5453 … 0.90→0.7128), and its θ0.90 row equals
+the primary heldout15 number, matching `eval/reports/RESULTS.md`'s pinned *"heldout15
+strict-F1 0.7128 vs calibration 0.7160, gap −0.0032"*. E14 now runs strict cache-only, so
+that freedom from paid calls is structural rather than a property of the current cache.
+
 Two caveats before you run them:
 
 * **They still require `GOOGLE_API_KEY` to be set**, even though they never call Google:
