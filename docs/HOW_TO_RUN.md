@@ -17,8 +17,9 @@ assurance is worth less than an honest inventory, so here is the inventory.
 | 2 | `nlp-histo --help`, `import nlp_histo` from any directory | verified |
 | 3 | every command/subcommand `--help` (15) | verified, all exit 0 |
 | 4 | the eight `NLP_HISTO_*` env vars | verified present in `src/` |
-| 5 | `db check`, `db init` | verified against a live PostgreSQL (existing schema) |
+| 5 | `db check`, `db init` | verified against a live PostgreSQL — including `db init` against an **empty** database (21 tables created from the ORM, exit 0, ~1 s) |
 | 6 | `acquire organize` missing-input failure | verified (exit 1, names the path) |
+| 7 | `ingest` | **verified end-to-end** on one 8-page PDF into an isolated database — exit 0, 33 s, 14 text elements + 10 figures, matching the established corpus exactly |
 | 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
 | 10 | `replay chapter9` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable |
 | 11 | `pytest`, `ruff check .` | verified — 1565 passed, 0 failed; ruff clean |
@@ -29,14 +30,10 @@ assurance is worth less than an honest inventory, so here is the inventory.
 * **§2** — the `venv` sequence and the `python -m build` wheel path. This machine runs a
   framework 3.12 install; imports and the console script resolve, but the documented
   install was not re-run from scratch.
-* **§5** — `db init` against an **empty** database. Only the idempotent re-run against an
-  existing schema was exercised.
 * **§6** — `acquire download` / `unpack`. No bulk download was performed against NCBI.
-* **§7 `ingest` and §8 `ner`** — **dispatch and flag names confirmed by reading the
-  forwarded parsers** (`runner.py:1084` `--pdf-dir`, `:1091` `--out-root`,
-  `batch_ner.py:288` `--entity-cache`), but **neither was run**: both write to the
-  database. §8's entity-cache migration advice is likewise untested. These are the
-  largest remaining gaps, and `ingest` is the pipeline's primary command.
+* **§8 `ner`** — **dispatch and flag names confirmed by reading the forwarded parser**
+  (`batch_ner.py:288` `--entity-cache`), and the entity-cache migration advice checked
+  against `ner/cache_paths.py`, but **no `ner` command was run**.
 * **§12** — `E14 --theta-frontier` (the plain E14 run is verified).
 * **§13** — the B-102 limitation, carried forward from an earlier audit.
 
@@ -130,10 +127,11 @@ nlp-histo db check        # verify only; creates nothing
 already exists — it does **not** initialise an empty one.
 
 *Verified 2026-07-16:* both ran against a live PostgreSQL server. `db check` reported
-`schema is present and valid (21 tables)`; `db init` exited 0 on the existing schema
-(`OK: schema verified (21 tables)`), confirming it is safe to re-run and drops nothing.
-**Creation against an empty database was not exercised** — that is the same code path
-with creation enabled, but it is untested here.
+`schema is present and valid (21 tables)`. `db init` was exercised **both ways**: against
+an existing schema it exits 0 (`OK: schema verified (21 tables)`), dropping nothing — and
+against a genuinely **empty** database it created all 21 tables from the ORM in ~1 s
+(`Database tables created successfully!` → `OK: schema verified (21 tables)`), with the
+table set matching `database/models.py`.
 
 ## 6. Acquire the corpus
 
@@ -166,11 +164,26 @@ extraction runner. `nlp-histo ingest --help` shows this CLI's stub; **`nlp-histo
 -- --help` lists the runner's real options** (`--glob`, `--max-docs`, `--workers`,
 `--detector`, …).
 
-> **Not verified by execution.** The flags above exist (`runner.py:1084` `--pdf-dir`,
-> `:1091` `--out-root`) and forwarding is covered by tests, but no ingest run was
-> performed during the 2026-07-16 audit — it writes to the database. Treat this section
-> as inspected, not exercised. Note a missing `--pdf-dir` does **not** error: the run
-> finds 0 PDFs, writes a run manifest, and exits 0.
+*Verified end-to-end 2026-07-16* — the command above, exactly as written, on one 8-page
+main PDF, into an isolated artifact root and an empty isolated database (`DB_NAME` pointed
+elsewhere via `NLP_HISTO_ENV_FILE`; the production corpus was untouched):
+
+```
+nlp-histo ingest --pdf-dir <root>/pdfs --out-root <root>/out
+→ exit 0 in 33 s · ok=1 fail=0 skip=0 · no paid call (guard: 0 billable hosts)
+DB:   documents=1 · text_elements=14 (all non-empty, avg 692 chars, all with path_string)
+      figures=10 · tables=0
+disk: out/text (1) · out/figures (10 PNGs) · out/json (1) · out/docling_full (2)
+      out/run_metadata (2)
+```
+
+The counts match the established corpus for the same paper exactly (14 text elements,
+10 figures, 0 tables), and `unique_path` has the documented
+`{PMCID}/{section}/{position}` shape. Two things worth knowing, both matching production
+rather than deviating from it: `documents.title` is left `NULL` (it is NULL for all 977
+papers in the established corpus), and `ingest` writes no `pipeline_runs` row. Also note a
+missing `--pdf-dir` does **not** error — the run finds 0 PDFs, writes a run manifest, and
+exits 0.
 
 ## 8. Named-entity recognition
 
