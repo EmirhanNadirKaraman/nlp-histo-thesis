@@ -151,9 +151,13 @@ def test_acquire_download_dispatches_with_explicit_paths(monkeypatch, tmp_path) 
     seen: dict = {}
     import nlp_histo.acquisition.downloader as downloader
 
+    from nlp_histo.acquisition.downloader import DownloadReport
+
     def _fake_download(pmcid_file, output_dir, *, overwrite=False):
         seen.update(file=Path(pmcid_file), out=Path(output_dir), overwrite=overwrite)
-        return 1  # the real download_papers returns a count; 0 now means failure (B-117)
+        # Mirror the real signature: a DownloadReport, not a bare count. Any `failed`
+        # would make the CLI exit non-zero (B-117).
+        return DownloadReport(requested=1, succeeded=1, failed=0, skipped=0)
 
     monkeypatch.setattr(downloader, "download_papers", _fake_download)
     ids = tmp_path / "ids.txt"
@@ -230,46 +234,9 @@ def test_replay_missing_artifacts_is_a_clear_error(tmp_path, capsys) -> None:
     assert "Required for:" in err
 
 
-# ── B-117: downloading nothing is a failure, not a quiet success ──────────────
-
-def _pmcid_file(tmp_path, n: int):
-    p = tmp_path / "ids.txt"
-    p.write_text("\n".join(f"PMC{i:07d}" for i in range(n)) + ("\n" if n else ""), encoding="utf-8")
-    return p
-
-
-def test_acquire_download_exits_nonzero_when_nothing_downloads(tmp_path, capsys, monkeypatch) -> None:
-    """Every requested paper failed — previously reported "Done — 0 tarball(s)", exit 0.
-
-    Observed for real against NCBI: an OA package advertised by NCBI's own API 404s, and
-    the command still exited 0.
-    """
-    from nlp_histo.acquisition import downloader
-
-    monkeypatch.setattr(downloader, "download_papers", lambda *a, **k: 0)
-    ids = _pmcid_file(tmp_path, 3)
-    rc = main(["acquire", "download", "--pmcid-file", str(ids), "--output-dir", str(tmp_path / "out")])
-    assert rc == 1
-    assert "none of the 3 requested" in capsys.readouterr().err
-
-
-def test_acquire_download_partial_result_is_success(tmp_path, monkeypatch) -> None:
-    """Papers absent from the OA subset are reported per-PMCID and are not errors, so a
-    partial fetch must not fail the run."""
-    from nlp_histo.acquisition import downloader
-
-    monkeypatch.setattr(downloader, "download_papers", lambda *a, **k: 1)
-    ids = _pmcid_file(tmp_path, 3)
-    assert main(["acquire", "download", "--pmcid-file", str(ids), "--output-dir", str(tmp_path / "o")]) == 0
-
-
-def test_acquire_download_empty_pmcid_file_is_not_an_error(tmp_path, monkeypatch) -> None:
-    """Nothing requested, nothing downloaded — vacuously fine, not a failure."""
-    from nlp_histo.acquisition import downloader
-
-    monkeypatch.setattr(downloader, "download_papers", lambda *a, **k: 0)
-    ids = _pmcid_file(tmp_path, 0)
-    assert main(["acquire", "download", "--pmcid-file", str(ids), "--output-dir", str(tmp_path / "o")]) == 0
+# B-117's exit-code contract (total/partial failure, skips, empty input, zero-byte and
+# non-archive responses) lives in tests/test_acquire_download_outcomes.py — the dispatch
+# test below only checks that the CLI forwards its arguments.
 
 
 # ── B-107: a UMLS failure must stop the replay, not shade its numbers ──────────

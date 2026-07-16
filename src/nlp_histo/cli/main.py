@@ -36,23 +36,27 @@ def _db(args: argparse.Namespace) -> int:
 
 def _acquire(args: argparse.Namespace) -> int:
     if args.acquire_command == "download":
-        from nlp_histo.acquisition.downloader import download_papers, load_pmc_ids
+        from nlp_histo.acquisition.downloader import download_papers
 
-        requested = len(load_pmc_ids(args.pmcid_file))
-        downloaded = download_papers(
+        report = download_papers(
             args.pmcid_file, args.output_dir, overwrite=args.overwrite
         )
-        # Downloading none of what was asked for is a failure, not a quiet success. The
-        # return value used to be discarded, so a run that fetched nothing — every link
-        # 404, no network, the OA subset moved — still exited 0 and read as "done"
-        # (B-117). A partial result stays 0: papers legitimately absent from the OA
-        # subset are reported per-PMCID and are not errors.
-        if requested and not downloaded:
+        # ANY failure fails the run, even beside successes: a corpus quietly missing the
+        # papers NCBI said it had is worse than a red exit code. The return value used to
+        # be discarded entirely, so even a total failure exited 0 (B-117).
+        #
+        # Skips are not failures — a paper outside the OA subset, or one already on disk,
+        # is an expected answer rather than a denied request.
+        #
+        # Successful archives are kept on a partial failure; only unusable ones are
+        # removed (see download_file), so a re-run resumes instead of refetching.
+        if not report.ok:
             print(
-                f"error: none of the {requested} requested paper(s) were downloaded. "
-                "See the per-PMCID reasons above — a 404 on an advertised link means the "
-                "OA package NCBI lists is not retrievable, which is an upstream problem, "
-                "not a local one.",
+                f"error: {report.failed} of {report.requested} requested paper(s) failed "
+                f"to download — {report.summary()}. See the per-PMCID reasons above. "
+                "A 404 on a link NCBI advertised means the OA package it lists is not "
+                "retrievable: an upstream problem, not a local one. Successfully "
+                "downloaded archives have been kept; re-running resumes.",
                 file=sys.stderr,
             )
             return 1
