@@ -18,7 +18,7 @@ assurance is worth less than an honest inventory, so here is the inventory.
 | 3 | every command/subcommand `--help` (15) | verified, all exit 0 |
 | 4 | the eight `NLP_HISTO_*` env vars | verified present in `src/` |
 | 5 | `db check`, `db init` | verified against a live PostgreSQL — including `db init` against an **empty** database (21 tables created from the ORM, exit 0, ~1 s) |
-| 6 | `acquire download` / `unpack` / `organize` | **verified end-to-end** on one PMCID against live NCBI — 7.2 MB archive → 1 PDF + 1 XML. Uses NCBI's relocated tree; **expires August 2026** (B-118) |
+| 6 | `acquire download` / `unpack` / `organize` | **verified end-to-end** on one PMCID, **both sources** — aws (default, durable) and ftp (legacy, expires Aug 2026). Identical PDF bytes from each (B-118) |
 | 7 | `ingest` | **verified end-to-end** on one 8-page PDF into an isolated database — exit 0, 33 s, 14 text elements + 10 figures, matching the established corpus exactly |
 | 8 | `ner extract` / `merge` / `export` | **verified end-to-end** on that document — 865 entities (749 with UMLS CUIs) → 762 merged files → 89 disease CUIs. `merge`/`export` produced nothing before the B-115 fix |
 | 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
@@ -32,9 +32,7 @@ assurance is worth less than an honest inventory, so here is the inventory.
   fresh venv (multi-GB torch/docling download; this machine is disk-constrained). The
   wheel build, install, imports, entry points and packaged resources **were** verified
   from a throwaway venv outside the repository.
-* **§6's bulk path** — only one PMCID was fetched, never the full 1093. And the working
-  route is temporary: NCBI deletes the relocated tree in **August 2026**, after which
-  acquisition needs the AWS OA service (B-118).
+* **§6's bulk path** — one PMCID per source was fetched, never the full 1093.
 * **§8's entity-cache migration advice** — the paths and resolution order were checked
   against `ner/cache_paths.py`, and `ner extract` was run against a *copy* of the cache;
   the documented `export NLP_HISTO_ENTITY_CACHE=…` line itself was not exercised.
@@ -185,12 +183,34 @@ table set matching `database/models.py`.
 ## 6. Acquire the corpus
 
 ```bash
-nlp-histo acquire download --pmcid-file target_pmc_ids.txt --output-dir files/tarballs
-nlp-histo acquire unpack   --input-dir  files/tarballs      --output-dir files/corpus
+# AWS Open-Access dataset (default) — two steps, no tarball, no deprecation date
+nlp-histo acquire download --pmcid-file files/target_pmc_ids.txt --output-dir files/corpus
 nlp-histo acquire organize --input-dir  files/corpus \
                            --pdf-dir    files/organized_pdfs \
                            --xml-dir    files/organized_xmls
 ```
+
+`download` defaults to `--source aws`: NLM publishes the OA Subset on AWS (free, no
+login), and it writes `files/corpus/<PMCID>/` directly — the layout `unpack` produces —
+so **`unpack` is not needed on this route**.
+
+The legacy FTP tarballs remain available with `--source ftp`, for resuming a corpus
+started that way. **They are deleted in August 2026** (B-118), and that route still needs
+all three steps:
+
+```bash
+nlp-histo acquire download --source ftp --pmcid-file files/target_pmc_ids.txt \
+                           --output-dir files/tarballs
+nlp-histo acquire unpack   --input-dir  files/tarballs --output-dir files/corpus
+nlp-histo acquire organize --input-dir  files/corpus  --pdf-dir … --xml-dir …
+```
+
+Both sources serve the same bytes — verified: the AWS PDF for `PMC8395919` has the same
+SHA-256 and the same 5 733 574 bytes as the one inside the FTP tarball. They differ only
+in naming: AWS objects are `PMC8395919.1.pdf` (the article version), while the tarball
+carried the publisher's filename, so a PDF's stem — and hence the PMCID `ingest` derives
+— reads `PMC8395919.1` rather than `PMC8395919_dermatopathology-08-00036`. A from-scratch
+AWS corpus is self-consistent; **don't mix sources within one corpus**.
 
 Every path is explicit — nothing is resolved against a hidden default. Re-running skips
 work already done; pass `--overwrite` to force. A missing input fails immediately with
@@ -201,41 +221,38 @@ the offending path.
 B-117). A *partial* result is still success: papers outside the OA subset are reported
 per-PMCID and are expected.
 
-> **⏳ Works — but on borrowed time. NCBI deletes this path in August 2026.**
+> **Why the default is AWS.** NCBI moved every legacy FTP tree under
+> `/pub/pmc/deprecated/` (their readme, updated 2026-04-10) while **its own OA API still
+> advertises the pre-move paths** — so the advertised URL 404s for *every* paper
+> (measured 0/5 across 2010–2025). `--source ftp` copes by trying the advertised URL
+> first and the relocated one second, announcing the fallback when it uses it, but NCBI
+> states those files **"will be removed in August 2026"**. AWS has no such expiry.
 >
-> NCBI moved every legacy FTP tree under `/pub/pmc/deprecated/` (their readme, updated
-> 2026-04-10) and **its own OA API still advertises the pre-move paths**, so the
-> advertised URL 404s for every paper — measured 0/5 across publications from 2010 to
-> 2025. `download` now tries the advertised URL first and the relocated one second, and
-> says so when it falls back (`↪ via NCBI's relocated legacy tree`). Advertised-first
-> means this repairs itself if NCBI fixes its API (BUGS.md B-118).
->
-> **NCBI states the legacy files "will be removed in August 2026."** After that both
-> candidates 404 and `download` fails loudly — the signal to migrate to the AWS OA
-> service (<https://pmc.ncbi.nlm.nih.gov/tools/cloud/>), which is a different endpoint and
-> a different index. Tracked in THESIS.md.
->
-> The code was never at fault, and that was tested rather than assumed: an FTP probe of
-> the *original* advertised URL answers `550 … No such file or directory`, so both
-> protocols fail identically and the `ftp://`→`https://` rewrite is sound.
+> The FTP code was never at fault, and that was tested rather than assumed: an FTP probe
+> of the *original* advertised URL answers `550 … No such file or directory`, so both
+> protocols fail identically and the `ftp://`→`https://` rewrite is sound. NCBI simply
+> stopped serving what its API advertises (BUGS.md B-118).
 
 `download` exits **1** if any requested paper fails, reporting succeeded/failed/skipped —
 papers outside the OA subset are *skipped*, not failed. A downloaded file is validated as
 a real `.tar.gz`; a 200 carrying an error page or a truncated stream is a failure, and
 unusable files are discarded so a re-run retries them instead of skipping them (B-117).
 
-*Verified end-to-end 2026-07-16* against live NCBI, isolated from the established corpus:
+*Verified end-to-end 2026-07-16*, both sources, one PMCID each, isolated from the
+established corpus:
 
 ```
-acquire download --pmcid-file <one> --output-dir <iso>/tarballs
-  → exit 0 · 7.2 MB · "↪ via NCBI's relocated legacy tree"
-acquire unpack   --input-dir <iso>/tarballs --output-dir <iso>/corpus
-  → exit 0 · valid tar (17 members) · 1 PDF + 1 XML extracted
-acquire organize --input-dir <iso>/corpus --pdf-dir … --xml-dir …
-  → exit 0 · 1 PDF + 1 XML organized
+# aws (default)
+acquire download --output-dir <iso>/corpus   → exit 0 · 3 s · PDF 5.7 MB (%PDF) + XML
+acquire organize --input-dir  <iso>/corpus   → exit 0 · 1 PDF + 1 XML organized
+
+# ftp (legacy, dies Aug 2026)
+acquire download --source ftp → exit 0 · 7.2 MB · "↪ via NCBI's relocated legacy tree"
+acquire unpack                → exit 0 · valid tar (17 members) · 1 PDF + 1 XML
+acquire organize              → exit 0 · 1 PDF + 1 XML organized
 ```
 
-One PMCID, not a bulk fetch; `files/organized_pdfs` still holds its original 1132 PDFs.
+Not a bulk fetch; `files/organized_pdfs` still holds its original 1132 PDFs.
 
 ## 7. Ingest PDFs
 
