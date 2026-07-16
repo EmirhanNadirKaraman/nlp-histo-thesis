@@ -18,7 +18,7 @@ assurance is worth less than an honest inventory, so here is the inventory.
 | 3 | every command/subcommand `--help` (15) | verified, all exit 0 |
 | 4 | the eight `NLP_HISTO_*` env vars | verified present in `src/` |
 | 5 | `db check`, `db init` | verified against a live PostgreSQL — including `db init` against an **empty** database (21 tables created from the ORM, exit 0, ~1 s) |
-| 6 | `acquire organize` missing-input failure | verified (exit 1, names the path) |
+| 6 | `acquire download` / `unpack` / `organize` | **verified end-to-end** on one PMCID against live NCBI — 7.2 MB archive → 1 PDF + 1 XML. Uses NCBI's relocated tree; **expires August 2026** (B-118) |
 | 7 | `ingest` | **verified end-to-end** on one 8-page PDF into an isolated database — exit 0, 33 s, 14 text elements + 10 figures, matching the established corpus exactly |
 | 8 | `ner extract` / `merge` / `export` | **verified end-to-end** on that document — 865 entities (749 with UMLS CUIs) → 762 merged files → 89 disease CUIs. `merge`/`export` produced nothing before the B-115 fix |
 | 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
@@ -32,16 +32,9 @@ assurance is worth less than an honest inventory, so here is the inventory.
   fresh venv (multi-GB torch/docling download; this machine is disk-constrained). The
   wheel build, install, imports, entry points and packaged resources **were** verified
   from a throwaway venv outside the repository.
-* **§6 `acquire download` / `unpack`** — **blocked upstream and currently impossible, not
-  skipped.** Measured on 5 PMCIDs stratified 2010→2025: **0/5** HTTPS successes, all 404
-  with `text/html`; one FTP probe of the original advertised URL returns `550 … No such
-  file or directory`. Both protocols fail identically, so the code's `ftp://`→`https://`
-  rewrite is exonerated and the paths match NCBI's own committed index — NCBI advertises
-  packages it does not serve (BUGS.md *"Topic — NCBI OA packages are unreachable"*).
-  `download`'s argument handling, lookup and failure reporting **are** verified against
-  live NCBI; a successful fetch is not, and `unpack` consequently has no input.
-  `organize` is verified (fixture + failure path). **Nothing downstream is affected:** the
-  corpus is on disk and §7–§12 are verified against it.
+* **§6's bulk path** — only one PMCID was fetched, never the full 1093. And the working
+  route is temporary: NCBI deletes the relocated tree in **August 2026**, after which
+  acquisition needs the AWS OA service (B-118).
 * **§8's entity-cache migration advice** — the paths and resolution order were checked
   against `ner/cache_paths.py`, and `ner extract` was run against a *copy* of the cache;
   the documented `export NLP_HISTO_ENTITY_CACHE=…` line itself was not exercised.
@@ -208,32 +201,41 @@ the offending path.
 B-117). A *partial* result is still success: papers outside the OA subset are reported
 per-PMCID and are expected.
 
-> **⛔ `download` cannot succeed at the moment — NCBI's packages are not where NCBI says
-> they are. This is upstream; nothing in this repository will fix it.**
+> **⏳ Works — but on borrowed time. NCBI deletes this path in August 2026.**
 >
-> Measured 2026-07-16 on 5 PMCIDs stratified across the corpus (2010 → 2025), each
-> currently advertised by the official OA API as having a package: **0 of 5** returned an
-> archive. All 5 gave **404** with `content-type: text/html` — an error page. Fifteen
-> years of publication dates failing identically is not a few withdrawn papers.
+> NCBI moved every legacy FTP tree under `/pub/pmc/deprecated/` (their readme, updated
+> 2026-04-10) and **its own OA API still advertises the pre-move paths**, so the
+> advertised URL 404s for every paper — measured 0/5 across publications from 2010 to
+> 2025. `download` now tries the advertised URL first and the relocated one second, and
+> says so when it falls back (`↪ via NCBI's relocated legacy tree`). Advertised-first
+> means this repairs itself if NCBI fixes its API (BUGS.md B-118).
 >
-> **The code is not at fault, and that was tested rather than assumed.** The obvious
-> suspect was the `ftp://`→`https://` rewrite at `downloader.py:107`. One FTP probe of the
-> *original* advertised URL refutes it: the FTP server accepts the connection and answers
-> `550 … No such file or directory` for the same path. Both protocols fail identically,
-> the paths match NCBI's own committed index (`files/oa_file_list.csv`) byte-for-byte, and
-> `acquire download` faithfully requests exactly what NCBI advertises.
+> **NCBI states the legacy files "will be removed in August 2026."** After that both
+> candidates 404 and `download` fails loudly — the signal to migrate to the AWS OA
+> service (<https://pmc.ncbi.nlm.nih.gov/tools/cloud/>), which is a different endpoint and
+> a different index. Tracked in THESIS.md.
 >
-> The existing corpus (1132 PDFs) proves this worked historically, not that it works now.
-> **Everything downstream is unaffected** — the corpus is on disk, and §7–§12 are all
-> verified against it. Only a *from-scratch* acquisition is blocked. Before attempting
-> one, read BUGS.md *"Topic — NCBI OA packages are unreachable"* and find out where OA
-> packages now live.
+> The code was never at fault, and that was tested rather than assumed: an FTP probe of
+> the *original* advertised URL answers `550 … No such file or directory`, so both
+> protocols fail identically and the `ftp://`→`https://` rewrite is sound.
 
-*Verified 2026-07-16:* `acquire organize` end-to-end on a temporary fixture, and its
-missing-input failure path. `download`'s argument handling, OA lookup and failure
-reporting are verified against live NCBI — a successful fetch is not, and currently
-cannot be. `unpack` is unverified for a consequent reason: no tarball can be obtained,
-and none remain on disk (they are deleted after `organize`).
+`download` exits **1** if any requested paper fails, reporting succeeded/failed/skipped —
+papers outside the OA subset are *skipped*, not failed. A downloaded file is validated as
+a real `.tar.gz`; a 200 carrying an error page or a truncated stream is a failure, and
+unusable files are discarded so a re-run retries them instead of skipping them (B-117).
+
+*Verified end-to-end 2026-07-16* against live NCBI, isolated from the established corpus:
+
+```
+acquire download --pmcid-file <one> --output-dir <iso>/tarballs
+  → exit 0 · 7.2 MB · "↪ via NCBI's relocated legacy tree"
+acquire unpack   --input-dir <iso>/tarballs --output-dir <iso>/corpus
+  → exit 0 · valid tar (17 members) · 1 PDF + 1 XML extracted
+acquire organize --input-dir <iso>/corpus --pdf-dir … --xml-dir …
+  → exit 0 · 1 PDF + 1 XML organized
+```
+
+One PMCID, not a bulk fetch; `files/organized_pdfs` still holds its original 1132 PDFs.
 
 ## 7. Ingest PDFs
 
