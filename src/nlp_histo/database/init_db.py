@@ -122,8 +122,14 @@ def validate_config(env: Mapping[str, str]) -> dict[str, str]:
 
 
 def target_description(cfg: Mapping[str, str]) -> str:
-    """Human-readable target — deliberately excludes the password."""
-    return f"{cfg['user']}@{cfg['host']}:{cfg['port']}/{cfg['database']}"
+    """Human-readable target — deliberately excludes the password.
+
+    Delegates to the shared formatter so every command renders a target identically and
+    no caller can invent a variant that leaks the password (B-113).
+    """
+    from .env_routing import format_target_config
+
+    return format_target_config(cfg)
 
 
 # ── Verification (small, testable units; each takes an Inspector-like object) ──

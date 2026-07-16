@@ -15,12 +15,22 @@ from .models import Base
 try:
     from dotenv import find_dotenv, load_dotenv
 
+    from .env_routing import raise_on_routing_conflict
+
     # Search UPWARD FROM THE WORKING DIRECTORY, never relative to this file: the
     # package is installed (site-packages, or src/nlp_histo/ in a checkout), so a
     # file-relative walk finds nothing and silently leaves DB_CONFIG on its
-    # postgres/postgres@localhost defaults. NLP_HISTO_ENV_FILE overrides.
+    # postgres/postgres@localhost defaults. NLP_HISTO_ENV_FILE selects the file.
     _explicit = os.getenv("NLP_HISTO_ENV_FILE")
     _found = _explicit or find_dotenv(usecwd=True)
+
+    # Only for an EXPLICIT selection, and only before load_dotenv: afterwards the file's
+    # values are indistinguishable from inherited ones and the conflict is invisible.
+    # `load_dotenv` does not override the environment (documented, deliberate — see
+    # ENV_LOADING.md), so naming a file while DB_* is already exported silently connects
+    # somewhere else. Automatic discovery keeps the documented env-wins behaviour (B-113).
+    raise_on_routing_conflict(_explicit)
+
     if _found and Path(_found).exists():
         load_dotenv(_found)
 except ImportError:

@@ -49,9 +49,27 @@ def _acquire(args: argparse.Namespace) -> int:
     return 0
 
 
+def _echo_db_target() -> None:
+    """Announce the resolved database before a command touches it.
+
+    `db init` / `db check` always did; `ingest` and `ner` did not, so a run silently
+    redirected by an inherited DB_* variable gave no sign of where it was writing —
+    which is how a test ingest nearly landed in the production corpus (B-113).
+    Best-effort: never let the announcement itself break the command.
+    """
+    try:
+        from nlp_histo.database import get_db_connection
+        from nlp_histo.database.env_routing import print_target
+
+        print_target(get_db_connection())
+    except Exception:  # noqa: BLE001 — diagnostics must not gate real work
+        pass
+
+
 def _ingest(args: argparse.Namespace) -> int:
     from nlp_histo.pipeline.stages.pdf_text_extraction import runner
 
+    _echo_db_target()
     runner.main(args.forwarded)
     return 0
 
@@ -63,6 +81,7 @@ def _ner(args: argparse.Namespace) -> int:
         from nlp_histo.ner import merge_entities_by_umls as mod
     else:  # export
         from nlp_histo.ner import export_disease_entities as mod
+    _echo_db_target()
     return mod.main(args.forwarded)
 
 
@@ -225,7 +244,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.parse_args([group, "--help"])
             return 1
 
-    return handler(args)
+    try:
+        return handler(args)
+    except Exception as exc:  # noqa: BLE001 — re-raised below unless it is ours
+        # An env-routing conflict is raised while `nlp_histo.database` is imported, deep
+        # inside a handler. It is a user-configuration problem with an actionable
+        # message, so render it as an error rather than a traceback (B-113). Anything
+        # else is a real fault and keeps its traceback.
+        if type(exc).__name__ == "EnvRoutingConflict":
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        raise
 
 
 if __name__ == "__main__":
