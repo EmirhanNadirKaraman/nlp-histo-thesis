@@ -44,6 +44,69 @@ cost constraint is a reason to find the free verification, not to skip it.
 
 ---
 
+## 0. What you need before you start
+
+**A clean clone is not enough, and that is by design.** It gives you 172 MB of code,
+tests, docs and configuration. It does **not** give you the frozen artifacts, the
+database, or the PDFs — those are 1.5 GB of paid LLM output and embedding caches, a
+485 MB database, and 5.2 GB of publisher PDFs that mostly cannot be redistributed (322 of
+1093 carry no Creative Commons licence at all).
+
+Verified on a fresh clone, 2026-07-16 — so you know exactly what does and does not work
+before you start:
+
+| Works from a clean clone alone | Needs the artifact bundle |
+|---|---|
+| §2 install · §3 `--help` · §4 env vars | §10 `replay chapter9` → exits **2**, naming every missing artifact |
+| §5 `db init` / `db check` (your own PostgreSQL) | §12 experiments → no primer / caches |
+| **§11 `pytest` → 1685 passed** | §7 `ingest` · §8 `ner` → no PDFs, no ingested documents |
+
+Nothing fails silently — a missing artifact is a loud, itemised error. But a loud error
+is not a result, so pick your path:
+
+### Path A — reproduce the thesis tables (recommended, free, ~10 min)
+
+You need **the replay bundle (~1.5 GB)**. It is the frozen output of the paid pipeline,
+so no API key and **no database** are required — `replay chapter9` never connects to
+PostgreSQL.
+
+```
+eval/data/embedding_cache_openai.sqlite       467 MB
+eval/data/embedding_cache_gemini.sqlite       1.1 GB
+eval/data/map_primer/voter_cache.json          22 MB
+eval/data/silver_findings_related15.jsonl     1.1 MB
+out/summaries/{summaries,cascade_decisions}/   10 MB
+out/summaries/corpus_relations*.json
+```
+
+Unpack it over the clone so the paths match, then → **§10**. Expect 9 CSVs, byte-identical
+to the published tables.
+
+### Path B — work with the corpus (adds the database)
+
+Restore the **PostgreSQL dump (~485 MB)** into your own database (§5), point `.env` at it,
+then → §8 NER, §9 knowledge extraction, or any SQL against the 977 papers.
+
+### Path C — rebuild from scratch
+
+`files/target_pmc_ids.txt` (in the clone — it is the corpus *definition*) → **§6** acquires
+the PDFs from NLM's AWS dataset → **§7** ingests them → **§9** re-runs knowledge
+extraction. **§9 costs money.** You do not need the PDFs shipped to you: §6 fetches them.
+
+> **Where the bundles live.** The replay bundle and the PostgreSQL dump are hosted on
+> **TUM's institutional storage** — ask the author for the link and access. They are not
+> in this repository: the caches and dump are too large for git, and the PDFs they derive
+> from are mostly not redistributable.
+>
+> Verify what you received against the bundle's `SHA256SUMS` before running anything. The
+> replay's preflight already refuses an *incomplete* cache — it checks every required
+> entry, not just that the file exists, and exits 4 rather than falling through to paid
+> calls (B-112). What it cannot see is a cache that is complete but *wrong* — every entry
+> present, values corrupted in transit — which would produce plausible numbers. That is
+> what the checksums are for.
+
+---
+
 ## 1. Requirements
 
 * **Python 3.10 – 3.12** (`requires-python = ">=3.10,<3.13"`). 3.13 is not supported:

@@ -238,7 +238,15 @@ marimo/_lsp/
 __marimo__/
 
 histopathology_papers/
-files/
+# Corpus inputs stay local — 5.2 GB of PDFs/XMLs, most under licences that do not permit
+# redistribution (322 of 1093 carry no CC licence at all). target_pmc_ids.txt is the
+# exception: it is 16 KB of accession numbers — the corpus *definition*, not its content —
+# and without it `acquire` cannot know which papers to fetch, so a clean clone cannot
+# rebuild anything.
+# NOTE: the pattern must be `files/*`, not `files/` — git cannot re-include a file whose
+# parent *directory* is excluded, so the negation below would silently do nothing.
+files/*
+!files/target_pmc_ids.txt
 
 .DS_STORE
 .claude/
