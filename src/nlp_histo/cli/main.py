@@ -17,6 +17,7 @@ a cache or output directory. Importing this module does none of those things eit
 from __future__ import annotations
 
 import argparse
+import sys
 from collections.abc import Sequence
 
 COST_WARNING = (
@@ -35,9 +36,26 @@ def _db(args: argparse.Namespace) -> int:
 
 def _acquire(args: argparse.Namespace) -> int:
     if args.acquire_command == "download":
-        from nlp_histo.acquisition.downloader import download_papers
+        from nlp_histo.acquisition.downloader import download_papers, load_pmc_ids
 
-        download_papers(args.pmcid_file, args.output_dir, overwrite=args.overwrite)
+        requested = len(load_pmc_ids(args.pmcid_file))
+        downloaded = download_papers(
+            args.pmcid_file, args.output_dir, overwrite=args.overwrite
+        )
+        # Downloading none of what was asked for is a failure, not a quiet success. The
+        # return value used to be discarded, so a run that fetched nothing — every link
+        # 404, no network, the OA subset moved — still exited 0 and read as "done"
+        # (B-117). A partial result stays 0: papers legitimately absent from the OA
+        # subset are reported per-PMCID and are not errors.
+        if requested and not downloaded:
+            print(
+                f"error: none of the {requested} requested paper(s) were downloaded. "
+                "See the per-PMCID reasons above — a 404 on an advertised link means the "
+                "OA package NCBI lists is not retrievable, which is an upstream problem, "
+                "not a local one.",
+                file=sys.stderr,
+            )
+            return 1
     elif args.acquire_command == "unpack":
         from nlp_histo.acquisition.tarballs import unpack_tarballs
 
@@ -219,8 +237,6 @@ def _split_forwarded(argv: list[str]) -> tuple[list[str], list[str]]:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    import sys
-
     raw = list(sys.argv[1:] if argv is None else argv)
     own, forwarded = _split_forwarded(raw)
 
