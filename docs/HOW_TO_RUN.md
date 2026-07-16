@@ -1,9 +1,48 @@
 # How to run
 
-Every command below was executed against this tree before being written down. Where a
-command needs something this machine does not have (a live database, an API key, the
-frozen thesis artifacts), that is stated explicitly and the command is documented up to
-the point it was verified — argument parsing and preflight validation.
+## Verification status — read this first
+
+This file previously opened by claiming *"every command below was executed against this
+tree before being written down."* **That was not true**, and the claim is what hid the
+defects: §9's two commands had been written by inspection, both were unrunnable (a
+`--pmcid` flag that does not exist; two omitted required arguments), and the section
+asserted "flag parsing" had been verified while it had not (BUGS.md B-105). A blanket
+assurance is worth less than an honest inventory, so here is the inventory.
+
+**Executed and verified 2026-07-16**, under a guard that raises on any billable host
+(zero paid calls made):
+
+| § | Command | Status |
+|---|---|---|
+| 2 | `nlp-histo --help`, `import nlp_histo` from any directory | verified |
+| 3 | every command/subcommand `--help` (15) | verified, all exit 0 |
+| 4 | the eight `NLP_HISTO_*` env vars | verified present in `src/` |
+| 5 | `db check`, `db init` | verified against a live PostgreSQL (existing schema) |
+| 6 | `acquire organize` missing-input failure | verified (exit 1, names the path) |
+| 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
+| 10 | `replay chapter9` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable |
+| 11 | `pytest`, `ruff check .` | verified — 1565 passed, 0 failed; ruff clean |
+| 12 | E04, `sweeps/grounding.py`, E14, `map_theta_sweep --help` | verified free (0 cache misses, no paid host) |
+
+**Not executed — do not read these as verified:**
+
+* **§2** — the `venv` sequence and the `python -m build` wheel path. This machine runs a
+  framework 3.12 install; imports and the console script resolve, but the documented
+  install was not re-run from scratch.
+* **§5** — `db init` against an **empty** database. Only the idempotent re-run against an
+  existing schema was exercised.
+* **§6** — `acquire download` / `unpack`. No bulk download was performed against NCBI.
+* **§7 `ingest` and §8 `ner`** — **dispatch and flag names confirmed by reading the
+  forwarded parsers** (`runner.py:1084` `--pdf-dir`, `:1091` `--out-root`,
+  `batch_ner.py:288` `--entity-cache`), but **neither was run**: both write to the
+  database. §8's entity-cache migration advice is likewise untested. These are the
+  largest remaining gaps, and `ingest` is the pipeline's primary command.
+* **§12** — `E14 --theta-frontier` (the plain E14 run is verified).
+* **§13** — the B-102 limitation, carried forward from an earlier audit.
+
+Where a command needs something this machine does not have, that is stated at the command
+itself. **`--dry-run` (§9) resolves a paid invocation's full configuration for free** — a
+cost constraint is a reason to find the free verification, not to skip it.
 
 ---
 
@@ -90,9 +129,11 @@ nlp-histo db check        # verify only; creates nothing
 `db init` builds the schema from the ORM models. Alembic only migrates a database that
 already exists — it does **not** initialise an empty one.
 
-*Verified here:* `nlp-histo db check` ran against a live PostgreSQL server and reported
-the schema current. `db init` was not re-run (the schema already exists); it is the same
-code path with creation enabled.
+*Verified 2026-07-16:* both ran against a live PostgreSQL server. `db check` reported
+`schema is present and valid (21 tables)`; `db init` exited 0 on the existing schema
+(`OK: schema verified (21 tables)`), confirming it is safe to re-run and drops nothing.
+**Creation against an empty database was not exercised** — that is the same code path
+with creation enabled, but it is untested here.
 
 ## 6. Acquire the corpus
 
@@ -120,6 +161,17 @@ nlp-histo ingest --pdf-dir files/organized_pdfs --out-root out
 Outputs land under `out/` **relative to the directory you run from** — that is
 deliberate, and `--out-root` overrides it. Requires PostgreSQL.
 
+`ingest` defines no options of its own — everything after it is forwarded to the
+extraction runner. `nlp-histo ingest --help` shows this CLI's stub; **`nlp-histo ingest
+-- --help` lists the runner's real options** (`--glob`, `--max-docs`, `--workers`,
+`--detector`, …).
+
+> **Not verified by execution.** The flags above exist (`runner.py:1084` `--pdf-dir`,
+> `:1091` `--out-root`) and forwarding is covered by tests, but no ingest run was
+> performed during the 2026-07-16 audit — it writes to the database. Treat this section
+> as inspected, not exercised. Note a missing `--pdf-dir` does **not** error: the run
+> finds 0 PDFs, writes a run manifest, and exits 0.
+
 ## 8. Named-entity recognition
 
 ```bash
@@ -141,6 +193,17 @@ export NLP_HISTO_ENTITY_CACHE=$PWD/named_entity_recognition/entity_linking_cache
 ```
 
 Otherwise NER starts with a cold cache and recomputes the UMLS links.
+
+As with `ingest`, `ner` forwards its options: `nlp-histo ner extract -- --help` lists the
+real ones (`--entity-cache`, `--limit`, `--force`, …).
+
+> **Partly verified (2026-07-16).** Confirmed by inspection: the 30 MB cache is still at
+> `named_entity_recognition/entity_linking_cache.json` (the module's `.py` files moved to
+> `src/nlp_histo/ner/`; the data file did not), `--entity-cache` exists
+> (`batch_ner.py:288`), and the resolution order matches `ner/cache_paths.py` — explicit
+> flag → `$NLP_HISTO_ENTITY_CACHE` → `$XDG_CACHE_HOME/nlp-histo/…` → `~/.cache/nlp-histo/…`.
+> **No `ner` command was executed** (they write to the database), so the migration advice
+> is reasoned from the code, not demonstrated.
 
 ## 9. Knowledge extraction — ⚠ this costs money
 
@@ -192,11 +255,20 @@ No API key, no database, **no cost** — no paid provider is ever called (verifi
 2026-07-16: the only hosts contacted are `huggingface.co` and
 `s3-us-west-2.amazonaws.com`, both free model downloads).
 
-> **API-free does not mean offline. UMLS-dependent replay currently requires network
-> access even when the model artifacts have already been downloaded.** That access is a
-> free model/metadata fetch from `s3-us-west-2.amazonaws.com` — it incurs **no paid
-> model or API usage**. Without it the replay now **refuses to start (exit 3)** rather
-> than silently skipping CUI work; see BUGS.md B-107.
+> **API-free does not mean offline.** Two separate things, and conflating them is what
+> produced two defects here:
+>
+> * **API-free — guaranteed.** Every embedding is served from the frozen caches. The
+>   replay runs strict **cache-only**: no embedding provider is constructed, every
+>   required cache entry is validated before the run starts, and a miss aborts (exit 4)
+>   rather than contacting OpenAI or Gemini. It cannot fall through to a paid call
+>   (BUGS.md B-112, fixed in `8d0c5c5`).
+> * **Offline — not supported.** **UMLS-dependent replay still requires network access
+>   even when the model artifacts have already been downloaded**, because scispaCy
+>   resolves its cache through a live S3 ETag lookup. That access is a free
+>   model/metadata fetch from `s3-us-west-2.amazonaws.com` and incurs **no paid model or
+>   API usage**. Without it the replay refuses to start (exit 3) rather than silently
+>   skipping CUI work (BUGS.md B-107).
 
 **It requires network on every run, and it runs model inference.** It uses two models —
 scispaCy `en_core_sci_lg` + the UMLS KB (from S3) and `pritamdeka/PubMedBERT-MNLI-MedNLI`
@@ -217,7 +289,8 @@ nothing — naming the affected outputs (`06_exp_f_test_split`,
 `12_real_profile_grounding_polarity`) and the real cause. It previously logged a single
 `WARNING UMLS: linker unavailable`, exited 0, and wrote plausible-but-wrong tables; that
 silent path is fixed (BUGS.md B-107). Exit codes: `0` ran · `2` artifact tree unusable ·
-`3` UMLS linker unavailable. Both non-zero paths refuse before anything is written.
+`3` UMLS linker unavailable · `4` an embedding cache is incomplete. **Every** non-zero
+path refuses before anything is written.
 
 `--artifact-root` is **required**, and it is a **repository-shaped artifact tree**, not a
 flat bundle: the *code* comes from the installed package, the tree supplies only *data*.
@@ -231,17 +304,63 @@ out/summaries/cascade_decisions/                per-chunk cascade decisions
 out/summaries/corpus_relations*.json            ≥1 variant, for the NLI-input A/B table
 eval/data/map_primer/voter_cache.json           frozen voter outputs
 eval/data/silver_findings_related15.jsonl       silver labels
-eval/data/embedding_cache_openai.sqlite         frozen embedding cache
+eval/data/embedding_cache_openai.sqlite         frozen embedding cache — analyses 05, 10
+eval/data/embedding_cache_gemini.sqlite         frozen embedding cache — analyses 06, 10, 12
 scripts/eval/run_summarization_experiments.py   orchestrator, loaded by path
 reports/stage6_PR.md                            frozen rubric report, parsed as data
 ```
 
-The embedding cache is *required*, not optional: without it the matcher would miss and
-issue **paid** embedding calls in a workflow documented as free, so the command refuses
-to start instead. It is validated as a real SQLite file, not merely as an existing path.
+**Both** embedding caches are required, and both are resolved from `--artifact-root`.
+Analysis 05 loads the map context with the `openai` embedder; 06, 10 and 12 use `gemini`.
+A cache that is absent — or present but incomplete — would make the run miss and embed at
+run time, which is a **paid** call in a workflow documented as free. So the replay refuses
+to start instead, and the check is stronger than "the files exist":
 
-This tree is roughly **2.8 GB** and is **not** in the wheel. A symlink or hard-link tree
-pointing at the repository's artifacts works and costs nothing.
+* **Every required entry is validated up front**, not just the SQLite header. An empty or
+  partial cache is a perfectly valid database (and `make_embedding_cache` creates one on
+  demand), so existence proves nothing. The required set is derived from the voter cache
+  using the same extraction the run itself performs — 15 273 claims on this tree. Missing
+  entries → **exit 4**, before the output directory is created, reporting counts and paths.
+* **The run is strict cache-only.** No embedding provider is constructed at all, so an
+  unexpected miss raises rather than billing. The guarantee is structural — it does not
+  depend on an unset API key.
+
+*Verified 2026-07-16 (BUGS.md B-112, fixed in commit `8d0c5c5`):* both caches complete
+here — 15 273 unique claims, **0 cache misses**, zero paid hosts contacted. A tree without
+the gemini cache exits 2; a tree whose gemini cache is present but empty exits 4
+(`gemini: 15273 of 15273 required entries missing`). Neither writes anything. Before that
+commit the gemini cache was used but unvalidated, and was resolved against the repository
+rather than `--artifact-root` — a tree without it passed preflight and then issued ~15 000
+paid Gemini calls.
+
+**Size** (measured 2026-07-16 on this tree; `du` reports 1024-based MB):
+
+| Scope | Size | What it includes |
+|---|---|---|
+| Required inputs | **≈ 1 585 MB (1.5 GB)** | exactly the artifacts listed above — nothing else under `out/` or `eval/` |
+| `eval/data/` wholesale | **≈ 1 714 MB (1.7 GB)** | the whole directory: the two caches, the primers, silver labels, splits, relation pairs |
+
+The two embedding caches are **1 551 MB** of the required set (gemini 1.1 GB + openai
+467 MB); everything else together is under 35 MB. Copying `eval/data/` wholesale is the
+simpler recipe and costs ~130 MB more than the minimum.
+
+```bash
+# reproduce the required-set figure
+du -scm out/summaries/summaries out/summaries/cascade_decisions \
+        out/summaries/corpus_relations*.json \
+        eval/data/map_primer/voter_cache.json \
+        eval/data/silver_findings_related15.jsonl \
+        eval/data/embedding_cache_openai.sqlite \
+        eval/data/embedding_cache_gemini.sqlite \
+        scripts/eval/run_summarization_experiments.py \
+        reports/stage6_PR.md | tail -1
+du -scm eval/data | tail -1        # the wholesale figure
+```
+
+None of it is in the wheel. A symlink or hard-link tree pointing at the repository's
+artifacts works and costs nothing. *(Earlier revisions of this file claimed "roughly
+2.8 GB", which was unsourced and matched no measurable scope, and then "≈ 640 MB", which
+was measured before the gemini cache became required.)*
 
 **A complete run writes exactly 9 CSVs.** Two files in the historical results directory
 do not regenerate, for reasons that predate this packaging work:
