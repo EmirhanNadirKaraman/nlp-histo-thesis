@@ -311,11 +311,26 @@ Each writes a timestamped CSV under `eval/reports/E##_.../`. E13 is special — 
 in the git repository, so it runs even without the bundle. E09 reads the frozen calibration
 sweep CSVs (also committed), so it needs neither the bundle nor a re-run of those sweeps.
 
+**E01 (document-extraction rubric)** reproduces at the *report* level — the committed frozen
+report re-derives the rubric-F1 table, no bundle and no PDFs required:
+
+```bash
+python -m eval.silver.experiments.E01_doc_extraction.flatten_to_csv \
+  --json eval/reports/E01_doc_extraction/figtable_extraction_sweep_rerun_27pdf_20260604_PR.json
+```
+
+This regenerates the per-variant rubric CSV (winner var18: tables strict-F1 40→83.8%, figures
+84%) from the frozen sweep result. It is a lossless reshape of the recorded numbers, **not** a
+re-extraction — re-running the pipeline over the 27 rubric PDFs is a separate, heavier path
+that needs the PDFs themselves, which are publisher content and are not shipped (see the
+Decisions log in `docs/THESIS.md`).
+
 **Why not every experiment is here.** The rest need inputs this free track does not ship, so
 listing them would only produce errors:
 
-* **E01** (document-extraction rubric) needs the 27 annotated rubric PDFs — publisher
-  content, so shipped only where licensing allows (see the note below).
+* **E01**'s *numbers* reproduce from the committed frozen report (shown above); only the
+  from-PDF *re-extraction* is unavailable, since the 27 rubric PDFs are publisher content and
+  are not shipped.
 * **E05–E08** are the calibration sweeps that *selected* the frozen configuration — heavy,
   and their result already lives in `configs/run.yaml`; you do not re-run them to reproduce,
   you inherit their output (E09 above reads their frozen CSVs so you get the cost–quality

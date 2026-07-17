@@ -323,6 +323,15 @@ eval/reports/E07_map_theta/*
 !eval/reports/E08b_map_theta_shipped/
 eval/reports/E08b_map_theta_shipped/*
 !eval/reports/E08b_map_theta_shipped/sweep_*.csv
+# …and the frozen E01 doc-extraction rubric report (REPRODUCE.md Step 8, B-125). The rubric
+# F1 numbers reproduce from these via `flatten_to_csv` with no PDFs; the 27 publisher PDFs
+# themselves are deliberately NOT tracked (licensing — see the Decisions log). Only the
+# `_PR.*` report files.
+!eval/reports/E01_doc_extraction/
+eval/reports/E01_doc_extraction/*
+!eval/reports/E01_doc_extraction/*_PR.json
+!eval/reports/E01_doc_extraction/*_PR.csv
+!eval/reports/E01_doc_extraction/*_PR.md
 
 # E13: generated per-batch prompt files (template lives in prepare_manual_batches.py)
 eval/prompts/relation_pairs/*_prompt.txt
