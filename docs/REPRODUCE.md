@@ -4,7 +4,7 @@ Read this top to bottom and run the commands as you meet them. Every step says w
 does, what you should see, and what to do if you see something else. You should not need
 to jump around; where a detail would interrupt the flow it is in a note you can skip.
 
-**Nothing here costs money except Step 12, which is marked and optional.**
+**Nothing here costs money except Step 15, which is marked and optional.**
 
 By the end you will have reproduced the nine tables that Chapter 9 reports, and you will
 have a working corpus database you can query.
@@ -15,16 +15,24 @@ authoritative and this file has a bug.
 
 ---
 
-## What you should have received
+## Before you start — begin the download
 
-Two files, from the author (hosted on LRZ Sync+Share, mirrored to Google Drive):
+**Start this now and read on while it transfers**; it is 1.2 GB and you will not need it
+until Step 4. Download both files, from either location (the two are identical — use
+whichever is faster):
+
+* **Primary — LRZ Sync+Share:** <https://syncandshare.lrz.de/getlink/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles>
+* **Mirror — Google Drive:** <https://drive.google.com/drive/folders/1uo-iGOb3df11LqjQRbCwoyRsiVDMJkpY?usp=sharing>
 
 | File | Size | What it is |
 |---|---|---|
 | `nlp-histo-replay-artifacts-ec11eec.tar.gz` | 1.2 GB | Frozen outputs of the paid LLM pipeline + the embedding caches |
 | `nlp-histo-corpus.sql.gz` | 47 MB | The PostgreSQL corpus: 977 papers, 35,896 text elements, 1.79M entities |
 
-Each comes with a `.sha256` file. Keep them together.
+Each comes with a `.sha256` file — download those too, and keep them beside the file they
+name. Step 4 uses them.
+
+Put all four in one directory. This guide calls it `~/nlp-histo-bundles`; anywhere works.
 
 **Why these are not in the git repository:** the artifacts cost real money to generate and
 are too large for git; the corpus PDFs they derive from are mostly not redistributable
@@ -38,7 +46,7 @@ and the corpus *definition* — everything else you either receive or regenerate
 * **PostgreSQL**, running, and the ability to create a database. Check with `psql --version`.
 * **About 10 GB of free disk**: ~4 GB of Python dependencies, 1.2 GB archive, 1.5 GB
   extracted, ~0.5 GB database, plus ~3 GB of models downloaded on first use.
-* **An internet connection.** Steps 3 and 9 download packages and models. Neither costs
+* **An internet connection.** Steps 3 and 10 download packages and models. Neither costs
   money.
 
 You do **not** need an API key. You do **not** need the PDFs.
