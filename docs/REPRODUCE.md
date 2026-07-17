@@ -147,6 +147,15 @@ curl -L -o nlp-histo-replay-artifacts-ec11eec.tar.gz \
 
 Either way, Step 5 verifies what you got before anything trusts it.
 
+If a line like this appears:
+
+```bash
+replace nlp-histo-replay-artifacts-ec11eec.tar.gz.sha256? [y]es, [n]o, [A]ll, [N]one, [r]ename:
+```
+
+Just type A.
+
+
 **No account is needed.** Both are read-only links that serve anonymously — you cannot write
 through either. Anyone holding a URL can download the bundle; it is unlisted rather than
 access-controlled. It contains only derived artifacts (embeddings, summaries, cascade
