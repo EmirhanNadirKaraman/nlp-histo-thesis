@@ -664,15 +664,55 @@ with the number of papers. It regenerates the summaries and `sum_*` tables — t
 that Track A's archive contained.
 
 Check the invocation for free first — `--dry-run` resolves the whole configuration, prints
-the model cascade and the required API keys, and exits without contacting a provider:
+the model cascade and the required API keys, and exits without contacting a provider.
+
+Run it on one of the papers you actually ingested in Step 15. Pass the `pmcid` **exactly as it
+was stored** — the composite id (`PMC10047158_dermatopathology-10-00017`), not the bare
+accession (`PMC10047158`); the loader matches it exactly, so the bare form fails with `PMCID
+'…' not found in database`. List what you ingested and copy one:
 
 ```bash
-nlp-histo knowledge PMC1448691 --profile cheap --sync --health-check no --dry-run
+psql -d nlp_histo_rebuild -c "SELECT pmcid FROM documents;"
+```
+
+Then dry-run it — substitute a `pmcid` from that list (the value below is the first paper the
+Step 14 `head -3` acquires):
+
+```bash
+nlp-histo knowledge PMC10047158_dermatopathology-10-00017 --profile cheap --sync --health-check no --dry-run
 ```
 
 Remove `--dry-run` to actually run it. Three arguments are required and have no defaults —
 `--profile`, `--health-check`, and one of `--sync`/`--batch` — precisely so that a paid run
 cannot start by accident. Use `--profile cheap` and a single paper before anything larger.
+
+### Cross-paper relations (optional, free)
+
+Each `--sync` run appends its result to `out/summaries/summaries/{pmcid}.json`. Run a second
+paper the same way — any other `pmcid` from the list above — so at least two are on disk:
+
+```bash
+nlp-histo knowledge PMC10047213_dermatopathology-10-00018 --profile cheap --sync --health-check no
+```
+
+With two or more papers extracted, build the **cross-paper** support/contradiction graph.
+`corpus_relate` pools their canonical rules and compares every pair with the same local NLI
+model the pipeline uses — **no API calls, no cost**. It is skipped inside the per-paper
+`--sync` run (that path needs ≥2 papers to compare), so run it as its own step:
+
+```bash
+python -m nlp_histo.pipeline.stages.knowledge_extraction.stages.corpus_relate \
+  out/summaries/summaries --no-save-to-db
+```
+
+It writes `out/summaries/corpus_relations.json` and logs a line like `written N relations
+(… intra-paper, … cross-paper)` — the cross-paper ones are exactly what a single paper cannot
+produce. Two things to know:
+
+* The stage pools **whatever** is in `out/summaries/summaries/`. If you also ran Track A, its
+  frozen papers are included in the comparison too.
+* `--no-save-to-db` keeps this to a file. Drop it to also write the `sum_corpus_relations`
+  table — but note that **deletes and rewrites every row** in it first.
 
 Because the voters are non-deterministic, the rules this produces will resemble but not
 equal the frozen ones in Track A's archive. That is expected; the frozen archive exists
