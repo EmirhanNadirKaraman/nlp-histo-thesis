@@ -572,7 +572,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"  L2  {v.model:<40} (t={v.temperature})  [{v.provider}]")
         l3 = profile.l3_voter
         print(f"  L3  {l3.model:<40} (t={l3.temperature})  [{l3.provider}]")
-        print("\nEnv vars required: GOOGLE_API_KEY, ANTHROPIC_API_KEY")
+        # Derived from the resolved profile, never hardcoded: the whole point of
+        # --dry-run is to tell you what THIS invocation needs (B-120).
+        env_by_provider = {
+            "claude": "ANTHROPIC_API_KEY",
+            "gemini": "GOOGLE_API_KEY",
+            "openai": "OPENAI_API_KEY",
+            "azure": "AZURE_FOUNDRY_API_KEY",
+            "vertex_gemini": "GOOGLE_APPLICATION_CREDENTIALS",
+        }
+        providers = {v.provider for v in (*profile.l1_voters, *profile.l2_voters, l3)}
+        required = sorted(
+            # An unknown provider must be visible, not silently dropped.
+            env_by_provider.get(p, f"<unknown provider {p!r}>") for p in providers
+        )
+        print("\nEnv vars required: " + ", ".join(required))
         return
 
     artifact_root_path = Path(args.artifact_root) if args.artifact_root else None

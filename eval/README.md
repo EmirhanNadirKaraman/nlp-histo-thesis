@@ -14,7 +14,7 @@ capable LLM would extract from the same text.
 > - **Frozen-artifact threshold sweeps** — `eval/sweeps/` (see `eval/sweeps/README.md`)
 >
 > The canonical reproduction commands for all tracks live in
-> `docs/readmes/HOW_TO_RUN.md`.
+> `docs/HOW_TO_RUN.md`.
 
 ---
 

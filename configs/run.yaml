@@ -70,7 +70,7 @@ pdf_extraction:
     skip_existing_outputs: false  # reuses out/stage_cache/{table_detection,filtering,text_assembly}
                                   # when the pipeline config hash matches.
                                   # Final writers (steps 7/8) still always run.
-                                  # Clear with: rm -rf out/stage_cache/  (see docs/readmes/HOW_TO_RUN.md §9)
+                                  # Clear with: rm -rf out/stage_cache/  (see docs/HOW_TO_RUN.md §9)
 
   two_pass:
     enabled: true               # pixel-render ghost-text detection

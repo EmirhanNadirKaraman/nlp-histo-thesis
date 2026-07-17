@@ -1,13 +1,13 @@
 # Experiment results — explanations + interpretation
 
-Narrative companion to the registry in `docs/readmes/EXPERIMENTS.md` (which maps
+Narrative companion to the registry in `docs/EXPERIMENTS.md` (which maps
 experiment → CSV → command → status). This file explains **what each run
 experiment tested and what its numbers mean**. The raw CSVs live in the
 `E##_*/` subfolders alongside this file.
 
 > **Update protocol:** whenever a new experiment runs, add a section here with
 > **What / Result / Interpretation / Artifact**, and flip its row to *done* in
-> `docs/readmes/EXPERIMENTS.md`. Keep both in sync in the same change.
+> `docs/EXPERIMENTS.md`. Keep both in sync in the same change.
 
 > **B-074 correction (2026-06-17), RESOLVED:** an enum-stringification bug in
 > `_finding_to_pipeline` under-counted strict-F1 in proportion to early-accept rate

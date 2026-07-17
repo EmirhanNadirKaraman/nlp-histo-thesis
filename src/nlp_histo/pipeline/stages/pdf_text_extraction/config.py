@@ -236,7 +236,7 @@ class MaskingConfig:
     # `drop_tables_inside_figures` — runs in Step 2 after detection only;
     # unlike that flag, it is not re-applied in Step 7's supplementary-source pass.
     # Frozen to 50.0 on 2026-05-21 (Stage 3 sweep winner — +6.1pp crop F1
-    # on Hybrid, 0 TPs lost; see docs/readmes/other_readmes/THESIS.md Decisions log).
+    # on Hybrid, 0 TPs lost; see docs/THESIS.md Decisions log).
     drop_tables_in_top_pts: float = 50.0
 
 
