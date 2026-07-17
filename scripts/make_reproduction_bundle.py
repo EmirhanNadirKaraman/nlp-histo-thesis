@@ -28,6 +28,7 @@ alone would ship a silently truncated cache.
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import os
@@ -241,20 +242,39 @@ def build_replay_bundle(out_dir: Path, commit: str) -> tuple[Path, Path]:
 
 
 def build_db_dump(out_dir: Path) -> Path:
+    """Dump the corpus as gzipped plain SQL.
+
+    Plain SQL, not ``-Fc``: a custom-format dump can only be read by a ``pg_restore`` of
+    the dumping version or newer, and the recipient's toolchain is unknown — this machine
+    dumps with pg_dump 16 against a PostgreSQL 14 server, so a ``-Fc`` file would refuse
+    to load for anyone on 14. Plain SQL restores with *any* psql:
+
+        createdb nlp_histo
+        gunzip -c nlp-histo-corpus.sql.gz | psql -d nlp_histo
+
+    ``--no-owner``/``--no-privileges`` drop the local role names, so the recipient does not
+    need a matching ``local_db_user`` for the restore to succeed.
+    """
     from nlp_histo.database.db_connection import get_db_connection
 
     url = get_db_connection().engine.url
-    dump = out_dir / "nlp-histo-corpus.dump"
+    dump = out_dir / "nlp-histo-corpus.sql.gz"
     print(f"dumping {url.database} → {dump.name} …")
     env = dict(os.environ)
     if url.password:
         env["PGPASSWORD"] = str(url.password)  # never argv: `ps` is world-readable
-    subprocess.run(
-        ["pg_dump", "-Fc", "--no-owner", "--no-privileges",
-         "-h", str(url.host), "-p", str(url.port), "-U", str(url.username),
-         "-d", str(url.database), "-f", str(dump)],
-        check=True, env=env,
-    )
+    with gzip.open(dump, "wb") as fh:
+        proc = subprocess.Popen(
+            ["pg_dump", "--no-owner", "--no-privileges",
+             "-h", str(url.host), "-p", str(url.port), "-U", str(url.username),
+             "-d", str(url.database)],
+            stdout=subprocess.PIPE, env=env,
+        )
+        assert proc.stdout is not None
+        for chunk in iter(lambda: proc.stdout.read(1 << 20), b""):
+            fh.write(chunk)
+        if proc.wait() != 0:
+            raise SystemExit(f"pg_dump failed with exit {proc.returncode}")
     return dump
 
 
