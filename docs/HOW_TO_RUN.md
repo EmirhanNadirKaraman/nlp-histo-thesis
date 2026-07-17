@@ -1,46 +1,56 @@
 # How to run
 
-## Verification status — read this first
+**New here? Read §0, then follow the numbered sections in order.** Each one says what it
+produces and what success looks like. Nothing below costs money except §9, which is marked.
 
-This file previously opened by claiming *"every command below was executed against this
-tree before being written down."* **That was not true**, and the claim is what hid the
-defects: §9's two commands had been written by inspection, both were unrunnable (a
-`--pmcid` flag that does not exist; two omitted required arguments), and the section
-asserted "flag parsing" had been verified while it had not (BUGS.md B-105). A blanket
-assurance is worth less than an honest inventory, so here is the inventory.
+**Fastest useful result:** §0 (get the bundle) → §2 (install) → §10 (replay) → nine tables
+identical to the thesis. About 30 minutes, no database, no API key, no cost.
 
-**Executed and verified 2026-07-16**, under a guard that raises on any billable host
-(zero paid calls made):
+| I want to… | Do this |
+|---|---|
+| reproduce the thesis tables | §0 Path A → §2 → §10 |
+| query the corpus / run NER | §0 Path B → §2 → §5 → §8 |
+| rebuild the corpus from PMC | §0 Path C → §2 → §5 → §6 → §7 → (§9 **costs money**) |
+| just check the code is sane | §2 → §11 |
 
-| § | Command | Status |
-|---|---|---|
-| 2 | wheel build + install, `nlp-histo --help`, `import nlp_histo` | **verified from a fresh venv outside the repository** — wheel-only, no source tree / editable / `PYTHONPATH`; all 11 entry points and both packaged resources load |
-| 3 | every command/subcommand `--help` (15) | verified, all exit 0 |
-| 4 | the eight `NLP_HISTO_*` env vars | verified present in `src/` |
-| 5 | `db check`, `db init` | verified against a live PostgreSQL — including `db init` against an **empty** database (21 tables created from the ORM, exit 0, ~1 s) |
-| 6 | `acquire download` / `unpack` / `organize` | **verified end-to-end** on one PMCID, **both sources** — aws (default, durable) and ftp (legacy, expires Aug 2026). Identical PDF bytes from each (B-118) |
-| 7 | `ingest` | **verified end-to-end** on one 8-page PDF into an isolated database — exit 0, 33 s, 14 text elements + 10 figures, matching the established corpus exactly |
-| 8 | `ner extract` / `merge` / `export` | **verified end-to-end** on that document — 865 entities (749 with UMLS CUIs) → 762 merged files → 89 disease CUIs. `merge`/`export` produced nothing before the B-115 fix |
-| 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
-| 10 | `replay chapter9` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable |
-| 11 | `pytest`, `ruff check .` | verified — 1693 passed, 0 failed; ruff clean |
-| 12 | E04, `sweeps/grounding.py`, E14 (incl. `--theta-frontier`), `map_theta_sweep --help` | verified free (0 cache misses, no paid host). `E14 --theta-frontier` reproduces **byte-identically** to the 2026-06-25 baseline |
+### What each step produces
 
-**Not executed — do not read these as verified:**
+Follow these in order. Every command is run **from the repository root**.
 
-* **§2's dependency resolution** — `pip install -r requirements.txt` was not run into the
-  fresh venv (multi-GB torch/docling download; this machine is disk-constrained). The
-  wheel build, install, imports, entry points and packaged resources **were** verified
-  from a throwaway venv outside the repository.
-* **§6's bulk path** — one PMCID per source was fetched, never the full 1093.
-* **§8's entity-cache migration advice** — the paths and resolution order were checked
-  against `ner/cache_paths.py`, and `ner extract` was run against a *copy* of the cache;
-  the documented `export NLP_HISTO_ENTITY_CACHE=…` line itself was not exercised.
-* **§13** — the B-102 limitation, carried forward from an earlier audit.
+| § | Command | Produces | Success looks like | Time |
+|---|---|---|---|---|
+| 2 | `pip install -r requirements.txt` · `pip install -e . --no-deps` | the `nlp-histo` command | `nlp-histo --help` exits 0 | ~10 min, ~4 GB |
+| 5 | `nlp-histo db init` | 21 tables in your database | `OK: schema verified (21 tables)` | seconds |
+| 6 | `nlp-histo acquire download` → `organize` | `files/organized_pdfs/`, `files/organized_xmls/` | `N succeeded · 0 failed` | ~3 s/paper |
+| 7 | `nlp-histo ingest` | text + figures + tables in the database, `out/` | `ok=N fail=0` | ~30 s/paper |
+| 8 | `nlp-histo ner extract` → `merge` → `export` | `entities` rows; `umls_entities_lg/`, `disease_entities_lg/` | `Summary: N Processed … 0 Errors`, then `✓ Saved N files` | slow on a cold cache |
+| 9 | `nlp-histo knowledge` | `sum_*` tables, `out/summaries/` | per-paper JSON written | **⚠ costs money** |
+| 10 | `nlp-histo replay chapter9` | 9 CSVs in `out/thesis_results/…` | exit 0, nine files | ~5 min |
+| 11 | `pytest` · `ruff check .` | — | `1693 passed`, `All checks passed!` | ~3 min |
 
-Where a command needs something this machine does not have, that is stated at the command
-itself. **`--dry-run` (§9) resolves a paid invocation's full configuration for free** — a
-cost constraint is a reason to find the free verification, not to skip it.
+**Exit codes are meaningful, not decorative.** Non-zero always means *stop and read*, never
+"it mostly worked": `2` the artifact tree is unusable · `3` the UMLS model is unreachable ·
+`4` an embedding cache is incomplete. Commands here fail loudly rather than producing
+plausible-looking wrong output — if something is missing you get an itemised error, not a
+partial result.
+
+### Two things that will bite you if nobody says so
+
+1. **Your shell's `DB_*` variables beat the `.env` file.** If `env | grep '^DB_'` prints
+   anything, that wins, and a command you *think* is aimed at a scratch database will write
+   to whichever one your shell names. Check before any write; `db init`/`db check` print the
+   database they resolved — believe that, not your intent.
+2. **Run the heavy commands one at a time.** `ingest`, `ner`, `replay` and `pytest` each
+   load scispaCy plus the UMLS knowledge base — several GB of RAM each. Two at once will
+   exhaust a 16–32 GB machine.
+
+A note on the tone below: sections cite bug IDs like `B-112` and say when a command was
+last verified. That is provenance for the maintainer — you can ignore it. If a command
+surprises you, the citation tells you where the reasoning is written down
+(`docs/readmes/other_readmes/BUGS.md`).
+
+The full audit — what was executed, what was only inspected — is in the
+**appendix at the end**.
 
 ---
 
@@ -707,3 +717,51 @@ time** — concurrent runs will exhaust memory on a 16–32 GB machine.
 * `scripts/run_paper.py` and `scripts/thesis/run_chapter9_offline_replay.py` remain as
   thin compatibility wrappers around the installed commands. Prefer
   `nlp-histo knowledge` and `nlp-histo replay chapter9`.
+
+---
+
+## Appendix — verification status (for the maintainer)
+
+## Verification status — read this first
+
+This file previously opened by claiming *"every command below was executed against this
+tree before being written down."* **That was not true**, and the claim is what hid the
+defects: §9's two commands had been written by inspection, both were unrunnable (a
+`--pmcid` flag that does not exist; two omitted required arguments), and the section
+asserted "flag parsing" had been verified while it had not (BUGS.md B-105). A blanket
+assurance is worth less than an honest inventory, so here is the inventory.
+
+**Executed and verified 2026-07-16**, under a guard that raises on any billable host
+(zero paid calls made):
+
+| § | Command | Status |
+|---|---|---|
+| 2 | wheel build + install, `nlp-histo --help`, `import nlp_histo` | **verified from a fresh venv outside the repository** — wheel-only, no source tree / editable / `PYTHONPATH`; all 11 entry points and both packaged resources load |
+| 3 | every command/subcommand `--help` (15) | verified, all exit 0 |
+| 4 | the eight `NLP_HISTO_*` env vars | verified present in `src/` |
+| 5 | `db check`, `db init` | verified against a live PostgreSQL — including `db init` against an **empty** database (21 tables created from the ORM, exit 0, ~1 s) |
+| 6 | `acquire download` / `unpack` / `organize` | **verified end-to-end** on one PMCID, **both sources** — aws (default, durable) and ftp (legacy, expires Aug 2026). Identical PDF bytes from each (B-118) |
+| 7 | `ingest` | **verified end-to-end** on one 8-page PDF into an isolated database — exit 0, 33 s, 14 text elements + 10 figures, matching the established corpus exactly |
+| 8 | `ner extract` / `merge` / `export` | **verified end-to-end** on that document — 865 entities (749 with UMLS CUIs) → 762 merged files → 89 disease CUIs. `merge`/`export` produced nothing before the B-115 fix |
+| 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
+| 10 | `replay chapter9` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable |
+| 11 | `pytest`, `ruff check .` | verified — 1693 passed, 0 failed; ruff clean |
+| 12 | E04, `sweeps/grounding.py`, E14 (incl. `--theta-frontier`), `map_theta_sweep --help` | verified free (0 cache misses, no paid host). `E14 --theta-frontier` reproduces **byte-identically** to the 2026-06-25 baseline |
+
+**Not executed — do not read these as verified:**
+
+* **§2's dependency resolution** — `pip install -r requirements.txt` was not run into the
+  fresh venv (multi-GB torch/docling download; this machine is disk-constrained). The
+  wheel build, install, imports, entry points and packaged resources **were** verified
+  from a throwaway venv outside the repository.
+* **§6's bulk path** — one PMCID per source was fetched, never the full 1093.
+* **§8's entity-cache migration advice** — the paths and resolution order were checked
+  against `ner/cache_paths.py`, and `ner extract` was run against a *copy* of the cache;
+  the documented `export NLP_HISTO_ENTITY_CACHE=…` line itself was not exercised.
+* **§13** — the B-102 limitation, carried forward from an earlier audit.
+
+Where a command needs something this machine does not have, that is stated at the command
+itself. **`--dry-run` (§9) resolves a paid invocation's full configuration for free** — a
+cost constraint is a reason to find the free verification, not to skip it.
+
+---
