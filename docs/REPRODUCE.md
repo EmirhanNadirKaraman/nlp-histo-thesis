@@ -160,9 +160,10 @@ so it restores under whatever user you connect as.
 gunzip -c /path/to/nlp-histo-corpus.sql.gz | psql -d nlp_histo
 ```
 
-This restores plain SQL, so it works with any `psql` version. It prints a long stream of
-`SET`, `CREATE TABLE` and `COPY` lines. A few `NOTICE` messages are normal; `ERROR` lines
-are not.
+This restores plain SQL, so it works with any `psql` version. It takes about 15 seconds and
+prints a long stream of `SET`, `CREATE TABLE` and `COPY` lines. Into an empty database it
+produces no `ERROR` and no `NOTICE` output; an `ERROR` means something is wrong — most
+likely the database was not empty.
 
 **Check it worked:**
 
@@ -174,11 +175,11 @@ psql -d nlp_histo -c "SELECT count(*) FROM text_elements;"
 Expect **977** documents and **35,896** text elements. If you get `0`, the restore did not
 take — re-read the output of the previous command for `ERROR` lines.
 
-> **Not yet verified.** This restore has not been executed end-to-end by the author: doing
-> so needs an empty database, and the machine it was built on has none to spare. The dump
-> itself *was* checked — valid gzip, 22 `CREATE TABLE` statements, the data `COPY` blocks,
-> no embedded role names, no credentials. If the restore misbehaves, that is a bug in this
-> document; please report it with the exact output.
+> *Verified 2026-07-17:* this exact command was run into a genuinely empty database owned
+> by the application role. It took **15 seconds**, exited 0, and printed **no `ERROR` and no
+> `NOTICE` lines at all**. Every table matched the source: documents 977, text_elements
+> 35,896, entities 1,792,440, figures 4,479, tables 1,960. `nlp-histo db check` then
+> reported `OK: schema is present and valid (21 tables)`. The restored database is ~445 MB.
 
 ## Step 8 — Point the project at your database
 
@@ -213,8 +214,13 @@ You should see:
 
 ```
 Target: <user>@<host>:5432/nlp_histo
+Note: 1 unrelated table(s) present and left untouched: alembic_version
 OK: schema is present and valid (21 tables).
 ```
+
+The `Note:` line is expected, not a warning. The dump carries `alembic_version` — a
+migration bookkeeping table that is not one of the ORM's 21 — so `db check` reports it and
+leaves it alone. 21 tables is the correct count.
 
 **Read the `Target:` line.** It is the database the project actually resolved — not the one
 you meant. If it names something unexpected, go back to Step 8.

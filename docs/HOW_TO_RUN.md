@@ -95,9 +95,9 @@ to the published tables.
 
 ### Path B — work with the corpus (adds the database)
 
-Restore the **corpus dump** (`nlp-histo-corpus.sql.gz`, 49 MB compressed → 485 MB restored)
-into your own database (§5), point `.env` at it, then → §8 NER, §9 knowledge extraction, or
-any SQL against the 977 papers.
+Restore the **corpus dump** (`nlp-histo-corpus.sql.gz`, 49 MB compressed → ~445 MB
+restored, 15 s) into your own database (§5), point `.env` at it, then → §8 NER, §9
+knowledge extraction, or any SQL against the 977 papers.
 
 ### Path C — rebuild from scratch
 
@@ -329,16 +329,21 @@ nlp-histo db check    # → OK: schema is present and valid (21 tables).
 psql -d nlp_histo -c "SELECT count(*) FROM documents;"   # → 977
 ```
 
+`db check` also prints `Note: 1 unrelated table(s) present and left untouched:
+alembic_version`. That is expected — the dump carries Alembic's bookkeeping table, which is
+not one of the ORM's 21; the count of 21 is correct.
+
 The dump is built by `scripts/make_reproduction_bundle.py --with-db`. It carries
 `--no-owner --no-privileges`, so it restores as whoever connects and needs no matching
 `local_db_user` role; it contains no `CREATE DATABASE` (hence the `createdb` above), no
-extensions, and no credentials. It holds 22 `CREATE TABLE` — the 21 ORM tables plus
-`alembic_version`, which is why `db check` reporting 21 is correct and not a discrepancy.
+extensions, and no credentials.
 
-**Not yet verified end-to-end.** The dump's *contents* were checked (valid gzip, the 22
-tables, the data `COPY` blocks, 0 owner references, 0 credentials) but the restore itself
-has not been executed: it needs an empty database and the authoring machine has none to
-spare. If it misbehaves, that is a bug in this section — please report the exact output.
+*Verified 2026-07-17:* run end-to-end into a genuinely empty database owned by the
+application role. **15 s**, exit 0, **zero `ERROR` and zero `NOTICE` lines**. Every table
+matched the source database exactly — documents 977, text_elements 35 896, entities
+1 792 440, figures 4 479, tables 1 960 — and `db check` reported `OK: schema is present and
+valid (21 tables)`. The restored database is **~445 MB**; the 485 MB source figure above is
+the same data plus accumulated write bloat, so a fresh restore is legitimately smaller.
 
 ## 6. Acquire the corpus
 
