@@ -222,6 +222,40 @@ you meant. If it names something unexpected, go back to Step 8.
 This is also the first command that touches PostgreSQL, so it is where a wrong password or
 a stopped server shows up.
 
+**The corpus is now yours to query.** It is an ordinary PostgreSQL database — `psql -d
+nlp_histo` and any SQL you like. The 21 tables are described in `docs/STRUCTURE.md`; the
+ones you probably want are `documents` (one row per paper), `text_elements` (its
+hierarchical text), and `entities` (the UMLS concepts found in that text).
+
+The structure worth knowing about is that `text_elements` keeps each paragraph's **section
+path** as an array, so you can ask for text by where it sits in the paper rather than by
+string-matching headings:
+
+```bash
+psql -d nlp_histo -c \
+  "SELECT count(*) FROM text_elements WHERE path_list @> ARRAY['Methods'];"
+```
+
+The same thing from Python, which is how the project itself reads the corpus:
+
+```python
+from nlp_histo.database import get_db_connection, Document, TextElement
+
+db = get_db_connection()
+with db.session_scope() as session:            # commits on exit, rolls back on error
+    print(session.query(Document).count())     # 977
+
+    methods = session.query(TextElement).filter(
+        TextElement.path_list.contains(['Methods'])   # 'Methods' anywhere in the path
+    )
+    print(methods.count())                     # 86
+    print(methods.first().unique_path)         # PMC10092619_HIS-82-254/Methods/0
+```
+
+`unique_path` is `{document_id}/{section hierarchy}/{position}`, so a row tells you exactly
+where in which paper it came from. Note the document ID is composite
+(`PMC10092619_HIS-82-254`), not a bare accession — the publisher's filename is part of it.
+
 ## Step 10 — Reproduce the thesis tables
 
 This is the main result.
@@ -279,7 +313,7 @@ python -m pytest -q
 ruff check .
 ```
 
-Expect **1693 passed** and `All checks passed!`. Takes about four minutes. This needs
+Expect **1693 passed** and `All checks passed!`. Takes three to four minutes. This needs
 none of the artifacts — it is a check on the code alone, and it is the fastest way to tell
 whether your environment is sound.
 
