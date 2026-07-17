@@ -86,49 +86,50 @@ Citation format: `[S1|PMC123456|789]` where:
 
 ## Project Structure
 
-> Detailed maps live in `docs/readmes/other_readmes/STRUCTURE.md` (architecture) and
-> `docs/readmes/other_readmes/REPOSITORY_GUIDE.md` (file-by-file). This tree is the orientation
-> summary.
+> The detailed architectural map lives in `docs/STRUCTURE.md`. This tree is the
+> orientation summary.
 
 ```
 nlp-histo/
-├── file-selector/                      # Stage 1: data acquisition (PMC download, extract, organize)
+├── src/nlp_histo/                      # THE INSTALLED PACKAGE — everything below ships in the wheel
+│   ├── cli/                            #   the `nlp-histo` console command (argparse, lazy handlers)
+│   ├── workflows/                      #   knowledge.py (LLM extraction, PAID), replay.py (offline replay)
+│   ├── acquisition/                    #   Stage 1: PMC download, unpack, organize
+│   ├── pipeline/                       #   Stage 2: the production pipelines
+│   │   ├── stages/pdf_text_extraction/ #     PDF → hierarchical text + figures/tables → Postgres
+│   │   │   ├── runner.py               #       PipelineRunner (8-step orchestrator)
+│   │   │   ├── config.py               #       PipelineConfig + sub-configs
+│   │   │   ├── components/             #       layout extractor, masker, two-pass ghost-text, croppers…
+│   │   │   ├── table_detectors/        #       Docling / TATR / Hybrid
+│   │   │   └── outputs/                #       text/DB writers, stats + run-manifest writers
+│   │   ├── stages/knowledge_extraction/#     Text → auditable clinical rules (3-tier ABC LLM cascade)
+│   │   │   ├── runner.py               #       KnowledgeExtractionRunner (MAP→…→RESOLVE)
+│   │   │   ├── stages/                 #       map / normalize / group / canonicalize / relate / resolve
+│   │   │   ├── agreement/ routing/ batch/  #   voter scorers, MAP router, async batch dispatch
+│   │   │   └── grounding/ costing/ observability/
+│   │   └── utils/                      #     cross-pipeline utilities (memory logging)
+│   ├── parsers/                        #   Shared parsing hub (layout_utils.py, text_processing.py)
+│   ├── ner/                            #   scispaCy + UMLS entity extraction
+│   ├── database/                       #   SQLAlchemy ORM (models.py, 21 tables) + connection mgmt
+│   ├── evaluation/                     #   reusable evaluation library (schemas, matching, split)
+│   └── resources/                      #   packaged defaults: model_prices.json, nli_models.yaml
 │
-├── pipeline/                           # Stage 2: the production pipelines (modular, current)
-│   ├── stages/pdf_text_extraction/     #   PDF → hierarchical text + figures/tables → Postgres
-│   │   ├── runner.py                   #     PipelineRunner (8-step orchestrator)
-│   │   ├── config.py                   #     PipelineConfig + sub-configs
-│   │   ├── components/                 #     layout extractor, masker, two-pass ghost-text, croppers…
-│   │   ├── table_detectors/            #     Docling / TATR / Hybrid
-│   │   └── outputs/                    #     text/DB writers, stats + run-manifest writers
-│   ├── stages/knowledge_extraction/    #   Text → auditable clinical rules (3-tier ABC LLM cascade)
-│   │   ├── runner.py                   #     KnowledgeExtractionRunner (MAP→…→RESOLVE)
-│   │   ├── stages/                     #     map / normalize / group / canonicalize / relate / resolve
-│   │   ├── agreement/ routing/ batch/  #     voter scorers, MAP router, async batch dispatch
-│   │   └── grounding/ costing/ observability/
-│   └── utils/                          #   cross-pipeline utilities (memory logging)
+├── alembic/                            # Incremental migrations (head: 0014). The ORM creates the schema.
 │
-├── parsers/                            # Shared parsing hub (layout_utils.py, text_processing.py)
-│
-├── database/                           # SQLAlchemy ORM (models.py) + connection mgmt; schema via Alembic
-├── alembic/                            # Schema migrations (head: 0014)
-│
-├── src/nlp_histo/ner/                  # scispaCy + UMLS entity extraction (installed)
-│
-├── eval/                               # Evaluation harness (measures the two pipelines)
+├── eval/                               # Evaluation harness (measures the two pipelines) — repository-only
 │   ├── llm_judge/  silver/             #   Opus silver labels + matching + MAP-cascade calibration
 │   ├── silver/experiments/             #   numbered thesis experiments E01…E14 (non-contiguous) + corpus_stats/
 │   ├── silver/relation_pairs/          #   E13 claim-pair generation (Message-Batches workflow)
 │   ├── paper_selection/                #   calibration-set builder (greedy / ILP)
 │   └── reports/                        #   per-experiment results + RESULTS.md
 │
-├── configs/                            # run.yaml, model_prices.json, nli_models.yaml, paper_selection/*.yaml
-├── scripts/                            # runners (run_paper.py), inspectors, eval helpers (+ legacy ingests)
-├── tests/                              # pytest suite (77 test files, ~1,080 test functions; summarisation-heavy)
-├── docs/readmes/                       # project docs — HOW_TO_RUN.md + other_readmes/ (STRUCTURE, REPOSITORY_GUIDE, BUGS, …) + thesis_review/
+├── configs/                            # user-editable run config: run.yaml, paper_selection/*.yaml
+├── scripts/                            # developer utilities, inspectors, eval helpers (not a package)
+├── tests/                              # pytest suite (96 test files, 1693 tests; knowledge-extraction-heavy)
+├── docs/                               # project docs — REPRODUCE, HOW_TO_RUN, STRUCTURE, BUGS, THESIS, EXPERIMENTS
+├── reports/                            # frozen document-extraction rubric reports (stage6/stage7)
 │
-├── legacy/langchain-summarization/     # LEGACY summarisation stack (superseded by pipeline/…/summarization); incl. count_tokens.py cost estimator
-├── legacy/pdf_parsers/                 # LEGACY research/comparison PDF parsers (Docling/Nougat/Marker/PyMuPDF4LLM/pdffigures/Ensemble; NOT the production path)
+├── legacy/                             # Quarantined superseded code (monolithic ingest, research parsers)
 ├── files/                              # Input PDFs/XMLs (not in repo)
 ├── out/                                # Runtime outputs (cached layouts, summaries, run metadata)
 ├── requirements.txt
@@ -166,9 +167,12 @@ nlp-histo replay chapter9 --artifact-root .                     # offline, free
 ```
 
 The commands work from **any** directory — the package no longer needs the repository
-as its working directory in order to import. Full command reference:
-[`docs/HOW_TO_RUN.md`](docs/HOW_TO_RUN.md); layout and the ships/doesn't-ship boundary:
-[`docs/STRUCTURE.md`](docs/STRUCTURE.md).
+as its working directory in order to import.
+
+**Reproducing the thesis from scratch:** [`docs/REPRODUCE.md`](docs/REPRODUCE.md) — one
+linear sequence, read top to bottom, no prior knowledge of the project assumed. Full command
+reference: [`docs/HOW_TO_RUN.md`](docs/HOW_TO_RUN.md); layout and the ships/doesn't-ship
+boundary: [`docs/STRUCTURE.md`](docs/STRUCTURE.md).
 
 `eval/` (the thesis experiments and frozen artifacts) and `scripts/` are
 **repository-only** — they are not installed and never enter the wheel. They import
@@ -300,15 +304,25 @@ cd ..
 
 ### 5. Run Knowledge Extraction Pipeline
 
-The production summariser is `pipeline/stages/knowledge_extraction/`, driven via
-`scripts/run_paper.py` (sync or async batch). It needs three direct-API keys in
-`.env`: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`. See
-[`docs/readmes/HOW_TO_RUN.md`](docs/readmes/HOW_TO_RUN.md) §3 for the full recipe.
+The production summariser is `src/nlp_histo/pipeline/stages/knowledge_extraction/`,
+driven via `nlp-histo knowledge` (sync or async batch). See
+[`docs/HOW_TO_RUN.md`](docs/HOW_TO_RUN.md) §9 for the full recipe.
 
-`run_paper.py` requires a mode (`--sync` or `--batch`), a `--profile NAME`, and
-`--health-check yes|no`. Valid profiles are `cheap`, `real`, `real_5`,
-`haiku_only` (defined in `pipeline/stages/knowledge_extraction/batch/voter_configs.py`
-via `get_profile`); see HOW_TO_RUN.md §3.
+Which direct-API keys `.env` needs **depends on the profile** — `real`/`real_5` use all
+three (`OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`), `cheap` needs only
+OpenAI + Google, and `haiku_only` only Anthropic. `--dry-run` prints the exact set for
+the invocation you are about to run; treat it as the authority (see
+[B-120](docs/BUGS.md)).
+
+> **This costs money.** `--dry-run` resolves the full config and contacts no paid
+> host — use it to check an invocation for free.
+
+The PMCID is **positional**. A mode (`--sync` or `--batch`), a `--profile NAME`, and
+`--health-check yes|no` are all required and have no defaults — that is deliberate, and
+it is what stops a paid run starting by accident (see [B-105](docs/BUGS.md)). Valid
+profiles are `cheap`, `real`, `real_5`, `haiku_only` (defined in
+`src/nlp_histo/pipeline/stages/knowledge_extraction/batch/voter_configs.py` via
+`get_profile`).
 
 ```bash
 # Single paper, sync (live) mode — pmcid is positional

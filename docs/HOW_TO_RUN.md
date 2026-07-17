@@ -1,7 +1,13 @@
 # How to run
 
-**New here? Read §0, then follow the numbered sections in order.** Each one says what it
-produces and what success looks like. Nothing below costs money except §9, which is marked.
+> **Never run this project before?** Read **`docs/REPRODUCE.md`** instead. It is the same
+> material as one linear sequence — clone, install, restore, replay — written to be followed
+> top to bottom without jumping between sections. Come back here when you want the detail on
+> a specific command: this file is the reference, and it is authoritative if the two ever
+> disagree.
+
+**Already oriented? Read §0, then follow the numbered sections in order.** Each one says what
+it produces and what success looks like. Nothing below costs money except §9, which is marked.
 
 **Fastest useful result:** §0 (get the bundle) → §2 (install) → §10 (replay) → nine tables
 identical to the thesis. No database, no API key, no cost. Budget an hour: the 1.2 GB
@@ -27,7 +33,7 @@ Follow these in order. Every command is run **from the repository root**.
 | 8 | `nlp-histo ner extract` → `merge` → `export` | `entities` rows; `umls_entities_lg/`, `disease_entities_lg/` | `Summary: N Processed … 0 Errors`, then `✓ Saved N files` | slow on a cold cache |
 | 9 | `nlp-histo knowledge` | `sum_*` tables, `out/summaries/` | per-paper JSON written | **⚠ costs money** |
 | 10 | `nlp-histo replay chapter9` | 9 CSVs in `out/thesis_results/…` | exit 0, nine files | ~5 min |
-| 11 | `pytest` · `ruff check .` | — | `1693 passed`, `All checks passed!` | ~3 min |
+| 11 | `pytest` · `ruff check .` | — | `1693 passed`, `All checks passed!` | 3–4 min |
 
 **Exit codes are meaningful, not decorative.** Non-zero always means *stop and read*, never
 "it mostly worked": `2` the artifact tree is unusable · `3` the UMLS model is unreachable ·
@@ -77,9 +83,9 @@ is not a result, so pick your path:
 
 ### Path A — reproduce the thesis tables (recommended, free)
 
-You need **the replay bundle (~1.5 GB)**. It is the frozen output of the paid pipeline,
-so no API key and **no database** are required — `replay chapter9` never connects to
-PostgreSQL.
+You need **the replay bundle** — a 1.2 GB download that unpacks to ~1.5 GB, so budget both.
+It is the frozen output of the paid pipeline, so no API key and **no database** are
+required — `replay chapter9` never connects to PostgreSQL.
 
 ```
 eval/data/embedding_cache_openai.sqlite       467 MB
@@ -480,10 +486,17 @@ Three things worth knowing, none of them faults in this run:
 ## 8. Named-entity recognition
 
 ```bash
-nlp-histo ner extract --entity-cache /path/to/entity_linking_cache.json
+nlp-histo ner extract            # add --entity-cache <path> only if you have a cache
 nlp-histo ner merge
 nlp-histo ner export
 ```
+
+**If you received this project rather than built it, you do not have the entity cache** —
+it is not in the bundle (it is 30 MB of the author's local UMLS-linking results, not a
+thesis artifact). Omit `--entity-cache`; NER then starts cold and recomputes the links,
+which is slow but correct. The rest of this section is for the maintainer's existing cache.
+Note also that a restored corpus already holds its 1.79M entities, so `extract` will report
+the documents as processed and skip them unless you pass `-- --force`.
 
 **Cache migration — read this if you have the old 30 MB cache.** The entity cache used
 to live at `named_entity_recognition/entity_linking_cache.json`, next to the module.

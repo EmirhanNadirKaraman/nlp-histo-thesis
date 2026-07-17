@@ -7,7 +7,7 @@ src/nlp_histo/     installed library + public CLI   → ships
 eval/              thesis experiments + frozen artifacts   → repository-only
 scripts/           developer utilities + 2 compatibility wrappers   → repository-only
 tests/             test suite
-docs/              tracked documentation (this file, HOW_TO_RUN.md)
+docs/              tracked documentation (this file, REPRODUCE.md, HOW_TO_RUN.md)
 configs/           user-editable run configuration (run.yaml)
 ```
 
