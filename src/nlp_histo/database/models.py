@@ -7,9 +7,13 @@ tables further down the file.
 
 from sqlalchemy import (
     Boolean, Column, Integer, String, Text, TIMESTAMP,
-    ForeignKey, ARRAY, Index, Float, UniqueConstraint,
+    ForeignKey, Index, Float, UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import JSON, JSONB
+# ARRAY comes from the postgresql dialect, not sqlalchemy's generic namespace: the generic
+# ARRAY raises NotImplementedError from .contains(), so the documented hierarchical query
+# (path_list.contains(['Methods'])) failed at runtime. Both emit TEXT[] — identical DDL,
+# no migration — but only the dialect type compiles the containment operator (B-121).
+from sqlalchemy.dialects.postgresql import ARRAY, JSON, JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
