@@ -290,17 +290,18 @@ that matter.)
 
 ## Step 8 (optional) — The evaluation experiments
 
-The thesis has many numbered experiments (E01–E15). **Eight of them are free and reproduce
-from the caches you just unpacked** — no database, no API key, no provider ever contacted;
-every embedding is served from the frozen cache, and a cache miss raises rather than making a
-paid call. Run each **one at a time**; each loads scispaCy + the UMLS knowledge base (several
-GB of RAM) and takes from seconds to ~5 minutes.
+The thesis has many numbered experiments (E01–E15). **Seven of them reproduce from the caches
+you just unpacked alone** — no database, no API key, no provider ever contacted; every
+embedding is served from the frozen cache, and a cache miss raises rather than making a paid
+call. (An eighth, **E03**, is just as free but additionally needs the restored corpus
+database — it is deferred to after Step 9; see the note below the table.) Run each **one at a
+time**; each loads scispaCy + the UMLS knowledge base (several GB of RAM) and takes from
+seconds to ~5 minutes.
 
 | Command | What it is | Expect | Time |
 |---|---|---|---|
 | `python -m eval.silver.experiments.E14_heldout.heldout_eval --theta-frontier` | Held-out generalisation (the headline) | `strict_f1_optimal = 0.7128`, gap `-0.0032` | ~5 min |
 | `python -m eval.silver.experiments.E04_cardinalities.cardinalities` | Knowledge-extraction funnel | `2294 MAP → 1923 grounded (83.8%) → 1747 final` | ~30 s |
-| `python -m eval.silver.experiments.E03_grounding.grounding_sweep_related15` | Grounding-threshold sweep | retention `0.838` @0.50, best strict_f1 `0.7160` | ~5 min |
 | `python -m eval.silver.experiments.E09_cost_quality.cost_quality_frontier` | Cost–quality frontier | quality `0.7160@23.66`, knee `0.7067`, economy `0.5433` | ~10 s |
 | `python -m eval.silver.experiments.E10_baselines.single_model_baselines` | Single-model baselines vs cascade | cascade `0.7160` vs single-Sonnet `0.7129` | ~2 min |
 | `python -m eval.silver.experiments.E11_bootstrap.cascade_vs_single_bootstrap` | Cascade-vs-Sonnet paired bootstrap | cascade `0.7160`, B=10000 paper-level | ~3 min |
@@ -337,8 +338,12 @@ listing them would only produce errors:
   result without re-running them).
 * **E15** calls paid LLM APIs (silver-label generation), so it is Track B territory.
 
-Three more experiments (**E02, E02b, E02c**, provenance) are free but read the *database* —
-they appear later, after you restore it (Step 11).
+Four more experiments are just as free but read the *database*, so they run after you restore
+it (Steps 9–11), not here. The grounding sweep **E03** is one of them — its grounding step
+swaps each finding's paraphrased `verbatim_support` for the real cited paragraph from the
+corpus, so it only yields the published `retention 0.838 @0.50` once the DB is up (run before
+then, it silently falls back to the paraphrases and reports `0.883`). The other three are the
+provenance experiments **E02, E02b, E02c**. All four reappear at the end of Step 11.
 
 Everything above reproduces the published results without a database. The rest of Track A
 gives you the corpus to query and, optionally, its named entities and provenance metrics.
@@ -348,15 +353,33 @@ gives you the corpus to query and, optionally, its named entities and provenance
 The steps so far never touched PostgreSQL. This one loads the 977-paper corpus so you can
 query it.
 
+**First, tell PostgreSQL's command-line tools who to connect as.** `createdb` and `psql`
+are PostgreSQL's own clients, **not** this project — they ignore the `.env` from Step 10 and
+default to your operating-system login over the local socket. On a password-protected server
+(the EDB one-click installer, most managed setups) that login is not a valid role, so every
+command in this step fails with `password authentication failed for user "<you>"`. Set a
+real role once, for this terminal:
+
+```bash
+export PGHOST=localhost PGUSER=postgres
+export PGPASSWORD='<the postgres password you set when you installed PostgreSQL>'
+```
+
+`postgres` is the superuser created at install time; any role with a password and the
+CREATEDB privilege works. These `PG*` variables drive only the command-line tools in this
+step — Step 10's `.env` is the separate set the Python project reads. With them exported,
+every `createdb` and `psql` below connects without prompting.
+
+Now create the database:
+
 ```bash
 createdb nlp_histo
 ```
 
 Use whatever database name you like; this runbook uses `nlp_histo`. **If a database of that
 name already exists on your server, choose another** — the restore expects an empty target
-and this avoids writing into something you care about. If your PostgreSQL requires a
-specific role to create databases, name it: `createdb -U postgres -O <your-role> nlp_histo`.
-The dump embeds no role names, so it restores under whoever connects.
+and this avoids writing into something you care about. The dump embeds no role names, so it
+restores under whoever connects.
 
 Then restore:
 
@@ -423,9 +446,13 @@ Note: 1 unrelated table(s) present and left untouched: alembic_version
 OK: schema is present and valid (21 tables).
 ```
 
-The `Note:` line is expected, not a warning. The dump carries `alembic_version` — a
-migration bookkeeping table that is not one of the ORM's 21 — so `db check` reports it and
-leaves it alone. 21 tables is the correct count.
+The `Note:` line is expected, not a warning. Your database physically holds **22** tables,
+but `db check` reports **21** because it validates only the tables the ORM defines
+(`Base.metadata`). The 22nd, `alembic_version`, is Alembic's migration-bookkeeping table —
+a single row recording the schema's migration revision. The dump carries it, but it is not
+one of the ORM's 21, so `db check` lists it as an untouched "extra" and leaves it alone. 21
+is the correct count — if this line ever read **22**, it would mean `alembic_version` had
+been wrongly added to the models.
 
 **Read the `Target:` line.** It is the database the project actually resolved — not the one
 you meant. If it names something unexpected, go back to Step 10. This is also the first
@@ -479,8 +506,9 @@ with db.session_scope() as session:            # commits on exit, rolls back on 
 where in which paper it came from. Note the document ID is composite
 (`PMC10092619_HIS-82-254`), not a bare accession — the publisher's filename is part of it.
 
-**Three provenance experiments run against this restored database** (the ones the Step 8 note
-deferred). All are read-only, free, and finish in seconds:
+**Three provenance experiments run against this restored database** (three of the four the
+Step 8 note deferred — the grounding sweep E03 is the fourth, just below). All are read-only,
+free, and finish in seconds:
 
 ```bash
 python -m eval.silver.experiments.E02_provenance.provenance_metric              # corpus-level
@@ -493,6 +521,26 @@ full provenance address (**100%**). E02b confirms all **1,729** related15 final 
 back to a source paragraph (**1729/1729, 100%**); E02c does the same for the **held-out** set
 (**100%** across its 15 papers), showing provenance generalises. Each writes a CSV under
 `eval/reports/`.
+
+**The deferred grounding sweep (E03) belongs here too** — now that the corpus is restored and
+`.env` points at it (Steps 9–10), it can pull in the real cited paragraphs it needs:
+
+```bash
+python -m eval.silver.experiments.E03_grounding.grounding_sweep_related15
+```
+
+Expect `best strict_f1 = 0.7160` (grounding filter off) and, at the pinned `run.yaml`
+threshold, `retention 0.838 @0.50`. It takes ~5 minutes and loads scispaCy + the UMLS
+knowledge base like the Step 8 experiments. E03 replaces each finding's LLM-paraphrased
+`verbatim_support` with the real cited paragraph from the database before scoring grounding —
+that swap is why it needs the restore.
+
+Warning: **If the output contains `[verbatim] DB lookup failed — keeping LLM verbatim`, the run
+never reached the database.** It then scores grounding against the paraphrases instead of the
+real source text and reports `retention 0.883`, not `0.838` — yet still exits 0. The `strict_f1
+= 0.7160` line matches either way, because that row applies no grounding filter and never
+touches the swapped text, so it is **not** a safe signal. Trust the run only when that warning
+is absent.
 
 ## Step 12 (optional) — Named-entity recognition over the corpus
 
@@ -609,7 +657,7 @@ with no prior entities, so `extract` does the full scispaCy + UMLS work rather t
 skipping. This is the slow, cold path — every UMLS link is computed from scratch, because
 the author's entity cache is not shipped.
 
-## Step 17 — ⚠ Knowledge extraction — **this costs money**
+## Step 17 — Knowledge extraction — **this costs money**
 
 Every other command in either track is free. This one calls paid LLM APIs, and cost scales
 with the number of papers. It regenerates the summaries and `sum_*` tables — the LLM outputs
