@@ -44,6 +44,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Exactly replay.REQUIRED_ARTIFACTS, minus what a clone already carries
 # (scripts/eval/run_summarization_experiments.py and reports/stage6_PR.md are tracked).
+# E14's heldout15 primer + silver are NOT here on purpose: they are committed to git
+# (like source_cases_related15.jsonl), so a clone already carries them — see B-123.
 REPLAY_MEMBERS = (
     "eval/data/embedding_cache_openai.sqlite",
     "eval/data/embedding_cache_gemini.sqlite",

@@ -282,6 +282,15 @@ eval/data/*
 !eval/data/relation_claim_pairs_300.meta.json
 !eval/data/relation_claim_pairs_calibration.jsonl
 !eval/data/relation_claim_pairs_evaluation.jsonl
+# E14 (REPRODUCE.md Step 8) heldout15 inputs — committed to git rather than shipped in the
+# replay bundle (B-123): they gzip to ~1 MB and this way a clean clone can run E14 with no
+# extra download. Track ONLY the clean voter_cache.json — the sibling
+# voter_cache.contaminated.json is a leakage variant that must never ship, and primer.json
+# is unused. So re-include the directory, re-ignore its contents, then narrow to one file.
+!eval/data/silver_findings_heldout15.jsonl
+!eval/data/map_primer_heldout15/
+eval/data/map_primer_heldout15/*
+!eval/data/map_primer_heldout15/voter_cache.json
 # Per-experiment report artifacts (E01…E14, corpus_stats, old_reports, …) stay local:
 # they are regenerable outputs, not sources. RESULTS.md is the exception — it is the
 # documented experiment record, cited by .claude/CLAUDE.md alongside eval/README.md and

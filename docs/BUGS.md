@@ -165,6 +165,8 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 
 | B-122 | Fixed (2026-07-17) | Medium | Packaging, `requirements.txt` (was a `pip freeze` of a shared interpreter) | **`requirements.txt` was a `pip freeze` of a system-wide Python shared with unrelated projects: 404 pins, of which 186 belonged to no dependency of this project.** `pyproject.toml` declares **zero** dependencies (the wheel ships none — B-104), so this file is the *only* dependency source and every reader installs all 404. The freeze carried other projects' packages (`bcrypt`, `cleo`, `configobj`, `fastapi`, `gurobipy`, `easyocr`, `appnope`), dev tooling nothing runs (`black`, `flake8`, `mypy`, `ipython`, `debugpy`, seven unused pytest plugins), and — the largest item — **13 spaCy language models where the project loads 2**: German ×2, Spanish, French, Italian, Japanese, Korean, Polish, Portuguese, Russian, Swedish, all for an English-only corpus. `en_core_web_sm` appears only in a *code comment*; `en_core_sci_md` only as a mocked string in a test. **Fixed** by computing the dependency closure from installed metadata over the 32 top-level imports across `src`/`eval`/`scripts`/`tests`, then filtering the original file — **preserving every version pin**, because the tested versions are the thesis's provenance. Two entries static analysis could not see were added back by hand: `psycopg2-binary` (never imported — SQLAlchemy resolves it from the bare `postgresql://` URL) and `build` (§12 documents `python -m build`); `asyncpg` was correctly dropped, as the URL names no async driver. A first attempt with an *unpinned* direct list was **rejected**: pip resolved `transformers` 4.57.3 → **5.8.1**, `pandas` 2.1.4 → **3.0.3**, `torch` 2.9.1 → 2.13.0 and dropped `sentencepiece` — the suite still passed, which is precisely why "tests pass" is not sufficient evidence for a thesis whose replay must be byte-identical: an NLI major-version bump could move the grounding decisions the numbers rest on. **Verified** by installing the pruned file into three successive clean venvs until zero unpinned transitives remained (the closure initially missed docling's chunking stack — `semchunk`, `mpire`, `tree-sitter*`, `dill`, `multiprocess` — which pip then resolved at drifted versions): final state 229 pins, 0 extras, `1697 passed`, `ruff` clean, `torch 2.9.1`/`transformers 4.57.3` intact. `requirements.in` now records the direct set and why each entry exists. | [Bug 122](#bug-122--requirementstxt-was-a-freeze-of-an-unrelated-interpreter) |
 
+| B-123 | Fixed (2026-07-17) | Medium | Reproducibility, `scripts/make_reproduction_bundle.py` (bundle scope) × `docs/REPRODUCE.md` Step 8 (E14) | **E14 — the headline generalization result REPRODUCE.md tells the reader to reproduce — could not run from the downloaded bundle: its two heldout15 inputs were never shipped.** `nlp-histo replay chapter9` needs the *related15* primer, and the bundle's file list mirrored exactly the replay's `REQUIRED_ARTIFACTS`; but REPRODUCE.md Step 8's free track also runs `E14_heldout`, which reads a *different* primer — `eval/data/map_primer_heldout15/voter_cache.json` (16 MB) and `eval/data/silver_findings_heldout15.jsonl` (1.1 MB). Neither was in the bundle nor in a clean clone, so a fresh checkout died with `voter cache not found: …/map_primer_heldout15/voter_cache.json`. Found by the user running Step 8 verbatim in a clean clone. E04 (the other Step 8 experiment) was unaffected — its inputs are shipped. **Not a cost bug:** E14 sets `strict_cache_only=True`, so a missing embedding *raises* rather than issuing a paid call (same guarantee as [B-112](#bug-112--the-replay-embedding-cache-preflight)); verified by running E14 against the shipped gemini cache — **0 cache misses, exit 0, `strict_f1_optimal = 0.7128`, gap `-0.0032`**, matching the documented values. So the caches were complete; only the two primer/silver *inputs* were absent. **Fixed** by committing the two files to git (they gzip to ~1.0 MB combined) rather than re-cutting and re-uploading the 1.2 GB bundle — the same home as the already-tracked `source_cases_related15.jsonl`, so a clone now carries them and E14 runs with the *existing* uploaded bundle unchanged. The gitignore re-includes **only** the clean `voter_cache.json`; the sibling `voter_cache.contaminated.json` (a leakage variant that must never ship) and the unused `primer.json` stay ignored. The build-script comment records that these live in git by design, so a future bundle does not redundantly carry them. Accepted trade-off: one primer (heldout15) is in git while its related15 twin remains in the bundle — inconsistent, but it avoids a 1.2 GB re-upload for 1 MB of data. | [Bug 123](#bug-123--e14s-heldout15-inputs-were-missing-from-the-reproduction-bundle) |
+
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
 
 ---
@@ -9196,3 +9198,80 @@ Final state: **229 pins** (from 404), install 1m13s, `nlp-histo --help` exit 0, 
 
 Found while pruning at the user's request, ahead of a supervisor's clean-clone run — every
 one of those 404 lines is something they would otherwise download.
+
+---
+
+## Bug 123 — E14's heldout15 inputs were missing from the reproduction bundle
+
+**Status: Fixed (2026-07-17) / Severity: Medium / Surface:** `scripts/make_reproduction_bundle.py`, `docs/REPRODUCE.md` Step 8
+
+### Symptom
+
+A clean clone + the downloaded bundle, running REPRODUCE.md Step 8 exactly:
+
+```
+python -m eval.silver.experiments.E14_heldout.heldout_eval --theta-frontier
+voter cache not found: /Users/emir/histo-test/eval/data/map_primer_heldout15/voter_cache.json
+```
+
+E04, the other Step 8 experiment, ran fine.
+
+### Evidence
+
+The bundle's member list (`REPLAY_MEMBERS`) was built to mirror `replay.REQUIRED_ARTIFACTS`
+— what `nlp-histo replay chapter9` needs. That is the *related15* primer
+(`eval/data/map_primer/voter_cache.json`). But Step 8 also runs `E14_heldout`, and E14 reads
+a **different** primer and silver set:
+
+```
+eval/data/map_primer_heldout15/voter_cache.json     16 MB
+eval/data/silver_findings_heldout15.jsonl           1.1 MB
+```
+
+Neither was in the bundle, and neither was tracked in git, so a clean clone had no way to
+obtain them. The bundle's scope (the replay's artifacts) and the doc's promise (the free
+track, including E14) had silently diverged.
+
+### Diagnosis
+
+Not a cost regression. E14 constructs its scorer with `strict_cache_only=True`
+(`heldout_eval.py`), so any embedding not already in the frozen gemini cache raises rather
+than issuing a paid call — the same guarantee as [B-112](#bug-112--the-replay-embedding-cache-preflight).
+Running E14 against the shipped gemini cache confirmed the caches themselves were complete:
+
+```
+SQLite embedding cache: 87942 entries at eval/data/embedding_cache_gemini.sqlite
+Agreement embed pre-warm: 11148 unique claims, 0 cache misses
+strict_f1_optimal = 0.7128   loose_f1_optimal = 0.8837
+GENERALIZATION GAP (heldout − related15) = -0.0032
+```
+
+0 misses, exit 0, and the exact values REPRODUCE.md documents. So the embeddings were all
+present; only the two *input* files (primer + silver) were missing.
+
+### Fix
+
+Commit the two files to git rather than re-cut and re-upload the 1.2 GB bundle for 1 MB of
+data (they gzip to ~1.0 MB combined). This is the same home as the already-tracked
+`source_cases_related15.jsonl`, and it means a clone carries them — so E14 runs against the
+**existing** uploaded bundle, no re-upload, no checksum change.
+
+The gitignore re-includes **only** the clean `voter_cache.json`. Its directory also holds
+`voter_cache.contaminated.json` — a data-leakage variant that must never ship — and an
+unused `primer.json`; both stay ignored. The rule negates the directory, re-ignores its
+contents, then narrows to the one file (git will not descend into a wholesale-ignored
+directory, the same lesson as `out/*`).
+
+`make_reproduction_bundle.py` keeps its original member list, with a comment recording that
+the heldout15 inputs live in git by design, so a future bundle does not redundantly carry
+them.
+
+**Trade-off, accepted deliberately:** the heldout15 primer now lives in git while its
+related15 twin remains in the bundle. Inconsistent, but it avoids a 1.2 GB re-upload for a
+1 MB fix, and the reproduction works either way.
+
+### Verification
+
+With the two files tracked, a clean clone carries them; E14 was confirmed free and correct
+(0.7128 / -0.0032) against the already-shipped gemini cache. The contaminated variant and
+`primer.json` were verified to remain ignored.
