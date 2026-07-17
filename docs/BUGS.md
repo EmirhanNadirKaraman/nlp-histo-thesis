@@ -163,6 +163,8 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 | B-120 | Fixed (2026-07-17) | Medium | Docs/UX, `workflows/knowledge.py:575` (`--dry-run`) | **`--dry-run` — the documented free way to check a paid invocation — misreported the required API keys for every profile, because the line was hardcoded.** It always printed `Env vars required: GOOGLE_API_KEY, ANTHROPIC_API_KEY` regardless of the resolved profile, while printing the true per-voter model/provider table directly above it. Actual needs: `cheap` → `GOOGLE_API_KEY, OPENAI_API_KEY` (the message **omits `OPENAI_API_KEY`, which every one of its four voters needs**, and demands an Anthropic key it never uses); `real`/`real_5` → all three (omits `OPENAI_API_KEY`); `haiku_only` → `ANTHROPIC_API_KEY` only (demands an unused Google key). So the output was wrong for **4 of 4** profiles. Impact: a supervisor following `--dry-run` provisions the wrong keys and the subsequent *paid* run dies at provider construction — time, not money, and self-limiting. Same class as [B-105](#bug-105--neither-documented-knowledge-command-could-run): an assertion on the paid-command surface that was never executed. **Fixed** by deriving the set from the resolved profile's voters (`{v.provider for v in (*l1, *l2, l3)}` → env var), with an unknown provider rendered as `<unknown provider 'x'>` rather than silently dropped. Verified against all four profiles vs. an independently computed expectation. Found while verifying README's key claim during the 2026-07-17 docs consolidation. | [Bug 120](#bug-120--dry-run-hardcoded-the-required-api-keys) |
 | B-121 | Fixed (2026-07-17) | Medium | Database, `database/models.py:10,79` (`ARRAY`) × `.claude/CLAUDE.md` (Critical Patterns) | **The hierarchical query documented as a Critical Pattern raised `NotImplementedError` — the one query that makes the corpus's tree structure usable could not be run.** `path_list` was declared `Column(ARRAY(Text))` importing `ARRAY` from SQLAlchemy's **generic** namespace rather than the postgresql dialect; the generic type's `.contains()` deliberately raises `NotImplementedError: ARRAY.contains() not implemented for the base ARRAY type; please use the dialect-specific ARRAY type`. So `session.query(TextElement).filter(TextElement.path_list.contains(['Methods']))` — printed verbatim in CLAUDE.md, and the whole point of storing `path_list` as an array — failed for every caller. The column comment already said `# PostgreSQL array` and the module already imported `JSON, JSONB` from the dialect, so this was a one-word import slip, not a design choice. It survived because nothing in the pipeline queries by path: `path_list` is written by ingest and read back as a whole, so the array operators were only ever exercised by a human exploring the corpus — exactly the supervisor's use case, and untested. **Fixed** by importing `ARRAY` from `sqlalchemy.dialects.postgresql`. **DDL is identical** — both compile to `TEXT[]` (verified against the postgresql dialect), so no migration, no schema change, and the existing corpus dump restores unaffected; only the dialect type compiles containment to `@>`. Verified live against the 977-paper corpus: the documented query now returns 86 elements. The generic type does support `.any('Methods')` (`= ANY(...)`), which is why no workaround was needed for anything that already worked. Found while checking whether REPRODUCE.md's promise of "a working corpus database you can query" was true — the file showed only `count(*)`, and the first real query attempted was the documented one. | [Bug 121](#bug-121--the-documented-hierarchical-query-could-not-run) |
 
+| B-122 | Fixed (2026-07-17) | Medium | Packaging, `requirements.txt` (was a `pip freeze` of a shared interpreter) | **`requirements.txt` was a `pip freeze` of a system-wide Python shared with unrelated projects: 404 pins, of which 186 belonged to no dependency of this project.** `pyproject.toml` declares **zero** dependencies (the wheel ships none — B-104), so this file is the *only* dependency source and every reader installs all 404. The freeze carried other projects' packages (`bcrypt`, `cleo`, `configobj`, `fastapi`, `gurobipy`, `easyocr`, `appnope`), dev tooling nothing runs (`black`, `flake8`, `mypy`, `ipython`, `debugpy`, seven unused pytest plugins), and — the largest item — **13 spaCy language models where the project loads 2**: German ×2, Spanish, French, Italian, Japanese, Korean, Polish, Portuguese, Russian, Swedish, all for an English-only corpus. `en_core_web_sm` appears only in a *code comment*; `en_core_sci_md` only as a mocked string in a test. **Fixed** by computing the dependency closure from installed metadata over the 32 top-level imports across `src`/`eval`/`scripts`/`tests`, then filtering the original file — **preserving every version pin**, because the tested versions are the thesis's provenance. Two entries static analysis could not see were added back by hand: `psycopg2-binary` (never imported — SQLAlchemy resolves it from the bare `postgresql://` URL) and `build` (§12 documents `python -m build`); `asyncpg` was correctly dropped, as the URL names no async driver. A first attempt with an *unpinned* direct list was **rejected**: pip resolved `transformers` 4.57.3 → **5.8.1**, `pandas` 2.1.4 → **3.0.3**, `torch` 2.9.1 → 2.13.0 and dropped `sentencepiece` — the suite still passed, which is precisely why "tests pass" is not sufficient evidence for a thesis whose replay must be byte-identical: an NLI major-version bump could move the grounding decisions the numbers rest on. **Verified** by installing the pruned file into three successive clean venvs until zero unpinned transitives remained (the closure initially missed docling's chunking stack — `semchunk`, `mpire`, `tree-sitter*`, `dill`, `multiprocess` — which pip then resolved at drifted versions): final state 229 pins, 0 extras, `1697 passed`, `ruff` clean, `torch 2.9.1`/`transformers 4.57.3` intact. `requirements.in` now records the direct set and why each entry exists. | [Bug 122](#bug-122--requirementstxt-was-a-freeze-of-an-unrelated-interpreter) |
+
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
 
 ---
@@ -9115,3 +9117,82 @@ on the generic behaviour. Full suite re-run after the change.
 Found while verifying REPRODUCE.md's claim that the reader ends up with "a working corpus
 database you can query": the file demonstrated only `count(*)`, so the first genuine query
 tried was the one CLAUDE.md documents — which failed.
+
+---
+
+## Bug 122 — requirements.txt was a freeze of an unrelated interpreter
+
+**Status: Fixed (2026-07-17) / Severity: Medium / Surface:** `requirements.txt`
+
+### Symptom
+
+404 pinned entries. `pyproject.toml` declares **zero** dependencies, so this file is the
+only dependency source in the project — everyone who installs gets all 404.
+
+### Evidence
+
+The dependency closure over every top-level import in `src/`, `eval/`, `scripts/` and
+`tests/` (32 distinct imports → 45 distributions) covers **218** of the 404 entries. The
+remaining 186 are reachable from nothing:
+
+| category | examples |
+|---|---|
+| other projects' packages | `bcrypt`, `cleo`, `configobj`, `conllu`, `fastapi`, `gurobipy`, `appnope`, `easyocr` |
+| dev tooling nothing runs | `black`, `flake8`, `mypy`, `ipython`, `ipykernel`, `debugpy` |
+| unused pytest plugins | `pytest-benchmark`, `-codspeed`, `-randomly`, `-recording`, `-socket`, `-xdist`, `-cov` |
+| **11 unused spaCy models** | `de_core_news_{sm,md}`, `es`, `fr`, `it`, `ja`, `ko`, `pl`, `pt`, `ru`, `sv` |
+
+The models are the headline: the project is English-only histopathology and loads exactly
+two, `en_core_sci_lg` (36 references) and `en_core_sci_sm` (27 — real production sites at
+`knowledge_extraction/runner.py:888` for sentence splitting and
+`pdf_text_extraction/runner.py:493` for two-pass). `en_core_web_sm` occurs once, in a
+**comment**; `en_core_sci_md` once, as a mocked string in a test.
+
+The cause is recorded in CLAUDE.md's own gotchas: `python` here resolves to the system
+framework interpreter, not a venv. A `pip freeze` there captures every project on the
+machine.
+
+### Diagnosis
+
+Static analysis alone is **not sufficient** to prune this file — two entries are invisible
+to it:
+
+* **`psycopg2-binary`** is never imported. `db_connection.py:66` builds a bare
+  `postgresql://` URL and SQLAlchemy resolves the DBAPI from the scheme. Dropping it yields
+  a clean install and a runtime failure. (`asyncpg` *was* correctly dropped — no async
+  driver is named.)
+* **`build`** is never imported; §12 documents `python -m build`.
+
+### Fix
+
+Filter the original file by the closure, **preserving every version pin**. The pins are the
+thesis's provenance: they are the versions the published numbers were produced with.
+
+`requirements.in` now records the direct set with a reason per entry. `requirements.txt`
+remains the pinned lock and is what you install.
+
+**A first attempt was rejected.** Resolving an *unpinned* direct list produced a working
+environment — 200 packages, `1697 passed` — but pip had upgraded `transformers` 4.57.3 →
+**5.8.1**, `pandas` 2.1.4 → **3.0.3**, `torch` 2.9.1 → 2.13.0, and dropped `sentencepiece`
+entirely. That is the trap this bug exists to document: **a green test suite is not evidence
+of reproducibility.** The tests do not exercise the NLI models whose entailment decisions
+the grounding filter — and therefore the published numbers — depend on. A transformers major
+bump could move them silently.
+
+### Verification
+
+Three successive clean venvs, each installing the candidate file and reporting any package
+pip had to resolve itself (an unpinned transitive = uncontrolled version):
+
+| attempt | result |
+|---|---|
+| unpinned `requirements.in` | works, but `transformers` → 5.8.1, `pandas` → 3.0.3 — **rejected** |
+| closure-filtered, pinned | 11 unpinned extras — the closure missed docling's chunking stack (`semchunk`, `mpire`, `tree-sitter*`, `dill`, `multiprocess`), which pip then resolved at drifted versions |
+| **+ those 11 at original pins** | **0 unpinned extras** — the lock is complete |
+
+Final state: **229 pins** (from 404), install 1m13s, `nlp-histo --help` exit 0, the
+`postgresql://` URL resolves to the `psycopg2` driver, `torch 2.9.1` / `transformers
+4.57.3` intact, **1697 passed**, `ruff` clean.
+
+Found while pruning at the user's request, ahead of a supervisor's clean-clone run — every
+one of those 404 lines is something they would otherwise download.

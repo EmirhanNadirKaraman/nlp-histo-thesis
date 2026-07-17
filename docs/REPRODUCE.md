@@ -330,7 +330,7 @@ python -m pytest -q
 ruff check .
 ```
 
-Expect **1693 passed** and `All checks passed!`. Takes three to four minutes. This needs
+Expect **1697 passed** and `All checks passed!`. Takes three to four minutes. This needs
 none of the artifacts — it is a check on the code alone, and it is the fastest way to tell
 whether your environment is sound.
 

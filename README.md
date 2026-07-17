@@ -125,7 +125,7 @@ nlp-histo/
 │
 ├── configs/                            # user-editable run config: run.yaml, paper_selection/*.yaml
 ├── scripts/                            # developer utilities, inspectors, eval helpers (not a package)
-├── tests/                              # pytest suite (96 test files, 1693 tests; knowledge-extraction-heavy)
+├── tests/                              # pytest suite (96 test files, 1697 tests; knowledge-extraction-heavy)
 ├── docs/                               # project docs — REPRODUCE, HOW_TO_RUN, STRUCTURE, BUGS, THESIS, EXPERIMENTS
 ├── reports/                            # frozen document-extraction rubric reports (stage6/stage7)
 │

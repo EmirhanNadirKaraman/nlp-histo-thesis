@@ -1,0 +1,60 @@
+# Direct dependencies only — pip resolves the rest.
+#
+# requirements.txt is generated FROM this file and is what you install; it is the pinned,
+# fully-resolved lock. Edit this file, re-lock, and commit both (docs/HOW_TO_RUN.md §2).
+#
+# Every line below is traceable to an import in src/nlp_histo, eval/, scripts/ or tests/,
+# or to a command the docs tell a reader to run. The previous requirements.txt was a
+# `pip freeze` of a shared system interpreter: 404 entries, of which 189 belonged to no
+# dependency of this project (B-122).
+
+# ── core runtime ──────────────────────────────────────────────────────────────
+SQLAlchemy                 # database/models.py, db_connection.py
+psycopg2-binary            # NEVER imported: SQLAlchemy loads it from `postgresql://`
+alembic                    # incremental migrations (HOW_TO_RUN §5)
+python-dotenv              # database/env loading
+pydantic                   # models throughout knowledge_extraction
+PyYAML                     # configs/run.yaml, nli_models.yaml
+requests                   # acquisition/downloader.py
+tqdm                       # progress bars
+psutil                     # pipeline/utils/memory_logging.py
+
+# ── PDF extraction ────────────────────────────────────────────────────────────
+docling                    # components/layout_extractor.py
+docling-core               # DoclingDocument types
+PyMuPDF                    # imported as `fitz` — masking, cropping
+pillow                     # imported as `PIL` — media_cropper
+
+# ── NLP / NER ─────────────────────────────────────────────────────────────────
+spacy
+scispacy
+transformers               # NLI models (grounding, relate)
+torch                      # transformers backend
+en_core_sci_lg @ https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_lg-0.5.4.tar.gz
+en_core_sci_sm @ https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
+
+# ── LLM providers (knowledge extraction — the paid path) ──────────────────────
+langchain-core
+langchain-openai
+langchain-anthropic
+langchain-google-vertexai
+anthropic
+openai
+tiktoken                   # token counting for cost estimation
+
+# ── analysis / eval ───────────────────────────────────────────────────────────
+numpy
+pandas
+scipy
+scikit-learn               # imported as `sklearn`
+matplotlib                 # experiment plots
+pulp                       # ILP paper selection (acquisition/selector.py)
+
+# ── tooling the docs tell you to run ──────────────────────────────────────────
+pytest                     # §11
+ruff                       # §11
+build                      # §12 — `python -m build`
+
+# ── used by repository-only helpers ───────────────────────────────────────────
+Flask                      # scripts/ visualization server
+Jinja2                     # scripts/ HTML reports

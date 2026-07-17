@@ -33,7 +33,7 @@ Follow these in order. Every command is run **from the repository root**.
 | 8 | `nlp-histo ner extract` → `merge` → `export` | `entities` rows; `umls_entities_lg/`, `disease_entities_lg/` | `Summary: N Processed … 0 Errors`, then `✓ Saved N files` | slow on a cold cache |
 | 9 | `nlp-histo knowledge` | `sum_*` tables, `out/summaries/` | per-paper JSON written | **⚠ costs money** |
 | 10 | `nlp-histo replay chapter9` | 9 CSVs in `out/thesis_results/…` | exit 0, nine files | ~5 min |
-| 11 | `pytest` · `ruff check .` | — | `1693 passed`, `All checks passed!` | 3–4 min |
+| 11 | `pytest` · `ruff check .` | — | `1697 passed`, `All checks passed!` | 3–4 min |
 
 **Exit codes are meaningful, not decorative.** Non-zero always means *stop and read*, never
 "it mostly worked": `2` the artifact tree is unusable · `3` the UMLS model is unreachable ·
@@ -76,7 +76,7 @@ before you start:
 |---|---|
 | §2 install · §3 `--help` · §4 env vars | §10 `replay chapter9` → exits **2**, naming every missing artifact |
 | §5 `db init` / `db check` (your own PostgreSQL) | §12 experiments → no primer / caches |
-| **§11 `pytest` → 1693 passed** | §7 `ingest` · §8 `ner` → no PDFs, no ingested documents |
+| **§11 `pytest` → 1697 passed** | §7 `ingest` · §8 `ner` → no PDFs, no ingested documents |
 
 Nothing fails silently — a missing artifact is a loud, itemised error. But a loud error
 is not a result, so pick your path:
