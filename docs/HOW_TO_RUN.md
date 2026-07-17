@@ -720,9 +720,11 @@ time** — concurrent runs will exhaust memory on a 16–32 GB machine.
 
 ---
 
-## Appendix — verification status (for the maintainer)
+## Appendix — verification status
 
-## Verification status — read this first
+Provenance for the maintainer. A first-time reader does not need this to run anything —
+it records what was executed against this tree and what was only inspected, so no claim
+above rests on assumption.
 
 This file previously opened by claiming *"every command below was executed against this
 tree before being written down."* **That was not true**, and the claim is what hid the
