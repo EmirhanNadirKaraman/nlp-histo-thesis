@@ -19,9 +19,12 @@ both against the same database.
 
 **Nothing costs money except the final step of Track B, which is clearly marked.**
 
-Companion document: `docs/HOW_TO_RUN.md` is the *reference* — every command, every flag,
-every caveat. This file is the *path*. If the two ever disagree, HOW_TO_RUN.md is
-authoritative and this file has a bug.
+**This file is self-contained** — every command and value you need to complete either track
+is here; you do not need to open another document to finish. `docs/HOW_TO_RUN.md` is the
+deeper reference (every flag, every option, the per-command verification history) for when
+you want more than the path, and `docs/BUGS.md` records known defects with their reasoning.
+If this file and `HOW_TO_RUN.md` ever disagree on a fact, `HOW_TO_RUN.md` is authoritative
+and this file has a bug worth reporting.
 
 ## What you need on your machine
 
@@ -102,20 +105,52 @@ Step 2.
 This is the recommended path. You download the artifacts and the corpus once, then every
 command runs against them for free.
 
-> **Start the download now.** The artifact archive is 1.2 GB and you will not need it until
-> Step 5, so kick it off before you read on. Download **both** files, from either location
-> (the two are identical — use whichever is faster), plus their `.sha256` sidecars:
->
-> * **Primary — LRZ Sync+Share:** <https://syncandshare.lrz.de/getlink/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles>
-> * **Mirror — Google Drive:** <https://drive.google.com/drive/folders/1uo-iGOb3df11LqjQRbCwoyRsiVDMJkpY?usp=sharing>
->
-> | File | Size | What it is |
-> |---|---|---|
-> | `nlp-histo-replay-artifacts-ec11eec.tar.gz` | 1.2 GB | Frozen outputs of the paid LLM pipeline + the embedding caches |
-> | `nlp-histo-corpus.sql.gz` | 49 MB | The PostgreSQL corpus: 977 papers, 35,896 text elements, 1.79M entities |
->
-> Put all four files (two archives + two `.sha256`) in one directory. This guide calls it
-> `~/nlp-histo-bundles`; anywhere works.
+**Start the download now** — the artifact archive is 1.2 GB and you will not need it until
+Step 5, so kick it off before you read on. There are **four files** to fetch (two archives
+and their `.sha256` sidecars):
+
+| File | Size | What it is |
+|---|---|---|
+| `nlp-histo-replay-artifacts-ec11eec.tar.gz` | 1.2 GB | Frozen outputs of the paid LLM pipeline + the embedding caches |
+| `nlp-histo-replay-artifacts-ec11eec.tar.gz.sha256` | tiny | Checksum for the archive |
+| `nlp-histo-corpus.sql.gz` | 49 MB | The PostgreSQL corpus: 977 papers, 35,896 text elements, 1.79M entities |
+| `nlp-histo-corpus.sql.gz.sha256` | tiny | Checksum for the corpus dump |
+
+Both locations hold the identical set — use whichever is faster:
+
+* **Primary — LRZ Sync+Share:** <https://syncandshare.lrz.de/getlink/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles>
+* **Mirror — Google Drive:** <https://drive.google.com/drive/folders/1uo-iGOb3df11LqjQRbCwoyRsiVDMJkpY?usp=sharing>
+
+Put all four files in one directory. This guide calls it `~/nlp-histo-bundles`; anywhere
+works, and the rest of Track A assumes that path.
+
+**From a browser**, open either link and download all four files into `~/nlp-histo-bundles`.
+
+**From the command line**, the LRZ link fetches the whole folder — all four files — as one
+zip:
+
+```bash
+mkdir -p ~/nlp-histo-bundles && cd ~/nlp-histo-bundles
+curl -L -o bundle.zip \
+  "https://syncandshare.lrz.de/dl/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles.dir"
+unzip bundle.zip        # yields the four files above
+```
+
+The Google Drive mirror is per-file, and a 1.2 GB file triggers Drive's virus-scan
+interstitial — a plain `curl` silently saves that HTML warning page under the archive's
+name. If you use Drive from the command line, pass the confirm token:
+
+```bash
+curl -L -o nlp-histo-replay-artifacts-ec11eec.tar.gz \
+  "https://drive.usercontent.google.com/download?id=1SOWdAhhy0ZFqwlMjG3X3EFvgNQyKhIxW&export=download&confirm=t"
+```
+
+Either way, Step 5 verifies what you got before anything trusts it.
+
+**No account is needed.** Both are read-only links that serve anonymously — you cannot write
+through either. Anyone holding a URL can download the bundle; it is unlisted rather than
+access-controlled. It contains only derived artifacts (embeddings, summaries, cascade
+decisions) and **no publisher PDFs**, which is why sharing a link is acceptable.
 
 **Why these are not in the git repository:** the artifacts cost real money to generate and
 are too large for git; the corpus PDFs they derive from are mostly not redistributable
@@ -156,8 +191,8 @@ file nlp-histo-replay-artifacts-ec11eec.tar.gz
 
 Must say **gzip compressed data**. If it says *HTML document*, your download was
 intercepted — Google Drive shows a virus-scan warning page for files this large and some
-tools save that page instead of the file. Download it again through a browser, or see
-`docs/HOW_TO_RUN.md` §0 for the command-line form.
+tools save that page instead of the file. Re-download through a browser, or use the
+`confirm=t` command in the download block above (Track A introduction).
 
 > The expected checksums, for reference:
 > `cded4299ac1a47cf8b857f5796731a27d3b66eac234a1acf306771e73d3e45d3` (archive)
@@ -350,9 +385,22 @@ command that touches PostgreSQL, so it is where a wrong password or a stopped se
 up.
 
 **The corpus is now yours to query.** It is an ordinary PostgreSQL database — `psql -d
-nlp_histo` and any SQL you like. The 21 tables are described in `docs/STRUCTURE.md`; the
-ones you probably want are `documents` (one row per paper), `text_elements` (its
-hierarchical text), and `entities` (the UMLS concepts found in that text).
+nlp_histo` and any SQL you like. The ones you probably want are `documents` (one row per
+paper), `text_elements` (its hierarchical text), and `entities` (the UMLS concepts found in
+that text). The full set of 21 tables:
+
+* **Document extraction (7):** `documents`, `text_elements`, `figures`, `tables`,
+  `entities`, `text_element_figure_references`, `text_element_table_references`.
+* **Run tracking (2):** `pipeline_runs`, `llm_judge_cache`.
+* **Knowledge extraction (12), all prefixed `sum_`:** `sum_map_findings`,
+  `sum_map_voter_outputs`, `sum_normal_findings`, `sum_normal_finding_spans`,
+  `sum_finding_groups`, `sum_group_members`, `sum_canonical_rules`, `sum_relations`,
+  `sum_final_rules`, `sum_rejection_summaries`, `sum_rejected_findings`,
+  `sum_corpus_relations`.
+
+(A Track A restore ships these already populated — the corpus was built with knowledge
+extraction run, so `sum_final_rules` holds 1,729 rules, `sum_map_findings` 1,911, and so
+on. Track B regenerates them from scratch.)
 
 The structure worth knowing about is that `text_elements` keeps each paragraph's **section
 path** as an array, so you can ask for text by where it sits in the paper rather than by
