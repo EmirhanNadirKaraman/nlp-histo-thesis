@@ -1,43 +1,27 @@
 # Reproducing this thesis — a start-to-finish runbook
 
 Read this top to bottom and run the commands as you meet them. Every step says what it
-does, what you should see, and what to do if you see something else. You should not need
-to jump around; where a detail would interrupt the flow it is in a note you can skip.
+does, what you should see, and what to do if you see something else.
 
-**Nothing here costs money except Step 15, which is marked and optional.**
+There are **two tracks**, and you almost certainly want the first:
 
-By the end you will have reproduced the nine tables that Chapter 9 reports, and you will
-have a working corpus database you can query.
+* **Track A — reproduce from the files provided (free).** You download the frozen artifacts
+  and the corpus database from a link, and every command runs against those caches. No API
+  key, no cost, and the thesis tables come out byte-identical. **Start here.**
+* **Track B — rebuild the artifacts yourself.** You re-acquire the PDFs from PubMed Central,
+  re-ingest them into a fresh database, and re-run the pipeline. This regenerates what
+  Track A hands you. Its last step calls **paid** LLM APIs, and because those models are
+  non-deterministic the results will *not* be byte-identical. Do this only if you want to
+  see where the artifacts come from.
+
+**Both tracks share the same setup (Steps 1–3).** After that, do Track A *or* Track B — not
+both against the same database.
+
+**Nothing costs money except the final step of Track B, which is clearly marked.**
 
 Companion document: `docs/HOW_TO_RUN.md` is the *reference* — every command, every flag,
 every caveat. This file is the *path*. If the two ever disagree, HOW_TO_RUN.md is
 authoritative and this file has a bug.
-
----
-
-## Before you start — begin the download
-
-**Start this now and read on while it transfers**; it is 1.2 GB and you will not need it
-until Step 4. Download both files, from either location (the two are identical — use
-whichever is faster):
-
-* **Primary — LRZ Sync+Share:** <https://syncandshare.lrz.de/getlink/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles>
-* **Mirror — Google Drive:** <https://drive.google.com/drive/folders/1uo-iGOb3df11LqjQRbCwoyRsiVDMJkpY?usp=sharing>
-
-| File | Size | What it is |
-|---|---|---|
-| `nlp-histo-replay-artifacts-ec11eec.tar.gz` | 1.2 GB | Frozen outputs of the paid LLM pipeline + the embedding caches |
-| `nlp-histo-corpus.sql.gz` | 49 MB | The PostgreSQL corpus: 977 papers, 35,896 text elements, 1.79M entities |
-
-Each comes with a `.sha256` file — download those too, and keep them beside the file they
-name. Step 4 uses them.
-
-Put all four in one directory. This guide calls it `~/nlp-histo-bundles`; anywhere works.
-
-**Why these are not in the git repository:** the artifacts cost real money to generate and
-are too large for git; the corpus PDFs they derive from are mostly not redistributable
-(322 of the 1093 papers carry no Creative Commons licence). The repository holds the code
-and the corpus *definition* — everything else you either receive or regenerate.
 
 ## What you need on your machine
 
@@ -46,12 +30,14 @@ and the corpus *definition* — everything else you either receive or regenerate
 * **PostgreSQL**, running, and the ability to create a database. Check with `psql --version`.
 * **About 10 GB of free disk**: ~4 GB of Python dependencies, 1.2 GB archive, 1.5 GB
   extracted, ~0.5 GB database, plus ~3 GB of models downloaded on first use.
-* **An internet connection.** Steps 3 and 10 download packages and models. Neither costs
+* **An internet connection.** Steps 3 and 7 download packages and models; neither costs
   money.
 
-You do **not** need an API key. You do **not** need the PDFs.
+You do **not** need an API key for Track A. You do **not** need the PDFs for either track.
 
 ---
+
+# Part 1 — Set up the code (both tracks)
 
 ## Step 1 — Get the code
 
@@ -109,12 +95,55 @@ You should see a list of commands (`db`, `acquire`, `ingest`, `ner`, `knowledge`
 `replay`). If you get `command not found`, your virtualenv is not active — go back to
 Step 2.
 
-## Step 4 — Verify the two files you received
+---
+
+# Track A — Reproduce from the files provided (free)
+
+This is the recommended path. You download the artifacts and the corpus once, then every
+command runs against them for free.
+
+> **Start the download now.** The artifact archive is 1.2 GB and you will not need it until
+> Step 5, so kick it off before you read on. Download **both** files, from either location
+> (the two are identical — use whichever is faster), plus their `.sha256` sidecars:
+>
+> * **Primary — LRZ Sync+Share:** <https://syncandshare.lrz.de/getlink/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles>
+> * **Mirror — Google Drive:** <https://drive.google.com/drive/folders/1uo-iGOb3df11LqjQRbCwoyRsiVDMJkpY?usp=sharing>
+>
+> | File | Size | What it is |
+> |---|---|---|
+> | `nlp-histo-replay-artifacts-ec11eec.tar.gz` | 1.2 GB | Frozen outputs of the paid LLM pipeline + the embedding caches |
+> | `nlp-histo-corpus.sql.gz` | 49 MB | The PostgreSQL corpus: 977 papers, 35,896 text elements, 1.79M entities |
+>
+> Put all four files (two archives + two `.sha256`) in one directory. This guide calls it
+> `~/nlp-histo-bundles`; anywhere works.
+
+**Why these are not in the git repository:** the artifacts cost real money to generate and
+are too large for git; the corpus PDFs they derive from are mostly not redistributable
+(322 of the 1093 papers carry no Creative Commons licence). The repository holds the code
+and the corpus *definition* — everything else you either receive here or regenerate in
+Track B.
+
+## Step 4 — Confirm the code is sound while the download runs
+
+The test suite needs none of the artifacts — it checks the code alone, so it is the fastest
+way to confirm Step 3 produced a working environment. Run it now, while the download
+continues in the background.
+
+```bash
+python -m pytest -q
+ruff check .
+```
+
+Expect **1697 passed** and `All checks passed!`. Takes three to four minutes. If this
+fails, fix the install before going further — every step below assumes it passes.
+
+## Step 5 — Verify the two files you received
 
 Do this **before** anything else touches them. A truncated download produces failures much
 later and much more confusingly.
 
 ```bash
+cd ~/nlp-histo-bundles
 shasum -a 256 -c nlp-histo-replay-artifacts-ec11eec.tar.gz.sha256
 shasum -a 256 -c nlp-histo-corpus.sql.gz.sha256
 ```
@@ -134,10 +163,14 @@ tools save that page instead of the file. Download it again through a browser, o
 > `cded4299ac1a47cf8b857f5796731a27d3b66eac234a1acf306771e73d3e45d3` (archive)
 > `af80657dc8b512668b2fc1a120610290816797db18d1eb384140f2688b3a4f59` (corpus dump)
 
-## Step 5 — Unpack the artifacts into the repository
+## Step 6 — Unpack the artifacts into the repository
+
+Step 5 left you in `~/nlp-histo-bundles`. Go back to the `nlp-histo` clone from Step 1
+(wherever you created it) before extracting:
 
 ```bash
-tar -xzf /path/to/nlp-histo-replay-artifacts-ec11eec.tar.gz -C .
+cd /path/to/nlp-histo        # the clone from Step 1
+tar -xzf ~/nlp-histo-bundles/nlp-histo-replay-artifacts-ec11eec.tar.gz -C .
 ```
 
 The archive carries its own directory structure (`eval/data/…`, `out/summaries/…`), so it
@@ -153,28 +186,105 @@ ls out/summaries/summaries | head -3
 All three must exist. The archive also contains `MANIFEST.json`, listing every file with
 its size and checksum, if you ever want to verify them individually.
 
-## Step 6 — Create an empty database
+## Step 7 — Reproduce the thesis tables
 
-Use whatever database name you like; this runbook uses `nlp_histo`.
+This is the headline result, and it needs only the artifacts you just unpacked — **no
+database, no API key.**
+
+```bash
+nlp-histo replay chapter9 --artifact-root . --output-dir out/replay-check
+```
+
+Takes about five minutes. On first run it downloads two models (~3 GB: the scispaCy UMLS
+knowledge base and a biomedical NLI model). That download is free, and it is cached — later
+runs skip it.
+
+**What you should see:** it works through twelve analyses and ends with `done.`. Exit code
+0.
+
+```bash
+ls out/replay-check/*.csv | wc -l
+```
+
+**Expect 9.**
+
+Two of the twelve analyses do not produce a CSV, by design and for reasons that predate
+this work: `04_theta_heatmap` reports `status=missing` (its inputs are not in the tree) and
+`10_cascade_vs_sonnet_gap_ci` fails with a known pre-existing error. Nine CSVs is success.
+
+**If the exit code is not 0**, it will be one of these, and the message says which:
+
+| Exit | Meaning |
+|---|---|
+| 2 | The artifact tree is incomplete — Step 6 did not land. It lists exactly what is missing. |
+| 3 | The UMLS model could not be downloaded. It needs the network even when cached; see the note below. |
+| 4 | An embedding cache is incomplete — the archive did not extract fully. Re-do Steps 5 and 6. |
+
+Nothing here fails silently: a non-zero exit always names the cause.
+
+> **On this step needing the network.** It makes no paid calls and needs no API key. It
+> does need to reach `s3-us-west-2.amazonaws.com` and `huggingface.co`, even on a second
+> run, because scispaCy resolves its cache through a live lookup. If you are offline, the
+> command stops with exit 3 rather than quietly producing different numbers.
+
+**Comparing against the published tables:** the nine CSVs should be byte-identical to the
+ones in `out/thesis_results/chapter9_offline_replay/` if you have them. For example:
+
+```bash
+diff out/replay-check/01_provenance_carry_rate.csv \
+     out/thesis_results/chapter9_offline_replay/01_provenance_carry_rate.csv
+```
+
+No output means identical.
+
+## Step 8 (optional) — The evaluation experiments
+
+Also artifact-based and free — every embedding is served from the caches you unpacked, and
+no provider is ever contacted.
+
+```bash
+python -m eval.silver.experiments.E14_heldout.heldout_eval --theta-frontier
+python -m eval.silver.experiments.E04_cardinalities.cardinalities
+```
+
+E14 is the headline generalisation result: expect `strict_f1_optimal = 0.7128` and a
+generalisation gap of `-0.0032`.
+
+Run these **one at a time** — each loads scispaCy plus the UMLS knowledge base, several GB
+of memory apiece.
+
+> `eval/sweeps/grounding.py` also runs, but it overwrites a tracked file
+> (`eval/results/grounding_sweep.md`) with numbers from whatever is currently in
+> `out/summaries`. Use `git checkout eval/results/` afterwards to restore it.
+
+Everything above reproduces the published results. The rest of Track A gives you the corpus
+database to query and, optionally, its named entities.
+
+## Step 9 — Restore the corpus database
+
+The steps so far never touched PostgreSQL. This one loads the 977-paper corpus so you can
+query it.
 
 ```bash
 createdb nlp_histo
 ```
 
-If your PostgreSQL requires a specific role, use it — for example
-`createdb -U postgres -O <your-role> nlp_histo`. The dump does not embed any role names,
-so it restores under whatever user you connect as.
+Use whatever database name you like; this runbook uses `nlp_histo`. **If a database of that
+name already exists on your server, choose another** — the restore expects an empty target
+and this avoids writing into something you care about. If your PostgreSQL requires a
+specific role to create databases, name it: `createdb -U postgres -O <your-role> nlp_histo`.
+The dump embeds no role names, so it restores under whoever connects.
 
-## Step 7 — Restore the corpus
+Then restore:
 
 ```bash
-gunzip -c /path/to/nlp-histo-corpus.sql.gz | psql -d nlp_histo
+gunzip -c ~/nlp-histo-bundles/nlp-histo-corpus.sql.gz | psql -d nlp_histo
 ```
 
-This restores plain SQL, so it works with any `psql` version. It takes about 15 seconds and
-prints a long stream of `SET`, `CREATE TABLE` and `COPY` lines. Into an empty database it
-produces no `ERROR` and no `NOTICE` output; an `ERROR` means something is wrong — most
-likely the database was not empty.
+Plain SQL, so any `psql` version reads it. It takes about 15 seconds and prints a long
+stream of `SET`, `CREATE TABLE` and `COPY` lines. Into an empty database it produces no
+`ERROR` and no `NOTICE` output; an `ERROR` means something is wrong — most likely the
+database was not empty.
 
 **Check it worked:**
 
@@ -192,14 +302,15 @@ take — re-read the output of the previous command for `ERROR` lines.
 > 35,896, entities 1,792,440, figures 4,479, tables 1,960. `nlp-histo db check` then
 > reported `OK: schema is present and valid (21 tables)`. The restored database is ~445 MB.
 
-## Step 8 — Point the project at your database
+## Step 10 — Point the project at your database
 
 ```bash
 cp .env.example .env
 ```
 
 Open `.env` and set the five `DB_` values to match your PostgreSQL — at minimum
-`DB_NAME=nlp_histo`, plus the host, port, user and password you use.
+`DB_NAME=nlp_histo` (or whatever you named it in Step 9), plus the host, port, user and
+password you use.
 
 **Now the one trap in this whole runbook:**
 
@@ -215,7 +326,7 @@ a single command), but it surprises everyone the first time.
 
 If it printed something, either `unset` those variables or open a fresh terminal.
 
-## Step 9 — Confirm the connection
+## Step 11 — Confirm the connection, and query the corpus
 
 ```bash
 nlp-histo db check
@@ -234,10 +345,9 @@ migration bookkeeping table that is not one of the ORM's 21 — so `db check` re
 leaves it alone. 21 tables is the correct count.
 
 **Read the `Target:` line.** It is the database the project actually resolved — not the one
-you meant. If it names something unexpected, go back to Step 8.
-
-This is also the first command that touches PostgreSQL, so it is where a wrong password or
-a stopped server shows up.
+you meant. If it names something unexpected, go back to Step 10. This is also the first
+command that touches PostgreSQL, so it is where a wrong password or a stopped server shows
+up.
 
 **The corpus is now yours to query.** It is an ordinary PostgreSQL database — `psql -d
 nlp_histo` and any SQL you like. The 21 tables are described in `docs/STRUCTURE.md`; the
@@ -273,76 +383,7 @@ with db.session_scope() as session:            # commits on exit, rolls back on 
 where in which paper it came from. Note the document ID is composite
 (`PMC10092619_HIS-82-254`), not a bare accession — the publisher's filename is part of it.
 
-## Step 10 — Reproduce the thesis tables
-
-This is the main result.
-
-```bash
-nlp-histo replay chapter9 --artifact-root . --output-dir out/replay-check
-```
-
-Takes about five minutes. On first run it downloads two models (~3 GB: the scispaCy UMLS
-knowledge base and a biomedical NLI model). That download is free, and it is cached — later
-runs skip it.
-
-**What you should see:** it works through twelve analyses and ends with `done.`. Exit code
-0.
-
-```bash
-ls out/replay-check/*.csv | wc -l
-```
-
-**Expect 9.**
-
-Two of the twelve analyses do not produce a CSV, by design and for reasons that predate
-this work: `04_theta_heatmap` reports `status=missing` (its inputs are not in the tree) and
-`10_cascade_vs_sonnet_gap_ci` fails with a known pre-existing error. Nine CSVs is success.
-
-**If the exit code is not 0**, it will be one of these, and the message says which:
-
-| Exit | Meaning |
-|---|---|
-| 2 | The artifact tree is incomplete — Step 5 did not land. It lists exactly what is missing. |
-| 3 | The UMLS model could not be downloaded. It needs the network even when cached; see the note below. |
-| 4 | An embedding cache is incomplete — the archive did not extract fully. Re-do Steps 4 and 5. |
-
-Nothing here fails silently: a non-zero exit always names the cause.
-
-> **On Step 10 needing the network.** This command makes no paid calls and needs no API
-> key. It does need to reach `s3-us-west-2.amazonaws.com` and `huggingface.co`, even on a
-> second run, because scispaCy resolves its cache through a live lookup. If you are
-> offline, the command stops with exit 3 rather than quietly producing different numbers.
-
-**Comparing against the published tables:** the nine CSVs should be byte-identical to the
-ones in `out/thesis_results/chapter9_offline_replay/` if you have them. For example:
-
-```bash
-diff out/replay-check/01_provenance_carry_rate.csv \
-     out/thesis_results/chapter9_offline_replay/01_provenance_carry_rate.csv
-```
-
-No output means identical.
-
-## Step 11 — Run the test suite
-
-```bash
-python -m pytest -q
-ruff check .
-```
-
-Expect **1697 passed** and `All checks passed!`. Takes three to four minutes. This needs
-none of the artifacts — it is a check on the code alone, and it is the fastest way to tell
-whether your environment is sound.
-
----
-
-At this point you have reproduced the thesis result. Everything below is optional.
-
----
-
 ## Step 12 (optional) — Named-entity recognition over the corpus
-
-Requires Step 7 (the database).
 
 ```bash
 nlp-histo ner extract
@@ -355,39 +396,66 @@ and `export` then write JSON/TXT files grouped by UMLS concept, into `umls_entit
 and `disease_entities_lg/` in your current directory.
 
 The restored corpus already contains 1.79M entities, so `extract` will report that
-documents are already processed and skip them. To force it, add `-- --force` — but be aware
-that a cold run recomputes every UMLS link and is slow. The author's 30 MB entity cache is
-not part of what you received; without it the first run has nothing to reuse.
+documents are already processed and skip them. To force a recompute, add `-- --force` — but
+be aware that a cold run recomputes every UMLS link and is slow. The author's 30 MB entity
+cache is not part of what you received; without it the first run has nothing to reuse.
 
 **What you should see:** `Summary: N Processed | 0 Errors`, then `✓ Saved N files`.
 
 If `merge` or `export` reports *"No entities are stored under model …"*, they are being
 asked for a model the corpus does not contain — the message lists what is available.
 
-## Step 13 (optional) — The evaluation experiments
+**Track A is complete.** You have reproduced the thesis tables and have a working corpus
+database. You can stop here.
 
-Requires Step 5 (the artifacts). Free — every embedding is served from the caches you
-extracted, and no provider is ever contacted.
+---
+
+# Track B — Rebuild the artifacts yourself
+
+Everything in Track A ran against files you downloaded. Track B regenerates those files from
+the corpus *definition* in the repository: it re-acquires the PDFs, rebuilds the database by
+ingesting them, and re-runs the pipeline.
+
+**Read this before starting:**
+
+* **It does not need Track A.** Do the common setup (Steps 1–3), then come here. If you
+  already did Track A, use a *different, empty* database below so you do not overwrite the
+  restored corpus.
+* **The results will not be byte-identical.** Track A reproduces the *published* numbers
+  because it replays frozen outputs. Track B's final step calls LLMs, which are
+  non-deterministic; a fresh run produces its own outputs, close but not equal.
+* **The final step costs money.** Everything up to it is free.
+* **Honesty about verification:** the single-paper acquisition and ingest below have been
+  exercised; a full 1093-paper rebuild and the paid extraction have **not** been run
+  end-to-end by the author. Start small.
+
+## Step 13 — Create a fresh, empty database
+
+Unlike Track A, you are not restoring a dump — you build the schema from the ORM and fill it
+yourself.
 
 ```bash
-python -m eval.silver.experiments.E14_heldout.heldout_eval --theta-frontier
-python -m eval.silver.experiments.E04_cardinalities.cardinalities
+createdb nlp_histo_rebuild
+# if your role cannot create databases:
+#   createdb -U postgres -O <your-role> nlp_histo_rebuild
 ```
 
-E14 is the headline generalisation result: expect `strict_f1_optimal = 0.7128` and a
-generalisation gap of `-0.0032`.
+Point `.env` at it (as in Step 10 — set `DB_NAME=nlp_histo_rebuild`, and check
+`env | grep '^DB_'` prints nothing), then create the schema:
 
-Run these **one at a time** — each loads scispaCy plus the UMLS knowledge base, several GB
-of memory apiece.
+```bash
+nlp-histo db init
+```
 
-> `eval/sweeps/grounding.py` also runs, but it overwrites a tracked file
-> (`eval/results/grounding_sweep.md`) with numbers from whatever is currently in
-> `out/summaries`. Use `git checkout eval/results/` afterwards to restore it.
+This builds all 21 tables from `database/models.py` and verifies them. Expect `Database
+tables created successfully!` then `OK: schema verified (21 tables)`. It is safe to re-run
+and never drops anything. (Note: `db init` creates an **empty** schema — do not run it
+before a Track A restore, which brings its own schema and data.)
 
-## Step 14 (optional) — Rebuild the corpus from PubMed Central
+## Step 14 — Acquire the PDFs from PubMed Central
 
-You do not need this to reproduce anything; it is here if you want to see where the corpus
-comes from. `files/target_pmc_ids.txt` in the repository lists all 1093 papers.
+`files/target_pmc_ids.txt` in the repository lists all 1093 papers — the corpus definition.
+Start with three, because the full run has never been exercised in one go:
 
 ```bash
 head -3 files/target_pmc_ids.txt > /tmp/three-papers.txt
@@ -395,23 +463,49 @@ head -3 files/target_pmc_ids.txt > /tmp/three-papers.txt
 nlp-histo acquire download --pmcid-file /tmp/three-papers.txt --output-dir files/corpus
 nlp-histo acquire organize --input-dir files/corpus \
     --pdf-dir files/organized_pdfs --xml-dir files/organized_xmls
+```
+
+Papers are fetched from NLM's Open-Access dataset on AWS (~3 s/paper). If a download fails,
+the command exits non-zero and says which paper and why; papers simply absent from the
+Open-Access subset are reported and skipped, which is normal and not an error.
+
+## Step 15 — Ingest the PDFs into the database
+
+```bash
 nlp-histo ingest --pdf-dir files/organized_pdfs --out-root out
 ```
 
-Start with three papers, not all 1093 — the full run has never been exercised in one go.
-Downloading takes about three seconds per paper and ingesting about thirty.
+This is the PDF → text + figures + tables pipeline (~30 s/paper). It populates `documents`,
+`text_elements`, `figures` and `tables` — the same tables Track A's dump restored, now
+built from the PDFs you just fetched. Expect `ok=N fail=0`.
 
-Papers are fetched from NLM's Open-Access dataset on AWS. If a download fails, the command
-exits non-zero and says which paper and why; papers simply absent from the Open-Access
-subset are reported and skipped, which is normal and not an error.
+Confirm:
 
-## Step 15 (optional) — ⚠ Knowledge extraction — **this costs money**
+```bash
+psql -d nlp_histo_rebuild -c "SELECT count(*) FROM documents;"   # = the papers you ingested
+```
 
-Every other command in this runbook is free. This one calls paid LLM APIs, and cost scales
-with the number of papers.
+## Step 16 — Rebuild the entities
 
-Check the invocation for free first — `--dry-run` resolves the whole configuration,
-prints the model cascade, and exits without contacting a provider:
+```bash
+nlp-histo ner extract
+nlp-histo ner merge
+nlp-histo ner export
+```
+
+Same commands as Track A Step 12, but here they run against your freshly ingested papers
+with no prior entities, so `extract` does the full scispaCy + UMLS work rather than
+skipping. This is the slow, cold path — every UMLS link is computed from scratch, because
+the author's entity cache is not shipped.
+
+## Step 17 — ⚠ Knowledge extraction — **this costs money**
+
+Every other command in either track is free. This one calls paid LLM APIs, and cost scales
+with the number of papers. It regenerates the summaries and `sum_*` tables — the LLM outputs
+that Track A's archive contained.
+
+Check the invocation for free first — `--dry-run` resolves the whole configuration, prints
+the model cascade and the required API keys, and exits without contacting a provider:
 
 ```bash
 nlp-histo knowledge PMC1448691 --profile cheap --sync --health-check no --dry-run
@@ -420,6 +514,11 @@ nlp-histo knowledge PMC1448691 --profile cheap --sync --health-check no --dry-ru
 Remove `--dry-run` to actually run it. Three arguments are required and have no defaults —
 `--profile`, `--health-check`, and one of `--sync`/`--batch` — precisely so that a paid run
 cannot start by accident. Use `--profile cheap` and a single paper before anything larger.
+
+Because the voters are non-deterministic, the rules this produces will resemble but not
+equal the frozen ones in Track A's archive. That is expected; the frozen archive exists
+precisely so the *published* numbers can be reproduced exactly (Track A), which a fresh paid
+run cannot guarantee.
 
 ---
 
@@ -432,16 +531,16 @@ command did not complete. The project installs `--no-deps` on purpose, so it wil
 and print help without its dependencies and only fail when it tries to do real work.
 
 **The wrong database** — run `nlp-histo db check` and read the `Target:` line. If it is not
-what you configured, `env | grep '^DB_'` will show why (Step 8).
+what you configured, `env | grep '^DB_'` will show why (Step 10, or Step 13 for Track B).
 
 **`replay chapter9` exits 2** — the artifacts are not in place. The error lists every
-missing file. Re-do Step 5, extracting into the repository root.
+missing file. Re-do Step 6, extracting into the repository root.
 
 **`replay chapter9` exits 3** — no network, or S3 is unreachable. This command needs the
 network even though it is free and cached.
 
 **`replay chapter9` exits 4** — an embedding cache is incomplete. Your download or
-extraction was truncated: re-verify with Step 4.
+extraction was truncated: re-verify with Step 5.
 
 **Out of memory** — you are running two heavy commands at once. `ingest`, `ner`, `replay`
 and `pytest` each load scispaCy plus the UMLS knowledge base. Run them one at a time.
