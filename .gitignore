@@ -276,10 +276,12 @@ out/summaries/heldout15/summaries/*
 !out/summaries/heldout15/summaries/*.json
 profile.prof
 umls_entities/
+umls_entities_lg/
 umls_texts/
 relevant_texts/
 legacy/langchain-summarization/summarization_results/
 disease_entities/
+disease_entities_lg/
 named_entity_recognition/entity_linking_cache.json
 
 eval/out/
