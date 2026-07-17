@@ -264,6 +264,16 @@ out/thesis_results/*
 !out/thesis_results/chapter9_offline_replay/
 out/thesis_results/chapter9_offline_replay/*
 !out/thesis_results/chapter9_offline_replay/*.csv
+# …and the held-out summary JSONs that E02c reads (REPRODUCE.md Step 11, B-125). Only the
+# per-paper summaries — not batch_handles / corpus_relations, and NOT the bundle's own
+# out/summaries/summaries (which stays ignored, shipped in the archive instead).
+!out/summaries/
+out/summaries/*
+!out/summaries/heldout15/
+out/summaries/heldout15/*
+!out/summaries/heldout15/summaries/
+out/summaries/heldout15/summaries/*
+!out/summaries/heldout15/summaries/*.json
 profile.prof
 umls_entities/
 umls_texts/
@@ -299,6 +309,20 @@ eval/data/map_primer_heldout15/*
 # a file whose parent *directory* is excluded, so the negation below would silently fail.
 eval/reports/*
 !eval/reports/RESULTS.md
+# …except the three frozen calibration-sweep CSVs that E09 reads (REPRODUCE.md Step 8,
+# B-125). E09 is a free CSV re-analysis, but its upstream sweeps (E06c/E07/E08b) are the
+# heavy calibration runs a reader does not re-execute, so their outputs must ship. Only
+# these named sweep CSVs — everything else under eval/reports/ stays a local, regenerable
+# artifact.
+!eval/reports/E06c_voter_subset_refine/
+eval/reports/E06c_voter_subset_refine/*
+!eval/reports/E06c_voter_subset_refine/sweep_*.csv
+!eval/reports/E07_map_theta/
+eval/reports/E07_map_theta/*
+!eval/reports/E07_map_theta/sweep_*.csv
+!eval/reports/E08b_map_theta_shipped/
+eval/reports/E08b_map_theta_shipped/*
+!eval/reports/E08b_map_theta_shipped/sweep_*.csv
 
 # E13: generated per-batch prompt files (template lives in prepare_manual_batches.py)
 eval/prompts/relation_pairs/*_prompt.txt

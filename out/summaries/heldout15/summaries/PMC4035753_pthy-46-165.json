@@ -1,0 +1,855 @@
+{
+  "status": "success",
+  "run_id": "PMC4035753_pthy-46-165_20260622T214355",
+  "pmcid": "PMC4035753_pthy-46-165",
+  "canonical_rules": [
+    {
+      "canonical_id": "CR_8aecf993_positive",
+      "group_id": "GRP_c227e59d_c3e13e00_1b2c08a8_comparative_60c411b2",
+      "subject_entity": "synoptic/checklist reporting",
+      "outcome_entity": "Quality",
+      "relation_type": "comparative",
+      "direction": "positive",
+      "predicate_text": "Synoptic/checklist reporting superior to traditional narrative (free text) reporting for cancer resection specimens",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_fa65a0d5"
+      ],
+      "mean_grounding_score": 0.9985645413398743,
+      "finding_count": 1,
+      "subject_cui": null,
+      "outcome_cui": "C0332306",
+      "scope": {
+        "disease_subtype": "colorectal cancer",
+        "cohort_n": null,
+        "assay_method": null,
+        "biomarker_cutoff": null,
+        "tissue_site": null,
+        "treatment_context": null,
+        "endpoint": "reporting quality",
+        "study_design": "multi-institutional quality study",
+        "scope_parsed": true
+      },
+      "representative_verbatim": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+      "representative_text_element_id": 5944
+    },
+    {
+      "canonical_id": "CR_6d578e76_positive",
+      "group_id": "GRP_c227e59d_a284c4f1_5b834721_has_feature_60c411b2",
+      "subject_entity": "Electronic",
+      "outcome_entity": "Automated (qualifier value)",
+      "relation_type": "has_feature",
+      "direction": "positive",
+      "predicate_text": "Electronic synoptic histopathology reporting tools use discrete data fields, drop-down menus, and automated SNOMED encoding via electronic health records",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_cc56eb72"
+      ],
+      "mean_grounding_score": 0.9990284442901611,
+      "finding_count": 1,
+      "subject_cui": "C0013850",
+      "outcome_cui": "C1285164",
+      "scope": {
+        "disease_subtype": null,
+        "cohort_n": null,
+        "assay_method": null,
+        "biomarker_cutoff": null,
+        "tissue_site": null,
+        "treatment_context": null,
+        "endpoint": null,
+        "study_design": null,
+        "scope_parsed": false
+      },
+      "representative_verbatim": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+      "representative_text_element_id": 5944
+    },
+    {
+      "canonical_id": "CR_bae79ab4_positive",
+      "group_id": "GRP_c227e59d_726c1269_5b834721_has_feature_60c411b2",
+      "subject_entity": "Separate",
+      "outcome_entity": "Automated (qualifier value)",
+      "relation_type": "has_feature",
+      "direction": "positive",
+      "predicate_text": "Discrete 'atomic' data fields in electronic synoptic reporting enable automatic search, extraction, and electronic transmission of data",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_38b47afa"
+      ],
+      "mean_grounding_score": 0.9992958307266235,
+      "finding_count": 1,
+      "subject_cui": "C0443299",
+      "outcome_cui": "C1285164",
+      "scope": {
+        "disease_subtype": null,
+        "cohort_n": null,
+        "assay_method": null,
+        "biomarker_cutoff": null,
+        "tissue_site": null,
+        "treatment_context": null,
+        "endpoint": null,
+        "study_design": null,
+        "scope_parsed": false
+      },
+      "representative_verbatim": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+      "representative_text_element_id": 5944
+    },
+    {
+      "canonical_id": "CR_714058a6_positive",
+      "group_id": "GRP_c227e59d_6725e7bb_c88a0b90_treatment_response_60c411b2",
+      "subject_entity": "System",
+      "outcome_entity": "Success",
+      "relation_type": "treatment_response",
+      "direction": "positive",
+      "predicate_text": "Electronic synoptic histopathology reporting successfully implemented at regional level in Ontario, Canada",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_bf7bf410"
+      ],
+      "mean_grounding_score": 0.9991440773010254,
+      "finding_count": 1,
+      "subject_cui": "C0449913",
+      "outcome_cui": "C0597535",
+      "scope": {
+        "disease_subtype": null,
+        "cohort_n": null,
+        "assay_method": null,
+        "biomarker_cutoff": null,
+        "tissue_site": null,
+        "treatment_context": null,
+        "endpoint": "regional implementation",
+        "study_design": null,
+        "scope_parsed": true
+      },
+      "representative_verbatim": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+      "representative_text_element_id": 5944
+    },
+    {
+      "canonical_id": "CR_aaa22859_negative",
+      "group_id": "GRP_c227e59d_7973d920_5aabb1f5_has_feature_60c411b2",
+      "subject_entity": "electronic histopathology reporting",
+      "outcome_entity": "Has difficulty doing (qualifier value)",
+      "relation_type": "has_feature",
+      "direction": "negative",
+      "predicate_text": "Implementation and use of electronic histopathology reporting is a difficult organisational task",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_f6d9db3f"
+      ],
+      "mean_grounding_score": 0.9980491399765015,
+      "finding_count": 1,
+      "subject_cui": null,
+      "outcome_cui": "C1285164",
+      "scope": {
+        "disease_subtype": null,
+        "cohort_n": null,
+        "assay_method": null,
+        "biomarker_cutoff": null,
+        "tissue_site": null,
+        "treatment_context": null,
+        "endpoint": null,
+        "study_design": null,
+        "scope_parsed": false
+      },
+      "representative_verbatim": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+      "representative_text_element_id": 5944
+    },
+    {
+      "canonical_id": "CR_4984d2e5_negative",
+      "group_id": "GRP_c227e59d_39e8ccbb_8d59829c_has_feature_60c411b2",
+      "subject_entity": "web-based synoptic reporting tool",
+      "outcome_entity": "Usage",
+      "relation_type": "has_feature",
+      "direction": "negative",
+      "predicate_text": "Web-based synoptic reporting tools for cancer surgery face implementation and usage challenges",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_435de292"
+      ],
+      "mean_grounding_score": 0.9992064833641052,
+      "finding_count": 1,
+      "subject_cui": null,
+      "outcome_cui": "C0457083",
+      "scope": {
+        "disease_subtype": null,
+        "cohort_n": null,
+        "assay_method": null,
+        "biomarker_cutoff": null,
+        "tissue_site": null,
+        "treatment_context": "cancer surgery",
+        "endpoint": null,
+        "study_design": null,
+        "scope_parsed": true
+      },
+      "representative_verbatim": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+      "representative_text_element_id": 5944
+    },
+    {
+      "canonical_id": "CR_2bf12309_positive",
+      "group_id": "GRP_c227e59d_a149001a_ba35a2ac_treatment_response_60c411b2",
+      "subject_entity": "organisational issue management",
+      "outcome_entity": "Long-term",
+      "relation_type": "treatment_response",
+      "direction": "positive",
+      "predicate_text": "Proactive management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_fbdfe3ff"
+      ],
+      "mean_grounding_score": 0.9997435212135315,
+      "finding_count": 1,
+      "subject_cui": null,
+      "outcome_cui": "C0443252",
+      "scope": {
+        "disease_subtype": null,
+        "cohort_n": null,
+        "assay_method": null,
+        "biomarker_cutoff": null,
+        "tissue_site": null,
+        "treatment_context": null,
+        "endpoint": "long-term synoptic reporting success",
+        "study_design": null,
+        "scope_parsed": true
+      },
+      "representative_verbatim": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+      "representative_text_element_id": 5944
+    }
+  ],
+  "relations": [],
+  "relate_raw_pairs": [],
+  "final_rules": [
+    {
+      "final_id": "FR_CR_2bf12309_positive",
+      "canonical_id": "CR_2bf12309_positive",
+      "group_id": "GRP_c227e59d_a149001a_ba35a2ac_treatment_response_60c411b2",
+      "subject_entity": "organisational issue management",
+      "outcome_entity": "Long-term",
+      "relation_type": "treatment_response",
+      "direction": "positive",
+      "predicate_text": "Proactive management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_fbdfe3ff"
+      ],
+      "mean_grounding_score": 0.9997435212135315,
+      "finding_count": 1,
+      "final_score": 0.7798,
+      "support_count": 0,
+      "contradict_count": 0,
+      "scope_qualify_count": 0,
+      "is_contradicted": false,
+      "contradicted_by": [],
+      "score_mode": "relations_absent"
+    },
+    {
+      "final_id": "FR_CR_bae79ab4_positive",
+      "canonical_id": "CR_bae79ab4_positive",
+      "group_id": "GRP_c227e59d_726c1269_5b834721_has_feature_60c411b2",
+      "subject_entity": "Separate",
+      "outcome_entity": "Automated (qualifier value)",
+      "relation_type": "has_feature",
+      "direction": "positive",
+      "predicate_text": "Discrete 'atomic' data fields in electronic synoptic reporting enable automatic search, extraction, and electronic transmission of data",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_38b47afa"
+      ],
+      "mean_grounding_score": 0.9992958307266235,
+      "finding_count": 1,
+      "final_score": 0.7794,
+      "support_count": 0,
+      "contradict_count": 0,
+      "scope_qualify_count": 0,
+      "is_contradicted": false,
+      "contradicted_by": [],
+      "score_mode": "relations_absent"
+    },
+    {
+      "final_id": "FR_CR_4984d2e5_negative",
+      "canonical_id": "CR_4984d2e5_negative",
+      "group_id": "GRP_c227e59d_39e8ccbb_8d59829c_has_feature_60c411b2",
+      "subject_entity": "web-based synoptic reporting tool",
+      "outcome_entity": "Usage",
+      "relation_type": "has_feature",
+      "direction": "negative",
+      "predicate_text": "Web-based synoptic reporting tools for cancer surgery face implementation and usage challenges",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_435de292"
+      ],
+      "mean_grounding_score": 0.9992064833641052,
+      "finding_count": 1,
+      "final_score": 0.7794,
+      "support_count": 0,
+      "contradict_count": 0,
+      "scope_qualify_count": 0,
+      "is_contradicted": false,
+      "contradicted_by": [],
+      "score_mode": "relations_absent"
+    },
+    {
+      "final_id": "FR_CR_714058a6_positive",
+      "canonical_id": "CR_714058a6_positive",
+      "group_id": "GRP_c227e59d_6725e7bb_c88a0b90_treatment_response_60c411b2",
+      "subject_entity": "System",
+      "outcome_entity": "Success",
+      "relation_type": "treatment_response",
+      "direction": "positive",
+      "predicate_text": "Electronic synoptic histopathology reporting successfully implemented at regional level in Ontario, Canada",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_bf7bf410"
+      ],
+      "mean_grounding_score": 0.9991440773010254,
+      "finding_count": 1,
+      "final_score": 0.7793,
+      "support_count": 0,
+      "contradict_count": 0,
+      "scope_qualify_count": 0,
+      "is_contradicted": false,
+      "contradicted_by": [],
+      "score_mode": "relations_absent"
+    },
+    {
+      "final_id": "FR_CR_6d578e76_positive",
+      "canonical_id": "CR_6d578e76_positive",
+      "group_id": "GRP_c227e59d_a284c4f1_5b834721_has_feature_60c411b2",
+      "subject_entity": "Electronic",
+      "outcome_entity": "Automated (qualifier value)",
+      "relation_type": "has_feature",
+      "direction": "positive",
+      "predicate_text": "Electronic synoptic histopathology reporting tools use discrete data fields, drop-down menus, and automated SNOMED encoding via electronic health records",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_cc56eb72"
+      ],
+      "mean_grounding_score": 0.9990284442901611,
+      "finding_count": 1,
+      "final_score": 0.7792,
+      "support_count": 0,
+      "contradict_count": 0,
+      "scope_qualify_count": 0,
+      "is_contradicted": false,
+      "contradicted_by": [],
+      "score_mode": "relations_absent"
+    },
+    {
+      "final_id": "FR_CR_8aecf993_positive",
+      "canonical_id": "CR_8aecf993_positive",
+      "group_id": "GRP_c227e59d_c3e13e00_1b2c08a8_comparative_60c411b2",
+      "subject_entity": "synoptic/checklist reporting",
+      "outcome_entity": "Quality",
+      "relation_type": "comparative",
+      "direction": "positive",
+      "predicate_text": "Synoptic/checklist reporting superior to traditional narrative (free text) reporting for cancer resection specimens",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_fa65a0d5"
+      ],
+      "mean_grounding_score": 0.9985645413398743,
+      "finding_count": 1,
+      "final_score": 0.7789,
+      "support_count": 0,
+      "contradict_count": 0,
+      "scope_qualify_count": 0,
+      "is_contradicted": false,
+      "contradicted_by": [],
+      "score_mode": "relations_absent"
+    },
+    {
+      "final_id": "FR_CR_aaa22859_negative",
+      "canonical_id": "CR_aaa22859_negative",
+      "group_id": "GRP_c227e59d_7973d920_5aabb1f5_has_feature_60c411b2",
+      "subject_entity": "electronic histopathology reporting",
+      "outcome_entity": "Has difficulty doing (qualifier value)",
+      "relation_type": "has_feature",
+      "direction": "negative",
+      "predicate_text": "Implementation and use of electronic histopathology reporting is a difficult organisational task",
+      "is_conflicted": false,
+      "study_coverage": "single_study",
+      "category": "treatment",
+      "supporting_pmcids": [
+        "PMC4035753_pthy-46-165"
+      ],
+      "member_normal_ids": [
+        "NF_PMC4035753_pthy-46-165_f6d9db3f"
+      ],
+      "mean_grounding_score": 0.9980491399765015,
+      "finding_count": 1,
+      "final_score": 0.7784,
+      "support_count": 0,
+      "contradict_count": 0,
+      "scope_qualify_count": 0,
+      "is_contradicted": false,
+      "contradicted_by": [],
+      "score_mode": "relations_absent"
+    }
+  ],
+  "audit_trail": {
+    "map_chunks": [
+      {
+        "chunk_id": "C1",
+        "findings": [
+          {
+            "category": "treatment",
+            "claim": "Synoptic/checklist reporting superior to traditional narrative (free text) reporting for cancer resection specimens",
+            "evidence": [
+              "S2|PMC4035753_pthy-46-165|5944"
+            ],
+            "confidence": "high",
+            "verbatim_support": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+            "subject_entity": "synoptic/checklist reporting",
+            "outcome_entity": "reporting quality vs narrative reporting",
+            "relation_type": "comparative",
+            "direction": "positive",
+            "scope": {
+              "disease_subtype": "colorectal cancer",
+              "cohort_n": null,
+              "assay_method": null,
+              "biomarker_cutoff": null,
+              "tissue_site": null,
+              "treatment_context": null,
+              "endpoint": "reporting quality",
+              "study_design": "multi-institutional quality study",
+              "scope_parsed": true
+            },
+            "grounding_score": 0.9985645413398743
+          },
+          {
+            "category": "treatment",
+            "claim": "Electronic synoptic histopathology reporting tools use discrete data fields, drop-down menus, and automated SNOMED encoding via electronic health records",
+            "evidence": [
+              "S3|PMC4035753_pthy-46-165|5944"
+            ],
+            "confidence": "high",
+            "verbatim_support": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+            "subject_entity": "electronic synoptic histopathology reporting tools",
+            "outcome_entity": "discrete data fields, drop-down menus, automated SNOMED encoding",
+            "relation_type": "has_feature",
+            "direction": "positive",
+            "scope": {
+              "disease_subtype": null,
+              "cohort_n": null,
+              "assay_method": null,
+              "biomarker_cutoff": null,
+              "tissue_site": null,
+              "treatment_context": null,
+              "endpoint": null,
+              "study_design": null,
+              "scope_parsed": false
+            },
+            "grounding_score": 0.9990284442901611
+          },
+          {
+            "category": "treatment",
+            "claim": "Discrete 'atomic' data fields in electronic synoptic reporting enable automatic search, extraction, and electronic transmission of data",
+            "evidence": [
+              "S4|PMC4035753_pthy-46-165|5944"
+            ],
+            "confidence": "high",
+            "verbatim_support": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+            "subject_entity": "discrete data fields (atomic data)",
+            "outcome_entity": "automatic data search, extraction, and electronic transmission",
+            "relation_type": "has_feature",
+            "direction": "positive",
+            "scope": {
+              "disease_subtype": null,
+              "cohort_n": null,
+              "assay_method": null,
+              "biomarker_cutoff": null,
+              "tissue_site": null,
+              "treatment_context": null,
+              "endpoint": null,
+              "study_design": null,
+              "scope_parsed": false
+            },
+            "grounding_score": 0.9992958307266235
+          },
+          {
+            "category": "treatment",
+            "claim": "Electronic synoptic histopathology reporting successfully implemented at regional level in Ontario, Canada",
+            "evidence": [
+              "S5|PMC4035753_pthy-46-165|5944"
+            ],
+            "confidence": "high",
+            "verbatim_support": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+            "subject_entity": "electronic synoptic histopathology reporting system",
+            "outcome_entity": "regional implementation success",
+            "relation_type": "treatment_response",
+            "direction": "positive",
+            "scope": {
+              "disease_subtype": null,
+              "cohort_n": null,
+              "assay_method": null,
+              "biomarker_cutoff": null,
+              "tissue_site": null,
+              "treatment_context": null,
+              "endpoint": "regional implementation",
+              "study_design": null,
+              "scope_parsed": true
+            },
+            "grounding_score": 0.9991440773010254
+          },
+          {
+            "category": "treatment",
+            "claim": "Implementation and use of electronic histopathology reporting is a difficult organisational task",
+            "evidence": [
+              "S5|PMC4035753_pthy-46-165|5944"
+            ],
+            "confidence": "high",
+            "verbatim_support": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+            "subject_entity": "electronic histopathology reporting",
+            "outcome_entity": "organisational implementation difficulty",
+            "relation_type": "has_feature",
+            "direction": "negative",
+            "scope": {
+              "disease_subtype": null,
+              "cohort_n": null,
+              "assay_method": null,
+              "biomarker_cutoff": null,
+              "tissue_site": null,
+              "treatment_context": null,
+              "endpoint": null,
+              "study_design": null,
+              "scope_parsed": false
+            },
+            "grounding_score": 0.9980491399765015
+          },
+          {
+            "category": "treatment",
+            "claim": "Web-based synoptic reporting tools for cancer surgery face implementation and usage challenges",
+            "evidence": [
+              "S6|PMC4035753_pthy-46-165|5944"
+            ],
+            "confidence": "high",
+            "verbatim_support": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+            "subject_entity": "web-based synoptic reporting tool",
+            "outcome_entity": "implementation and usage challenges",
+            "relation_type": "has_feature",
+            "direction": "negative",
+            "scope": {
+              "disease_subtype": null,
+              "cohort_n": null,
+              "assay_method": null,
+              "biomarker_cutoff": null,
+              "tissue_site": null,
+              "treatment_context": "cancer surgery",
+              "endpoint": null,
+              "study_design": null,
+              "scope_parsed": true
+            },
+            "grounding_score": 0.9992064833641052
+          },
+          {
+            "category": "treatment",
+            "claim": "Proactive management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting",
+            "evidence": [
+              "S8|PMC4035753_pthy-46-165|5944"
+            ],
+            "confidence": "medium",
+            "verbatim_support": "The surgical pathology report on cancer resection specimens is fundamental to providing clinicians with the information needed for adequate patient oncology treatment. Since the multi-institutional quality study on pathology reporting of colorectal cancer published by Zarbo in 1992, many other studies have shown that the use of checklists or synoptic reporting is superior to traditional narrative (free text) reporting. Using electronic health records, synoptic histopathology reporting tools can be designed to be very sophisticated with discrete data fields, drop down menus, and automated SNOMED encoding. The use of discrete data fields ('atomic data') means that it is possible to automatically search, extract, and transmit data electronically. Despite the apparent benefits of electronic synoptic histopathology reporting, and the successful regional implementation of such a reporting system in Ontario, Canada, others have reported that the implementation and use of electronic histopathology reporting is no easy organisational task. Similar challenges have also been reported regarding the implementation and use of a web-based synoptic reporting tool for cancer surgery. From a management and organisational perspective, the list of possible causes for project failure with respect to information technology development, implementation and use is long. In our opinion, a pro-active understanding and management of key organisational issues is a requirement for successful long-term synoptic histopathology cancer reporting.",
+            "subject_entity": "organisational issue management",
+            "outcome_entity": "successful long-term synoptic histopathology cancer reporting",
+            "relation_type": "treatment_response",
+            "direction": "positive",
+            "scope": {
+              "disease_subtype": null,
+              "cohort_n": null,
+              "assay_method": null,
+              "biomarker_cutoff": null,
+              "tissue_site": null,
+              "treatment_context": null,
+              "endpoint": "long-term synoptic reporting success",
+              "study_design": null,
+              "scope_parsed": true
+            },
+            "grounding_score": 0.9997435212135315
+          }
+        ],
+        "summary_text": "This chunk (PMC4035753) introduces the context for electronic synoptic histopathology reporting in oncology. Synoptic/checklist-based reporting has been shown by multiple studies to be superior to traditional narrative reporting for cancer resection specimens [S2]. Electronic synoptic tools leverage discrete 'atomic' data fields, drop-down menus, and automated SNOMED encoding [S3], which enable automatic data search, extraction, and electronic transmission [S4]. While regional implementation in Ontario, Canada has demonstrated success [S5], multiple reports highlight that implementing and maintaining electronic histopathology reporting and web-based synoptic tools for cancer surgery is a significant organisational challenge [S5, S6]. The authors argue that proactive management of organisational issues is essential for sustained success [S8].",
+        "audit_metadata": {
+          "sentences_analyzed": 8,
+          "sentences_cited": [
+            "S2|PMC4035753_pthy-46-165|5944",
+            "S3|PMC4035753_pthy-46-165|5944",
+            "S4|PMC4035753_pthy-46-165|5944",
+            "S5|PMC4035753_pthy-46-165|5944",
+            "S6|PMC4035753_pthy-46-165|5944",
+            "S8|PMC4035753_pthy-46-165|5944"
+          ],
+          "pmcids_referenced": [
+            "PMC4035753_pthy-46-165"
+          ],
+          "uncited_sentences": [
+            "S1|PMC4035753_pthy-46-165|5944",
+            "S7|PMC4035753_pthy-46-165|5944"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C2",
+        "findings": [],
+        "summary_text": "This chunk discusses organisational and stakeholder considerations for transitioning from narrative to synoptic histopathology reporting. All sentences are either administrative/organisational narrative, author/institutional boilerplate, or generic implementation commentary. No generalizable atomic medical facts (morphology, IHC, molecular genetics, staging, treatment, prognosis, or demographic findings) are present. The only clinically adjacent observation — that implementation of a web-based synoptic reporting tool was affected by multilevel organisational factors (S9–S10) — is a healthcare-informatics/implementation science statement, not a histopathological medical fact extractable under the defined categories.",
+        "audit_metadata": {
+          "sentences_analyzed": 10,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC4035753_pthy-46-165"
+          ],
+          "uncited_sentences": [
+            "S1|PMC4035753_pthy-46-165|5945",
+            "S2|PMC4035753_pthy-46-165|5945",
+            "S3|PMC4035753_pthy-46-165|5945",
+            "S4|PMC4035753_pthy-46-165|5945",
+            "S5|PMC4035753_pthy-46-165|5945",
+            "S6|PMC4035753_pthy-46-165|5945",
+            "S7|PMC4035753_pthy-46-165|5945",
+            "S8|PMC4035753_pthy-46-165|5945",
+            "S9|PMC4035753_pthy-46-165|5945",
+            "S10|PMC4035753_pthy-46-165|5945"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C3",
+        "findings": [],
+        "summary_text": "This chunk (PMC4035753_pthy-46-165, sentences S1–S4) describes organisational and user-level factors influencing adoption of synoptic pathology reporting in US pathology departments. Key observations include: asymmetric cost-benefit distribution between laboratories and cancer registries as a barrier to implementation; and wide variability in uptake even when the tool was cost-free, ranging from >90% user rates to zero implementation. These are implementation-science/health-systems observations rather than generalizable histopathological or clinical medical facts, and no extractable atomic clinical findings (morphology, IHC, molecular genetics, staging, treatment, prognosis, or demographic) are present.",
+        "audit_metadata": {
+          "sentences_analyzed": 4,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC4035753_pthy-46-165"
+          ],
+          "uncited_sentences": [
+            "S1|PMC4035753_pthy-46-165|5945",
+            "S2|PMC4035753_pthy-46-165|5945",
+            "S3|PMC4035753_pthy-46-165|5945",
+            "S4|PMC4035753_pthy-46-165|5945"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C4",
+        "findings": [],
+        "summary_text": "This chunk (PMC4035753_pthy-46-165, sentences S1–S3) contains no extractable medical or histopathological findings. The sentences discuss general IT adoption behaviour, healthcare professional compliance with guidelines, and a 1975 behavioural model by Fishbein and Ajzen. None of these sentences contain generalizable medical facts related to morphology, IHC, molecular genetics, staging, treatment, prognosis, or demographic data applicable to a disease entity or biomarker.",
+        "audit_metadata": {
+          "sentences_analyzed": 3,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC4035753_pthy-46-165"
+          ],
+          "uncited_sentences": [
+            "S1|PMC4035753_pthy-46-165|5946",
+            "S2|PMC4035753_pthy-46-165|5946",
+            "S3|PMC4035753_pthy-46-165|5946"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C5",
+        "findings": [],
+        "summary_text": "This chunk contains only journal metadata, licensing information (Creative Commons Attribution-NonCommercial-NoDerivatives 3.0), and a DOI identifier for the article (10.1097/PAT.0000000000000065). No extractable medical findings are present.",
+        "audit_metadata": {
+          "sentences_analyzed": 4,
+          "sentences_cited": [],
+          "pmcids_referenced": [],
+          "uncited_sentences": [
+            "S1|PMC4035753_pthy-46-165|5947",
+            "S2|PMC4035753_pthy-46-165|5947",
+            "S3|PMC4035753_pthy-46-165|5947",
+            "S4|PMC4035753_pthy-46-165|5947"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C6",
+        "findings": [],
+        "summary_text": "This chunk discusses theoretical frameworks (Technology Acceptance Model and related behavioural models) used to explain individual behaviour regarding IT systems and electronic synoptic reporting in a pathology department. No generalizable medical, histopathological, or clinical facts are present — the content is entirely methodological/theoretical background with no extractable atomic medical findings per the FilterRules (no morphology, IHC, molecular genetics, staging, treatment, prognosis, or demographic data).",
+        "audit_metadata": {
+          "sentences_analyzed": 4,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC4035753_pthy-46-165"
+          ],
+          "uncited_sentences": [
+            "S1|PMC4035753_pthy-46-165|5948",
+            "S2|PMC4035753_pthy-46-165|5948",
+            "S3|PMC4035753_pthy-46-165|5948",
+            "S4|PMC4035753_pthy-46-165|5948"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C7",
+        "findings": [],
+        "summary_text": "This chunk (PMC4035753, C1) contains three sentences discussing implementation factors for synoptic reporting tools in pathology practice. The content is entirely methodological/operational commentary about perceived output quality, ease of use, and departmental social norms influencing adoption of synoptic reporting. No generalizable medical facts (morphological, IHC, molecular, staging, treatment, prognosis, or demographic findings) are present. All sentences were reviewed and none meet extraction criteria.",
+        "audit_metadata": {
+          "sentences_analyzed": 3,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC4035753_pthy-46-165"
+          ],
+          "uncited_sentences": [
+            "S1|PMC4035753_pthy-46-165|5949",
+            "S2|PMC4035753_pthy-46-165|5949",
+            "S3|PMC4035753_pthy-46-165|5949"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C8",
+        "findings": [],
+        "summary_text": "This chunk discusses implementation strategies for synoptic reporting in pathology, specifically addressing compliance and adherence. The text covers: (1) the role of compulsory use and monitoring systems in promoting synoptic reporting adoption; (2) the insufficiency of individual performance feedback alone for achieving high adherence; and (3) the recommendation for multifaceted, multi-level intervention strategies. None of these sentences contain generalizable medical/histopathological facts about a disease entity, biomarker, population, or clinical outcome — they are methodological/implementation commentary. No extractable findings meet the FilterRules criteria (no morphology, IHC, molecular genetics, staging, treatment response, prognosis, or demographic claims applicable to a disease or biomarker entity).",
+        "audit_metadata": {
+          "sentences_analyzed": 3,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC4035753_pthy-46-165"
+          ],
+          "uncited_sentences": [
+            "S1|PMC4035753_pthy-46-165|5950",
+            "S2|PMC4035753_pthy-46-165|5950",
+            "S3|PMC4035753_pthy-46-165|5950"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C9",
+        "findings": [],
+        "summary_text": "This chunk (PMC4035753_pthy-46-165, sentences S1–S8) consists entirely of editorial/opinion commentary and organisational implementation discussion regarding electronic synoptic reporting in pathology laboratories. It contains no generalizable medical facts pertaining to morphology, IHC, molecular genetics, staging, treatment, prognosis, or demographics of a disease entity or biomarker. All sentences address policy, organisational change, and health-systems implementation — content explicitly excluded by the FilterRules (boilerplate, editorial opinion, non-clinical generalizable facts). No extractable findings were identified.",
+        "audit_metadata": {
+          "sentences_analyzed": 8,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC4035753_pthy-46-165"
+          ],
+          "uncited_sentences": [
+            "S1|PMC4035753_pthy-46-165|5951",
+            "S2|PMC4035753_pthy-46-165|5951",
+            "S3|PMC4035753_pthy-46-165|5951",
+            "S4|PMC4035753_pthy-46-165|5951",
+            "S5|PMC4035753_pthy-46-165|5951",
+            "S6|PMC4035753_pthy-46-165|5951",
+            "S7|PMC4035753_pthy-46-165|5951",
+            "S8|PMC4035753_pthy-46-165|5951"
+          ]
+        }
+      }
+    ]
+  },
+  "map_run_metadata": {
+    "schema_version": "map_v10_nli_and_voter_config_in_key",
+    "prompt_version": "map_prompt_v5_expression_absent_vs_negative",
+    "stage_name": "map",
+    "cascade_profile": "real_5",
+    "cascade_signature": "57031d089d73d63b",
+    "l1_voters": [
+      {
+        "provider": "gemini",
+        "model": "gemini-2.5-flash-lite"
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-4.1-nano"
+      }
+    ],
+    "l2_voters": [
+      {
+        "provider": "gemini",
+        "model": "gemini-2.5-flash"
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-4.1-mini"
+      }
+    ],
+    "l3_voter": {
+      "provider": "claude",
+      "model": "claude-sonnet-4-6"
+    }
+  },
+  "rejection_summary": {
+    "pmcid": "PMC4035753_pthy-46-165",
+    "grounding_threshold": 0.5,
+    "map_findings_total": 7,
+    "map_grounding_rejected": 0,
+    "normal_findings_total": 7,
+    "non_groupable_total": 0,
+    "non_groupable_no_subject": 0,
+    "non_groupable_no_outcome": 0,
+    "non_groupable_unclear_relation": 0,
+    "grounding_rejection_rate": 0.0,
+    "non_groupable_rate": 0.0,
+    "grounding_rejected_by_category": {},
+    "rejected": []
+  },
+  "pipeline_config_hash": "cfb56a0289b557be"
+}

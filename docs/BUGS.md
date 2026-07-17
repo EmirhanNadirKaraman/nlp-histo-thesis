@@ -169,6 +169,8 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 
 | B-124 | Fixed (2026-07-17) | Medium | Reproducibility, `E03/E10/E11/E12` experiments × `eval/silver/analysis/map_context.py` (`_load_map_context`) | **Four offline-replay experiments demanded an API key they never used, so they died in a keyless clean clone — the exact condition REPRODUCE.md Track A promises works ("no API key").** E03, E10, E11 and E12 call `_load_map_context("gemini", …)` without `strict_cache_only=True`, so the helper constructs a live `GeminiEmbedder(api_key)` and aborts with `GOOGLE_API_KEY not set` — even though every embedding is served from the frozen gemini cache (verified **0 cache misses** in each). Pure constructor theatre, identical in shape to [B-109](#bug-109--the-replay-needed-a-credential-it-never-used) and [B-112](#bug-112--the-replay-embedding-cache-preflight): a provider built and never called. It escaped my own Step-8 verification because I ran the experiments on the author's machine with `.env` keys present; the failure only appears when the keys are absent. Found by re-running E12 with every provider key blanked — the clean-clone condition. **E14 was already immune** (it passes `strict_cache_only=True`, which builds a keyless `NoLiveEmbedding` that raises on a miss instead of billing); E04/E13 construct no embedder. **Fixed** by adding `strict_cache_only=True` at all four call sites — the mechanism already existed, mirroring E14. The numbers are unchanged (strict-cache-only affects only cache *misses*, of which there are none): all four re-verified keyless with 0 misses and identical values (E03 retention 0.838/best 0.7160; E10 cascade 0.7160 vs Sonnet 0.7129; E11 cascade 0.7160; E12 CSV). The fix also **unblocked E10 and E11**, which were free but keyless-broken — both are now added to REPRODUCE.md Step 8. Suite 1697 green, ruff clean. | [Bug 124](#bug-124--offline-experiments-demanded-a-key-they-never-used) |
 
+| B-125 | Fixed (2026-07-17) | Low | Reproducibility, `docs/REPRODUCE.md` (Step 8, Step 11) × shipped inputs | **E02c and E09 were reproducible for free but their inputs were not shipped, so the runbook listed them as "cannot reproduce" when in fact ~0.7 MB of data was all that was missing.** Following [B-123](#bug-123--e14s-heldout15-inputs-were-missing-from-the-reproduction-bundle) (which shipped E14's heldout15 primer), the same audit unlocked two more: **E09** (cost–quality frontier) is a pure keyless CSV re-analysis (`0` `_load_map_context`), but reads the frozen E06c/E07/E08b calibration-sweep CSVs a reader never re-runs; **E02c** (held-out final-rule provenance) is a keyless DB walk that reads the held-out per-paper summary JSONs. Both were verified free — E09 keyless → quality `0.7160@23.66` / knee `0.7067` / economy `0.5433`; E02c keyless → **100%** carry-rate across all 15 held-out papers — matching the registry. **Fixed** by committing the missing inputs to git (same choice as B-123 — no bundle re-upload): the 15 held-out summary JSONs (7.2 MB → ~0.6 MB packed) and the three frozen sweep CSVs (~52 KB). The gitignore re-includes *only* those: not the bundle's own `out/summaries/summaries` (still shipped in the archive), not the held-out `batch_handles`/`corpus_relations` intermediates, and not any other `eval/reports/` artifact. REPRODUCE.md Step 8 now lists **eight** free bundle experiments (was seven) and Step 11 **three** DB provenance experiments (was two). E01 remains separate — it needs the 27 rubric PDFs, a licensing question, tracked in the Decisions log. | [Bug 125](#bug-125--e02c-and-e09-were-free-but-their-inputs-were-unshipped) |
+
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
 
 ---
@@ -9343,3 +9345,57 @@ All four re-run with every provider key blanked (`OPENAI_API_KEY= GOOGLE_API_KEY
 E04, E13, E14 also confirmed keyless (0.7128 for E14). Suite 1697 green, ruff clean. The fix
 unblocked E10 and E11 — free but previously keyless-broken — which are now added to
 REPRODUCE.md Step 8.
+
+---
+
+## Bug 125 — E02c and E09 were free but their inputs were unshipped
+
+**Status: Fixed (2026-07-17) / Severity: Low / Surface:** `docs/REPRODUCE.md` Step 8 / Step 11
+
+### Symptom
+
+REPRODUCE.md listed E02c and E09 among the experiments that "cannot reproduce from the free
+track". True at the time — but only because a total of ~0.7 MB of inputs was missing, not
+because anything about them was paid or PDF-bound.
+
+### Evidence
+
+* **E09** (`cost_quality_frontier`) constructs no embedder (`0` occurrences of
+  `_load_map_context`) — a pure pandas re-analysis. It reads the frozen calibration-sweep
+  CSVs from E06c / E07 / E08b. Those sweeps are the heavy calibration runs a reader does not
+  re-execute (their result is already `configs/run.yaml`), and their CSVs were gitignored.
+* **E02c** (`rule_provenance_heldout`) is a keyless read-only DB walk that reads the held-out
+  per-paper summary JSONs at `out/summaries/heldout15/summaries/*.json` — also gitignored,
+  and not in the bundle (which carries only `out/summaries/summaries`).
+
+Both verified free before shipping: run with every provider key blanked,
+
+```
+E09  → quality 0.7160@23.66, knee 0.7067@21.80, economy 0.5433@3.38   (exit 0)
+E02c → heldout15: 15 papers, all 100.00% carry-rate                   (exit 0)
+```
+
+matching the EXPERIMENTS.md registry.
+
+### Fix
+
+Commit the inputs to git — the B-123 choice, avoiding a 1.2 GB bundle re-upload for < 1 MB:
+
+* 15 held-out summary JSONs (7.2 MB on disk, ~0.6 MB git-packed).
+* 3 frozen sweep CSVs — `E06c_voter_subset_refine`, `E07_map_theta`, `E08b_map_theta_shipped`
+  (~52 KB).
+
+The gitignore negations are surgical: **only** those files. The bundle's own
+`out/summaries/summaries` stays ignored (it ships in the archive); the held-out
+`batch_handles` and `corpus_relations` intermediates stay ignored; every other
+`eval/reports/` artifact stays ignored.
+
+REPRODUCE.md Step 8 now lists **eight** free bundle-based experiments (was seven), and Step
+11 lists **three** DB provenance experiments (was two).
+
+### Verification
+
+With the inputs tracked, both run keyless from what a clean clone carries. E09 reads the
+committed frozen CSVs (no re-run of the calibration sweeps); E02c reads the committed
+summaries against the restored corpus DB. E01 is deliberately *not* covered here — it needs
+the 27 rubric PDFs, a licensing decision recorded in the Decisions log.

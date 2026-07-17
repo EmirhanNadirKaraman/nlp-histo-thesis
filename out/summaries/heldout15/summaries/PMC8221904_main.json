@@ -1,0 +1,201 @@
+{
+  "status": "success",
+  "run_id": "PMC8221904_main_20260622T214447",
+  "pmcid": "PMC8221904_main",
+  "canonical_rules": [],
+  "relations": [],
+  "relate_raw_pairs": [],
+  "final_rules": [],
+  "audit_trail": {
+    "map_chunks": [
+      {
+        "chunk_id": "C1",
+        "findings": [],
+        "summary_text": "This chunk contains only publisher boilerplate (Elsevier COVID-19 open-access permission statement). No generalizable medical, histopathological, or clinical facts are present. No findings were extracted per filter rules excluding journal metadata and generic boilerplate.",
+        "audit_metadata": {
+          "sentences_analyzed": 2,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC8221904_main"
+          ],
+          "uncited_sentences": [
+            "S1|PMC8221904_main|4315",
+            "S2|PMC8221904_main|4315"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C2",
+        "findings": [],
+        "summary_text": "This chunk (PMC8221904_main, chunk C1) describes administrative and operational context for a forensic pathology institution (VIFM) managing COVID-19-related deaths, including cases diagnosed post-mortem, cases with known COVID-19 at death, and coincidental SARS-CoV-2 infections. It notes workload impacts such as changes in admission procedures, viral testing, and contact tracing contributions. No generalizable medical facts, biomarker data, morphological findings, or population-level clinical observations are present — the text consists entirely of contextual framing and institutional narrative. No extractable findings were identified per the filter rules.",
+        "audit_metadata": {
+          "sentences_analyzed": 3,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC8221904_main"
+          ],
+          "uncited_sentences": [
+            "S1|PMC8221904_main|4316",
+            "S2|PMC8221904_main|4316",
+            "S3|PMC8221904_main|4316"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C3",
+        "findings": [],
+        "summary_text": "This chunk describes a public health tragedy in a Pacific nation where two 1-year-old infants died shortly after receiving the MMR vaccine on July 6th, 2018. The subsequent investigation and downstream events culminated in an epidemic that killed 83 people, predominantly children. All three sentences are narrative/contextual framing of a specific public health event and do not contain generalizable medical facts applicable to a disease entity or population biomarker — they describe a specific incident timeline. No extractable generalizable medical findings were identified per filter rules (case/event narratives, not population-level or disease-entity-level facts).",
+        "audit_metadata": {
+          "sentences_analyzed": 3,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC8221904_main"
+          ],
+          "uncited_sentences": [
+            "S1|PMC8221904_main|4318",
+            "S2|PMC8221904_main|4318",
+            "S3|PMC8221904_main|4318"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C4",
+        "findings": [],
+        "summary_text": "This chunk contains no extractable generalizable medical facts relevant to histopathology, IHC, molecular genetics, staging, treatment, prognosis, or clinical demographics of a disease entity. The sentences describe general internet usage statistics (Pornhub website ranking, mobile device usage rates) and a population-level statistic about age of first pornography exposure in Australian boys, framed as contextual background for a study on pornography and sexual assault. These are neither histopathological findings nor generalizable clinical facts about a disease entity — they constitute introductory/contextual framing and are excluded per FilterRules (generic boilerplate and non-medical population statistics). No findings were extracted.",
+        "audit_metadata": {
+          "sentences_analyzed": 2,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC8221904_main"
+          ],
+          "uncited_sentences": [
+            "S1|PMC8221904_main|4320",
+            "S2|PMC8221904_main|4320"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C5",
+        "findings": [],
+        "summary_text": "This chunk (PMC8221904_main, C1) is an abstract/introduction describing the operational and contextual background of a clinical forensic medicine paper focused on COVID-19 adaptations for sexual assault forensic examinations in Melbourne. Sentences S1–S4 contain no extractable generalizable medical facts (e.g., no morphology, IHC, molecular genetics, staging, treatment, prognosis, or demographic findings). All content is framing/boilerplate narrative about the pandemic context and paper scope, which is excluded per filter rules.",
+        "audit_metadata": {
+          "sentences_analyzed": 4,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC8221904_main"
+          ],
+          "uncited_sentences": [
+            "S1|PMC8221904_main|4322",
+            "S2|PMC8221904_main|4322",
+            "S3|PMC8221904_main|4322",
+            "S4|PMC8221904_main|4322"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C6",
+        "findings": [],
+        "summary_text": "This chunk is an abstract/introduction for a study investigating the optimal timing and performer of slide preparation (forensic examiner at time of examination vs. forensic laboratory staff at a later date) for detecting semen DNA in sexual assault cases across Australian and international jurisdictions. No generalizable medical, histopathological, or clinical facts are extractable from this chunk — it contains only research framing, objectives, and boilerplate study purpose statements. No atomic findings meeting extraction criteria were identified.",
+        "audit_metadata": {
+          "sentences_analyzed": 3,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC8221904_main"
+          ],
+          "uncited_sentences": [
+            "S1|PMC8221904_main|4325",
+            "S2|PMC8221904_main|4325",
+            "S3|PMC8221904_main|4325"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C7",
+        "findings": [],
+        "summary_text": "This chunk introduces a study on patient perception of forensic imaging in the context of sexual assault documentation. The content is methodological/contextual framing (study rationale and scope) rather than generalizable medical or histopathological facts. No atomic clinical findings meeting extraction criteria were identified: the sentences describe a study's background and objective, not generalizable morphological, IHC, molecular, demographic, staging, treatment, or prognostic findings applicable to a disease entity or biomarker population.",
+        "audit_metadata": {
+          "sentences_analyzed": 2,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC8221904_main"
+          ],
+          "uncited_sentences": [
+            "S1|PMC8221904_main|4326",
+            "S2|PMC8221904_main|4326"
+          ]
+        }
+      },
+      {
+        "chunk_id": "C8",
+        "findings": [],
+        "summary_text": "This chunk is an abstract/introduction to a forensic medicine audit study examining technology-facilitated contact sexual offences in adults and children in Australia. It describes the study context and rationale (S1–S6), but contains no generalizable medical facts meeting extraction criteria — no morphological, IHC, molecular, staging, treatment, prognosis, or population-level demographic findings are present. All content is either generic boilerplate, study design narrative, or calls for future research, none of which yield atomic extractable medical facts under the FilterRules.",
+        "audit_metadata": {
+          "sentences_analyzed": 6,
+          "sentences_cited": [],
+          "pmcids_referenced": [
+            "PMC8221904_main"
+          ],
+          "uncited_sentences": [
+            "S1|PMC8221904_main|4328",
+            "S2|PMC8221904_main|4328",
+            "S3|PMC8221904_main|4328",
+            "S4|PMC8221904_main|4328",
+            "S5|PMC8221904_main|4328",
+            "S6|PMC8221904_main|4328"
+          ]
+        }
+      }
+    ]
+  },
+  "map_run_metadata": {
+    "schema_version": "map_v10_nli_and_voter_config_in_key",
+    "prompt_version": "map_prompt_v5_expression_absent_vs_negative",
+    "stage_name": "map",
+    "cascade_profile": "real_5",
+    "cascade_signature": "57031d089d73d63b",
+    "l1_voters": [
+      {
+        "provider": "gemini",
+        "model": "gemini-2.5-flash-lite"
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-4.1-nano"
+      }
+    ],
+    "l2_voters": [
+      {
+        "provider": "gemini",
+        "model": "gemini-2.5-flash"
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-4.1-mini"
+      }
+    ],
+    "l3_voter": {
+      "provider": "claude",
+      "model": "claude-sonnet-4-6"
+    }
+  },
+  "rejection_summary": {
+    "pmcid": "PMC8221904_main",
+    "grounding_threshold": 0.5,
+    "map_findings_total": 0,
+    "map_grounding_rejected": 0,
+    "normal_findings_total": 0,
+    "non_groupable_total": 0,
+    "non_groupable_no_subject": 0,
+    "non_groupable_no_outcome": 0,
+    "non_groupable_unclear_relation": 0,
+    "grounding_rejection_rate": 0.0,
+    "non_groupable_rate": 0.0,
+    "grounding_rejected_by_category": {},
+    "rejected": []
+  },
+  "pipeline_config_hash": "cfb56a0289b557be"
+}

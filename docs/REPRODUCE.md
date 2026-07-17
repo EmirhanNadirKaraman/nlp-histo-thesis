@@ -290,7 +290,7 @@ that matter.)
 
 ## Step 8 (optional) — The evaluation experiments
 
-The thesis has many numbered experiments (E01–E15). **Seven of them are free and reproduce
+The thesis has many numbered experiments (E01–E15). **Eight of them are free and reproduce
 from the caches you just unpacked** — no database, no API key, no provider ever contacted;
 every embedding is served from the frozen cache, and a cache miss raises rather than making a
 paid call. Run each **one at a time**; each loads scispaCy + the UMLS knowledge base (several
@@ -301,28 +301,29 @@ GB of RAM) and takes from seconds to ~5 minutes.
 | `python -m eval.silver.experiments.E14_heldout.heldout_eval --theta-frontier` | Held-out generalisation (the headline) | `strict_f1_optimal = 0.7128`, gap `-0.0032` | ~5 min |
 | `python -m eval.silver.experiments.E04_cardinalities.cardinalities` | Knowledge-extraction funnel | `2294 MAP → 1923 grounded (83.8%) → 1747 final` | ~30 s |
 | `python -m eval.silver.experiments.E03_grounding.grounding_sweep_related15` | Grounding-threshold sweep | retention `0.838` @0.50, best strict_f1 `0.7160` | ~5 min |
+| `python -m eval.silver.experiments.E09_cost_quality.cost_quality_frontier` | Cost–quality frontier | quality `0.7160@23.66`, knee `0.7067`, economy `0.5433` | ~10 s |
 | `python -m eval.silver.experiments.E10_baselines.single_model_baselines` | Single-model baselines vs cascade | cascade `0.7160` vs single-Sonnet `0.7129` | ~2 min |
 | `python -m eval.silver.experiments.E11_bootstrap.cascade_vs_single_bootstrap` | Cascade-vs-Sonnet paired bootstrap | cascade `0.7160`, B=10000 paper-level | ~3 min |
 | `python -m eval.silver.experiments.E12_voter_loo.voter_loo` | Leave-one-voter-out attribution | per-voter Δ table + CSV | ~1 min |
 | `python -m eval.silver.experiments.E13_nli_ablation.evaluate` | NLI relation-classification ablation | accuracy `0.9267`, macro-F1 `0.9273` | ~20 s |
 
 Each writes a timestamped CSV under `eval/reports/E##_.../`. E13 is special — its inputs are
-in the git repository, so it runs even without the bundle.
+in the git repository, so it runs even without the bundle. E09 reads the frozen calibration
+sweep CSVs (also committed), so it needs neither the bundle nor a re-run of those sweeps.
 
 **Why not every experiment is here.** The rest need inputs this free track does not ship, so
 listing them would only produce errors:
 
-* **E01** (document-extraction rubric) needs the 27 annotated rubric PDFs — not
-  redistributable, so never shipped.
-* **E02c** (held-out provenance) and **E09** (cost–quality frontier) read intermediate
-  artifacts the bundle omits (the held-out summaries; a calibration sweep CSV).
+* **E01** (document-extraction rubric) needs the 27 annotated rubric PDFs — publisher
+  content, so shipped only where licensing allows (see the note below).
 * **E05–E08** are the calibration sweeps that *selected* the frozen configuration — heavy,
   and their result already lives in `configs/run.yaml`; you do not re-run them to reproduce,
-  you inherit their output.
+  you inherit their output (E09 above reads their frozen CSVs so you get the cost–quality
+  result without re-running them).
 * **E15** calls paid LLM APIs (silver-label generation), so it is Track B territory.
 
-Two more experiments (**E02, E02b**, corpus/rule provenance) are free but read the
-*database* — they appear later, after you restore it (Step 11).
+Three more experiments (**E02, E02b, E02c**, provenance) are free but read the *database* —
+they appear later, after you restore it (Step 11).
 
 Everything above reproduces the published results without a database. The rest of Track A
 gives you the corpus to query and, optionally, its named entities and provenance metrics.
@@ -463,17 +464,20 @@ with db.session_scope() as session:            # commits on exit, rolls back on 
 where in which paper it came from. Note the document ID is composite
 (`PMC10092619_HIS-82-254`), not a bare accession — the publisher's filename is part of it.
 
-**Two provenance experiments run against this restored database** (the two the Step 8 note
-deferred). Both are read-only, free, and finish in seconds:
+**Three provenance experiments run against this restored database** (the ones the Step 8 note
+deferred). All are read-only, free, and finish in seconds:
 
 ```bash
-python -m eval.silver.experiments.E02_provenance.provenance_metric        # corpus-level
-python -m eval.silver.experiments.E02b_rule_provenance.rule_provenance_metric   # rule-level
+python -m eval.silver.experiments.E02_provenance.provenance_metric              # corpus-level
+python -m eval.silver.experiments.E02b_rule_provenance.rule_provenance_metric   # rule-level (related15)
+python -m eval.silver.experiments.E02c_rule_provenance_heldout.rule_provenance_heldout  # rule-level (held-out)
 ```
 
 E02 confirms every one of the 35,896 text elements, 4,479 figures and 1,960 tables carries a
-full provenance address (**100%**). E02b confirms all **1,729** final rules trace back to a
-source paragraph (**1729/1729, 100%**). Each writes a CSV under `eval/reports/`.
+full provenance address (**100%**). E02b confirms all **1,729** related15 final rules trace
+back to a source paragraph (**1729/1729, 100%**); E02c does the same for the **held-out** set
+(**100%** across its 15 papers), showing provenance generalises. Each writes a CSV under
+`eval/reports/`.
 
 ## Step 12 (optional) — Named-entity recognition over the corpus
 
