@@ -4,7 +4,8 @@
 produces and what success looks like. Nothing below costs money except §9, which is marked.
 
 **Fastest useful result:** §0 (get the bundle) → §2 (install) → §10 (replay) → nine tables
-identical to the thesis. About 30 minutes, no database, no API key, no cost.
+identical to the thesis. No database, no API key, no cost. Budget an hour: the 1.2 GB
+download and the ~4 GB dependency install dominate, and the replay itself is ~5 minutes.
 
 | I want to… | Do this |
 |---|---|
@@ -19,7 +20,7 @@ Follow these in order. Every command is run **from the repository root**.
 
 | § | Command | Produces | Success looks like | Time |
 |---|---|---|---|---|
-| 2 | `pip install -r requirements.txt` · `pip install -e . --no-deps` | the `nlp-histo` command | `nlp-histo --help` exits 0 | ~10 min, ~4 GB |
+| 2 | `pip install -r requirements.txt` · `pip install -e . --no-deps` | the `nlp-histo` command | `nlp-histo --help` exits 0 | ~4 GB; **time not measured** |
 | 5 | `nlp-histo db init` | 21 tables in your database | `OK: schema verified (21 tables)` | seconds |
 | 6 | `nlp-histo acquire download` → `organize` | `files/organized_pdfs/`, `files/organized_xmls/` | `N succeeded · 0 failed` | ~3 s/paper |
 | 7 | `nlp-histo ingest` | text + figures + tables in the database, `out/` | `ok=N fail=0` | ~30 s/paper |
@@ -74,7 +75,7 @@ before you start:
 Nothing fails silently — a missing artifact is a loud, itemised error. But a loud error
 is not a result, so pick your path:
 
-### Path A — reproduce the thesis tables (recommended, free, ~10 min)
+### Path A — reproduce the thesis tables (recommended, free)
 
 You need **the replay bundle (~1.5 GB)**. It is the frozen output of the paid pipeline,
 so no API key and **no database** are required — `replay chapter9` never connects to
