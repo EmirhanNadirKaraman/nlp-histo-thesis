@@ -262,15 +262,22 @@ Nothing here fails silently: a non-zero exit always names the cause.
 > run, because scispaCy resolves its cache through a live lookup. If you are offline, the
 > command stops with exit 3 rather than quietly producing different numbers.
 
-**Comparing against the published tables:** the nine CSVs should be byte-identical to the
-ones in `out/thesis_results/chapter9_offline_replay/` if you have them. For example:
+**Comparing against the published tables.** The repository ships the frozen thesis output at
+`out/thesis_results/chapter9_offline_replay/` (the CSVs are tracked in git — you already have
+them from Step 1). Your nine CSVs should be byte-identical to these. Diff all nine at once:
 
 ```bash
-diff out/replay-check/01_provenance_carry_rate.csv \
-     out/thesis_results/chapter9_offline_replay/01_provenance_carry_rate.csv
+for f in out/replay-check/*.csv; do
+  diff "$f" "out/thesis_results/chapter9_offline_replay/$(basename "$f")" \
+    && echo "OK  $(basename "$f")"
+done
 ```
 
-No output means identical.
+Every line should print `OK` with no `diff` output above it — that is the reproduction
+confirmed. (The reference directory also holds `04_theta_heatmap.csv` and
+`10_cascade_vs_sonnet_gap_ci_per_case.csv`, which your run does not produce — they are the
+two analyses noted above whose inputs are not in the shipped tree. Your nine are the ones
+that matter.)
 
 ## Step 8 (optional) — The evaluation experiments
 

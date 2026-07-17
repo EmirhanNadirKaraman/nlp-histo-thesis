@@ -251,7 +251,19 @@ files/*
 .DS_STORE
 .claude/
 /pdffigures2/
-out/
+# `out/*` not `out/`: a bare `out/` makes git refuse to descend, so the negations below
+# would never be reconsidered. Ignoring the *contents* lets the re-includes take effect.
+out/*
+# …except the frozen chapter-9 reference CSVs — the golden output that `replay chapter9`
+# is diffed against (REPRODUCE.md Step 7). Only the CSVs are reproducible byte-for-byte;
+# the JSONs/manifest carry run metadata, and the .BACKUP_ sibling is a local copy, so both
+# stay ignored. Re-include the path one level at a time (git will not descend into an
+# ignored directory otherwise), then narrow to *.csv.
+!out/thesis_results/
+out/thesis_results/*
+!out/thesis_results/chapter9_offline_replay/
+out/thesis_results/chapter9_offline_replay/*
+!out/thesis_results/chapter9_offline_replay/*.csv
 profile.prof
 umls_entities/
 umls_texts/
