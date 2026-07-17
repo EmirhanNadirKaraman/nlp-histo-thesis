@@ -48,7 +48,7 @@ partial result.
 A note on the tone below: sections cite bug IDs like `B-112` and say when a command was
 last verified. That is provenance for the maintainer — you can ignore it. If a command
 surprises you, the citation tells you where the reasoning is written down
-(`docs/readmes/other_readmes/BUGS.md`).
+(`docs/BUGS.md`).
 
 The full audit — what was executed, what was only inspected — is in the
 **appendix at the end**.
@@ -95,8 +95,9 @@ to the published tables.
 
 ### Path B — work with the corpus (adds the database)
 
-Restore the **PostgreSQL dump (~485 MB)** into your own database (§5), point `.env` at it,
-then → §8 NER, §9 knowledge extraction, or any SQL against the 977 papers.
+Restore the **corpus dump** (`nlp-histo-corpus.sql.gz`, 49 MB compressed → 485 MB restored)
+into your own database (§5), point `.env` at it, then → §8 NER, §9 knowledge extraction, or
+any SQL against the 977 papers.
 
 ### Path C — rebuild from scratch
 
@@ -304,6 +305,40 @@ an existing schema it exits 0 (`OK: schema verified (21 tables)`), dropping noth
 against a genuinely **empty** database it created all 21 tables from the ORM in ~1 s
 (`Database tables created successfully!` → `OK: schema verified (21 tables)`), with the
 table set matching `database/models.py`.
+
+### Restoring the corpus dump
+
+`db init` gives you an **empty** schema — the right thing if you intend to rebuild the
+corpus yourself (§6 → §7, days of work). To get the 977 papers directly, restore the dump
+instead; it carries the schema *and* the data, so **`db init` is not needed and should not
+be run first** — restore into a database that is genuinely empty:
+
+```bash
+createdb -U <admin-role> -O <db-user> nlp_histo
+gunzip -c nlp-histo-corpus.sql.gz | psql -d nlp_histo
+```
+
+Plain SQL, so any `psql` version reads it — deliberately not `-Fc`, which only a
+`pg_restore` of the dumping version or newer can read, and the recipient's toolchain is
+unknown (the reasoning is in `scripts/make_reproduction_bundle.py`). It prints a long
+stream of `SET`/`CREATE TABLE`/`COPY`; `NOTICE` lines are normal, `ERROR` lines are not.
+Then:
+
+```bash
+nlp-histo db check    # → OK: schema is present and valid (21 tables).
+psql -d nlp_histo -c "SELECT count(*) FROM documents;"   # → 977
+```
+
+The dump is built by `scripts/make_reproduction_bundle.py --with-db`. It carries
+`--no-owner --no-privileges`, so it restores as whoever connects and needs no matching
+`local_db_user` role; it contains no `CREATE DATABASE` (hence the `createdb` above), no
+extensions, and no credentials. It holds 22 `CREATE TABLE` — the 21 ORM tables plus
+`alembic_version`, which is why `db check` reporting 21 is correct and not a discrepancy.
+
+**Not yet verified end-to-end.** The dump's *contents* were checked (valid gzip, the 22
+tables, the data `COPY` blocks, 0 owner references, 0 credentials) but the restore itself
+has not been executed: it needs an empty database and the authoring machine has none to
+spare. If it misbehaves, that is a bug in this section — please report the exact output.
 
 ## 6. Acquire the corpus
 

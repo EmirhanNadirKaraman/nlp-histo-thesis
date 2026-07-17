@@ -27,7 +27,7 @@ whichever is faster):
 | File | Size | What it is |
 |---|---|---|
 | `nlp-histo-replay-artifacts-ec11eec.tar.gz` | 1.2 GB | Frozen outputs of the paid LLM pipeline + the embedding caches |
-| `nlp-histo-corpus.sql.gz` | 47 MB | The PostgreSQL corpus: 977 papers, 35,896 text elements, 1.79M entities |
+| `nlp-histo-corpus.sql.gz` | 49 MB | The PostgreSQL corpus: 977 papers, 35,896 text elements, 1.79M entities |
 
 Each comes with a `.sha256` file — download those too, and keep them beside the file they
 name. Step 4 uses them.
