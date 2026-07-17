@@ -167,6 +167,8 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 
 | B-123 | Fixed (2026-07-17) | Medium | Reproducibility, `scripts/make_reproduction_bundle.py` (bundle scope) × `docs/REPRODUCE.md` Step 8 (E14) | **E14 — the headline generalization result REPRODUCE.md tells the reader to reproduce — could not run from the downloaded bundle: its two heldout15 inputs were never shipped.** `nlp-histo replay chapter9` needs the *related15* primer, and the bundle's file list mirrored exactly the replay's `REQUIRED_ARTIFACTS`; but REPRODUCE.md Step 8's free track also runs `E14_heldout`, which reads a *different* primer — `eval/data/map_primer_heldout15/voter_cache.json` (16 MB) and `eval/data/silver_findings_heldout15.jsonl` (1.1 MB). Neither was in the bundle nor in a clean clone, so a fresh checkout died with `voter cache not found: …/map_primer_heldout15/voter_cache.json`. Found by the user running Step 8 verbatim in a clean clone. E04 (the other Step 8 experiment) was unaffected — its inputs are shipped. **Not a cost bug:** E14 sets `strict_cache_only=True`, so a missing embedding *raises* rather than issuing a paid call (same guarantee as [B-112](#bug-112--the-replay-embedding-cache-preflight)); verified by running E14 against the shipped gemini cache — **0 cache misses, exit 0, `strict_f1_optimal = 0.7128`, gap `-0.0032`**, matching the documented values. So the caches were complete; only the two primer/silver *inputs* were absent. **Fixed** by committing the two files to git (they gzip to ~1.0 MB combined) rather than re-cutting and re-uploading the 1.2 GB bundle — the same home as the already-tracked `source_cases_related15.jsonl`, so a clone now carries them and E14 runs with the *existing* uploaded bundle unchanged. The gitignore re-includes **only** the clean `voter_cache.json`; the sibling `voter_cache.contaminated.json` (a leakage variant that must never ship) and the unused `primer.json` stay ignored. The build-script comment records that these live in git by design, so a future bundle does not redundantly carry them. Accepted trade-off: one primer (heldout15) is in git while its related15 twin remains in the bundle — inconsistent, but it avoids a 1.2 GB re-upload for 1 MB of data. | [Bug 123](#bug-123--e14s-heldout15-inputs-were-missing-from-the-reproduction-bundle) |
 
+| B-124 | Fixed (2026-07-17) | Medium | Reproducibility, `E03/E10/E11/E12` experiments × `eval/silver/analysis/map_context.py` (`_load_map_context`) | **Four offline-replay experiments demanded an API key they never used, so they died in a keyless clean clone — the exact condition REPRODUCE.md Track A promises works ("no API key").** E03, E10, E11 and E12 call `_load_map_context("gemini", …)` without `strict_cache_only=True`, so the helper constructs a live `GeminiEmbedder(api_key)` and aborts with `GOOGLE_API_KEY not set` — even though every embedding is served from the frozen gemini cache (verified **0 cache misses** in each). Pure constructor theatre, identical in shape to [B-109](#bug-109--the-replay-needed-a-credential-it-never-used) and [B-112](#bug-112--the-replay-embedding-cache-preflight): a provider built and never called. It escaped my own Step-8 verification because I ran the experiments on the author's machine with `.env` keys present; the failure only appears when the keys are absent. Found by re-running E12 with every provider key blanked — the clean-clone condition. **E14 was already immune** (it passes `strict_cache_only=True`, which builds a keyless `NoLiveEmbedding` that raises on a miss instead of billing); E04/E13 construct no embedder. **Fixed** by adding `strict_cache_only=True` at all four call sites — the mechanism already existed, mirroring E14. The numbers are unchanged (strict-cache-only affects only cache *misses*, of which there are none): all four re-verified keyless with 0 misses and identical values (E03 retention 0.838/best 0.7160; E10 cascade 0.7160 vs Sonnet 0.7129; E11 cascade 0.7160; E12 CSV). The fix also **unblocked E10 and E11**, which were free but keyless-broken — both are now added to REPRODUCE.md Step 8. Suite 1697 green, ruff clean. | [Bug 124](#bug-124--offline-experiments-demanded-a-key-they-never-used) |
+
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
 
 ---
@@ -9275,3 +9277,69 @@ related15 twin remains in the bundle. Inconsistent, but it avoids a 1.2 GB re-up
 With the two files tracked, a clean clone carries them; E14 was confirmed free and correct
 (0.7128 / -0.0032) against the already-shipped gemini cache. The contaminated variant and
 `primer.json` were verified to remain ignored.
+
+---
+
+## Bug 124 — offline experiments demanded a key they never used
+
+**Status: Fixed (2026-07-17) / Severity: Medium / Surface:** `E03/E10/E11/E12` × `eval/silver/analysis/map_context.py`
+
+### Symptom
+
+REPRODUCE.md Track A promises "no API key". But four of the experiments it lists (or should
+list) died in a keyless clone:
+
+```
+GOOGLE_API_KEY not set
+```
+
+E12 was the first caught, because it was already in Step 8.
+
+### Evidence
+
+`_load_map_context(...)` has two paths (`map_context.py:106`): with `strict_cache_only=True`
+it builds a keyless `NoLiveEmbedding`; otherwise it builds a live `GeminiEmbedder(api_key)`,
+which requires a key at construction. E03, E10, E11 and E12 all called it **without** the
+flag:
+
+```python
+ctx = _load_map_context("gemini", embed_cache_path=None)   # → live embedder → needs a key
+```
+
+Yet each is a documented offline replay, and each pre-warms the agreement embeddings with
+**0 cache misses** — so the live embedder it constructs is never actually called. Pure
+constructor theatre, the same defect as [B-109](#bug-109--the-replay-needed-a-credential-it-never-used)
+and [B-112](#bug-112--the-replay-embedding-cache-preflight).
+
+E14 was already immune — it passes `strict_cache_only=True`. E04 and E13 construct no
+embedder at all.
+
+### Diagnosis
+
+It escaped the Step-8 verification because those runs happened on the author's machine,
+where `.env` supplies the keys. `load_dotenv(override=False)` means an explicitly-set env var
+wins, so re-running with every provider key blanked reproduces the keyless clone exactly —
+and that is where the failure surfaces. A command verified only with credentials present is
+not verified for a track whose whole premise is that there are none.
+
+### Fix
+
+Add `strict_cache_only=True` at the four call sites, mirroring E14. The mechanism already
+existed; this is not new code, just the correct flag. Because strict-cache-only changes
+behaviour only on a cache *miss* (it raises instead of billing) and these replays have none,
+the reported numbers are unaffected.
+
+### Verification
+
+All four re-run with every provider key blanked (`OPENAI_API_KEY= GOOGLE_API_KEY= …`):
+
+| exp | keyless | misses | value |
+|---|---|---|---|
+| E03 | exit 0 | 0 | retention 0.838 @0.50, best 0.7160 |
+| E10 | exit 0 | 0 | cascade 0.7160 vs single-Sonnet 0.7129 |
+| E11 | exit 0 | 0 | cascade 0.7160, paper-level bootstrap B=10000 |
+| E12 | exit 0 | 0 | LOO attribution CSV |
+
+E04, E13, E14 also confirmed keyless (0.7128 for E14). Suite 1697 green, ruff clean. The fix
+unblocked E10 and E11 — free but previously keyless-broken — which are now added to
+REPRODUCE.md Step 8.

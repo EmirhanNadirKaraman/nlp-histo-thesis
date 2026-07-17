@@ -152,7 +152,11 @@ def main() -> None:
         raise SystemExit(f"--reject-theta {args.reject_theta} must be < min theta {min(thetas)}")
 
     L1_lab, L2_lab = _voter_labels()
-    ctx = _load_map_context(args.embedder, embed_cache_path=args.embed_cache)
+    # strict_cache_only: offline replay — every embedding is in the frozen gemini cache, so
+    # construct no live embedder (no API key, a miss raises rather than billing). Without it
+    # the run dies "GOOGLE_API_KEY not set" in a keyless clone, even with a warm cache
+    # (B-109/B-112). --embed-cache still selects which cache file is read.
+    ctx = _load_map_context(args.embedder, embed_cache_path=args.embed_cache, strict_cache_only=True)
     _assert_cache_matches_voters(ctx.voter_cache, len(L1_lab), len(L2_lab))
 
     cache = ctx.voter_cache

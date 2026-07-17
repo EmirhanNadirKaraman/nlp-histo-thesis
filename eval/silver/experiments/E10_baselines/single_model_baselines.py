@@ -110,7 +110,10 @@ def _single_model_outputs(voter_cache, silver_by_case, level, idx) -> list[Pipel
 
 def main() -> None:
     print(f"E10 single-model baselines vs cascade — related15, frozen cascade θ{THETA}/r{REJECT} (offline)")
-    ctx = _load_map_context("gemini", embed_cache_path=None)
+    # strict_cache_only: offline replay — every embedding is in the frozen gemini cache, so
+    # construct no live embedder (no API key, a miss raises rather than billing). Without it
+    # the run dies "GOOGLE_API_KEY not set" in a keyless clone (B-109/B-112).
+    ctx = _load_map_context("gemini", embed_cache_path=None, strict_cache_only=True)
     price = _price_lookup()
 
     def score(case_outputs):

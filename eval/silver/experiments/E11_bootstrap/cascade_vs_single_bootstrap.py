@@ -88,7 +88,10 @@ def main() -> None:
     args = ap.parse_args()
 
     print(f"E11 paper-level paired bootstrap — B={args.boot}, seed={args.seed}, frozen cascade θ{THETA}/r{REJECT}")
-    ctx = _load_map_context("gemini", embed_cache_path=None)
+    # strict_cache_only: offline replay — every embedding is in the frozen gemini cache, so
+    # construct no live embedder (no API key, a miss raises rather than billing). Without it
+    # the run dies "GOOGLE_API_KEY not set" in a keyless clone (B-109/B-112).
+    ctx = _load_map_context("gemini", embed_cache_path=None, strict_cache_only=True)
 
     # cascade (frozen, in-run) + every single model
     scorer = _build_scorer(_frozen_spec(), ctx.agreement_embed_fn)

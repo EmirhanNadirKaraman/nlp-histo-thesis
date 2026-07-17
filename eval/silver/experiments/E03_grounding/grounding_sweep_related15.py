@@ -89,7 +89,11 @@ def _distribution(scores: list[float]) -> None:
 
 def main() -> None:
     print(f"E03 grounding sweep — frozen MAP θ={THETA}/reject={REJECT}, related15 (offline, no API)")
-    ctx = _load_map_context("gemini", embed_cache_path=None)
+    # strict_cache_only: this is an offline replay — every embedding is in the frozen
+    # gemini cache, so construct no live embedder (no API key needed, a miss raises rather
+    # than billing). Without it the run dies "GOOGLE_API_KEY not set" in a keyless clone,
+    # even though the cache is complete — pure constructor theatre (B-109/B-112).
+    ctx = _load_map_context("gemini", embed_cache_path=None, strict_cache_only=True)
     scorer = _build_scorer(_frozen_spec(), ctx.agreement_embed_fn)
     # SHIPPED config: 5-voter selection (drop_l2_2) over the 6-voter primer + the escalate gate.
     voter_cache = _filtered_voter_cache(ctx.voter_cache, BEST_VOTER_SUBSET)

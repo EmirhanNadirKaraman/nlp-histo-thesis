@@ -290,17 +290,19 @@ that matter.)
 
 ## Step 8 (optional) — The evaluation experiments
 
-The thesis has many numbered experiments (E01–E15). **Five of them are free and reproduce
-from the caches you just unpacked** — no database, no provider ever contacted, every
-embedding served from the frozen cache (a cache miss raises rather than making a paid call).
-Run each **one at a time**; each loads scispaCy + the UMLS knowledge base (several GB of RAM)
-and takes from seconds to ~5 minutes.
+The thesis has many numbered experiments (E01–E15). **Seven of them are free and reproduce
+from the caches you just unpacked** — no database, no API key, no provider ever contacted;
+every embedding is served from the frozen cache, and a cache miss raises rather than making a
+paid call. Run each **one at a time**; each loads scispaCy + the UMLS knowledge base (several
+GB of RAM) and takes from seconds to ~5 minutes.
 
 | Command | What it is | Expect | Time |
 |---|---|---|---|
 | `python -m eval.silver.experiments.E14_heldout.heldout_eval --theta-frontier` | Held-out generalisation (the headline) | `strict_f1_optimal = 0.7128`, gap `-0.0032` | ~5 min |
 | `python -m eval.silver.experiments.E04_cardinalities.cardinalities` | Knowledge-extraction funnel | `2294 MAP → 1923 grounded (83.8%) → 1747 final` | ~30 s |
 | `python -m eval.silver.experiments.E03_grounding.grounding_sweep_related15` | Grounding-threshold sweep | retention `0.838` @0.50, best strict_f1 `0.7160` | ~5 min |
+| `python -m eval.silver.experiments.E10_baselines.single_model_baselines` | Single-model baselines vs cascade | cascade `0.7160` vs single-Sonnet `0.7129` | ~2 min |
+| `python -m eval.silver.experiments.E11_bootstrap.cascade_vs_single_bootstrap` | Cascade-vs-Sonnet paired bootstrap | cascade `0.7160`, B=10000 paper-level | ~3 min |
 | `python -m eval.silver.experiments.E12_voter_loo.voter_loo` | Leave-one-voter-out attribution | per-voter Δ table + CSV | ~1 min |
 | `python -m eval.silver.experiments.E13_nli_ablation.evaluate` | NLI relation-classification ablation | accuracy `0.9267`, macro-F1 `0.9273` | ~20 s |
 
@@ -317,7 +319,7 @@ listing them would only produce errors:
 * **E05–E08** are the calibration sweeps that *selected* the frozen configuration — heavy,
   and their result already lives in `configs/run.yaml`; you do not re-run them to reproduce,
   you inherit their output.
-* **E10, E11, E15** call paid LLM APIs (E15) or need harnesses/artifacts not in the bundle.
+* **E15** calls paid LLM APIs (silver-label generation), so it is Track B territory.
 
 Two more experiments (**E02, E02b**, corpus/rule provenance) are free but read the
 *database* — they appear later, after you restore it (Step 11).
