@@ -171,6 +171,8 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 
 | B-125 | Fixed (2026-07-17) | Low | Reproducibility, `docs/REPRODUCE.md` (Step 8, Step 11) × shipped inputs | **E02c and E09 were reproducible for free but their inputs were not shipped, so the runbook listed them as "cannot reproduce" when in fact ~0.7 MB of data was all that was missing.** Following [B-123](#bug-123--e14s-heldout15-inputs-were-missing-from-the-reproduction-bundle) (which shipped E14's heldout15 primer), the same audit unlocked two more: **E09** (cost–quality frontier) is a pure keyless CSV re-analysis (`0` `_load_map_context`), but reads the frozen E06c/E07/E08b calibration-sweep CSVs a reader never re-runs; **E02c** (held-out final-rule provenance) is a keyless DB walk that reads the held-out per-paper summary JSONs. Both were verified free — E09 keyless → quality `0.7160@23.66` / knee `0.7067` / economy `0.5433`; E02c keyless → **100%** carry-rate across all 15 held-out papers — matching the registry. **Fixed** by committing the missing inputs to git (same choice as B-123 — no bundle re-upload): the 15 held-out summary JSONs (7.2 MB → ~0.6 MB packed) and the three frozen sweep CSVs (~52 KB). The gitignore re-includes *only* those: not the bundle's own `out/summaries/summaries` (still shipped in the archive), not the held-out `batch_handles`/`corpus_relations` intermediates, and not any other `eval/reports/` artifact. REPRODUCE.md Step 8 now lists **eight** free bundle experiments (was seven) and Step 11 **three** DB provenance experiments (was two). E01 remains separate — it needs the 27 rubric PDFs, a licensing question, tracked in the Decisions log. | [Bug 125](#bug-125--e02c-and-e09-were-free-but-their-inputs-were-unshipped) |
 
+| B-126 | Fixed (2026-07-17) | Low | Eval, `E01_doc_extraction/flatten_to_csv.py:120` | **E01's `flatten_to_csv` wrote its CSV correctly and then crashed on the success message — a `ValueError` traceback on exit 1 despite a complete, correct output file.** The final line does `csv_path.relative_to(_REPO_ROOT)`, but `_REPO_ROOT` is absolute while `--csv-out` (or the default derived from a relative `--json`) is a **relative** path — and `Path("eval/reports/…").relative_to("/abs/repo")` raises. So the natural invocation a reader copies from the docs (`flatten_to_csv --json eval/reports/…_PR.json`) printed a stack trace and returned non-zero, even though the reshaped CSV was already on disk and byte-identical to the frozen one. Surfaced while wiring E01 into REPRODUCE.md Step 8 as the PDF-free, report-level reproduction of the doc-extraction rubric. **Fixed** by resolving the path before `relative_to` and falling back to the path as-given when it is outside the repo (`try/except ValueError`). Verified: both the relative `--csv-out` and default invocations now exit 0, and the regenerated CSV is byte-identical to the committed `figtable_extraction_sweep_rerun_27pdf_20260604_PR.csv` (winner var18: tables 40→83.8 %, figures 84 %). ruff clean. | [Bug 126](#bug-126--flatten_to_csv-crashed-on-its-own-success-message) |
+
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
 
 ---
@@ -9399,3 +9401,50 @@ With the inputs tracked, both run keyless from what a clean clone carries. E09 r
 committed frozen CSVs (no re-run of the calibration sweeps); E02c reads the committed
 summaries against the restored corpus DB. E01 is deliberately *not* covered here — it needs
 the 27 rubric PDFs, a licensing decision recorded in the Decisions log.
+
+
+---
+
+## Bug 126 — flatten_to_csv crashed on its own success message
+
+**Status: Fixed (2026-07-17) / Severity: Low / Surface:** `eval/silver/experiments/E01_doc_extraction/flatten_to_csv.py:120`
+
+### Symptom
+
+The documented E01 reproduction wrote its CSV and then died:
+
+```
+E01 flatten … ValueError: 'eval/reports/E01_doc_extraction/…_PR.csv' is not in the
+subpath of '/Users/…/nlp-histo'
+```
+
+Exit 1, full traceback — but the CSV was already written and correct.
+
+### Diagnosis
+
+```python
+print(f"E01 flatten: {n} rows -> {csv_path.relative_to(_REPO_ROOT)}")
+```
+
+`_REPO_ROOT` is absolute; `csv_path` is whatever `--csv-out` was, or the default derived from
+`--json`. A reader naturally passes a **relative** path (`eval/reports/…`), and
+`Path.relative_to` requires both operands absolute and nested — so it raises. The failure is
+*after* `flatten()` has written the file: a crash on success.
+
+### Fix
+
+Resolve before comparing, and fall back to the raw path when the target is outside the repo:
+
+```python
+try:
+    shown = csv_path.resolve().relative_to(_REPO_ROOT)
+except ValueError:
+    shown = csv_path
+print(f"E01 flatten: {n} rows -> {shown}")
+```
+
+### Verification
+
+Both invocations — a relative `--csv-out`, and the default (no `--csv-out`) — now exit 0, and
+the regenerated CSV is byte-identical to the committed frozen
+`figtable_extraction_sweep_rerun_27pdf_20260604_PR.csv`. ruff clean.
