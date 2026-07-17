@@ -56,8 +56,19 @@ You do **not** need an API key. You do **not** need the PDFs.
 ## Step 1 — Get the code
 
 ```bash
-git clone <repository-url> nlp-histo
+git clone -b refactor/python-packaging \
+  https://gitlab.lrz.de/00000000014B8E24/nlp-histo.git nlp-histo
 cd nlp-histo
+```
+
+The `-b` is deliberate: the work lives on the `refactor/python-packaging` branch. Clone
+without it and you may land on a branch that predates the current layout — no
+`src/nlp_histo/`, and none of the commands below will exist.
+
+Check you got the right thing:
+
+```bash
+ls src/nlp_histo/cli/main.py docs/REPRODUCE.md    # both must exist
 ```
 
 Everything from here runs **from this directory**. If a command misbehaves, the first
