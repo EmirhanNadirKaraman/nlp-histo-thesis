@@ -23,7 +23,7 @@ assurance is worth less than an honest inventory, so here is the inventory.
 | 8 | `ner extract` / `merge` / `export` | **verified end-to-end** on that document — 865 entities (749 with UMLS CUIs) → 762 merged files → 89 disease CUIs. `merge`/`export` produced nothing before the B-115 fix |
 | 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
 | 10 | `replay chapter9` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable |
-| 11 | `pytest`, `ruff check .` | verified — 1565 passed, 0 failed; ruff clean |
+| 11 | `pytest`, `ruff check .` | verified — 1693 passed, 0 failed; ruff clean |
 | 12 | E04, `sweeps/grounding.py`, E14 (incl. `--theta-frontier`), `map_theta_sweep --help` | verified free (0 cache misses, no paid host). `E14 --theta-frontier` reproduces **byte-identically** to the 2026-06-25 baseline |
 
 **Not executed — do not read these as verified:**
@@ -59,7 +59,7 @@ before you start:
 |---|---|
 | §2 install · §3 `--help` · §4 env vars | §10 `replay chapter9` → exits **2**, naming every missing artifact |
 | §5 `db init` / `db check` (your own PostgreSQL) | §12 experiments → no primer / caches |
-| **§11 `pytest` → 1685 passed** | §7 `ingest` · §8 `ner` → no PDFs, no ingested documents |
+| **§11 `pytest` → 1693 passed** | §7 `ingest` · §8 `ner` → no PDFs, no ingested documents |
 
 Nothing fails silently — a missing artifact is a loud, itemised error. But a loud error
 is not a result, so pick your path:
@@ -649,8 +649,8 @@ python -m pytest              # full suite
 ruff check .
 ```
 
-Both are clean as of 2026-07-16: `ruff check .` passes, and `pytest` is **1565 passed,
-0 failed** (~2–4 min). Two `tests/test_config_loader.py` failures found during that day's
+Both are clean as of 2026-07-16: `ruff check .` passes, and `pytest` is **1693 passed,
+0 failed** (~3 min). Two `tests/test_config_loader.py` failures found during that day's
 verification were stale assertions pinning the pre-calibration agreement defaults, and
 have been corrected to the calibrated E06/E08 winner that `configs/run.yaml` ships —
 the config was right, the tests were not (BUGS.md B-110). Nine regression tests were
