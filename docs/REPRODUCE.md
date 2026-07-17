@@ -290,26 +290,40 @@ that matter.)
 
 ## Step 8 (optional) — The evaluation experiments
 
-Also artifact-based and free — every embedding is served from the caches you unpacked, and
-no provider is ever contacted.
+The thesis has many numbered experiments (E01–E15). **Five of them are free and reproduce
+from the caches you just unpacked** — no database, no provider ever contacted, every
+embedding served from the frozen cache (a cache miss raises rather than making a paid call).
+Run each **one at a time**; each loads scispaCy + the UMLS knowledge base (several GB of RAM)
+and takes from seconds to ~5 minutes.
 
-```bash
-python -m eval.silver.experiments.E14_heldout.heldout_eval --theta-frontier
-python -m eval.silver.experiments.E04_cardinalities.cardinalities
-```
+| Command | What it is | Expect | Time |
+|---|---|---|---|
+| `python -m eval.silver.experiments.E14_heldout.heldout_eval --theta-frontier` | Held-out generalisation (the headline) | `strict_f1_optimal = 0.7128`, gap `-0.0032` | ~5 min |
+| `python -m eval.silver.experiments.E04_cardinalities.cardinalities` | Knowledge-extraction funnel | `2294 MAP → 1923 grounded (83.8%) → 1747 final` | ~30 s |
+| `python -m eval.silver.experiments.E03_grounding.grounding_sweep_related15` | Grounding-threshold sweep | retention `0.838` @0.50, best strict_f1 `0.7160` | ~5 min |
+| `python -m eval.silver.experiments.E12_voter_loo.voter_loo` | Leave-one-voter-out attribution | per-voter Δ table + CSV | ~1 min |
+| `python -m eval.silver.experiments.E13_nli_ablation.evaluate` | NLI relation-classification ablation | accuracy `0.9267`, macro-F1 `0.9273` | ~20 s |
 
-E14 is the headline generalisation result: expect `strict_f1_optimal = 0.7128` and a
-generalisation gap of `-0.0032`.
+Each writes a timestamped CSV under `eval/reports/E##_.../`. E13 is special — its inputs are
+in the git repository, so it runs even without the bundle.
 
-Run these **one at a time** — each loads scispaCy plus the UMLS knowledge base, several GB
-of memory apiece.
+**Why not every experiment is here.** The rest need inputs this free track does not ship, so
+listing them would only produce errors:
 
-> `eval/sweeps/grounding.py` also runs, but it overwrites a tracked file
-> (`eval/results/grounding_sweep.md`) with numbers from whatever is currently in
-> `out/summaries`. Use `git checkout eval/results/` afterwards to restore it.
+* **E01** (document-extraction rubric) needs the 27 annotated rubric PDFs — not
+  redistributable, so never shipped.
+* **E02c** (held-out provenance) and **E09** (cost–quality frontier) read intermediate
+  artifacts the bundle omits (the held-out summaries; a calibration sweep CSV).
+* **E05–E08** are the calibration sweeps that *selected* the frozen configuration — heavy,
+  and their result already lives in `configs/run.yaml`; you do not re-run them to reproduce,
+  you inherit their output.
+* **E10, E11, E15** call paid LLM APIs (E15) or need harnesses/artifacts not in the bundle.
 
-Everything above reproduces the published results. The rest of Track A gives you the corpus
-database to query and, optionally, its named entities.
+Two more experiments (**E02, E02b**, corpus/rule provenance) are free but read the
+*database* — they appear later, after you restore it (Step 11).
+
+Everything above reproduces the published results without a database. The rest of Track A
+gives you the corpus to query and, optionally, its named entities and provenance metrics.
 
 ## Step 9 — Restore the corpus database
 
@@ -446,6 +460,18 @@ with db.session_scope() as session:            # commits on exit, rolls back on 
 `unique_path` is `{document_id}/{section hierarchy}/{position}`, so a row tells you exactly
 where in which paper it came from. Note the document ID is composite
 (`PMC10092619_HIS-82-254`), not a bare accession — the publisher's filename is part of it.
+
+**Two provenance experiments run against this restored database** (the two the Step 8 note
+deferred). Both are read-only, free, and finish in seconds:
+
+```bash
+python -m eval.silver.experiments.E02_provenance.provenance_metric        # corpus-level
+python -m eval.silver.experiments.E02b_rule_provenance.rule_provenance_metric   # rule-level
+```
+
+E02 confirms every one of the 35,896 text elements, 4,479 figures and 1,960 tables carries a
+full provenance address (**100%**). E02b confirms all **1,729** final rules trace back to a
+source paragraph (**1729/1729, 100%**). Each writes a CSV under `eval/reports/`.
 
 ## Step 12 (optional) — Named-entity recognition over the corpus
 
