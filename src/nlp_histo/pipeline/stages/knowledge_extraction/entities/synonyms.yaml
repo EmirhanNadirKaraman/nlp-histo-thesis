@@ -1,0 +1,71 @@
+# Entity synonym dictionary for the NORMALIZE stage.
+#
+# Keys are lowercase surface forms as they appear in LLM output.
+# Values are the canonical names used throughout the pipeline.
+#
+# Resolution order in normalize_stage.py:
+#   1. This file (highest priority — domain knowledge beats the linker)
+#   2. UMLS linker (scispaCy en_core_sci_lg, threshold 0.85)
+#   3. Identity fallback
+#
+# Add new entries here as new papers are processed.
+# No code changes needed — the file is reloaded on each pipeline run.
+
+# ── Survival endpoints ─────────────────────────────────────────────────────────
+overall survival:           OS
+os:                         OS
+overall survival rate:      OS
+progression-free survival:  PFS
+pfs:                        PFS
+progression free survival:  PFS
+disease-free survival:      DFS
+dfs:                        DFS
+
+# ── IHC / biomarkers ──────────────────────────────────────────────────────────
+cd30:             CD30
+ber-h2:           CD30
+ki-67:            Ki-67
+ki67:             Ki-67
+mib-1:            Ki-67
+mib1:             Ki-67
+bcl-2:            BCL2
+bcl2:             BCL2
+bcl-6:            BCL6
+bcl6:             BCL6
+myc:              MYC
+c-myc:            MYC
+pd-l1:            PD-L1
+pdl1:             PD-L1
+cd20:             CD20
+cd3:              CD3
+cd8:              CD8
+cd4:              CD4
+cd10:             CD10
+cd31:             CD31
+cd34:             CD34
+cd138:            CD138
+cd56:             CD56
+cd30 expression:  CD30
+cd30 positivity:  CD30
+bcl2 expression:  BCL2
+myc expression:   MYC
+
+# ── Treatments ────────────────────────────────────────────────────────────────
+r-chop:           R-CHOP
+r chop:           R-CHOP
+rituximab-chop:   R-CHOP
+chop:             CHOP
+
+# ── Disease entities ──────────────────────────────────────────────────────────
+# CEAN: Cutaneous Epithelioid Angiomatous Nodule
+caen:                                    CEAN
+cean:                                    CEAN
+cutaneous epithelioid angiomatous nodule: CEAN
+epithelioid angiomatous nodule:          CEAN
+
+# ── Cell population variants ──────────────────────────────────────────────────
+tumour cells:    tumour cells
+tumor cells:     tumour cells
+tumour cell:     tumour cells
+tumor cell:      tumour cells
+neoplastic cells: tumour cells

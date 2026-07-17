@@ -1,0 +1,13 @@
+{
+  "status": "skipped",
+  "run_id": "PAPER_SPARSE_20260516T000000",
+  "pmcid": "PAPER_SPARSE",
+  "pipeline_config_hash": "deadbeef00000002",
+  "canonical_rules": [],
+  "final_rules": [],
+  "relations": [],
+  "relate_raw_pairs": [],
+  "audit_trail": {"map_chunks": []},
+  "map_run_metadata": {},
+  "rejection_summary": null
+}

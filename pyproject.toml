@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nlp-histo"
+version = "0.1.0"
+# Supported runtime window, 3.10–3.12 — not merely the minimum syntax level.
+# Floor (>=3.10), three ways: langchain / langchain-core / torch declare
+# Requires-Python >= 3.10, and the Pydantic schemas in
+# pipeline/stages/knowledge_extraction/models.py use PEP-604 unions (`str | None`),
+# which Pydantic evaluates at class-creation time even under
+# `from __future__ import annotations`.
+# Ceiling (<3.13): scispacy declares Requires-Python <3.13, and the UMLS/NER path
+# depends on it — so 3.13+ is not a supported runtime for this project.
+# Dependencies are NOT declared here: requirements.txt remains the tested dependency
+# source of truth, so install with
+# `pip install -r requirements.txt` then `pip install -e . --no-deps`.
+requires-python = ">=3.10,<3.13"
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s %(levelname)s %(name)s %(message)s"
+# `pdffigures2/` is a gitignored, vendored third-party tool; its own eval
+# tests are not part of this project's suite and fail to import here.
+# The rest of the list restores pytest's built-in defaults (overriding
+# `norecursedirs` replaces them).
+norecursedirs = ["pdffigures2", "*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules", "venv", "{arch}"]
+
+[tool.ruff]
+# Non-project / vendored / dead trees — not part of this codebase's lint surface.
+extend-exclude = [
+    ".agents",               # Claude Code skill scripts (not project code)
+    "legacy",                # quarantined superseded pipeline
+    "pdffigures2",           # vendored third-party tool (gitignored)
+    "eval/silver/old_files", # dead earlier sweep drivers
+    "notebooks",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# scripts/, eval/, and one-off tests bootstrap sys.path before importing the
+# project packages (documented pattern in CLAUDE.md — the `from pipeline...`
+# imports MUST follow `sys.path.insert(...)`), which necessarily trips E402.
+# Library code under pipeline/parsers/database/ does NOT get this pass, so a
+# genuine "statement before import" there still surfaces (e.g. entity_linker.py).
+"scripts/**" = ["E402"]
+"eval/**" = ["E402"]
+"tests/**" = ["E402"]
+
+[project.scripts]
+# One console command with subcommands, not one binary per script: the workflows are
+# stages of a single pipeline, so `nlp-histo --help` is the discovery surface.
+nlp-histo = "nlp_histo.cli.main:main"
+
+[tool.setuptools]
+# src layout: only what lives under src/ is installable. Everything else in the
+# repository (experiment drivers, developer tools, tests, thesis artifacts) is
+# repository-only and imports the installed package — never the reverse.
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+# Single installed namespace. The repository no longer exposes generic top-level
+# packages (`database`, `parsers`, …) to the environment: they would collide with
+# unrelated distributions and make `import database` ambiguous.
+include = ["nlp_histo*"]
+
+# NOTE (migration): `named_entity_recognition` and `eval` are still top-level
+# directories and are therefore NOT installed — they resolve only from the
+# repository root. They move in the following phases.
+
+[tool.setuptools.package-data]
+# synonyms.yaml is the one non-Python file read at runtime from an installed
+# package (knowledge_extraction/stages/normalize_stage.py loads it at import via
+# importlib.resources — there is no hardcoded fallback, so a missing file means
+# an empty synonym map). Declared explicitly rather than with a glob: nothing
+# else under the package is a runtime resource, and a broad pattern would sweep
+# the co-located design docs into the wheel.
+#
+# configs/*.yaml|json stay OUT deliberately: they live outside every package and
+# are still read repository-root-relative (nli_config.py, pricing.py). That
+# repository-root assumption is catalogued for the Phase F path pass.
+"nlp_histo.pipeline.stages.knowledge_extraction.entities" = ["synonyms.yaml"]
+# Immutable application defaults: the model price table and the NLI model registry.
+# Read via importlib.resources, overridable with NLP_HISTO_MODEL_PRICES /
+# NLP_HISTO_NLI_MODELS. configs/run.yaml stays OUT — that is the user's run
+# configuration, supplied with --config, not an application default.
+"nlp_histo.resources" = ["model_prices.json", "nli_models.yaml"]

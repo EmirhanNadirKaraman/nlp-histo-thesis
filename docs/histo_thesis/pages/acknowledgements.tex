@@ -1,0 +1,26 @@
+\makeatletter
+\ifthenelse{\pdf@strcmp{\languagename}{english}=0}
+{\addcontentsline{toc}{chapter}{Acknowledgments}}
+{\addcontentsline{toc}{chapter}{Danksagungen}}
+\makeatother
+\thispagestyle{empty}
+
+\vspace*{20mm}
+
+\begin{center}
+\makeatletter
+\ifthenelse{\pdf@strcmp{\languagename}{english}=0}
+{\usekomafont{section} Acknowledgments}
+{\usekomafont{section} Danksagungen}
+\makeatother
+\end{center}
+
+\vspace{10mm}
+
+I would first like to thank my supervisor, Frederic Mrozinski, for his valuable feedback and guidance throughout this thesis. Our discussions guided me throughout the research, implementation, and experimentation, and helped me improve both the system and its evaluation. His continued support also motivated me during stressful periods, especially when I doubted myself or struggled with the pressure of writing the thesis.
+
+I would also like to thank Prof. Dr. Georg Groh and the Chair of Connected Mobility at the Technical University of Munich for the opportunity to work on this interesting thesis topic.
+
+Finally, I would like to thank my mom, dad, brother, and my friends Nikki, Granit, Tanja, and Sungur for their constant support, especially during the difficult final months of this thesis. Their encouraging words and belief in me will always mean a great deal to me. 
+
+\cleardoublepage{}

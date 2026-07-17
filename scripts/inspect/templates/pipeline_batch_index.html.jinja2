@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline Inspector — Batch Index</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #22263a;
+    --border: #2e3350;
+    --text: #d4d8f0;
+    --text-dim: #7880a0;
+    --accent: #5b7cfa;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --orange: #f97316;
+    --font: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    --font-ui: system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; line-height: 1.5; padding: 24px 32px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+  h2 { font-size: 1.0rem; font-weight: 600; color: var(--accent); margin-bottom: 16px; }
+
+  .meta { color: var(--text-dim); font-size: 0.82rem; margin-bottom: 24px; }
+
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .controls input[type=text] { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 6px 10px; font-size: 0.85rem; width: 220px; }
+  .controls input[type=text]:focus { outline: none; border-color: var(--accent); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  th { text-align: left; padding: 7px 10px; background: var(--bg2); color: var(--text-dim); font-weight: 600; border-bottom: 2px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; }
+  th:hover { color: var(--text); }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:hover td { background: var(--bg2); }
+  td.num { font-family: var(--font); text-align: right; }
+
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.72rem; font-weight: 600; font-family: var(--font); vertical-align: middle; }
+  .badge-green  { background: #14532d; color: #86efac; }
+  .badge-red    { background: #7f1d1d; color: #fca5a5; }
+  .badge-orange { background: #7c2d12; color: #fdba74; }
+  .badge-gray   { background: #1f2937; color: #9ca3af; }
+  .badge-cyan   { background: #0c4a6e; color: #67e8f9; }
+  .badge-blue   { background: #1e3a8a; color: #93c5fd; }
+
+  .warn-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+  .empty-row td { color: var(--text-dim); font-style: italic; text-align: center; padding: 24px; }
+
+  /* Corpus relations section */
+  .section-header { font-size: 1.0rem; font-weight: 600; color: var(--accent); margin: 36px 0 12px; border-top: 1px solid var(--border); padding-top: 20px; }
+  .corpus-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .corpus-stat { background: var(--bg2); border: 1px solid var(--border); border-radius: 5px; padding: 8px 14px; font-size: 0.82rem; }
+  .corpus-stat .cs-num { font-size: 1.3rem; font-weight: 700; color: var(--accent); font-family: var(--font); display: block; }
+  .corpus-stat .cs-label { color: var(--text-dim); }
+  .corpus-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 4px; }
+  .corpus-table th { text-align: left; padding: 6px 10px; background: var(--bg2); color: var(--text-dim); font-weight: 600; border-bottom: 2px solid var(--border); cursor: pointer; white-space: nowrap; }
+  .corpus-table th:hover { color: var(--text); }
+  .corpus-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .corpus-table tr:hover td { background: var(--bg2); }
+  .corpus-table td.mono { font-family: var(--font); font-size: 0.78rem; }
+  .score { font-family: var(--font); font-size: 0.8rem; }
+</style>
+</head>
+<body>
+
+<h1>🔬 Pipeline Inspector — Batch Index</h1>
+<div class="meta">
+  Source: <code>{{ source_dir }}</code> &nbsp;·&nbsp; {{ total }} paper{{ 's' if total != 1 else '' }}
+</div>
+
+<div class="controls">
+  <input type="text" id="search" placeholder="Search PMCID, run_id…" oninput="filterRows()">
+</div>
+
+<table id="index-table">
+  <thead>
+    <tr>
+      <th onclick="sortBy('pmcid')">PMCID ↕</th>
+      <th onclick="sortBy('run_id')">Run ID ↕</th>
+      <th onclick="sortBy('status')">Status ↕</th>
+      <th onclick="sortBy('map_findings')" style="text-align:right">MAP ↕</th>
+      <th onclick="sortBy('canonical')" style="text-align:right">Canonical ↕</th>
+      <th onclick="sortBy('final')" style="text-align:right">Final ↕</th>
+      <th onclick="sortBy('relations')" style="text-align:right">Relations ↕</th>
+      <th onclick="sortBy('flagged')" style="text-align:right">⚠ Flagged ↕</th>
+      <th>Warnings</th>
+      <th>Inspector</th>
+    </tr>
+  </thead>
+  <tbody id="table-body">
+  {% for row in rows %}
+  <tr data-pmcid="{{ row.pmcid|lower }}" data-run="{{ row.run_id|lower }}"
+      data-map="{{ row.map_findings }}" data-canonical="{{ row.canonical }}"
+      data-final="{{ row.final }}" data-relations="{{ row.relations }}"
+      data-flagged="{{ row.flagged }}" data-status="{{ row.status }}">
+    <td><span style="font-family:var(--font); font-weight:600">{{ row.pmcid }}</span></td>
+    <td><span style="font-family:var(--font); font-size:0.78rem; color:var(--text-dim)">{{ row.run_id }}</span></td>
+    <td>
+      <span class="badge badge-{% if row.status == 'success' %}green{% else %}red{% endif %}">{{ row.status }}</span>
+    </td>
+    <td class="num">{{ row.map_findings }}</td>
+    <td class="num">{{ row.canonical }}</td>
+    <td class="num">{{ row.final }}</td>
+    <td class="num">{{ row.relations }}</td>
+    <td class="num">
+      {% if row.flagged %}
+      <span class="badge badge-orange">{{ row.flagged }}</span>
+      {% else %}
+      <span style="color:var(--text-dim)">0</span>
+      {% endif %}
+    </td>
+    <td>
+      {% if row.warnings %}
+      <span style="color:var(--orange); font-size:0.8rem">{{ row.warnings }}</span>
+      {% else %}
+      <span style="color:var(--text-dim); font-size:0.8rem">—</span>
+      {% endif %}
+    </td>
+    <td><a href="{{ row.html_path }}">open →</a></td>
+  </tr>
+  {% else %}
+  <tr class="empty-row"><td colspan="10">No papers found.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% if corpus_data %}
+<div class="section-header">
+  Corpus Relations
+  <span style="color:var(--text-dim); font-size:0.8rem; font-weight:400; margin-left:10px;">
+    generated {{ corpus_data.generated_at[:19].replace('T',' ') if corpus_data.generated_at else '' }}
+    · run_selection={{ corpus_data.run_selection or '—' }}
+  </span>
+</div>
+
+<div class="corpus-stats">
+  <div class="corpus-stat"><span class="cs-num">{{ corpus_data.total_relations }}</span><span class="cs-label">total relations</span></div>
+  <div class="corpus-stat"><span class="cs-num">{{ corpus_data.cross_paper_count }}</span><span class="cs-label">cross-paper</span></div>
+  <div class="corpus-stat"><span class="cs-num">{{ corpus_data.intra_paper_count }}</span><span class="cs-label">intra-paper</span></div>
+  <div class="corpus-stat"><span class="cs-num">{{ corpus_data.pmcids_loaded | length }}</span><span class="cs-label">papers loaded</span></div>
+  <div class="corpus-stat"><span class="cs-num">{{ corpus_data.canonical_rules_loaded }}</span><span class="cs-label">canonical rules pooled</span></div>
+</div>
+
+<div class="controls" style="margin-bottom:12px;">
+  <input type="text" id="cr-search" placeholder="Search PMCID, entity, predicate…" oninput="filterCorpusRows()" style="width:260px;">
+  <select id="cr-scope" onchange="filterCorpusRows()">
+    <option value="">All scopes</option>
+    <option value="cross_paper">cross-paper</option>
+    <option value="intra_paper">intra-paper</option>
+  </select>
+  <select id="cr-type" onchange="filterCorpusRows()">
+    <option value="">All types</option>
+    <option value="CONTRADICT">CONTRADICT</option>
+    <option value="SUPPORT">SUPPORT</option>
+    <option value="SCOPE_QUALIFY">SCOPE_QUALIFY</option>
+    <option value="UNRELATED">UNRELATED</option>
+  </select>
+</div>
+
+{% if corpus_data.relations %}
+<table class="corpus-table" id="corpus-table">
+  <thead>
+    <tr>
+      <th onclick="sortCorpus('scope')">Scope ↕</th>
+      <th onclick="sortCorpus('type')">Type ↕</th>
+      <th onclick="sortCorpus('pmcid_a')">PMCID A ↕</th>
+      <th onclick="sortCorpus('pmcid_b')">PMCID B ↕</th>
+      <th>Subject</th>
+      <th>Outcome</th>
+      <th>Dir A / B</th>
+      <th onclick="sortCorpus('nli_ab')" style="text-align:right">NLI A→B ↕</th>
+      <th onclick="sortCorpus('nli_ba')" style="text-align:right">NLI B→A ↕</th>
+      <th>Predicate A</th>
+      <th>Predicate B</th>
+    </tr>
+  </thead>
+  <tbody id="corpus-body">
+  {% for rel in corpus_data.relations %}
+  <tr data-search="{{ (rel.pmcid_a ~ ' ' ~ rel.pmcid_b ~ ' ' ~ rel.subject_entity ~ ' ' ~ rel.outcome_entity ~ ' ' ~ rel.predicate_a ~ ' ' ~ rel.predicate_b)|lower }}"
+      data-scope="{{ rel.comparison_scope }}"
+      data-type="{{ rel.relation_type }}"
+      data-pmcid-a="{{ rel.pmcid_a }}"
+      data-pmcid-b="{{ rel.pmcid_b }}"
+      data-nli-ab="{{ rel.nli_score_a_to_b }}"
+      data-nli-ba="{{ rel.nli_score_b_to_a }}">
+    <td>
+      <span class="badge {% if rel.comparison_scope == 'cross_paper' %}badge-cyan{% else %}badge-gray{% endif %}">{{ rel.comparison_scope }}</span>
+    </td>
+    <td>
+      <span class="badge {% if rel.relation_type == 'CONTRADICT' %}badge-red{% elif rel.relation_type == 'SUPPORT' %}badge-green{% elif rel.relation_type == 'SCOPE_QUALIFY' %}badge-blue{% else %}badge-gray{% endif %}">{{ rel.relation_type }}</span>
+    </td>
+    <td class="mono">{{ rel.pmcid_a }}</td>
+    <td class="mono">{{ rel.pmcid_b }}</td>
+    <td>{{ rel.subject_entity }}</td>
+    <td>{{ rel.outcome_entity }}</td>
+    <td>
+      <span class="badge {% if rel.direction_a == 'positive' %}badge-green{% elif rel.direction_a == 'negative' %}badge-red{% else %}badge-gray{% endif %}">{{ rel.direction_a or '—' }}</span>
+      /
+      <span class="badge {% if rel.direction_b == 'positive' %}badge-green{% elif rel.direction_b == 'negative' %}badge-red{% else %}badge-gray{% endif %}">{{ rel.direction_b or '—' }}</span>
+    </td>
+    <td class="score" style="text-align:right">{{ '%.3f'|format(rel.nli_score_a_to_b) }}</td>
+    <td class="score" style="text-align:right">{{ '%.3f'|format(rel.nli_score_b_to_a) }}</td>
+    {# Predicate A — abstracted claim + scope chips + collapsible verbatim/paragraph/NLI-input audit #}
+    <td style="max-width:280px; font-size:0.78rem;">
+      <div style="color:var(--text-dim);">{{ rel.predicate_a }}</div>
+      {% if rel.scope_a %}
+      <div style="margin-top:0.25rem;">
+        {% for k, v in rel.scope_a.items() %}
+          {% if v is not none and k != 'scope_parsed' %}
+            <span class="badge" style="background:#e0eaff;color:#1d3a8a; font-size:0.7rem;">{{ k }}={{ v }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if rel.nli_input_a %}
+      <details style="margin-top:0.25rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">NLI input</summary>
+        <code style="display:block; white-space:pre-wrap; word-break:break-word; font-size:0.72rem; color:var(--text-dim); margin-top:0.2rem;">{{ rel.nli_input_a }}</code>
+      </details>
+      {% endif %}
+      {% if rel.verbatim_a %}
+      <details style="margin-top:0.2rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">verbatim</summary>
+        <blockquote style="margin:0.2rem 0; padding:0.25rem 0.4rem; border-left:2px solid var(--border, #d0d7de); color:var(--text-dim); font-size:0.72rem;">{{ rel.verbatim_a }}</blockquote>
+      </details>
+      {% endif %}
+      {% if rel.paragraph_a %}
+      <details style="margin-top:0.2rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">paragraph ({{ rel.paragraph_a|length }} chars)</summary>
+        <blockquote style="margin:0.2rem 0; padding:0.3rem 0.5rem; border-left:3px solid var(--border-light, #d0d7de); background:var(--bg-soft, #f6f8fa); color:var(--text-dim); font-size:0.72rem; white-space:pre-wrap; line-height:1.4;">{{ rel.paragraph_a }}</blockquote>
+      </details>
+      {% endif %}
+    </td>
+    {# Predicate B — mirror of A. #}
+    <td style="max-width:280px; font-size:0.78rem;">
+      <div style="color:var(--text-dim);">{{ rel.predicate_b }}</div>
+      {% if rel.scope_b %}
+      <div style="margin-top:0.25rem;">
+        {% for k, v in rel.scope_b.items() %}
+          {% if v is not none and k != 'scope_parsed' %}
+            <span class="badge" style="background:#e0eaff;color:#1d3a8a; font-size:0.7rem;">{{ k }}={{ v }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if rel.nli_input_b %}
+      <details style="margin-top:0.25rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">NLI input</summary>
+        <code style="display:block; white-space:pre-wrap; word-break:break-word; font-size:0.72rem; color:var(--text-dim); margin-top:0.2rem;">{{ rel.nli_input_b }}</code>
+      </details>
+      {% endif %}
+      {% if rel.verbatim_b %}
+      <details style="margin-top:0.2rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">verbatim</summary>
+        <blockquote style="margin:0.2rem 0; padding:0.25rem 0.4rem; border-left:2px solid var(--border, #d0d7de); color:var(--text-dim); font-size:0.72rem;">{{ rel.verbatim_b }}</blockquote>
+      </details>
+      {% endif %}
+      {% if rel.paragraph_b %}
+      <details style="margin-top:0.2rem;">
+        <summary style="cursor:pointer; color:var(--text-dim); font-size:0.7rem;">paragraph ({{ rel.paragraph_b|length }} chars)</summary>
+        <blockquote style="margin:0.2rem 0; padding:0.3rem 0.5rem; border-left:3px solid var(--border-light, #d0d7de); background:var(--bg-soft, #f6f8fa); color:var(--text-dim); font-size:0.72rem; white-space:pre-wrap; line-height:1.4;">{{ rel.paragraph_b }}</blockquote>
+      </details>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div style="color:var(--text-dim); font-style:italic; padding:16px 0;">No relations in corpus_relations.json.</div>
+{% endif %}
+
+{% endif %}{# /corpus_data #}
+
+<script>
+function filterRows() {
+  const q = document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('#table-body tr').forEach(function(tr) {
+    const pmcid = (tr.dataset.pmcid || '');
+    const run   = (tr.dataset.run   || '');
+    tr.style.display = (!q || pmcid.includes(q) || run.includes(q)) ? '' : 'none';
+  });
+}
+
+let _sortCol = null, _sortDir = 1;
+function sortBy(col) {
+  _sortDir = (_sortCol === col) ? -_sortDir : 1;
+  _sortCol = col;
+  const tbody = document.getElementById('table-body');
+  const rows = Array.from(tbody.querySelectorAll('tr[data-pmcid]'));
+  rows.sort(function(a, b) {
+    let va = a.dataset[col] || '';
+    let vb = b.dataset[col] || '';
+    // Numeric sort for count columns
+    if (['map', 'canonical', 'final', 'relations', 'flagged'].includes(col)) {
+      va = parseInt(va) || 0;
+      vb = parseInt(vb) || 0;
+      return _sortDir * (va - vb);
+    }
+    return _sortDir * va.localeCompare(vb);
+  });
+  rows.forEach(function(r) { tbody.appendChild(r); });
+}
+
+function filterCorpusRows() {
+  const q     = (document.getElementById('cr-search')?.value || '').toLowerCase();
+  const scope = document.getElementById('cr-scope')?.value || '';
+  const type  = document.getElementById('cr-type')?.value  || '';
+  document.querySelectorAll('#corpus-body tr').forEach(function(tr) {
+    let show = true;
+    if (q     && !(tr.dataset.search || '').includes(q))  show = false;
+    if (scope && tr.dataset.scope !== scope)               show = false;
+    if (type  && tr.dataset.type  !== type)                show = false;
+    tr.style.display = show ? '' : 'none';
+  });
+}
+
+let _corpusSortCol = null, _corpusSortDir = 1;
+function sortCorpus(col) {
+  _corpusSortDir = (_corpusSortCol === col) ? -_corpusSortDir : 1;
+  _corpusSortCol = col;
+  const tbody = document.getElementById('corpus-body');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort(function(a, b) {
+    let va, vb;
+    if (col === 'scope')   { va = a.dataset.scope || '';  vb = b.dataset.scope || ''; }
+    else if (col === 'type')    { va = a.dataset.type || '';   vb = b.dataset.type || ''; }
+    else if (col === 'pmcid_a') { va = a.dataset.pmcidA || ''; vb = b.dataset.pmcidA || ''; }
+    else if (col === 'pmcid_b') { va = a.dataset.pmcidB || ''; vb = b.dataset.pmcidB || ''; }
+    else if (col === 'nli_ab')  { va = parseFloat(a.dataset.nliAb) || 0; vb = parseFloat(b.dataset.nliAb) || 0; return _corpusSortDir * (va - vb); }
+    else if (col === 'nli_ba')  { va = parseFloat(a.dataset.nliBa) || 0; vb = parseFloat(b.dataset.nliBa) || 0; return _corpusSortDir * (va - vb); }
+    else { va = ''; vb = ''; }
+    return _corpusSortDir * va.localeCompare(vb);
+  });
+  rows.forEach(function(r) { tbody.appendChild(r); });
+}
+</script>
+</body>
+</html>

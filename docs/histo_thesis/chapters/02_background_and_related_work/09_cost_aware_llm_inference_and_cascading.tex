@@ -1,0 +1,8 @@
+\section{Cost-aware LLM inference and cascading}\label{section:background-cost-aware-llm-inference-and-cascading}
+
+Using the strongest models for all inputs can improve quality, but it is prohibitively expensive for large-scale knowledge extraction. This is the main motivation behind cost-aware inference strategies that send easier cases to cheaper models, and reserve expensive models for more difficult cases~\parencite{chen2023frugalgpt}. 
+
+The MAP stage in this thesis follows this idea by incorporating agreement-based cascading into the pipeline, in which the agreement between cheaper voters decides whether to escalate text chunks to a more expensive voter tier, accept the cheaper output, or reject it completely. This configuration builds directly on agreement-based cascading for efficient inference~\parencite{kolawole2025abc} and on semantic-agreement cascades for free-prose output~\parencite{soiffer2025semantic}.
+
+This thesis implements a variant that scores agreement on structured, typed findings rather than free-form prose, adds 
+safety gates for tiers with models supporting or conflicting with each other, and uses voter models from multiple providers. The cascade is calibrated on the selected histopathology corpus, and Section~\ref{section:results-cost-quality-comparison} reports the cost-quality results obtained under the Opus-based silver metric.

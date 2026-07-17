@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline Inspector — {{ pmcid }}</title>
+<!-- sentence_lookup is injected as a JS object for hover tooltips -->
+<script>
+const SENTENCE_LOOKUP = {{ sentence_lookup_json | safe }};
+</script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #22263a;
+    --border: #2e3350;
+    --text: #d4d8f0;
+    --text-dim: #7880a0;
+    --accent: #5b7cfa;
+    --accent2: #8b5cf6;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --orange: #f97316;
+    --cyan: #06b6d4;
+    --font: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    --font-ui: system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; line-height: 1.5; }
+  a { color: var(--accent); text-decoration: none; }
+  h1 { font-size: 1.4rem; font-weight: 700; }
+  h2 { font-size: 1.1rem; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 12px; }
+  h3 { font-size: 0.95rem; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; }
+  pre, code { font-family: var(--font); font-size: 12px; }
+  pre { background: var(--bg); padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid var(--border); }
+
+  /* Layout */
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); padding: 20px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .sidebar-title { padding: 0 16px 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+  .sidebar nav a { display: block; padding: 6px 16px; color: var(--text-dim); font-size: 0.85rem; border-left: 3px solid transparent; transition: all 0.15s; }
+  .sidebar nav a:hover { color: var(--text); background: var(--bg3); border-left-color: var(--accent); }
+  .main { flex: 1; padding: 24px 32px; max-width: 1400px; }
+
+  /* Overview */
+  .overview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; }
+  .stat-card .num { font-size: 1.6rem; font-weight: 700; color: var(--accent); font-family: var(--font); }
+  .stat-card .label { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
+  .summary-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 24px; white-space: pre-wrap; font-size: 0.88rem; line-height: 1.7; color: var(--text); max-height: 220px; overflow-y: auto; }
+
+  /* Section wrappers */
+  .section { margin-bottom: 40px; }
+
+  /* Controls bar */
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .controls input[type=text] { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 6px 10px; font-size: 0.85rem; width: 220px; }
+  .controls input[type=text]:focus { outline: none; border-color: var(--accent); }
+  .controls select { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 6px 8px; font-size: 0.85rem; }
+  .controls label { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; color: var(--text-dim); cursor: pointer; }
+  .controls label input[type=checkbox] { cursor: pointer; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.72rem; font-weight: 600; font-family: var(--font); vertical-align: middle; }
+  .badge-green  { background: #14532d; color: #86efac; }
+  .badge-yellow { background: #78350f; color: #fcd34d; }
+  .badge-red    { background: #7f1d1d; color: #fca5a5; }
+  .badge-orange { background: #7c2d12; color: #fdba74; }
+  .badge-blue   { background: #1e3a5f; color: #93c5fd; }
+  .badge-purple { background: #3b0764; color: #d8b4fe; }
+  .badge-gray   { background: #1f2937; color: #9ca3af; }
+  .badge-cyan   { background: #0c4a6e; color: #67e8f9; }
+
+  /* Warning icons */
+  .warn { color: var(--yellow); margin-right: 4px; }
+  .warn-red { color: var(--red); margin-right: 4px; }
+
+  /* Cards */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; overflow: visible; }
+  .card.flagged { border-color: var(--orange); }
+  .card.contradicted { border-color: var(--red); }
+  .card-header { padding: 10px 14px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; user-select: none; background: var(--bg2); }
+  .card-header:hover { background: var(--bg3); }
+  .card-header .card-title { flex: 1; font-size: 0.88rem; font-weight: 500; }
+  .card-header .card-badges { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
+  .card-body { padding: 12px 14px; border-top: 1px solid var(--border); display: none; }
+  .card-body.open { display: block; }
+
+  /* Field tables */
+  .field-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .field-table td { padding: 4px 8px; vertical-align: top; border-bottom: 1px solid var(--border); }
+  .field-table td:first-child { color: var(--text-dim); width: 170px; white-space: nowrap; font-family: var(--font); }
+  .field-table tr:last-child td { border-bottom: none; }
+
+  /* Chunk grid */
+  .chunk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+
+  /* Lineage trace */
+  .lineage { background: var(--bg3); border-radius: 4px; padding: 10px 12px; margin-top: 8px; }
+  .lineage-step { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
+  .lineage-step .step-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); min-width: 80px; padding-top: 2px; }
+  .lineage-step .step-content { flex: 1; font-size: 0.82rem; }
+  .lineage-connector { border-left: 2px solid var(--border); margin-left: 39px; height: 8px; }
+
+  /* Side-by-side comparison */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .compare-col { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; }
+  .compare-col .stage-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 6px; }
+  .compare-col .field-row { margin-bottom: 4px; font-size: 0.8rem; }
+  .compare-col .field-row .key { color: var(--text-dim); font-family: var(--font); }
+  .diff-highlight { background: #3d2e00; border-radius: 2px; padding: 0 3px; }
+
+  /* Verbatim quote */
+  .verbatim { border-left: 3px solid var(--accent2); padding: 6px 10px; font-size: 0.82rem; color: var(--text); background: var(--bg); border-radius: 0 4px 4px 0; margin-top: 6px; font-style: italic; }
+
+  /* Score bar */
+  .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .score-bar { height: 6px; border-radius: 3px; background: var(--border); flex: 1; max-width: 120px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 3px; }
+  .score-text { font-family: var(--font); font-size: 0.8rem; }
+
+  /* Empty state */
+  .empty { color: var(--text-dim); font-style: italic; padding: 20px 0; }
+
+  /* Relations table */
+  .rel-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .rel-table th { text-align: left; padding: 6px 10px; background: var(--bg3); color: var(--text-dim); font-weight: 600; border-bottom: 1px solid var(--border); }
+  .rel-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .rel-table tr:hover td { background: var(--bg3); }
+
+  /* Tag pills */
+  .tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; padding: 1px 6px; font-size: 0.72rem; font-family: var(--font); color: var(--text-dim); margin: 1px; }
+
+  /* Collapsible raw JSON */
+  .raw-toggle { font-size: 0.75rem; color: var(--accent); cursor: pointer; }
+  .raw-block { display: none; margin-top: 6px; }
+  .raw-block.open { display: block; }
+
+  /* Sticky section headers */
+  .section-anchor { scroll-margin-top: 20px; }
+
+  /* Evidence badge hover + click */
+  .ev-tag { cursor: pointer; }
+  #ev-floating-tooltip {
+    display: none;
+    position: fixed;
+    min-width: 280px;
+    max-width: 560px;
+    background: #2a2d3e;
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    color: var(--text);
+    font-family: var(--font-ui);
+    line-height: 1.5;
+    white-space: normal;
+    z-index: 9999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    word-break: break-word;
+    pointer-events: none;
+  }
+  /* Pinned source-text panel (click to open) */
+  #ev-pinned-panel {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 480px;
+    max-height: 50vh;
+    overflow-y: auto;
+    background: #1a1d27;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 0.82rem;
+    color: var(--text);
+    font-family: var(--font-ui);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    z-index: 10000;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+    word-break: break-word;
+  }
+  #ev-pinned-panel .ev-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+  }
+  #ev-pinned-panel .ev-panel-close {
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 2px;
+  }
+  #ev-pinned-panel .ev-panel-body {
+    font-style: italic;
+    border-left: 3px solid var(--accent2);
+    padding-left: 10px;
+  }
+
+  /* Responsive tweaks */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar nav -->
+  <div class="sidebar">
+    <div class="sidebar-title">Pipeline Inspector</div>
+    {% if live_mode is defined and live_mode %}
+    <div style="padding: 0 16px 12px;">
+      <a href="/" style="font-size:0.8rem; color:var(--text-dim);">← All papers</a>
+    </div>
+    {% if available_runs is defined and available_runs|length > 1 %}
+    <div style="padding: 0 16px 12px;">
+      <div style="font-size:0.75rem; color:var(--text-dim); margin-bottom:4px;">Run</div>
+      <select onchange="window.location='/paper/{{ pmcid }}/'+this.value"
+              style="width:100%; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:5px 8px; border-radius:4px; font-size:0.82rem;">
+        {% for r in available_runs %}
+        <option value="{{ r.run_id }}" {% if r.run_id == current_run_id %}selected{% endif %}>
+          {{ r.started_at[:16] if r.started_at else r.run_id }}
+          {% if r.status != 'success' %}({{ r.status }}){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    {% endif %}
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#final-rules">Final Rules ({{ final_rules|length }})</a>
+      <a href="#canonical-rules">Canonical Rules ({{ canonical_rules|length }})</a>
+      <a href="#map-findings">MAP Findings ({{ total_map_findings }})</a>
+      <a href="#relations">Relations ({{ relations|length }})</a>
+      {% if cross_paper_total > 0 %}<a href="#corpus-connections">Cross-paper ({{ cross_paper_total }})</a>{% endif %}
+      <a href="#summary">Narrative Summary</a>
+    </nav>
+  </div>
+
+  <div class="main">
+
+    <!-- A. Overview -->
+    <div id="overview" class="section section-anchor">
+      <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+        <h1>🔬 Pipeline Inspector</h1>
+        <span class="badge badge-cyan">{{ pmcid }}</span>
+        {% if run_id %}<span class="badge badge-gray">{{ run_id }}</span>{% endif %}
+        <span class="badge badge-{% if status == 'success' %}green{% else %}red{% endif %}">{{ status }}</span>
+      </div>
+
+      <div class="overview-grid">
+        <div class="stat-card">
+          <div class="num">{{ total_map_findings }}</div>
+          <div class="label">MAP findings</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">{{ map_chunks|length }}</div>
+          <div class="label">MAP chunks</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">{{ canonical_rules|length }}</div>
+          <div class="label">Canonical rules</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">{{ relations|length }}</div>
+          <div class="label">Relations</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">{{ final_rules|length }}</div>
+          <div class="label">Final rules</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">{{ flagged_count }}</div>
+          <div class="label">⚠ Flagged</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">{{ contradicted_count }}</div>
+          <div class="label">✗ Contradicted</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">{{ low_grounding_count }}</div>
+          <div class="label">Low grounding</div>
+        </div>
+      </div>
+
+      {% if summary %}
+      <h2>Narrative Summary</h2>
+      <div class="summary-box">{{ summary }}</div>
+      {% endif %}
+    </div>
+
+    <!-- B/C. Final Rules with lineage -->
+    <div id="final-rules" class="section section-anchor">
+      <h2>Final Rules</h2>
+      <div class="controls">
+        <input type="text" id="fr-search" placeholder="Search subject, outcome, claim…" oninput="filterCards('fr')">
+        <select id="fr-cat" onchange="filterCards('fr')">
+          <option value="">All categories</option>
+          {% for cat in fr_categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+        </select>
+        <select id="fr-rel" onchange="filterCards('fr')">
+          <option value="">All relation types</option>
+          {% for rt in fr_relation_types %}<option value="{{ rt }}">{{ rt }}</option>{% endfor %}
+        </select>
+        <label><input type="checkbox" id="fr-flagged" onchange="filterCards('fr')"> Flagged only</label>
+        <label><input type="checkbox" id="fr-contradicted" onchange="filterCards('fr')"> Contradicted only</label>
+        <label><input type="checkbox" id="fr-lowgs" onchange="filterCards('fr')"> Low grounding</label>
+      </div>
+
+      <div id="fr-list">
+      {% for fr in final_rules %}
+      {% set flags = fr.flags %}
+      <div class="card {% if fr.is_contradicted %}contradicted{% elif flags %}flagged{% endif %}"
+           data-search="{{ (fr.subject_entity ~ ' ' ~ fr.outcome_entity ~ ' ' ~ fr.predicate_text ~ ' ' ~ fr.category ~ ' ' ~ fr.relation_type)|lower }}"
+           data-cat="{{ fr.category }}"
+           data-rel="{{ fr.relation_type }}"
+           data-flagged="{{ '1' if flags else '0' }}"
+           data-contradicted="{{ '1' if fr.is_contradicted else '0' }}"
+           data-lowgs="{{ '1' if fr.low_grounding else '0' }}">
+        <div class="card-header" onclick="toggleCard(this)">
+          <div class="card-title">
+            {% if flags %}<span class="warn">⚠</span>{% endif %}
+            {% if fr.is_contradicted %}<span class="warn-red">✗</span>{% endif %}
+            <strong>{{ fr.subject_entity or '—' }}</strong>
+            <span style="color:var(--text-dim)"> → </span>
+            <strong>{{ fr.outcome_entity or '—' }}</strong>
+            <span style="color:var(--text-dim); font-size:0.8rem"> [{{ fr.relation_type }}]</span>
+          </div>
+          <div class="card-badges">
+            <span class="badge badge-{% if fr.direction == 'positive' %}green{% elif fr.direction == 'negative' %}red{% elif fr.direction == 'unclear' %}yellow{% else %}gray{% endif %}" title="{% if fr.direction == 'positive' %}The rule asserts a positive association or presence{% elif fr.direction == 'negative' %}The rule asserts a negative association or absence{% elif fr.direction == 'unclear' %}Direction not determinable — LLM could not identify the sign of this relationship{% elif fr.direction == 'partial' %}The rule asserts a partial or mixed association{% elif fr.direction == 'absent' %}The rule asserts absence of the outcome{% else %}No direction extracted{% endif %}">{% if fr.direction == 'unclear' %}unclear dir{% else %}{{ fr.direction or 'no dir' }}{% endif %}</span>
+            <span class="badge badge-blue">{{ fr.category }}</span>
+            <span class="badge badge-{% if fr.final_score >= 0.7 %}green{% elif fr.final_score >= 0.4 %}yellow{% else %}red{% endif %}">score {{ '%.3f'|format(fr.final_score) }}</span>
+            {% for flag in flags %}<span class="badge badge-orange">{{ flag }}</span>{% endfor %}
+          </div>
+        </div>
+        <div class="card-body">
+          <table class="field-table">
+            <tr><td>final_id</td><td><code>{{ fr.final_id }}</code></td></tr>
+            <tr><td>canonical_id</td><td><code>{{ fr.canonical_id }}</code></td></tr>
+            <tr><td>predicate_text</td><td>{{ fr.predicate_text }}</td></tr>
+            <tr><td>final_score</td><td>
+              <div class="score-bar-wrap">
+                <div class="score-bar"><div class="score-bar-fill" style="width:{{ (fr.final_score * 100)|int }}%;background:{% if fr.final_score >= 0.7 %}var(--green){% elif fr.final_score >= 0.4 %}var(--yellow){% else %}var(--red){% endif %};"></div></div>
+                <span class="score-text">{{ '%.4f'|format(fr.final_score) }}</span>
+              </div>
+            </td></tr>
+            <tr><td>support / contra / qualify</td><td>{{ fr.support_count }} / {{ fr.contradict_count }} / {{ fr.scope_qualify_count }}</td></tr>
+            <tr><td>is_contradicted</td><td>{% if fr.is_contradicted %}<span class="badge badge-red">YES</span>{% else %}<span class="badge badge-green">NO</span>{% endif %}</td></tr>
+            {% if fr.contradicted_by %}<tr><td>contradicted_by</td><td>{% for cb in fr.contradicted_by %}<span class="tag">{{ cb }}</span>{% endfor %}</td></tr>{% endif %}
+            <tr><td>canonical_scope</td><td>{{ fr.canonical_scope }}</td></tr>
+            <tr><td>supporting_pmcids</td><td>{% for p in (fr.supporting_pmcids or []) %}<span class="tag">{{ p }}</span>{% endfor %}</td></tr>
+            <tr><td>mean_grounding_score</td><td>
+              {% if fr.mean_grounding_score is not none %}
+              <div class="score-bar-wrap">
+                <div class="score-bar"><div class="score-bar-fill" style="width:{{ (fr.mean_grounding_score * 100)|int }}%;background:{% if fr.mean_grounding_score >= 0.7 %}var(--green){% elif fr.mean_grounding_score >= 0.4 %}var(--yellow){% else %}var(--red){% endif %};"></div></div>
+                <span class="score-text">{{ '%.4f'|format(fr.mean_grounding_score) }}</span>
+              </div>
+              {% else %}—{% endif %}
+            </td></tr>
+            <tr><td>finding_count</td><td>{{ fr.finding_count }}</td></tr>
+          </table>
+
+          <!-- Lineage trace -->
+          {% if fr.lineage %}
+          <div style="margin-top:12px;">
+            <h3>Lineage Trace</h3>
+            <div class="lineage">
+              <!-- FINAL → CANONICAL -->
+              <div class="lineage-step">
+                <div class="step-label">FINAL</div>
+                <div class="step-content">
+                  <code>{{ fr.final_id }}</code>
+                  <span class="badge badge-{% if fr.final_score >= 0.7 %}green{% elif fr.final_score >= 0.4 %}yellow{% else %}red{% endif %}">{{ '%.3f'|format(fr.final_score) }}</span>
+                </div>
+              </div>
+              <div class="lineage-connector"></div>
+              <div class="lineage-step">
+                <div class="step-label">CANONICAL</div>
+                <div class="step-content">
+                  <code>{{ fr.canonical_id }}</code>
+                  — {{ fr.predicate_text[:120] }}{% if fr.predicate_text|length > 120 %}…{% endif %}
+                </div>
+              </div>
+              <!-- Normal findings with source spans -->
+              {% set normal_findings = fr.lineage.normal_findings if fr.lineage else [] %}
+              {% for nf in normal_findings %}
+              <div class="lineage-connector"></div>
+              <div class="lineage-step">
+                <div class="step-label">NORMAL</div>
+                <div class="step-content">
+                  <code>{{ nf.normal_id }}</code>
+                  {% if nf.predicate_text %}<span style="color:var(--text-dim)"> — {{ nf.predicate_text[:120] }}{% if nf.predicate_text|length > 120 %}…{% endif %}</span>{% endif %}
+                  {% for span in nf.spans %}
+                  <div style="margin-top:6px; border-left:2px solid var(--border); padding-left:8px;">
+                    <div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:2px;">
+                      {{ span.sentence_id }}{% if span.text_element_id %} · te:{{ span.text_element_id }}{% endif %}
+                    </div>
+                    <div class="verbatim"><strong>Sentence:</strong> {{ span.verbatim[:300] }}{% if span.verbatim|length > 300 %}…{% endif %}</div>
+                    {% if span.paragraph and span.paragraph != span.verbatim %}
+                    <div class="verbatim" style="margin-top:4px; color:var(--text-dim);"><strong>Paragraph:</strong> {{ span.paragraph[:600] }}{% if span.paragraph|length > 600 %}…{% endif %}</div>
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endfor %}
+              {% if not normal_findings %}
+              {% for nid in fr.member_normal_ids or [] %}
+              <div class="lineage-connector"></div>
+              <div class="lineage-step">
+                <div class="step-label">NORMAL</div>
+                <div class="step-content"><code>{{ nid }}</code></div>
+              </div>
+              {% endfor %}
+              {% endif %}
+              <!-- MAP findings (matched by subject/outcome) -->
+              {% if fr.lineage.map_findings %}
+              {% for mf in fr.lineage.map_findings %}
+              <div class="lineage-connector"></div>
+              <div class="lineage-step">
+                <div class="step-label">MAP</div>
+                <div class="step-content">
+                  <span class="badge badge-gray">{{ mf.chunk_id }}</span>
+                  <strong>{{ mf.subject_entity }}</strong> → <strong>{{ mf.outcome_entity }}</strong>
+                  {% if mf.subject_entity != fr.subject_entity %}<span class="badge badge-orange" title="Entity normalized">{{ mf.subject_entity }} ≠ {{ fr.subject_entity }}</span>{% endif %}
+                  <br><span style="color:var(--text-dim)">{{ mf.claim[:150] }}{% if mf.claim|length > 150 %}…{% endif %}</span>
+                  {% if mf.grounding_score is not none %}
+                  <span class="badge badge-{% if mf.grounding_score >= 0.7 %}green{% elif mf.grounding_score >= 0.4 %}yellow{% else %}red{% endif %}">gs {{ '%.3f'|format(mf.grounding_score) }}</span>
+                  {% endif %}
+                  {% if mf.verbatim_support %}
+                  <div class="verbatim">{{ mf.verbatim_support[:300] }}{% if mf.verbatim_support|length > 300 %}…{% endif %}</div>
+                  {% endif %}
+                  {% if mf.evidence %}
+                  <div style="margin-top:4px;">{% for ev in mf.evidence %}<span class="tag ev-tag" data-ev="{{ ev }}">{{ ev }}</span>{% endfor %}</div>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Side-by-side stage comparison -->
+          {% if fr.lineage and fr.lineage.map_findings %}
+          <div style="margin-top:12px;">
+            <h3>Stage Comparison</h3>
+            <div class="compare-grid">
+              <!-- MAP column (first matching finding) -->
+              {% set mf = fr.lineage.map_findings[0] %}
+              <div class="compare-col">
+                <div class="stage-label">MAP (raw)</div>
+                <div class="field-row"><span class="key">subject: </span>
+                  <span {% if mf.subject_entity != fr.subject_entity %}class="diff-highlight"{% endif %}>{{ mf.subject_entity or '—' }}</span>
+                </div>
+                <div class="field-row"><span class="key">outcome: </span>
+                  <span {% if mf.outcome_entity != fr.outcome_entity %}class="diff-highlight"{% endif %}>{{ mf.outcome_entity or '—' }}</span>
+                </div>
+                <div class="field-row"><span class="key">direction: </span>{{ mf.direction or '—' }}</div>
+                <div class="field-row"><span class="key">grounding: </span>{{ '%.3f'|format(mf.grounding_score) if mf.grounding_score is not none else '—' }}</div>
+                <div class="field-row"><span class="key">confidence: </span>{{ mf.confidence or '—' }}</div>
+              </div>
+              <!-- CANONICAL column -->
+              <div class="compare-col">
+                <div class="stage-label">CANONICAL</div>
+                <div class="field-row"><span class="key">subject: </span>{{ fr.subject_entity or '—' }}</div>
+                <div class="field-row"><span class="key">outcome: </span>{{ fr.outcome_entity or '—' }}</div>
+                <div class="field-row"><span class="key">scope: </span>{{ fr.canonical_scope }}</div>
+                <div class="field-row"><span class="key">direction: </span>{{ fr.direction or '—' }}</div>
+                <div class="field-row"><span class="key">mean_gs: </span>{{ '%.3f'|format(fr.mean_grounding_score) if fr.mean_grounding_score is not none else '—' }}</div>
+                <div class="field-row"><span class="key">finding_count: </span>{{ fr.finding_count }}</div>
+              </div>
+              <!-- FINAL column -->
+              <div class="compare-col">
+                <div class="stage-label">FINAL</div>
+                <div class="field-row"><span class="key">subject: </span>{{ fr.subject_entity or '—' }}</div>
+                <div class="field-row"><span class="key">outcome: </span>{{ fr.outcome_entity or '—' }}</div>
+                <div class="field-row"><span class="key">final_score: </span>{{ '%.4f'|format(fr.final_score) }}</div>
+                <div class="field-row"><span class="key">support: </span>{{ fr.support_count }}</div>
+                <div class="field-row"><span class="key">contradict: </span>{{ fr.contradict_count }}</div>
+                <div class="field-row"><span class="key">contradicted: </span>{{ fr.is_contradicted }}</div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Raw JSON toggle -->
+          <div style="margin-top:10px;">
+            <span class="raw-toggle" onclick="toggleRaw(this)">▶ raw JSON</span>
+            <div class="raw-block"><pre>{{ fr.raw_json }}</pre></div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty">No final rules found.</div>
+      {% endfor %}
+      </div>
+    </div>
+
+    <!-- Canonical rules -->
+    <div id="canonical-rules" class="section section-anchor">
+      <h2>Canonical Rules</h2>
+      <div class="controls">
+        <input type="text" id="cr-search" placeholder="Search…" oninput="filterCards('cr')">
+        <select id="cr-cat" onchange="filterCards('cr')">
+          <option value="">All categories</option>
+          {% for cat in cr_categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+        </select>
+        <select id="cr-rel" onchange="filterCards('cr')">
+          <option value="">All relation types</option>
+          {% for rt in cr_relation_types %}<option value="{{ rt }}">{{ rt }}</option>{% endfor %}
+        </select>
+        <label><input type="checkbox" id="cr-flagged" onchange="filterCards('cr')"> Flagged only</label>
+      </div>
+      <div id="cr-list">
+      {% for cr in canonical_rules %}
+      {% set flags = cr.flags %}
+      <div class="card {% if flags %}flagged{% endif %}"
+           data-search="{{ (cr.subject_entity ~ ' ' ~ cr.outcome_entity ~ ' ' ~ cr.predicate_text ~ ' ' ~ cr.category ~ ' ' ~ cr.relation_type)|lower }}"
+           data-cat="{{ cr.category }}"
+           data-rel="{{ cr.relation_type }}"
+           data-flagged="{{ '1' if flags else '0' }}">
+        <div class="card-header" onclick="toggleCard(this)">
+          <div class="card-title">
+            {% if flags %}<span class="warn">⚠</span>{% endif %}
+            <strong>{{ cr.subject_entity or '—' }}</strong>
+            <span style="color:var(--text-dim)"> → </span>
+            <strong>{{ cr.outcome_entity or '—' }}</strong>
+            <span style="color:var(--text-dim); font-size:0.8rem"> [{{ cr.relation_type }}]</span>
+          </div>
+          <div class="card-badges">
+            <span class="badge badge-{% if cr.direction == 'positive' %}green{% elif cr.direction == 'negative' %}red{% elif cr.direction == 'unclear' %}yellow{% else %}gray{% endif %}" title="{% if cr.direction == 'positive' %}The rule asserts a positive association or presence{% elif cr.direction == 'negative' %}The rule asserts a negative association or absence{% elif cr.direction == 'unclear' %}The LLM extracted a relationship but could not determine its sign (positive/negative/absent/partial){% elif cr.direction == 'partial' %}The rule asserts a partial or mixed association{% elif cr.direction == 'absent' %}The rule asserts absence of the outcome{% else %}No direction extracted{% endif %}">{% if cr.direction == 'unclear' %}unclear dir{% else %}{{ cr.direction or 'no dir' }}{% endif %}</span>
+            <span class="badge badge-blue">{{ cr.category }}</span>
+            <span class="badge badge-gray">n={{ cr.finding_count }}</span>
+            {% if cr.mean_grounding_score is not none %}<span class="badge badge-{% if cr.mean_grounding_score >= 0.7 %}green{% elif cr.mean_grounding_score >= 0.4 %}yellow{% else %}red{% endif %}">gs {{ '%.3f'|format(cr.mean_grounding_score) }}</span>{% endif %}
+            {% for flag in flags %}<span class="badge badge-orange">{{ flag }}</span>{% endfor %}
+          </div>
+        </div>
+        <div class="card-body">
+          <table class="field-table">
+            <tr><td>canonical_id</td><td><code>{{ cr.canonical_id }}</code></td></tr>
+            <tr><td>group_id</td><td><code>{{ cr.group_id }}</code></td></tr>
+            <tr><td>predicate_text</td><td>{{ cr.predicate_text }}</td></tr>
+            <tr><td>canonical_scope</td><td>{{ cr.canonical_scope }}</td></tr>
+            {% if cr.scope %}
+            <tr>
+              <td>scope</td>
+              <td>
+                {% for k, v in cr.scope.items() %}
+                  {% if v is not none and k != 'scope_parsed' %}
+                    <span class="tag" style="background:#e0eaff;color:#1d3a8a;">{{ k }}={{ v }}</span>
+                  {% endif %}
+                {% endfor %}
+                {% if not cr.scope %}<span style="color:var(--text-dim)">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endif %}
+            {% if cr.representative_verbatim %}
+            <tr>
+              <td>verbatim source</td>
+              <td>
+                <blockquote style="margin:0; padding:0.25rem 0.5rem; border-left:2px solid var(--border); font-size:0.85rem;">
+                  {{ cr.representative_verbatim }}
+                </blockquote>
+                {% if cr.representative_text_element_id %}
+                <span style="color:var(--text-dim); font-size:0.72rem;">text_element_id = {{ cr.representative_text_element_id }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endif %}
+            {% if cr.representative_paragraph %}
+            <tr>
+              <td title="The full paragraph (text_elements.text_content) containing the verbatim source sentence above. Resolved at inspector-render time via the DB pointer representative_text_element_id.">paragraph context</td>
+              <td>
+                <details>
+                  <summary style="cursor:pointer; color:var(--text-dim); font-size:0.8rem;">show full paragraph ({{ cr.representative_paragraph|length }} chars)</summary>
+                  <blockquote style="margin:0.5rem 0 0; padding:0.5rem 0.75rem; border-left:3px solid var(--border-light, #d0d7de); background:var(--bg-soft, #f6f8fa); font-size:0.85rem; white-space:pre-wrap; line-height:1.5;">{{ cr.representative_paragraph }}</blockquote>
+                </details>
+              </td>
+            </tr>
+            {% endif %}
+            {% if cr.nli_input_scope_predicate %}
+            <tr>
+              <td title="The exact string the RELATE-stage NLI sees for this rule under the current RelateConfig (scope_aware_nli=True, use_verbatim_for_nli=False).">NLI input</td>
+              <td>
+                <code style="white-space:pre-wrap; word-break:break-word; font-size:0.82rem;">{{ cr.nli_input_scope_predicate }}</code>
+                {% if cr.nli_input_scope_verbatim and cr.nli_input_scope_verbatim != cr.nli_input_scope_predicate %}
+                <details style="margin-top:0.25rem;">
+                  <summary style="cursor:pointer; color:var(--text-dim); font-size:0.75rem;">if use_verbatim_for_nli=True →</summary>
+                  <code style="white-space:pre-wrap; word-break:break-word; font-size:0.78rem;">{{ cr.nli_input_scope_verbatim }}</code>
+                </details>
+                {% endif %}
+              </td>
+            </tr>
+            {% endif %}
+            <tr><td>supporting_pmcids</td><td>{% for p in (cr.supporting_pmcids or []) %}<span class="tag">{{ p }}</span>{% endfor %}</td></tr>
+            <tr><td>member_normal_ids</td><td>{% for nid in (cr.member_normal_ids or []) %}<span class="tag">{{ nid }}</span>{% endfor %}</td></tr>
+            <tr><td>mean_grounding_score</td><td>{{ '%.4f'|format(cr.mean_grounding_score) if cr.mean_grounding_score is not none else '—' }}</td></tr>
+          </table>
+          <div style="margin-top:10px;">
+            <span class="raw-toggle" onclick="toggleRaw(this)">▶ raw JSON</span>
+            <div class="raw-block"><pre>{{ cr.raw_json }}</pre></div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty">No canonical rules found.</div>
+      {% endfor %}
+      </div>
+    </div>
+
+    <!-- B. MAP findings by chunk -->
+    <div id="map-findings" class="section section-anchor">
+      <h2>MAP Findings by Chunk</h2>
+      <div class="controls">
+        <input type="text" id="mf-search" placeholder="Search claim, entity…" oninput="filterCards('mf')">
+        <select id="mf-cat" onchange="filterCards('mf')">
+          <option value="">All categories</option>
+          {% for cat in mf_categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+        </select>
+        <select id="mf-rel" onchange="filterCards('mf')">
+          <option value="">All relation types</option>
+          {% for rt in mf_relation_types %}<option value="{{ rt }}">{{ rt }}</option>{% endfor %}
+        </select>
+        <label><input type="checkbox" id="mf-flagged" onchange="filterCards('mf')"> Flagged only</label>
+        <label><input type="checkbox" id="mf-lowgs" onchange="filterCards('mf')"> Low grounding</label>
+      </div>
+      <div id="mf-list">
+      {% for chunk in map_chunks %}
+      <div style="margin-bottom:20px;">
+        <h3 style="color:var(--accent2); margin-bottom:8px;">
+          Chunk {{ chunk.chunk_id }}
+          <span class="badge badge-gray">{{ chunk.findings|length }} findings</span>
+          {% if chunk.audit_metadata %}
+          <span class="badge badge-blue">{{ chunk.audit_metadata.sentences_analyzed }} sentences</span>
+          {% endif %}
+        </h3>
+        {% for f in chunk.findings %}
+        {% set flags = f.flags %}
+        <div class="card {% if flags %}flagged{% endif %}"
+             data-search="{{ (f.subject_entity ~ ' ' ~ f.outcome_entity ~ ' ' ~ f.claim ~ ' ' ~ f.category ~ ' ' ~ f.relation_type)|lower }}"
+             data-cat="{{ f.category }}"
+             data-rel="{{ f.relation_type }}"
+             data-flagged="{{ '1' if flags else '0' }}"
+             data-lowgs="{{ '1' if f.low_grounding else '0' }}"
+             data-chunk="{{ chunk.chunk_id }}">
+          <div class="card-header" onclick="toggleCard(this)">
+            <div class="card-title">
+              {% if flags %}<span class="warn">⚠</span>{% endif %}
+              <strong>{{ f.subject_entity or '—' }}</strong>
+              <span style="color:var(--text-dim)"> → </span>
+              <strong>{{ f.outcome_entity or '—' }}</strong>
+              <span style="color:var(--text-dim); font-size:0.8rem"> [{{ f.relation_type }}]</span>
+            </div>
+            <div class="card-badges">
+              <span class="badge badge-{% if f.direction == 'positive' %}green{% elif f.direction == 'negative' %}red{% elif f.direction == 'unclear' %}yellow{% else %}gray{% endif %}" title="{% if f.direction == 'positive' %}The finding asserts a positive association or presence{% elif f.direction == 'negative' %}The finding asserts a negative association or absence{% elif f.direction == 'unclear' %}Direction not determinable — LLM could not identify the sign of this relationship{% elif f.direction == 'partial' %}The finding asserts a partial or mixed association{% elif f.direction == 'absent' %}The finding asserts absence of the outcome{% else %}No direction extracted{% endif %}">{% if f.direction == 'unclear' %}unclear dir{% else %}{{ f.direction or 'no dir' }}{% endif %}</span>
+              <span class="badge badge-blue">{{ f.category }}</span>
+              {% if f.grounding_score is not none %}<span class="badge badge-{% if f.grounding_score >= 0.7 %}green{% elif f.grounding_score >= 0.4 %}yellow{% else %}red{% endif %}">gs {{ '%.3f'|format(f.grounding_score) }}</span>{% endif %}
+              <span class="badge badge-{% if f.confidence == 'high' %}green{% elif f.confidence == 'medium' %}yellow{% else %}gray{% endif %}">{{ f.confidence or '—' }}</span>
+              {% for flag in flags %}<span class="badge badge-orange">{{ flag }}</span>{% endfor %}
+            </div>
+          </div>
+          <div class="card-body">
+            <table class="field-table">
+              <tr><td>claim</td><td>{{ f.claim }}</td></tr>
+              <tr><td>subject_entity</td><td>{{ f.subject_entity or '—' }}</td></tr>
+              <tr><td>outcome_entity</td><td>{{ f.outcome_entity or '—' }}</td></tr>
+              <tr><td>relation_type</td><td>{{ f.relation_type }}</td></tr>
+              <tr><td>direction</td><td>{{ f.direction or '—' }}</td></tr>
+              <tr><td>confidence</td><td>{{ f.confidence or '—' }}</td></tr>
+              <tr><td>grounding_score</td><td>{{ '%.4f'|format(f.grounding_score) if f.grounding_score is not none else '—' }}</td></tr>
+              <tr><td>evidence</td><td>{% for ev in (f.evidence or []) %}<span class="tag ev-tag" data-ev="{{ ev }}">{{ ev }}</span>{% endfor %}</td></tr>
+              {% if f.verbatim_support %}<tr><td>verbatim_support</td><td><div class="verbatim">{{ f.verbatim_support }}</div></td></tr>{% endif %}
+              {% if f.scope %}
+              <tr><td>scope</td><td>
+                {% for k, v in f.scope.items() %}{% if v is not none and k != 'scope_parsed' %}<span class="tag">{{ k }}={{ v }}</span>{% endif %}{% endfor %}
+              </td></tr>
+              {% endif %}
+            </table>
+            <div style="margin-top:10px;">
+              <span class="raw-toggle" onclick="toggleRaw(this)">▶ raw JSON</span>
+              <div class="raw-block"><pre>{{ f.raw_json }}</pre></div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty">No MAP chunks found.</div>
+      {% endfor %}
+      </div>
+    </div>
+
+    <!-- Relations table -->
+    <div id="relations" class="section section-anchor">
+      <h2>Relations</h2>
+      {% if relations %}
+      <table class="rel-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Rule A</th>
+            <th>Rule B</th>
+            <th>NLI A→B</th>
+            <th>NLI B→A</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for rel in relations %}
+        <tr>
+          <td><span class="badge badge-{% if rel.relation_type == 'contradicts' %}red{% elif rel.relation_type == 'entails' %}green{% elif rel.relation_type == 'scope_qualifies' %}blue{% else %}gray{% endif %}">{{ rel.relation_type }}</span></td>
+          <td><code>{{ rel.rule_id_a }}</code></td>
+          <td><code>{{ rel.rule_id_b }}</code></td>
+          <td>{{ '%.3f'|format(rel.nli_score_a_to_b) }}</td>
+          <td>{{ '%.3f'|format(rel.nli_score_b_to_a) }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty">No relations found (RELATE stage may have been skipped or produced no output).</div>
+      {% endif %}
+    </div>
+
+    <!-- Cross-paper connections from corpus_relations.json -->
+    {% if cross_paper_total > 0 %}
+    <div id="corpus-connections" class="section section-anchor">
+      <h2>Cross-paper Connections ({{ cross_paper_total }})</h2>
+      <p style="color:var(--text-dim); font-size:0.85rem; margin:0.25rem 0 0.75rem;">
+        Each row shows what the RELATE-stage NLI <em>actually saw</em> for the
+        local rule: the predicate is prepended with a <code>[scope: …]</code>
+        prefix carrying disease_subtype, tissue_site, assay_method, etc. (see
+        <code>RelateConfig.scope_aware_nli</code>). The "NLI input" cell makes
+        the embedded scope qualifiers visible so SUPPORT / CONTRADICT scores
+        can be audited against the text the model judged.
+      </p>
+      <table class="rel-table">
+        <thead>
+          <tr>
+            <th>This rule</th>
+            <th>NLI input (this side)</th>
+            <th>Type</th>
+            <th>Other PMCID</th>
+            <th>Other predicate</th>
+            <th>NLI A→B</th>
+            <th>NLI B→A</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for cr in canonical_rules %}
+          {% for conn in cr.corpus_connections %}
+          {% set is_a = (conn.rule_id_a == cr.canonical_id) %}
+          <tr>
+            <td>
+              <code style="font-size:0.75rem">{{ cr.canonical_id }}</code><br>
+              <span style="color:var(--text-dim); font-size:0.78rem">{{ cr.predicate_text }}</span>
+            </td>
+            <td style="max-width:320px; font-size:0.78rem">
+              {% if cr.nli_input_scope_predicate %}
+                <code style="white-space:pre-wrap; word-break:break-word;">{{ cr.nli_input_scope_predicate }}</code>
+              {% else %}
+                <span style="color:var(--text-dim)">(no scope/predicate)</span>
+              {% endif %}
+              {% if cr.representative_verbatim %}
+              <details style="margin-top:0.25rem;">
+                <summary style="cursor:pointer; color:var(--text-dim); font-size:0.75rem;">verbatim source</summary>
+                <blockquote style="margin:0.25rem 0; padding:0.25rem 0.5rem; border-left:2px solid var(--border); color:var(--text-dim); font-size:0.75rem;">
+                  {{ cr.representative_verbatim }}
+                </blockquote>
+              </details>
+              {% endif %}
+              {% if cr.representative_paragraph %}
+              <details style="margin-top:0.25rem;">
+                <summary style="cursor:pointer; color:var(--text-dim); font-size:0.75rem;">paragraph context ({{ cr.representative_paragraph|length }} chars)</summary>
+                <blockquote style="margin:0.25rem 0; padding:0.35rem 0.5rem; border-left:3px solid var(--border-light, #d0d7de); background:var(--bg-soft, #f6f8fa); color:var(--text-dim); font-size:0.75rem; white-space:pre-wrap; line-height:1.4;">{{ cr.representative_paragraph }}</blockquote>
+              </details>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge-{% if conn.relation_type == 'CONTRADICT' %}red{% elif conn.relation_type == 'SUPPORT' %}green{% elif conn.relation_type == 'SCOPE_QUALIFY' %}blue{% else %}gray{% endif %}">{{ conn.relation_type }}</span>
+            </td>
+            <td>
+              <span class="badge badge-cyan">{{ conn.pmcid_b if is_a else conn.pmcid_a }}</span>
+            </td>
+            <td style="max-width:280px; font-size:0.78rem; color:var(--text-dim)">
+              {{ conn.predicate_b if is_a else conn.predicate_a }}
+            </td>
+            <td>{{ '%.3f'|format(conn.nli_score_a_to_b) }}</td>
+            <td>{{ '%.3f'|format(conn.nli_score_b_to_a) }}</td>
+          </tr>
+          {% endfor %}
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Narrative summary full text -->
+    <div id="summary" class="section section-anchor">
+      <h2>Narrative Summary (full)</h2>
+      {% if summary %}
+      <div class="summary-box" style="max-height:none;">{{ summary }}</div>
+      {% else %}
+      <div class="empty">No narrative summary available.</div>
+      {% endif %}
+    </div>
+
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+function toggleCard(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+function toggleRaw(el) {
+  const block = el.nextElementSibling;
+  block.classList.toggle('open');
+  el.textContent = block.classList.contains('open') ? '▼ raw JSON' : '▶ raw JSON';
+}
+
+function filterCards(prefix) {
+  const search = (document.getElementById(prefix + '-search')?.value || '').toLowerCase();
+  const cat    = document.getElementById(prefix + '-cat')?.value || '';
+  const rel    = document.getElementById(prefix + '-rel')?.value || '';
+  const onlyFlagged      = document.getElementById(prefix + '-flagged')?.checked;
+  const onlyContradicted = document.getElementById(prefix + '-contradicted')?.checked;
+  const onlyLowGs        = document.getElementById(prefix + '-lowgs')?.checked;
+
+  const list = document.getElementById(prefix + '-list');
+  if (!list) return;
+
+  list.querySelectorAll('.card').forEach(card => {
+    let show = true;
+    if (search && !card.dataset.search?.includes(search)) show = false;
+    if (cat    && card.dataset.cat !== cat)                show = false;
+    if (rel    && card.dataset.rel !== rel)                show = false;
+    if (onlyFlagged      && card.dataset.flagged      !== '1') show = false;
+    if (onlyContradicted && card.dataset.contradicted !== '1') show = false;
+    if (onlyLowGs        && card.dataset.lowgs        !== '1') show = false;
+    card.style.display = show ? '' : 'none';
+  });
+}
+
+// Evidence badge: hover = floating quick-look, click = pinned scrollable panel
+(function() {
+  // ── Floating hover tooltip (quick preview) ────────────────────────────
+  var tip = document.createElement('div');
+  tip.id = 'ev-floating-tooltip';
+  document.body.appendChild(tip);
+
+  function showTip(e) {
+    if (pinnedEv) return; // suppress hover while panel is open
+    var ev = this.dataset.ev;
+    var text = SENTENCE_LOOKUP[ev];
+    tip.textContent = text ? ('\u201c' + text + '\u201d') : '(no source text for ' + ev + ')';
+    tip.style.display = 'block';
+    moveTip(e);
+  }
+  function moveTip(e) {
+    if (pinnedEv) return;
+    var x = e.clientX + 14;
+    var y = e.clientY - tip.offsetHeight - 10;
+    if (y < 4) y = e.clientY + 18;
+    if (x + tip.offsetWidth > window.innerWidth - 4) x = e.clientX - tip.offsetWidth - 14;
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+  }
+  function hideTip() { tip.style.display = 'none'; }
+
+  // ── Pinned panel (click to open, scrollable) ──────────────────────────
+  var panel = document.createElement('div');
+  panel.id = 'ev-pinned-panel';
+  panel.innerHTML =
+    '<div class="ev-panel-header">' +
+      '<span id="ev-panel-token"></span>' +
+      '<span class="ev-panel-close" title="Close">\u00d7</span>' +
+    '</div>' +
+    '<div class="ev-panel-body" id="ev-panel-body"></div>';
+  document.body.appendChild(panel);
+
+  var pinnedEv = null;
+
+  panel.querySelector('.ev-panel-close').addEventListener('click', function() {
+    panel.style.display = 'none';
+    pinnedEv = null;
+  });
+
+  function openPanel(ev) {
+    var text = SENTENCE_LOOKUP[ev];
+    document.getElementById('ev-panel-token').textContent = ev;
+    document.getElementById('ev-panel-body').textContent =
+      text ? ('\u201c' + text + '\u201d') : '(no source text for ' + ev + ')';
+    panel.style.display = 'block';
+    panel.scrollTop = 0;
+    pinnedEv = ev;
+    hideTip();
+  }
+
+  document.querySelectorAll('.ev-tag').forEach(function(tag) {
+    tag.addEventListener('mouseenter', showTip);
+    tag.addEventListener('mousemove',  moveTip);
+    tag.addEventListener('mouseleave', hideTip);
+    tag.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (pinnedEv === this.dataset.ev) {
+        panel.style.display = 'none';
+        pinnedEv = null;
+      } else {
+        openPanel(this.dataset.ev);
+      }
+    });
+  });
+
+  // Click outside panel closes it
+  document.addEventListener('click', function(e) {
+    if (pinnedEv && !panel.contains(e.target)) {
+      panel.style.display = 'none';
+      pinnedEv = null;
+    }
+  });
+})();
+</script>
+</body>
+</html>

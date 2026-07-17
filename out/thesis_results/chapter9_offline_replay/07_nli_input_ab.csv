@@ -1,0 +1,7 @@
+mode,label,count
+predicate,CONTRADICT,6
+predicate,SUPPORT,6
+verbatim,CONTRADICT,3
+verbatim,SUPPORT,11
+current_production,CONTRADICT,3
+current_production,SUPPORT,22

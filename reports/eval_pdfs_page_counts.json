@@ -1,0 +1,212 @@
+[
+  {
+    "name": "PMC7122038_978-1-4614-4800-6_Chapter_25.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC7122038_978-1-4614-4800-6_Chapter_25.pdf",
+    "pages": 77,
+    "bytes": 2058862,
+    "error": null
+  },
+  {
+    "name": "PMC12129649_NEUP-45-177.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC12129649_NEUP-45-177.pdf",
+    "pages": 25,
+    "bytes": 1104979,
+    "error": null
+  },
+  {
+    "name": "PMC7152403_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC7152403_main.pdf",
+    "pages": 15,
+    "bytes": 462444,
+    "error": null
+  },
+  {
+    "name": "PMC11791726_HIS-86-485.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC11791726_HIS-86-485.pdf",
+    "pages": 12,
+    "bytes": 4930822,
+    "error": null
+  },
+  {
+    "name": "PMC12192205_dermatopathology-12-00018.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC12192205_dermatopathology-12-00018.pdf",
+    "pages": 12,
+    "bytes": 1555714,
+    "error": null
+  },
+  {
+    "name": "PMC8352662_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC8352662_main.pdf",
+    "pages": 12,
+    "bytes": 438029,
+    "error": null
+  },
+  {
+    "name": "PMC11649516_HIS-86-236.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC11649516_HIS-86-236.pdf",
+    "pages": 11,
+    "bytes": 3274808,
+    "error": null
+  },
+  {
+    "name": "PMC12045760_HIS-86-1053.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC12045760_HIS-86-1053.pdf",
+    "pages": 11,
+    "bytes": 2510929,
+    "error": null
+  },
+  {
+    "name": "PMC7124083_978-1-61779-403-2_Chapter_21.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC7124083_978-1-61779-403-2_Chapter_21.pdf",
+    "pages": 11,
+    "bytes": 545462,
+    "error": null
+  },
+  {
+    "name": "PMC7543760_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC7543760_main.pdf",
+    "pages": 10,
+    "bytes": 670565,
+    "error": null
+  },
+  {
+    "name": "PMC10296831_dermatopathology-10-00026.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC10296831_dermatopathology-10-00026.pdf",
+    "pages": 9,
+    "bytes": 1967347,
+    "error": null
+  },
+  {
+    "name": "PMC11674653_dermatopathology-11-00035.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC11674653_dermatopathology-11-00035.pdf",
+    "pages": 9,
+    "bytes": 4908532,
+    "error": null
+  },
+  {
+    "name": "PMC11863705_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC11863705_main.pdf",
+    "pages": 9,
+    "bytes": 2152526,
+    "error": null
+  },
+  {
+    "name": "PMC6851684_HIS-75-329.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC6851684_HIS-75-329.pdf",
+    "pages": 9,
+    "bytes": 527860,
+    "error": null
+  },
+  {
+    "name": "PMC11863984_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC11863984_main.pdf",
+    "pages": 7,
+    "bytes": 637486,
+    "error": null
+  },
+  {
+    "name": "PMC7150024_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC7150024_main.pdf",
+    "pages": 7,
+    "bytes": 5182162,
+    "error": null
+  },
+  {
+    "name": "PMC8420544_CYT-33-93.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC8420544_CYT-33-93.pdf",
+    "pages": 7,
+    "bytes": 1210796,
+    "error": null
+  },
+  {
+    "name": "PMC10123624_dermatopathology-10-00020.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC10123624_dermatopathology-10-00020.pdf",
+    "pages": 6,
+    "bytes": 212204,
+    "error": null
+  },
+  {
+    "name": "PMC4945808_dpa-0003-0055.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC4945808_dpa-0003-0055.pdf",
+    "pages": 6,
+    "bytes": 719883,
+    "error": null
+  },
+  {
+    "name": "PMC7317439_NEUP-40-302.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC7317439_NEUP-40-302.pdf",
+    "pages": 6,
+    "bytes": 1052349,
+    "error": null
+  },
+  {
+    "name": "PMC10297671_dermatopathology-10-00024.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC10297671_dermatopathology-10-00024.pdf",
+    "pages": 5,
+    "bytes": 945151,
+    "error": null
+  },
+  {
+    "name": "PMC11755463_dermatopathology-12-00002.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC11755463_dermatopathology-12-00002.pdf",
+    "pages": 5,
+    "bytes": 2686339,
+    "error": null
+  },
+  {
+    "name": "PMC8008316_dermatopathology-08-00010.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC8008316_dermatopathology-08-00010.pdf",
+    "pages": 5,
+    "bytes": 732715,
+    "error": null
+  },
+  {
+    "name": "PMC12337196_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC12337196_main.pdf",
+    "pages": 4,
+    "bytes": 2294939,
+    "error": null
+  },
+  {
+    "name": "PMC7436514_HIS-77-169.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC7436514_HIS-77-169.pdf",
+    "pages": 4,
+    "bytes": 218366,
+    "error": null
+  },
+  {
+    "name": "PMC8416649_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC8416649_main.pdf",
+    "pages": 4,
+    "bytes": 279920,
+    "error": null
+  },
+  {
+    "name": "PMC8221903_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC8221903_main.pdf",
+    "pages": 3,
+    "bytes": 145731,
+    "error": null
+  },
+  {
+    "name": "PMC10201000_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC10201000_main.pdf",
+    "pages": 2,
+    "bytes": 125374,
+    "error": null
+  },
+  {
+    "name": "PMC9906788_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC9906788_main.pdf",
+    "pages": 2,
+    "bytes": 116624,
+    "error": null
+  },
+  {
+    "name": "PMC11984985_main.pdf",
+    "path": "/Users/emir/Documents/GitHub/nlp-histo/eval/pdfs/PMC11984985_main.pdf",
+    "pages": 1,
+    "bytes": 267696,
+    "error": null
+  }
+]

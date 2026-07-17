@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline Diff — {{ pmcid }}</title>
+<script>
+const SENTENCE_LOOKUP = {{ sentence_lookup_json }};
+</script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #22263a;
+    --border: #2e3350;
+    --text: #d4d8f0;
+    --text-dim: #7880a0;
+    --accent: #5b7cfa;
+    --accent2: #8b5cf6;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --orange: #f97316;
+    --cyan: #06b6d4;
+    --add-bg: #0d2b1a;
+    --add-border: #22c55e;
+    --rem-bg: #2b0d0d;
+    --rem-border: #ef4444;
+    --chg-bg: #2b2000;
+    --chg-border: #f59e0b;
+    --font: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    --font-ui: system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; line-height: 1.5; }
+  a { color: var(--accent); text-decoration: none; }
+  h1 { font-size: 1.4rem; font-weight: 700; }
+  h2 { font-size: 1.1rem; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 12px; }
+  h3 { font-size: 0.9rem; font-weight: 600; color: var(--text-dim); margin-bottom: 6px; }
+  pre, code { font-family: var(--font); font-size: 12px; }
+
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); padding: 20px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .sidebar-title { padding: 0 16px 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+  .sidebar nav a { display: block; padding: 6px 16px; color: var(--text-dim); font-size: 0.85rem; border-left: 3px solid transparent; transition: all 0.15s; }
+  .sidebar nav a:hover { color: var(--text); background: var(--bg3); border-left-color: var(--accent); }
+  .main { flex: 1; padding: 24px 32px; max-width: 1400px; }
+  .section { margin-bottom: 40px; }
+  .section-anchor { scroll-margin-top: 20px; }
+
+  /* Stats comparison grid */
+  .stats-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .stats-col { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; }
+  .stats-col h3 { color: var(--accent); margin-bottom: 10px; font-size: 0.9rem; }
+  .stat-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .key { color: var(--text-dim); }
+  .stat-row .val { font-family: var(--font); }
+
+  /* Diff summary banner */
+  .diff-banner { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+  .diff-banner .title { font-weight: 700; color: var(--text); font-size: 0.9rem; margin-right: 8px; }
+  .diff-group { display: flex; gap: 8px; align-items: center; font-size: 0.82rem; }
+  .diff-group .label { color: var(--text-dim); }
+
+  /* Diff entry cards */
+  .diff-entry { border-radius: 5px; margin-bottom: 8px; padding: 10px 14px; font-size: 0.84rem; }
+  .diff-entry.added   { background: var(--add-bg); border: 1px solid var(--add-border); }
+  .diff-entry.removed { background: var(--rem-bg); border: 1px solid var(--rem-border); }
+  .diff-entry.changed { background: var(--chg-bg); border: 1px solid var(--chg-border); }
+  .diff-marker { font-weight: 700; font-size: 0.8rem; padding: 1px 6px; border-radius: 3px; margin-right: 8px; font-family: var(--font); }
+  .diff-marker.add { background: #14532d; color: #86efac; }
+  .diff-marker.rem { background: #7f1d1d; color: #fca5a5; }
+  .diff-marker.chg { background: #78350f; color: #fcd34d; }
+
+  /* Field-diff display */
+  .field-diff-grid { display: grid; grid-template-columns: 140px 1fr 1fr; gap: 4px 8px; margin-top: 8px; font-size: 0.8rem; border-top: 1px solid var(--border); padding-top: 8px; }
+  .field-diff-grid .fkey { color: var(--text-dim); font-family: var(--font); padding-top: 2px; }
+  .field-diff-grid .fval-a { color: #fca5a5; }
+  .field-diff-grid .fval-b { color: #86efac; }
+  .field-diff-header { font-size: 0.72rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.72rem; font-weight: 600; font-family: var(--font); vertical-align: middle; }
+  .badge-green  { background: #14532d; color: #86efac; }
+  .badge-yellow { background: #78350f; color: #fcd34d; }
+  .badge-red    { background: #7f1d1d; color: #fca5a5; }
+  .badge-blue   { background: #1e3a5f; color: #93c5fd; }
+  .badge-gray   { background: #1f2937; color: #9ca3af; }
+  .badge-cyan   { background: #0c4a6e; color: #67e8f9; }
+  .badge-add    { background: #14532d; color: #86efac; }
+  .badge-rem    { background: #7f1d1d; color: #fca5a5; }
+  .badge-chg    { background: #78350f; color: #fcd34d; }
+
+  .tag { display: inline-block; background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; padding: 1px 6px; font-size: 0.72rem; font-family: var(--font); color: var(--text-dim); margin: 1px; }
+
+  .empty { color: var(--text-dim); font-style: italic; padding: 12px 0; }
+
+  /* entity line */
+  .entity-line { margin-bottom: 4px; }
+  .entity-line strong { color: var(--text); }
+  .entity-line .pred { color: var(--text-dim); font-size: 0.8rem; margin-top: 2px; }
+
+  /* Sentence hover tooltip */
+  .ev-tag { position: relative; cursor: help; }
+  .ev-tag .ev-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    min-width: 280px;
+    max-width: 420px;
+    background: #2a2d3e;
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    color: var(--text);
+    font-family: var(--font-ui);
+    line-height: 1.5;
+    white-space: normal;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    word-break: break-word;
+  }
+  .ev-tag:hover .ev-tooltip { display: block; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .stats-compare { grid-template-columns: 1fr; }
+    .field-diff-grid { grid-template-columns: 120px 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-title">Diff Inspector</div>
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#final-rules">Final Rules</a>
+      <a href="#canonical-rules">Canonical Rules</a>
+      <a href="#relations">Relations</a>
+      <a href="#findings">MAP Findings</a>
+    </nav>
+  </div>
+
+  <div class="main">
+
+    <!-- Overview -->
+    <div id="overview" class="section section-anchor">
+      <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+        <h1>🔬 Pipeline Diff</h1>
+        <span class="badge badge-cyan">{{ pmcid }}</span>
+      </div>
+
+      <!-- Stats side-by-side -->
+      <div class="stats-compare">
+        <div class="stats-col">
+          <h3>Run A — <code style="font-size:0.82rem">{{ run_a }}</code></h3>
+          <div class="stat-row"><span class="key">Status</span>
+            <span class="val">
+              <span class="badge badge-{% if stats_a.status == 'success' %}green{% else %}red{% endif %}">{{ stats_a.status }}</span>
+            </span>
+          </div>
+          <div class="stat-row"><span class="key">MAP findings</span><span class="val">{{ stats_a.map_findings }}</span></div>
+          <div class="stat-row"><span class="key">Canonical rules</span><span class="val">{{ stats_a.canonical_rules }}</span></div>
+          <div class="stat-row"><span class="key">Final rules</span><span class="val">{{ stats_a.final_rules }}</span></div>
+          <div class="stat-row"><span class="key">Relations</span><span class="val">{{ stats_a.relations }}</span></div>
+          <div class="stat-row"><span class="key">⚠ Flagged</span><span class="val">{{ stats_a.flagged }}</span></div>
+          <div class="stat-row"><span class="key">✗ Contradicted</span><span class="val">{{ stats_a.contradicted }}</span></div>
+        </div>
+        <div class="stats-col">
+          <h3>Run B — <code style="font-size:0.82rem">{{ run_b }}</code></h3>
+          <div class="stat-row"><span class="key">Status</span>
+            <span class="val">
+              <span class="badge badge-{% if stats_b.status == 'success' %}green{% else %}red{% endif %}">{{ stats_b.status }}</span>
+            </span>
+          </div>
+          <div class="stat-row"><span class="key">MAP findings</span><span class="val">{{ stats_b.map_findings }}</span></div>
+          <div class="stat-row"><span class="key">Canonical rules</span><span class="val">{{ stats_b.canonical_rules }}</span></div>
+          <div class="stat-row"><span class="key">Final rules</span><span class="val">{{ stats_b.final_rules }}</span></div>
+          <div class="stat-row"><span class="key">Relations</span><span class="val">{{ stats_b.relations }}</span></div>
+          <div class="stat-row"><span class="key">⚠ Flagged</span><span class="val">{{ stats_b.flagged }}</span></div>
+          <div class="stat-row"><span class="key">✗ Contradicted</span><span class="val">{{ stats_b.contradicted }}</span></div>
+        </div>
+      </div>
+
+      <!-- Diff summary banner -->
+      <div class="diff-banner">
+        <span class="title">Diff summary</span>
+        <div class="diff-group">
+          <span class="label">Final rules:</span>
+          <span class="badge badge-add">+{{ diff_summary.final_added }}</span>
+          <span class="badge badge-rem">-{{ diff_summary.final_removed }}</span>
+          <span class="badge badge-chg">~{{ diff_summary.final_changed }}</span>
+        </div>
+        <div class="diff-group">
+          <span class="label">Relations:</span>
+          <span class="badge badge-add">+{{ diff_summary.rel_added }}</span>
+          <span class="badge badge-rem">-{{ diff_summary.rel_removed }}</span>
+          <span class="badge badge-chg">~{{ diff_summary.rel_changed }}</span>
+        </div>
+        <div class="diff-group">
+          <span class="label">MAP findings:</span>
+          <span class="badge badge-add">+{{ diff_summary.findings_added }}</span>
+          <span class="badge badge-rem">-{{ diff_summary.findings_removed }}</span>
+          <span class="badge badge-chg">~{{ diff_summary.findings_changed }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Final Rules diff -->
+    <div id="final-rules" class="section section-anchor">
+      <h2>Final Rules Diff
+        <span class="badge badge-add" style="margin-left:8px">+{{ diff_summary.final_added }}</span>
+        <span class="badge badge-rem">-{{ diff_summary.final_removed }}</span>
+        <span class="badge badge-chg">~{{ diff_summary.final_changed }}</span>
+      </h2>
+
+      {% macro render_rule_entity(rule) %}
+        <div class="entity-line">
+          <strong>{{ rule.subject_entity or '—' }}</strong>
+          <span style="color:var(--text-dim)"> → </span>
+          <strong>{{ rule.outcome_entity or '—' }}</strong>
+          <span style="color:var(--text-dim); font-size:0.78rem"> [{{ rule.relation_type }}]</span>
+        </div>
+        <div class="pred" style="color:var(--text-dim); font-size:0.8rem">{{ (rule.predicate_text or '')[:120] }}{% if (rule.predicate_text or '')|length > 120 %}…{% endif %}</div>
+        <div style="margin-top:4px; display:flex; gap:4px; flex-wrap:wrap;">
+          <span class="badge badge-blue">{{ rule.category }}</span>
+          {% if rule.direction %}<span class="badge badge-gray">{{ rule.direction }}</span>{% endif %}
+          {% if rule.final_score is not none %}<span class="badge badge-gray">score {{ '%.3f'|format(rule.final_score) }}</span>{% endif %}
+          {% if rule.mean_grounding_score is not none %}<span class="badge badge-gray">gs {{ '%.3f'|format(rule.mean_grounding_score) }}</span>{% endif %}
+        </div>
+      {% endmacro %}
+
+      <!-- Added -->
+      {% if final_diff.added %}
+      <h3 style="color:var(--green); margin-bottom:6px;">Added in run B ({{ final_diff.added|length }})</h3>
+      {% for rule in final_diff.added %}
+      <div class="diff-entry added">
+        <span class="diff-marker add">+ ADDED</span>
+        {{ render_rule_entity(rule) }}
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      <!-- Removed -->
+      {% if final_diff.removed %}
+      <h3 style="color:var(--red); margin-top:16px; margin-bottom:6px;">Removed from run A ({{ final_diff.removed|length }})</h3>
+      {% for rule in final_diff.removed %}
+      <div class="diff-entry removed">
+        <span class="diff-marker rem">- REMOVED</span>
+        {{ render_rule_entity(rule) }}
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      <!-- Changed -->
+      {% if final_diff.changed %}
+      <h3 style="color:var(--yellow); margin-top:16px; margin-bottom:6px;">Changed ({{ final_diff.changed|length }})</h3>
+      {% for item in final_diff.changed %}
+      <div class="diff-entry changed">
+        <span class="diff-marker chg">~ CHANGED</span>
+        {{ render_rule_entity(item.b) }}
+        <div class="field-diff-grid">
+          <div class="field-diff-header fkey">Field</div>
+          <div class="field-diff-header fval-a">Run A</div>
+          <div class="field-diff-header fval-b">Run B</div>
+          {% for field, vals in item.field_diffs.items() %}
+          <div class="fkey">{{ field }}</div>
+          <div class="fval-a">{{ vals[0] if vals[0] is not none else '—' }}</div>
+          <div class="fval-b">{{ vals[1] if vals[1] is not none else '—' }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if not final_diff.added and not final_diff.removed and not final_diff.changed %}
+      <div class="empty">No differences in final rules.</div>
+      {% endif %}
+    </div>
+
+    <!-- Canonical Rules diff -->
+    <div id="canonical-rules" class="section section-anchor">
+      <h2>Canonical Rules Diff
+        <span class="badge badge-add" style="margin-left:8px">+{{ canonical_diff.added|length }}</span>
+        <span class="badge badge-rem">-{{ canonical_diff.removed|length }}</span>
+        <span class="badge badge-chg">~{{ canonical_diff.changed|length }}</span>
+      </h2>
+
+      {% if canonical_diff.added %}
+      <h3 style="color:var(--green); margin-bottom:6px;">Added in run B ({{ canonical_diff.added|length }})</h3>
+      {% for rule in canonical_diff.added %}
+      <div class="diff-entry added">
+        <span class="diff-marker add">+ ADDED</span>
+        <strong>{{ rule.subject_entity or '—' }}</strong> → <strong>{{ rule.outcome_entity or '—' }}</strong>
+        <span style="color:var(--text-dim); font-size:0.78rem"> [{{ rule.relation_type }}]</span>
+        <span class="badge badge-blue">{{ rule.category }}</span>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if canonical_diff.removed %}
+      <h3 style="color:var(--red); margin-top:16px; margin-bottom:6px;">Removed from run A ({{ canonical_diff.removed|length }})</h3>
+      {% for rule in canonical_diff.removed %}
+      <div class="diff-entry removed">
+        <span class="diff-marker rem">- REMOVED</span>
+        <strong>{{ rule.subject_entity or '—' }}</strong> → <strong>{{ rule.outcome_entity or '—' }}</strong>
+        <span style="color:var(--text-dim); font-size:0.78rem"> [{{ rule.relation_type }}]</span>
+        <span class="badge badge-blue">{{ rule.category }}</span>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if canonical_diff.changed %}
+      <h3 style="color:var(--yellow); margin-top:16px; margin-bottom:6px;">Changed ({{ canonical_diff.changed|length }})</h3>
+      {% for item in canonical_diff.changed %}
+      <div class="diff-entry changed">
+        <span class="diff-marker chg">~ CHANGED</span>
+        <strong>{{ item.b.subject_entity or '—' }}</strong> → <strong>{{ item.b.outcome_entity or '—' }}</strong>
+        <span style="color:var(--text-dim); font-size:0.78rem"> [{{ item.b.relation_type }}]</span>
+        <div class="field-diff-grid">
+          <div class="field-diff-header fkey">Field</div>
+          <div class="field-diff-header fval-a">Run A</div>
+          <div class="field-diff-header fval-b">Run B</div>
+          {% for field, vals in item.field_diffs.items() %}
+          <div class="fkey">{{ field }}</div>
+          <div class="fval-a">{{ vals[0] if vals[0] is not none else '—' }}</div>
+          <div class="fval-b">{{ vals[1] if vals[1] is not none else '—' }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if not canonical_diff.added and not canonical_diff.removed and not canonical_diff.changed %}
+      <div class="empty">No differences in canonical rules.</div>
+      {% endif %}
+    </div>
+
+    <!-- Relations diff -->
+    <div id="relations" class="section section-anchor">
+      <h2>Relations Diff
+        <span class="badge badge-add" style="margin-left:8px">+{{ diff_summary.rel_added }}</span>
+        <span class="badge badge-rem">-{{ diff_summary.rel_removed }}</span>
+        <span class="badge badge-chg">~{{ diff_summary.rel_changed }}</span>
+      </h2>
+
+      {% if relations_diff.added %}
+      <h3 style="color:var(--green); margin-bottom:6px;">Added in run B</h3>
+      {% for rel in relations_diff.added %}
+      <div class="diff-entry added">
+        <span class="diff-marker add">+ ADDED</span>
+        <span class="badge badge-gray">{{ rel.relation_type }}</span>
+        <code>{{ rel.rule_id_a }}</code> ↔ <code>{{ rel.rule_id_b }}</code>
+        <span style="color:var(--text-dim); font-size:0.8rem"> NLI: {{ '%.3f'|format(rel.nli_score_a_to_b) }} / {{ '%.3f'|format(rel.nli_score_b_to_a) }}</span>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if relations_diff.removed %}
+      <h3 style="color:var(--red); margin-top:16px; margin-bottom:6px;">Removed from run A</h3>
+      {% for rel in relations_diff.removed %}
+      <div class="diff-entry removed">
+        <span class="diff-marker rem">- REMOVED</span>
+        <span class="badge badge-gray">{{ rel.relation_type }}</span>
+        <code>{{ rel.rule_id_a }}</code> ↔ <code>{{ rel.rule_id_b }}</code>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if relations_diff.changed %}
+      <h3 style="color:var(--yellow); margin-top:16px; margin-bottom:6px;">Changed</h3>
+      {% for item in relations_diff.changed %}
+      <div class="diff-entry changed">
+        <span class="diff-marker chg">~ CHANGED</span>
+        <span class="badge badge-gray">{{ item.b.relation_type }}</span>
+        <code>{{ item.b.rule_id_a }}</code> ↔ <code>{{ item.b.rule_id_b }}</code>
+        <div class="field-diff-grid">
+          <div class="field-diff-header fkey">Field</div>
+          <div class="field-diff-header fval-a">Run A</div>
+          <div class="field-diff-header fval-b">Run B</div>
+          {% for field, vals in item.field_diffs.items() %}
+          <div class="fkey">{{ field }}</div>
+          <div class="fval-a">{{ '%.3f'|format(vals[0]) if vals[0] is not none else '—' }}</div>
+          <div class="fval-b">{{ '%.3f'|format(vals[1]) if vals[1] is not none else '—' }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if not relations_diff.added and not relations_diff.removed and not relations_diff.changed %}
+      <div class="empty">No differences in relations.</div>
+      {% endif %}
+    </div>
+
+    <!-- MAP Findings diff -->
+    <div id="findings" class="section section-anchor">
+      <h2>MAP Findings Diff
+        <span class="badge badge-add" style="margin-left:8px">+{{ diff_summary.findings_added }}</span>
+        <span class="badge badge-rem">-{{ diff_summary.findings_removed }}</span>
+        <span class="badge badge-chg">~{{ diff_summary.findings_changed }}</span>
+      </h2>
+
+      {% if findings_diff.added %}
+      <h3 style="color:var(--green); margin-bottom:6px;">Added in run B ({{ findings_diff.added|length }})</h3>
+      {% for f in findings_diff.added %}
+      <div class="diff-entry added">
+        <span class="diff-marker add">+ ADDED</span>
+        <strong>{{ f.subject_entity or '—' }}</strong> → <strong>{{ f.outcome_entity or '—' }}</strong>
+        <span class="badge badge-blue">{{ f.category }}</span>
+        <span style="color:var(--text-dim); font-size:0.8rem">{{ (f.claim or '')[:120] }}</span>
+        {% if f.evidence %}
+        <div style="margin-top:4px;">{% for ev in f.evidence %}<span class="tag ev-tag" data-ev="{{ ev }}">{{ ev }}<span class="ev-tooltip"></span></span>{% endfor %}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if findings_diff.removed %}
+      <h3 style="color:var(--red); margin-top:16px; margin-bottom:6px;">Removed from run A ({{ findings_diff.removed|length }})</h3>
+      {% for f in findings_diff.removed %}
+      <div class="diff-entry removed">
+        <span class="diff-marker rem">- REMOVED</span>
+        <strong>{{ f.subject_entity or '—' }}</strong> → <strong>{{ f.outcome_entity or '—' }}</strong>
+        <span class="badge badge-blue">{{ f.category }}</span>
+        <span style="color:var(--text-dim); font-size:0.8rem">{{ (f.claim or '')[:120] }}</span>
+        {% if f.evidence %}
+        <div style="margin-top:4px;">{% for ev in f.evidence %}<span class="tag ev-tag" data-ev="{{ ev }}">{{ ev }}<span class="ev-tooltip"></span></span>{% endfor %}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if findings_diff.changed %}
+      <h3 style="color:var(--yellow); margin-top:16px; margin-bottom:6px;">Changed ({{ findings_diff.changed|length }})</h3>
+      {% for item in findings_diff.changed %}
+      <div class="diff-entry changed">
+        <span class="diff-marker chg">~ CHANGED</span>
+        <strong>{{ item.b.subject_entity or '—' }}</strong> → <strong>{{ item.b.outcome_entity or '—' }}</strong>
+        <span class="badge badge-blue">{{ item.b.category }}</span>
+        <span style="color:var(--text-dim); font-size:0.8rem">{{ (item.b.claim or '')[:120] }}</span>
+        <div class="field-diff-grid">
+          <div class="field-diff-header fkey">Field</div>
+          <div class="field-diff-header fval-a">Run A</div>
+          <div class="field-diff-header fval-b">Run B</div>
+          {% for field, vals in item.field_diffs.items() %}
+          <div class="fkey">{{ field }}</div>
+          <div class="fval-a">{{ vals[0] if vals[0] is not none else '—' }}</div>
+          <div class="fval-b">{{ vals[1] if vals[1] is not none else '—' }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if not findings_diff.added and not findings_diff.removed and not findings_diff.changed %}
+      <div class="empty">No differences in MAP findings.</div>
+      {% endif %}
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// Sentence hover tooltips
+(function() {
+  document.querySelectorAll('.ev-tag').forEach(function(tag) {
+    const ev = tag.dataset.ev;
+    const tooltip = tag.querySelector('.ev-tooltip');
+    if (!tooltip) return;
+    const text = SENTENCE_LOOKUP[ev];
+    if (text) {
+      tooltip.textContent = '\u201c' + text + '\u201d';
+    } else {
+      tooltip.textContent = '(sentence text unavailable for ' + ev + ')';
+    }
+  });
+})();
+</script>
+</body>
+</html>

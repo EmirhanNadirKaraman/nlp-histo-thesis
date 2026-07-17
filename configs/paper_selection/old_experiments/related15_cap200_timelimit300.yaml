@@ -1,0 +1,21 @@
+related15_cap200_timelimit300:
+  related:
+    - PMC12221370_main
+    - PMC12522033_HIS-87-660
+    - PMC10108312_HIS-82-162
+    - PMC12550931_dermatopathology-12-00036
+    - PMC7027543_HIS-76-383
+    - PMC2253716_his0052-0355
+    - PMC7003895_HIS-76-182
+    - PMC8395919_dermatopathology-08-00036
+    - PMC11674666_dermatopathology-11-00038
+    - PMC6635746_HIS-73-68
+    - PMC12283485_NEUP-45-0
+    - PMC12129603_HIS-87-110
+    - PMC4670475_his0064-0365
+    - PMC8293194_dermatopathology-08-00023
+    - PMC3229684_his0059-0441
+  diverse:
+    []
+  hard:
+    []

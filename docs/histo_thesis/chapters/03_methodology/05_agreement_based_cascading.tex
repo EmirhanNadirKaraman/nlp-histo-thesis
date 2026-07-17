@@ -1,0 +1,23 @@
+\section{Agreement-Based Cascading}\label{section:Agreement_Based_Cascading}
+
+\makeatletter
+\def\input@path{{chapters/03_methodology/05_agreement_based_cascading/}}
+\makeatother
+
+This section describes agreement-based cascading, the framework that makes the MAP stage of Subsection~\ref{subsec:knowledge-map} cost-aware. This framework turns the MAP stage from a single LLM call into a tiered voter ensemble with explicit agreement and escalation policies. Cheap voters are queried first. An agreement scorer then measures consensus among the voters; the resulting score drives the escalation policy, which decides whether to accept the output, reject it, or escalate it to the next layer with more powerful, but also more expensive, language models. 
+
+This section first introduces the three-tier voter structure. It defines the agreement scorer, which quantifies the consensus between the outputs of different voter models. Then it describes the escalation policy, which determines whether to accept, escalate, or reject model outputs at each tier based on the agreement score. 
+
+Later, this section introduces three safety gates. Two can override the default escalation policy: a polarity-conflict gate, which forces escalation when voters disagree on claim polarity; and a single-voter policy, which decides whether to keep or escalate a tier, in which only one voter output survives; while a third, a citation-provenance screen discards findings whose citations are structurally invalid. Finally, this section describes the offline calibration procedure used to tune the production scorer and thresholds. 
+
+The evaluation protocol for agreement-based cascading is defined in Section~\ref{section:Evaluation_Methodology}; the empirical results are reported in Chapter~\ref{chapter:Results}, and discussed in Section~\ref{section:disc-agreement-based-cascading}.
+
+\input{01_motivation}
+\input{02_cascade_architecture}
+\input{03_agreement_scoring}
+\input{04_accept_reject_escalate}
+\input{05_safety_gates_and_hard_fail_policies}
+\input{06_calibration_and_replay}
+\input{07_cost_versus_quality}
+\input{08_relationship_to_the_pipeline}
+% \input{09_section_summary}

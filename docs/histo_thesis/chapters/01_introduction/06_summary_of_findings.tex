@@ -1,0 +1,19 @@
+\section{Summary of findings}\label{section:intro-summary-of-findings}
+
+The results are mixed. The system excels at document extraction, provenance, grounding, and held-out generalization; the only negative result concerns the agreement-based cascade and is discussed under RQ3 below. All results are reported in detail in Chapter~\ref{chapter:Results}. 
+
+\begin{itemize}[label={},leftmargin=1.5em]
+
+    \item \textbf{RQ1 -- Document extraction.} On the 27-PDF rubric set, the post-processing steps in this stage substantially raise table strict-F1 from $0.366$ (off-the-shelf Docling) to $0.838$; the main driver of this improvement is footnote expansion, increasing footnote precision from $43.8\%$ to $91.4\%$. The figure strict-F1 is also lifted from $0.447$ (off-the-shelf Docling) to $0.840$, mainly because of decorative icon filtering, sub-figure merging, and improved caption matching. Therefore, the document-extraction pipeline reaches its targets.
+    
+    \item \textbf{RQ2 -- Knowledge extraction and provenance.} Against silver labels, the MAP stage achieves a strict-F1 of $0.7160$. The extracted findings are mostly atomic and distinct, so the consolidation stages do not change the volume much before canonical rules are produced. Provenance is fully preserved: every text element has its source span, every table carries its caption, and every extracted figure and table retains its crop and bounding box ($100\%$). This supports the design claim that provenance is structurally guaranteed.
+    
+    \item \textbf{RQ3 -- Cost-quality trade-off.} This is the central negative result. The calibrated five-voter cascade, which is the optimal voter subset after analysis in Section~\ref{section:results-abc-calibration}, reaches a strict-F1 score of $0.7160$, versus the strong single-model baseline's $0.7129$ (Sonnet). This difference is not statistically significant; single-Sonnet achieves an equivalent strict-F1 while being 24\% cheaper. The cascade decisively beats every other single model, but it is not cost-justified against single-Sonnet under the silver cost-quality criterion. Therefore, the defensible value of the cascade is not the accuracy, but provider independence.
+    
+    \item \textbf{RQ4 -- Grounding and relation classification.} The NLI components behave as designed. The grounding filter enforces source-faithfulness and trades off 6 points in strict-F1 at the pinned threshold, lowering the score from $0.7160$ to $0.652$. The relation classifier reaches about $93\%$ accuracy on a class-balanced synthetic dataset. This is an optimistic result, considering that the synthetically generated claim pairs might be cleaner than the hardest corpus cases. 
+    
+    \item \textbf{RQ5 -- Held-out generalization.} MAP strict-F1 drops from $0.7160$ on the calibration cluster to $0.7128$ on the held-out cluster. The strict-F1 difference between the two paper sets is within noise, and the downstream funnel preserves its shape, indicating that the calibrated configuration does not meaningfully overfit the calibration set.
+
+\end{itemize}
+
+These results, together with the overall cascade outcome, are interpreted in Chapter~\ref{chapter:Discussion}.

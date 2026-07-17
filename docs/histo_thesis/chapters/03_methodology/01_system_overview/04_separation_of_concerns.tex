@@ -1,0 +1,21 @@
+\subsection{Separation of concerns}\label{subsec:overview-separation-of-concerns}
+
+The system was designed with modularity and extendability in mind. Each subsystem has a specific responsibility, exposes a clean interface to the next stage, and avoids doing work that belongs to another stage.
+
+\medskip{}
+
+The main separation of concerns is as follows:
+
+\begin{itemize}[label={},leftmargin=1.5em]
+    \item \textbf{Document extraction} converts PDF files into text elements and stores them in the database; it does not interpret them.
+
+    \item \textbf{Knowledge extraction} consumes text elements and emits atomic biomedical claims; it does not parse PDFs.
+
+    \item \textbf{Cascade and routing} decide which model outputs will be accepted, escalated, or rejected (§\ref{subsec:end-to-end-architecture}). This stage does not redefine the schema of the MAP outputs; it only selects which model outputs are passed to the downstream pipeline.
+
+    \item \textbf{Grounding and relation classification} filter and relate the claims that are already extracted by the MAP stage. Grounding checks whether a claim is supported by its source text, while relation classification identifies whether two claims support or contradict each other. These stages do not re-extract and generate biomedical claims themselves.
+
+    \item \textbf{Evaluation and replay} read from the generated artifacts, and compute metrics, comparisons, and ablations with different configurations of the pipeline stages. They do not modify pipeline outputs; instead, they are designed to inspect and evaluate pipeline behavior.
+\end{itemize}
+
+This separation is important for both engineering and evaluation. Document extraction and knowledge extraction can be evaluated independently, components are swappable, and cascade experiments can be compared offline over cached artifacts (§\ref{subsec:overview-reproducibility-and-artifact-design}). It also supports the provenance design: a fully inspectable chain of provenance where each link is owned by a single subsystem. 

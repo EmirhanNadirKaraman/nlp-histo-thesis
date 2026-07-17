@@ -1,0 +1,5 @@
+mode,label,count
+predicate,CONTRADICT,3
+predicate,SUPPORT,19
+scope_predicate,CONTRADICT,3
+scope_predicate,SUPPORT,22

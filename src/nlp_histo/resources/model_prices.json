@@ -1,0 +1,22 @@
+{
+  "_comment": "USD per 1M tokens. Update from provider pricing pages. batch_discount_multiplier applies on top of input+output cost for batched calls. cached_input_per_1m is optional per-model; absent → cached_tokens billed at input rate.",
+  "batch_discount_multiplier": 0.5,
+  "models": {
+    "gpt-4o-mini":         {"input_per_1m": 0.15,  "output_per_1m": 0.60},
+    "gpt-4o":              {"input_per_1m": 2.50,  "output_per_1m": 10.00},
+    "gpt-4.1":             {"input_per_1m": 2.00,  "output_per_1m": 8.00},
+    "gpt-4.1-mini":        {"input_per_1m": 0.40,  "output_per_1m": 1.60},
+    "gpt-4.1-nano":        {"input_per_1m": 0.10,  "output_per_1m": 0.40},
+
+    "claude-sonnet-4-6":   {"input_per_1m": 3.00,  "output_per_1m": 15.00},
+    "claude-sonnet-4-6-20251001": {"input_per_1m": 3.00, "output_per_1m": 15.00},
+    "claude-haiku-4-5":    {"input_per_1m": 0.80,  "output_per_1m": 4.00},
+    "claude-haiku-4-5-20251001": {"input_per_1m": 0.80, "output_per_1m": 4.00},
+    "claude-opus-4-7":     {"input_per_1m": 5.00,  "output_per_1m": 25.00, "cached_input_per_1m": 0.50},
+
+    "gemini-2.5-pro":               {"input_per_1m": 1.25,  "output_per_1m": 10.00},
+    "gemini-2.5-flash":             {"input_per_1m": 0.30,  "output_per_1m": 2.50},
+    "gemini-2.5-flash-lite":        {"input_per_1m": 0.10,  "output_per_1m": 0.40},
+    "gemini-2.5-flash-lite-preview-06-17": {"input_per_1m": 0.10, "output_per_1m": 0.40}
+  }
+}

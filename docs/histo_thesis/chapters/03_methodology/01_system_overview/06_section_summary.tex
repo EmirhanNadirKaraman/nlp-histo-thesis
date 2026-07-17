@@ -1,0 +1,5 @@
+\subsection{Section summary}\label{subsec:overview-section-summary}
+
+This section describes the pipeline that takes histopathology PMC OA papers and produces structured, scored, and provenance-preserving final rule candidates. Paper selection, document extraction, knowledge extraction, and per-stage evaluation are separated. MAP, powered by the agreement-based cascade, is the core component of knowledge extraction. Each subsystem has a bounded responsibility, and intermediate outputs are persisted so that evaluation can be replayed offline. 
+
+The system considers separation of concerns, modularity, and provenance to be the architecture's main design constraints. This design supports auditability, which allows each final rule to be traced back to its source evidence for error analysis and expert review.

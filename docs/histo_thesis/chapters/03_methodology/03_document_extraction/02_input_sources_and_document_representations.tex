@@ -1,0 +1,7 @@
+\subsection{Input sources and document representations}\label{subsec:doc-input-sources}
+
+The pipeline operates on the PubMed Central Open Access subset~\parencite{nlm_pmc_open_access}. Each ingested paper is available in both PDF and XML formats; this thesis uses only the PDF as the document-extraction input.
+
+The PDF representation preserves the article's published layout: page-level positions, fonts, tables, figures, sections, captions, and footnotes. XML representations are more structured compared to PDFs, as they encode the paper structure directly with section nesting, paragraph-level content, table semantics, and figure references.
+
+The PDF is chosen as the input to the structural parser because it is the most consistently available representation across the scientific literature; although every paper in this corpus is available in both PDF and XML, the pipeline is deliberately built not to depend on structured XML. The limitation of this choice is that the paper structure is not directly available: paragraph boundaries, table cells, figures, captions, and section headings must be recovered from the visual layout rather than read from an XML file. This recovery process is the focus of the remainder of this section.

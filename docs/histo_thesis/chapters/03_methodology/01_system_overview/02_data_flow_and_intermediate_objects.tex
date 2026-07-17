@@ -1,0 +1,25 @@
+\subsection{Data flow and intermediate objects}\label{subsec:data-flow-and-intermediate-objects}
+
+While data passes through the pipeline, it is converted to different typed intermediate objects, and each of these object types has its own database table. Every derived object stores a back-pointer to the upstream object that produced it, so the full chain below can be traced end to end.
+
+\begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
+    \item \textbf{Documents.} One row per ingested paper, with its PMC ID saved as a unique key in the database -- the root of the provenance chain that every later object points back to.
+
+    \item \textbf{Text elements.} Paragraphs, each with its unique path, content, depth, and position within the section. A text element points back to its document and is the unit consumed by the knowledge extraction pipeline.
+    
+    \item \textbf{Figures and tables.} Cropped images of figures and tables identified in papers. Each figure and table points back to its document and records the page and bounding box it was cut from, along with its caption, where caption-linking succeeds; geometric caption attachment fails for a minority of figures (§\ref{subsec:doc-extraction-known-limitations}). Separate cross-reference records link each figure and table to the text elements that mention it.
+
+    \item \textbf{MAP findings.} The MAP stage generates an auditable summary of atomic biomedical claims for each chunk (a window over ten consecutive sentences in the production configuration). Each MAP finding includes a subject entity, an outcome entity, a relation type, a direction, and more, as well as an evidence pointer pointing back to the text element it was inferred from.
+
+    \item \textbf{Normal findings.} The subject and outcome entities are resolved to their canonical names with a curated synonym dictionary and the UMLS linker, and then deduplicated. Normal findings retain the source spans, including the sentences and text elements of each finding merged into them, to keep normalization reversible and the system traceable to its source text. 
+
+    \item \textbf{Finding groups.} Normal findings are grouped by their subject, outcome, relation type, and category. A finding group lists the normal findings it contains.
+
+    \item \textbf{Canonical rules.} Finding groups are separated into different bins based on their directions. Per direction bin per finding group, a representative claim with the best grounding score is selected. The canonical rule keeps pointers to its group and to the normal findings it summarizes.
+
+    \item \textbf{Relations.} Pairwise edges between canonical rules. Each comparable pair is labeled \texttt{SUPPORT}, \texttt{CONTRADICT}, or \texttt{UNRELATED} by an NLI cross-encoder. Only the supporting and contradicting pairs are kept. Each relation has the two canonical rules it connects, its \texttt{SUPPORT}/\texttt{CONTRADICT} label, and the NLI scores in both directions.
+
+    \item \textbf{Final rules.} Canonical rules are augmented with scores to generate final rules. A canonical rule is given a score between 0 and 1, combining its grounding score, the number of findings behind it, the support and contradiction relations that touch it, and a penalty when the evidence for a rule is from a single study. The generated final rule keeps a pointer back to its canonical rule.
+\end{itemize}
+
+The detailed shape of each object is defined in Sections~\ref{section:Document_Extraction} and~\ref{section:Knowledge_Extraction}.

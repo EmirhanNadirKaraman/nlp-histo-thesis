@@ -1,0 +1,7 @@
+\subsection{Knowledge extraction evaluation set}\label{subsec:knowledge-extraction-eval-set}
+
+The calibration of the knowledge-extraction pipeline thresholds, matcher settings, and the agreement-based cascade configuration is performed on the calibration dataset described in Subsection~\ref{subsec:knowledge-extraction-calibration-set}. The configuration's generalization is then tested on a held-out set of 15 papers, randomly selected from the ingested histopathology corpus of Subsection~\ref{subsec:ingestion-counts}, and fully disjoint from the calibration set, where strict-F1 is recomputed as the RQ5 generalization measure (§\ref{subsec:eval-heldout-generalization}). Once the calibration is complete, no thresholds or hyperparameters are changed on these evaluation papers. 
+
+Unlike the calibration cluster, these papers are not selected based on relatedness. This is intentional: the evaluation measures per-chunk extraction quality, which does not require cross-paper signals; a random sample is expected to be more generalizable to unseen papers than a subset of related papers.
+
+The evaluation set is processed in a way similar to the calibration set. Paragraphs that are at least 40 words long and are outside of references, acknowledgments, and similar non-content sections are deemed usable. Each usable paragraph becomes one MAP-stage case, giving 285 cases; prompting Opus 4.7 on each case yields 1\,657 silver findings in total.

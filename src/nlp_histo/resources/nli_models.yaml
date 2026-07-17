@@ -1,0 +1,43 @@
+# NLI model registry for GROUNDING + RELATE stages.
+#
+# Active model selected by, in order:
+#   1. $NLP_HISTO_NLI_MODEL  — registry key (e.g. "pubmedbert_mednli") OR raw HF id.
+#   2. `default` key below.
+#
+# Override batch size with $NLP_HISTO_NLI_BATCH_SIZE.
+#
+# Label contract: code expects the HF pipeline to emit labels case-insensitively
+# containing one of {entailment, neutral, contradiction}. If a candidate model
+# emits LABEL_0/LABEL_1/LABEL_2, add a `label_map` here and wire it through
+# pipeline/stages/knowledge_extraction/grounding/nli_config.py before use.
+
+default: pubmedbert_mednli
+
+models:
+  pubmedbert_mednli:
+    hf_id: pritamdeka/PubMedBERT-MNLI-MedNLI
+    batch_size: 32
+    notes: >
+      Biomedical NLI. PubMedBERT base (~110M params) fine-tuned on MNLI then
+      MedNLI. Lower RAM than DeBERTa-large variants (~440 MB vs ~1.5 GB).
+
+  deberta_zeroshot_v2:
+    hf_id: MoritzLaurer/deberta-v3-large-zeroshot-v2.0
+    batch_size: 16
+    notes: >
+      Previous GROUNDING default. DeBERTa-v3-large fine-tuned for zero-shot
+      label transfer. Strong general-domain NLI; larger RAM footprint.
+
+  cross_encoder_deberta:
+    hf_id: cross-encoder/nli-deberta-v3-large
+    batch_size: 16
+    notes: >
+      Previous RELATE default. Cross-encoder NLI head over DeBERTa-v3-large.
+      General-domain; strongest baseline for pairwise rule comparison.
+
+  minilm_nli:
+    hf_id: cross-encoder/nli-MiniLM2-L6-H768
+    batch_size: 64
+    notes: >
+      Tiny general NLI (~90 MB). Useful as a cheap floor when benchmarking
+      bigger models.

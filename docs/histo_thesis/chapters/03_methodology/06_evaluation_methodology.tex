@@ -1,0 +1,20 @@
+\section{Evaluation Methodology}\label{section:Evaluation_Methodology}
+
+\makeatletter
+\def\input@path{{chapters/03_methodology/06_evaluation_methodology/}}
+\makeatother
+
+This section defines how the empirical claims of the thesis are measured, and Chapter~\ref{chapter:Results} reports the results. The evaluation methodology is organized around five research questions, each of which is mapped to its measurement procedure and defining subsection in Subsection~\ref{subsec:eval-questions-and-scope}.
+
+Four further subsections explain the evaluation methodology in more detail: how the calibration and evaluation datasets are constructed, in Subsection~\ref{subsec:eval-datasets}; how the calibration dataset is generated using integer linear programming, in Subsection~\ref{subsec:eval-ilp}; the offline-replay design that describes how cascade calibration works without making repeated API calls, in Subsection~\ref{subsec:eval-reprod-offline-replay}; and the methodological limits of the evaluation design in Subsection~\ref{subsec:eval-limitations}.
+
+\input{01_evaluation_questions_and_scope}
+\input{02_corpus_and_evaluation_datasets}
+\input{03_document_extraction_evaluation}
+\input{04_knowledge_extraction_evaluation}
+\input{05_agreement_based_cascading_evaluation}
+\input{06_grounding_and_relation_classification_evaluation}
+\input{07_ilp}
+\input{08_heldout_generalization}
+\input{09_reproducibility_and_offline_replay}
+\input{10_limitations_of_evaluation_design}

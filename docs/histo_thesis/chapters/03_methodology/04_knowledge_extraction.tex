@@ -1,0 +1,20 @@
+\section{Knowledge Extraction Pipeline}\label{section:Knowledge_Extraction}
+
+\makeatletter
+\def\input@path{{chapters/03_methodology/04_knowledge_extraction/}}
+\makeatother
+
+This section describes the knowledge extraction pipeline: the staged process that converts the text elements in Section~\ref{section:Document_Extraction} to scored, structured rules with provenance. This section presents each stage in the pipeline: how sentence chunks are decomposed into atomic findings, then checked against their source texts, normalized, grouped, and canonicalized into rule candidates, related to one another, and finally scored. Each stage produces an intermediate representation that is passed to the next stage, so that the generated final rules can be traced back to their source text elements. 
+
+The focus of this section is to explain the purpose of each stage, the type of objects each stage produces, and how provenance is preserved across the pipeline. Four topics are intentionally kept out of this section: the voter cascade that makes the MAP stage cost-aware (§\ref{section:Agreement_Based_Cascading}), the evaluation protocol that supports the numerical claims (§\ref{section:Evaluation_Methodology}), the results themselves (Ch.~\ref{chapter:Results}), and the interpretation of these results (Ch.~\ref{chapter:Discussion}). 
+
+\input{01_purpose_and_design_goals}
+\input{02_pipeline_overview}
+\input{03_map}
+\input{04_grounding}
+\input{05_normalize_and_group}
+\input{06_canonicalize}
+\input{07_relate}
+\input{08_resolve}
+\input{09_provenance_model}
+% \input{10_section_summary}

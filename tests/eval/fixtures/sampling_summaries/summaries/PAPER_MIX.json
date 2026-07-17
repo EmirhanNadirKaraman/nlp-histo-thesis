@@ -1,0 +1,86 @@
+{
+  "status": "success",
+  "run_id": "fixture_run",
+  "pmcid": "PAPER_MIX",
+  "pipeline_config_hash": "fixture_hash",
+  "canonical_rules": [],
+  "final_rules": [],
+  "relations": [],
+  "audit_trail": {
+    "map_chunks": [
+      {"chunk_id": "C1", "summary_text": "Chunk 1 summary text.",
+       "audit_metadata": {
+         "sentences_cited": ["S1|PAPER_MIX|101", "S2|PAPER_MIX|102"]
+       },
+       "findings": [
+        {"claim": "vl-1", "verbatim_support": "v1", "grounding_score": 0.05},
+        {"claim": "vl-2", "verbatim_support": "v2", "grounding_score": 0.15},
+        {"claim": "vl-3", "verbatim_support": "v3", "grounding_score": 0.20},
+        {"claim": "vl-4", "verbatim_support": "v4", "grounding_score": 0.25},
+        {"claim": "vl-5", "verbatim_support": "v5", "grounding_score": 0.28}
+       ]},
+      {"chunk_id": "C2", "summary_text": "Chunk 2 summary text.",
+       "audit_metadata": {
+         "sentences_cited": ["S1|PAPER_MIX|201"]
+       },
+       "findings": [
+        {"claim": "lo-1", "verbatim_support": "v6", "grounding_score": 0.30},
+        {"claim": "lo-2", "verbatim_support": "v7", "grounding_score": 0.35},
+        {"claim": "lo-3", "verbatim_support": "v8", "grounding_score": 0.40},
+        {"claim": "lo-4", "verbatim_support": "v9", "grounding_score": 0.43}
+       ]},
+      {"chunk_id": "C3", "summary_text": "Chunk 3 summary text.",
+       "audit_metadata": {"sentences_cited": []},
+       "findings": [
+        {"claim": "ntl-1", "verbatim_support": "v10", "grounding_score": 0.47}
+       ]},
+      {"chunk_id": "C4", "summary_text": "Chunk 4 summary text.",
+       "audit_metadata": {"sentences_cited": ["S1|PAPER_MIX|401"]},
+       "findings": [
+        {"claim": "nth-1", "verbatim_support": "v11", "grounding_score": 0.50},
+        {"claim": "nth-2", "verbatim_support": "v12", "grounding_score": 0.51},
+        {"claim": "nth-3", "verbatim_support": "v13", "grounding_score": 0.52},
+        {"claim": "nth-4", "verbatim_support": "v14", "grounding_score": 0.53},
+        {"claim": "nth-5", "verbatim_support": "v15", "grounding_score": 0.54}
+       ]},
+      {"chunk_id": "C5", "summary_text": "Chunk 5 summary text.",
+       "audit_metadata": {"sentences_cited": []},
+       "findings": [
+        {"claim": "md-1", "verbatim_support": "v16", "grounding_score": 0.55},
+        {"claim": "md-2", "verbatim_support": "v17", "grounding_score": 0.60},
+        {"claim": "md-3", "verbatim_support": "v18", "grounding_score": 0.65},
+        {"claim": "md-4", "verbatim_support": "v19", "grounding_score": 0.70},
+        {"claim": "md-5", "verbatim_support": "v20", "grounding_score": 0.74}
+       ]},
+      {"chunk_id": "C6", "summary_text": "Chunk 6 summary text.",
+       "audit_metadata": {"sentences_cited": []},
+       "findings": [
+        {"claim": "hi-1", "verbatim_support": "v21", "grounding_score": 0.75},
+        {"claim": "hi-2", "verbatim_support": "v22", "grounding_score": 0.80},
+        {"claim": "hi-3", "verbatim_support": "v23", "grounding_score": 0.85},
+        {"claim": "hi-4", "verbatim_support": "v24", "grounding_score": 0.90},
+        {"claim": "hi-5", "verbatim_support": "v25", "grounding_score": 0.95},
+        {"claim": "hi-6", "verbatim_support": "v26", "grounding_score": 1.00}
+       ]},
+      {"chunk_id": "C7", "summary_text": "Chunk 7 with missing-score findings.",
+       "audit_metadata": {"sentences_cited": []},
+       "findings": [
+        {"claim": "ms-1", "verbatim_support": "v27"},
+        {"claim": "ms-2", "verbatim_support": "v28", "grounding_score": null}
+       ]}
+    ]
+  },
+  "rejection_summary": {
+    "pmcid": "PAPER_MIX",
+    "grounding_threshold": 0.5,
+    "map_findings_total": 34,
+    "map_grounding_rejected": 4,
+    "normal_findings_total": 28,
+    "rejected": [
+      {"stage": "grounding_map", "chunk_id": "C1", "claim": "rej-low-1", "grounding_score": "0.08", "category": "morphology"},
+      {"stage": "grounding_map", "chunk_id": "C2", "claim": "rej-low-2", "grounding_score": "0.32", "category": "prognosis"},
+      {"stage": "grounding_map", "chunk_id": null, "claim": "rej-null-1", "grounding_score": "0.41", "category": "morphology"},
+      {"stage": "grounding_map", "chunk_id": null, "claim": "rej-null-2", "grounding_score": "0.13", "category": "prognosis"}
+    ]
+  }
+}

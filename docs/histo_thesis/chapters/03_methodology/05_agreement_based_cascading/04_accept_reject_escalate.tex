@@ -1,0 +1,17 @@
+\subsection{Accept, reject, escalate}\label{subsec:abc-accept-reject-escalate}
+
+At each tier, the cascade uses the deferral score $s$ to decide between three actions: accept, reject, or escalate. This decision is controlled by two thresholds: the accept threshold $\theta$, and the reject threshold $\theta_{\mathrm{reject}}$, with $\theta_{\mathrm{reject}} < \theta$~\parencite{kolawole2025abc, chen2023frugalgpt}. 
+
+\begin{itemize}[label={},leftmargin=1.5em]
+    \item \textbf{Accept.} If $s \geq \theta$, the cascade accepts the output of the most consensus-aligned voter (§\ref{subsec:abc-agreement-scoring}) and does not escalate.
+
+    \item \textbf{Reject.} If $s \leq \theta_{\mathrm{reject}}$, the cascade rejects the chunk, no findings are emitted from the voter, and escalation does not occur. This behavior is conservative: it is reserved for cases where voter agreement is too weak to trust~\parencite{el-yaniv2010foundationsnoisefreeselective}.
+    
+    \item \textbf{Escalate.} Otherwise (when $\theta_{\mathrm{reject}} < s < \theta$), the cascade escalates to the next tier. A chunk that reaches the last level is accepted there; the cascade has no better model tier to escalate to.
+\end{itemize}
+
+The reject threshold can also serve as a toggle to enable or disable dropping behavior. Deferral scores lie in $[0,1]$, so setting $\theta_{\mathrm{reject}} = 0$ makes the reject branch unreachable for non-degenerate chunks. In that configuration, every chunk scoring below $\theta$ is escalated through L1 and L2, and then accepted at L3 (the single-model fallback described above).
+
+The threshold pair $(\theta, \theta_{\mathrm{reject}})$ is a calibration parameter, selected by the offline calibration protocol explained in Subsection~\ref{subsec:abc-calibration-and-replay}, and evaluated in Section~\ref{section:results-abc-calibration}. 
+
+Escalation is the primary cost-control mechanism in the agreement-based cascade; the resulting cost-quality trade-off is analyzed in Subsection~\ref{subsec:abc-cost-quality}.

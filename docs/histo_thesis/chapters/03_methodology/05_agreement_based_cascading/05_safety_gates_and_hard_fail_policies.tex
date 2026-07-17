@@ -1,0 +1,11 @@
+\subsection{Safety gates and hard-fail policies}\label{subsec:abc-safety-gates}
+
+The agreement scorer in Subsection~\ref{subsec:abc-agreement-scoring} only measures the similarity between the claim sets of voters; it cannot see certain contradictions between voter outputs that should override the accept-reject-escalate rule in Subsection~\ref{subsec:abc-accept-reject-escalate}. Three such safety gates are wired into the cascade for this purpose. 
+
+The first is the polarity-conflict hard-fail. This gate fires when two voters output findings with matching subject and outcome entities, relation type, and category, but with opposite polarity. When it fires, the chunk is escalated to the next tier regardless of its agreement score. The term ``hard-fail'' refers to the failure of the accept decision rather than the rejection of the chunk. The polarity-conflict gate is intentionally conservative: it only checks pairs with opposite \texttt{positive} -- \texttt{negative} directions, and ignores the findings with polarity direction values of \texttt{unclear}, \texttt{absent}, \texttt{partial}, and \texttt{no\_direction}.
+
+The second safety gate is the single-voter policy, which determines the cascade's behavior when only one voter's output in a tier is eligible. This can happen when voters' API calls fail or when voter output is rejected due to a failed provenance check. A configurable policy decides what to do in these cases: \texttt{keep} accepts the single survivor model, or \texttt{escalate} treats these single-voter situations as insufficiently supported, and escalates the chunk to the next tier.
+
+The third safety gate is a citation-provenance screen that drops findings with structurally malformed citations from the selected voter output.
+
+The safety mechanisms are conservative by design, and are not assumed to improve strict-F1; their purpose is to prevent unsafe routing decisions, most notably high-consensus outputs that still contain polarity conflicts. Their firing frequencies, the best-performing gate combination, and its calibration behavior are reported in Section~\ref{section:results-abc-calibration} and interpreted in Section~\ref{section:disc-grounding-polarity-conflicts-and-safety-gates}.

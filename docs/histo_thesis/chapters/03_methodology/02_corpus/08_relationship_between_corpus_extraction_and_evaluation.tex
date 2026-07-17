@@ -1,0 +1,46 @@
+\subsection{Relationship between corpus, document extraction, calibration, and evaluation}\label{subsec:relationship-of-corpus-with-datasets}
+
+The paper-based datasets drawn from the 977-paper ingested corpus (§\ref{subsec:ingestion-counts}) are: a document-extraction rubric set; a calibration cluster selected by integer linear programming based on mutual entity relatedness, described in Subsection~\ref{subsec:eval-ilp}; and a held-out generalization set. The 300 claim-pair dataset used to evaluate the relation classifier is constructed independently of the corpus. Table~\ref{tab:dataset-purpose-mapping} summarizes how each dataset is sampled or generated, and where it is used. 
+
+\begin{table}[htpb]
+  \caption[Dataset-purpose mapping]{Datasets, sampling design, and the thesis chapters that consume each dataset or subset.}
+  \label{tab:dataset-purpose-mapping}
+  \centering
+  \begin{tabular}{p{0.22\linewidth} p{0.18\linewidth} p{0.32\linewidth} p{0.20\linewidth}}
+    \toprule
+    Dataset / subset & Size & Sampling design & Consumed by \\
+    \midrule
+    Ingested corpus
+    & 977 papers
+    & All papers successfully written to the database after the acquisition and ingestion pipeline described in Subsection~\ref{subsec:ingestion-counts}
+    & Shared substrate for all downstream chapters \\
+    
+    Document-extraction rubric set
+    & 27 PDFs
+    & Manually selected from the 977-paper ingested corpus, disjoint from the calibration cluster
+    & Document-extraction evaluation (RQ1, §\ref{section:results-doc-extraction-performance}) \\
+    
+    Calibration cluster
+    & 15 papers
+    & Exhaustive integer-linear-programming selection over a weighted Jaccard-relatedness objective
+    & Source papers for the knowledge-extraction cases (§§\ref{section:results-ke-pipeline-output-and-provenance}--\ref{section:results-abc-calibration}) \\
+    
+    Knowledge-extraction source cases for calibration
+    & 454 cases / 2\,223 silver findings
+    & All MAP chunks derived from the calibration cluster
+    & In-sample knowledge-extraction and cascade calibration (RQ2, RQ3; §§\ref{section:results-abc-calibration}--\ref{section:results-cost-quality-comparison}) \\
+    
+    Held-out generalization set
+    & 15 papers / 285 cases / 1\,657 silver findings
+    & Random sample from the corpus, disjoint from the calibration cluster 
+    & Held-out generalization test (RQ5, §\ref{section:results-generalization-to-heldout-papers}) \\
+    
+    Relation-classification claim pairs
+    & 300 claim pairs
+    & Generated independently of the corpus by Opus~4.7
+    & Relation-classification evaluation (RQ4, §\ref{section:results-nli-in-grounding-and-relation-classification}) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The document-extraction and knowledge-extraction datasets do not overlap at the paper level: none of the 27 rubric PDFs are included in the 15-paper calibration cluster; similarly, the held-out evaluation set is completely disjoint from the other sets. This separation keeps the calibration, document-extraction evaluation, and knowledge-extraction evaluations independent and prevents information leakage between the document-extraction and knowledge-extraction pipelines.

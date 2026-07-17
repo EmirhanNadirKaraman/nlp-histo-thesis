@@ -1,0 +1,25 @@
+{
+  "status": "success",
+  "run_id": "shared_run",
+  "pmcid": "PAPER_B",
+  "pipeline_config_hash": "hashA",
+  "canonical_rules": [],
+  "final_rules": [],
+  "relations": [],
+  "audit_trail": {
+    "map_chunks": [
+      {"chunk_id": "C1", "findings": [
+        {"claim": "b1", "grounding_score": 0.90},
+        {"claim": "b2", "grounding_score": 0.60},
+        {"claim": "b3", "grounding_score": 0.30}
+      ]}
+    ]
+  },
+  "rejection_summary": {
+    "pmcid": "PAPER_B",
+    "grounding_threshold": 0.5,
+    "map_findings_total": 3,
+    "map_grounding_rejected": 0,
+    "normal_findings_total": 3
+  }
+}

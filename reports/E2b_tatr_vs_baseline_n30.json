@@ -1,0 +1,146 @@
+{
+  "run_a": {
+    "run_id": "20260517T214919Z_8525e08e",
+    "config_digest": "424591746b68"
+  },
+  "run_b": {
+    "run_id": "20260517T220705Z_bb15883b",
+    "config_digest": "83da244b2b0f"
+  },
+  "config_digest_equal": false,
+  "summary_diff": [
+    {
+      "key": "n_attempted",
+      "a": 30,
+      "b": 30,
+      "delta": 0
+    },
+    {
+      "key": "n_with_stats",
+      "a": 30,
+      "b": 30,
+      "delta": 0
+    },
+    {
+      "key": "n_ok",
+      "a": 30,
+      "b": 30,
+      "delta": 0
+    },
+    {
+      "key": "n_failed",
+      "a": 0,
+      "b": 0,
+      "delta": 0
+    },
+    {
+      "key": "total_wall_seconds",
+      "a": 1463.0432,
+      "b": 1628.0875,
+      "delta": 165.0443
+    },
+    {
+      "key": "mean_wall_seconds",
+      "a": 48.7681,
+      "b": 54.2696,
+      "delta": 5.5015
+    },
+    {
+      "key": "reason_in_header_zone_sum",
+      "a": 78,
+      "b": 78,
+      "delta": 0
+    }
+  ],
+  "counts_diff": [
+    {
+      "key": "after_filter",
+      "a": 3753,
+      "b": 3753,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "figures_cropped",
+      "a": 115,
+      "b": 115,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "layout_elements_full",
+      "a": 5146,
+      "b": 5146,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "layout_elements_masked",
+      "a": 3779,
+      "b": 3779,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "tables_cropped",
+      "a": 64,
+      "b": 65,
+      "delta": 1,
+      "delta_pct": 1.6
+    },
+    {
+      "key": "text_rows",
+      "a": 1946,
+      "b": 1946,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "two_pass_kept",
+      "a": 5024,
+      "b": 5024,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "two_pass_rejected",
+      "a": 122,
+      "b": 122,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "two_pass_scored",
+      "a": 5146,
+      "b": 5146,
+      "delta": 0,
+      "delta_pct": 0.0
+    }
+  ],
+  "reason_diff": [
+    {
+      "key": "R1_blank_pixels",
+      "a": 88,
+      "b": 88,
+      "delta": 0,
+      "delta_pct": 0.0
+    },
+    {
+      "key": "R3_dense_text",
+      "a": 34,
+      "b": 34,
+      "delta": 0,
+      "delta_pct": 0.0
+    }
+  ],
+  "status_changes": [],
+  "per_doc_count_diffs": [
+    {
+      "pmcid": "PMC11863705_main",
+      "field": "n_tables",
+      "a": 6,
+      "b": 7,
+      "delta": 1
+    }
+  ]
+}

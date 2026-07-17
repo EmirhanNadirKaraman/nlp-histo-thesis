@@ -1,0 +1,17 @@
+# Synthetic two-paper selection for end-to-end RELATE validation.
+# Seed first with: python scripts/seed_fake_papers.py
+# Then run:
+#   python scripts/run_paper.py --from-selection \
+#       configs/paper_selection/fake.yaml --sync
+#
+# Expected relations after the run:
+#   FAKE01.claim_1 ↔ FAKE02.claim_1  → SUPPORT     (EGFR / poor prognosis)
+#   FAKE01.claim_2 ↔ FAKE02.claim_2  → CONTRADICT  (KRAS / resistance)
+#   FAKE01.claim_3                    → UNRELATED   (HER2 standalone)
+
+fake:
+  related:
+    - FAKE01_main
+    - FAKE02_main
+  diverse: []
+  hard: []

@@ -1,0 +1,29 @@
+\subsection{MAP: atomic finding extraction}\label{subsec:knowledge-map}
+
+The MAP stage takes a sentence chunk and produces zero or more atomic findings. Each finding is a typed Pydantic record, with the following fields: 
+
+\begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.4em]
+
+    \item \textbf{Claim.} A short, telegraphic statement of the asserted fact. This is the natural-language assertion for a finding, which the GROUNDING stage checks in Subsection~\ref{subsec:knowledge-grounding}.
+    
+    \item \textbf{Subject and outcome entities.} The two endpoints of the claim. Either entity might be null; a finding that lacks an entity is dropped at the GROUP stage (§\ref{subsec:knowledge-normalize-and-group}).
+    
+    \item \textbf{Relation type.} Describes the type of relation expressed by the finding. The allowed values are: \texttt{has\_feature}, \texttt{expression}, \texttt{prognostic}, \texttt{comparative}, \texttt{demographic}, \texttt{treatment\_response}, or \texttt{unclear}.
+    
+    \item \textbf{Direction.} A polarity label that indicates the direction of a relation. The allowed values are: \texttt{positive}, \texttt{negative}, \texttt{absent}, \texttt{partial}, \texttt{unclear}, or \texttt{no\_direction}.
+    
+    \item \textbf{Category.} The histopathology domain class to which the finding is related. Possible values are: \texttt{morphology}, \texttt{IHC} (immunohistochemistry), \texttt{molecular\_genetics}, \texttt{staging}, \texttt{treatment}, \texttt{prognosis}, or \texttt{demographic}.
+    
+    \item \textbf{Scope.} A set of contextual qualifiers, including disease subtype, tissue site, assay method, treatment context, cohort size, study design, biomarker cutoff, and clinical endpoint. Each field is nullable, where the sentence does not contain the specific contextual qualifier. 
+    
+    \item \textbf{Evidence.} A verbatim support string, together with a list of citation identifiers of the form \texttt{[$S_{i}$|PMCID|$te\_id$]}, with \texttt{te\_id} pointing back to the database paragraph the sentence came from.
+    
+    \item \textbf{Confidence.} A self-reported confidence label: \texttt{high}, \texttt{medium}, or \texttt{low}. 
+    
+\end{itemize}
+
+The extracted findings are atomic: each finding expresses one subject-outcome assertion, with one direction, one relation type, and one scope. Compound claims in the source text are decomposed into multiple findings, as this atomicity is required in the later GROUP, CANONICALIZE, and RELATE stages, making the comparison and grouping logic of findings well-defined.
+
+After the MAP records are parsed, a deterministic post-processing step overwrites each finding's verbatim support with the actual cited text, after a database lookup using the \texttt{te\_id} field, so that the support string reflects the real source text rather than a possibly hallucinated quote.
+
+The voter ensemble that produces these findings, and its cost-quality calibration, are the subject of Section~\ref{section:Agreement_Based_Cascading}. This section treats MAP as a black box that returns a list of typed atomic findings per text chunk.

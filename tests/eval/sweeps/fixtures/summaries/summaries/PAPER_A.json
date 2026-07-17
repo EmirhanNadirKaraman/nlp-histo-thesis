@@ -1,0 +1,32 @@
+{
+  "status": "success",
+  "run_id": "shared_run",
+  "pmcid": "PAPER_A",
+  "pipeline_config_hash": "hashA",
+  "canonical_rules": [],
+  "final_rules": [],
+  "relations": [],
+  "audit_trail": {
+    "map_chunks": [
+      {"chunk_id": "C1", "findings": [
+        {"claim": "a1", "grounding_score": 0.95},
+        {"claim": "a2", "grounding_score": 0.80}
+      ]},
+      {"chunk_id": "C2", "findings": [
+        {"claim": "a3", "grounding_score": 0.55},
+        {"claim": "a4", "grounding_score": 0.45}
+      ]}
+    ]
+  },
+  "rejection_summary": {
+    "pmcid": "PAPER_A",
+    "grounding_threshold": 0.5,
+    "map_findings_total": 6,
+    "map_grounding_rejected": 2,
+    "normal_findings_total": 4,
+    "rejected": [
+      {"stage": "grounding_map", "chunk_id": "C3", "claim": "ra1", "grounding_score": "0.20", "category": "prognosis"},
+      {"stage": "grounding_map", "chunk_id": "C4", "claim": "ra2", "grounding_score": "0.10", "category": "morphology"}
+    ]
+  }
+}

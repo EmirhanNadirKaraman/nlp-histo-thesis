@@ -1,0 +1,177 @@
+# Unified pipeline configuration.
+#
+# Two top-level keys map onto PipelineConfig (PDF extraction) and
+# KnowledgeExtractionConfig. Any field omitted here falls back
+# to the dataclass default in:
+#   - pipeline/stages/pdf_text_extraction/config.py
+#   - pipeline/stages/knowledge_extraction/config.py
+#
+# Load with:
+#   from pipeline.config_loader import load_config
+#   pdf_cfg, sum_cfg = load_config("configs/run.yaml")
+
+pdf_extraction:
+  paths:
+    output_root: out
+    files_root: files
+
+  docling:
+    do_table_structure: true
+    do_ocr: false
+    images_scale: 2.0
+    accelerator_device: cpu
+    timeout_sec: 300            # advisory only — not enforced today (B-035)
+
+  tatr:
+    threshold: 0.99
+    device: cpu
+    model_name: microsoft/table-transformer-detection
+    render_dpi: 150             # raise for small/faint tables, drop for speed (B-034)
+
+  masking:
+    enabled: true
+    mask_tables: true
+    mask_figures: true
+    mask_header_footer_sidebar: true
+    merge_overlapping_boxes: true
+    expand_box_px: 2
+
+  filtering:
+    apply_ner_filtering: true
+    apply_paragraph_relevance_filtering: true
+
+  cropping:
+    save_figure_crops: true
+    save_table_crops: true
+    image_format: png
+    dpi: 200
+    min_figure_pts: 50
+
+  text:
+    write_raw_text: true
+    pre_filter_relevance: true
+
+  visualization:
+    enabled: true
+    save_tatr_visualization: true
+    save_combined_visualization: true
+
+  database:
+    enabled: false              # set true to ingest; db_url auto-loaded from .env
+    # db_url: postgresql://...  # uncomment to override
+
+  runtime:
+    log_level: INFO             # DEBUG | INFO | WARNING | ERROR
+    num_workers: 1              # used by ParallelBatchRunner via runner.main
+    skip_blacklisted: true
+    skip_existing_in_db: true
+    save_error_traces: true
+    seed: 42                    # int | None; None opts out of seeding (B-027)
+    skip_existing_outputs: false  # reuses out/stage_cache/{table_detection,filtering,text_assembly}
+                                  # when the pipeline config hash matches.
+                                  # Final writers (steps 7/8) still always run.
+                                  # Clear with: rm -rf out/stage_cache/  (see docs/HOW_TO_RUN.md §9)
+
+  two_pass:
+    enabled: true               # pixel-render ghost-text detection
+
+  table_detector: hybrid        # tatr | docling | hybrid | vlm
+
+knowledge_extraction:
+  map:
+    theta: 0.9                  # E07 map_theta CONFIRMED
+    reject_theta: 0.2           # E07 map_theta (5-voter, 2026-06-22): reject=0.2 weakly dominates 0.1 (the (0.0,0.1] band is empty for the 5-voter ensemble; the lowest-consensus chunk sits in (0.1,0.2])
+    chunk_size: 10
+    chunk_overlap: 0            # aligned to the calibration regime: E06–E12 replayed the
+                               # per-case primer, which uses disjoint (overlap-0) chunks.
+                               # overlap-2 would not match the primer cache (was 2).
+    chunk_workers: 5
+
+  routing:
+    enable_router: false        # cascade path — false → legacy AgreementChecker (theta/reject_theta);
+                                # true → grounding-first MapOutputRouter (L1→L3 skip). Pinned for
+                                # reproducibility: build_runner AND build_batch_runner read this, so the
+                                # sync and batch paths cannot diverge. The θ sweep replays the legacy
+                                # path only — re-validate any chosen θ against the router before flipping.
+    router_single_voter_policy: escalate   # only when enable_router=true: 'escalate' lone voter to L3, or 'keep'
+    legacy_single_voter_policy: escalate   # E08 (5-voter, 2026-06-22): escalate the N=1 case to L3/Sonnet (N=1-at-L2 is more common with 2 L2 voters; a lone voter has no agreement signal). only when enable_router=false: AgreementChecker N=1 handling.
+                                           # 'keep' preserves prior implicit behaviour (lone API-survivor
+                                           # accepted with synthetic confidence=1.0); 'escalate' treats N=1
+                                           # as low-evidence and routes the chunk up the cascade.
+
+  normalize:
+    extra_synonyms: {}          # surface → canonical overrides on top of synonyms.yaml (B-037)
+
+  grounding:
+    threshold: 0.5             # null disables the entailment filter
+
+  citation:                    # finding-level citation/provenance filter (B-080)
+    enabled: true              # drop MAP findings whose S{n}|PMCID|te_id citation
+                               # fails structural validation vs the chunk source
+                               # index (nonexistent sentence / te_id / pmcid).
+    check_verbatim: false      # also drop fuzzy-fabricated verbatim quotes (off:
+                               # structural checks are exact; grounding NLI covers
+                               # claim<->support quality).
+    fabricated_threshold: 0.25 # only consulted when check_verbatim: true
+
+  relate:
+    entailment_threshold: 0.50
+    contradiction_threshold: 0.50
+    scope_aware_nli: true              # [scope: ...] prefix on NLI input (default true)
+    use_verbatim_for_nli: false       # A/B 2026-05-27: verbatim flips real CONTRADICTs to SUPPORT
+                                      # via multi-claim sentence dilution (PRAME / PHH3 cases). Keep false.
+
+  resolve:
+    grounding_weight: 0.60
+    grounding_default: 0.50
+    finding_bonus_max: 0.10
+    finding_bonus_scale: 5
+    support_boost_per_rel: 0.08
+    support_boost_cap: 0.20
+    single_study_pen: 0.10
+    contradict_pen_per_rel: 0.15
+    contradict_pen_cap: 0.30
+    no_rel_grounding_weight: 0.80
+    no_rel_finding_bonus_max: 0.15
+    no_rel_single_study_pen: 0.05
+
+  cost:
+    enable_cost_report: true
+    write_usage_jsonl: true
+
+  agreement:                    # MAP embedding soft-alignment weights (H-EMB-01)
+    tau: 0.15                   # weak-match threshold; sims below this are zeroed
+    count_alpha: 0.25          # soft claim-count-mismatch penalty exponent
+    reuse_weight: 0.15         # reuse-concentration penalty weight
+    contradiction_weight: 0.20  # polarity-flip + numeric contradiction penalty
+    scorer_kind: hybrid         # E06 family_refine pin (was 'embedding'). strategy: 'embedding' (EmbeddingSimilarityStrategy,
+                                # production) or 'hybrid' (HybridStructuredSimilarity, blend of
+                                # category + embedding + entity + evidence). Stage 1 of the MAP
+                                # sweep (run_summarization_sweeps --stage map_scorer) picks the
+                                # winner; pin here to make it production-effective.
+    embedder: gemini            # agreement-scorer embedding model: 'gemini' (production default) or
+                                # 'openai'. MUST match the embedder the map_theta_sweep --embedder
+                                # comparison selected; build_runner/build_batch_runner read it to build
+                                # embed_fn (it is NOT derived anywhere else).
+    alignment_strategy: greedy  # E06 family_refine pin (was 'soft_max'). mode when scoring agreement: 'soft_max' (default,
+                                # many-to-one coverage + full penalty set) or one-to-one 'greedy'/
+                                # 'hungarian' (precision/recall F1 over matched pairs; tau = min valid
+                                # pair sim; count_alpha/reuse/contradiction do NOT apply). Calibrated
+                                # by the map_alignment stage in run_new_summarization_sweeps.py.
+    force_escalate_on_polarity_conflict: true   # B-051 hard-fail policy. true (default) preserves the
+                                                # safety guard: comparable positive/negative findings
+                                                # override the scorer decision to ESCALATE. false records
+                                                # the conflict in score_details but lets the scorer's
+                                                # natural decision stand — ablation only, not a tuning
+                                                # candidate (polarity overrides exist for semantic safety).
+    hybrid:                       # HybridStructuredSimilarity blend weights — only consulted when
+                                  # scorer_kind=hybrid. Should sum to 1.0 for a calibrated [0,1] score
+                                  # (convention; not enforced in code). Stage 1b map_hybrid_blend in
+                                  # run_summarization_sweeps explores alternatives; all official
+                                  # variants in HYBRID_BLEND_GRID sum to 1.0.
+      w_category: 0.15            # E06 entity-heavy blend (was 0.25). weight on category-set Jaccard
+      w_embedding: 0.30           # E06 entity-heavy blend (was 0.40). weight on H-EMB-01 soft-aligned embedding similarity
+      w_entity: 0.50              # E06 entity-heavy blend (was 0.25). weight on extracted-entity Jaccard
+      w_evidence: 0.05            # E06 entity-heavy blend (was 0.10). weight on evidence text-element-id Jaccard
+                               # NOTE: in the per-paper result-cache hash but not the
+                               # chunk-level MAP cache (like theta) — sweep via replay.

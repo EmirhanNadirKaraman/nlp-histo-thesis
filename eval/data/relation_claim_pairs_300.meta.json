@@ -1,0 +1,68 @@
+{
+  "dataset": "relation_claim_pairs_300",
+  "workflow": "api_batch",
+  "generator_model": "claude-opus-4-7",
+  "temperature": "unset \u2014 deprecated for this model (B-072); default sampling + forced tool_use",
+  "max_tokens": 12000,
+  "n_requests": 10,
+  "tool_name": "emit_relation_pairs",
+  "prompt_spec_version": "v1",
+  "batch_ids": [
+    "msgbatch_01KHp9reu4Cz7YEkGDQUmR1M"
+  ],
+  "n_batches": 10,
+  "pairs_per_batch": 30,
+  "per_label_per_batch": 10,
+  "total": 300,
+  "labels": [
+    "SUPPORTING",
+    "CONTRADICTING",
+    "UNRELATED"
+  ],
+  "label_counts": {
+    "SUPPORTING": 100,
+    "CONTRADICTING": 100,
+    "UNRELATED": 100
+  },
+  "difficulty_counts": {
+    "easy": 149,
+    "medium": 123,
+    "hard": 28
+  },
+  "relation_subtype_counts": {
+    "paraphrase": 63,
+    "entailment": 19,
+    "opposite_direction": 45,
+    "negation": 41,
+    "mutually_exclusive": 14,
+    "different_outcome": 12,
+    "different_entity": 63,
+    "orthogonal_topic": 25,
+    "elaboration": 7,
+    "same_direction": 11
+  },
+  "n_unique_entities": 115,
+  "n_unique_topics": 10,
+  "prompt_template_hash": "d3b6823eb0b9bf27",
+  "content_hash": "67cf283c280179f0",
+  "split": {
+    "strategy": "label-stratified, seeded",
+    "calib_frac": 0.5,
+    "seed": 42,
+    "calibration_n": 150,
+    "evaluation_n": 150,
+    "calibration_labels": {
+      "SUPPORTING": 50,
+      "CONTRADICTING": 50,
+      "UNRELATED": 50
+    },
+    "evaluation_labels": {
+      "SUPPORTING": 50,
+      "CONTRADICTING": 50,
+      "UNRELATED": 50
+    },
+    "note": "diagnostic only; per the thesis no threshold is tuned on this set"
+  },
+  "validated_at": "2026-06-18T21:25:53Z",
+  "n_warnings": 14
+}
