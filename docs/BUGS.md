@@ -175,6 +175,7 @@ design calls live in [`THESIS.md`](THESIS.md#decisions-log).
 
 | B-126 | Fixed (2026-07-17) | Low | Eval, `E01_doc_extraction/flatten_to_csv.py:120` | **E01's `flatten_to_csv` wrote its CSV correctly and then crashed on the success message — a `ValueError` traceback on exit 1 despite a complete, correct output file.** The final line does `csv_path.relative_to(_REPO_ROOT)`, but `_REPO_ROOT` is absolute while `--csv-out` (or the default derived from a relative `--json`) is a **relative** path — and `Path("eval/reports/…").relative_to("/abs/repo")` raises. So the natural invocation a reader copies from the docs (`flatten_to_csv --json eval/reports/…_PR.json`) printed a stack trace and returned non-zero, even though the reshaped CSV was already on disk and byte-identical to the frozen one. Surfaced while wiring E01 into REPRODUCE.md Step 8 as the PDF-free, report-level reproduction of the doc-extraction rubric. **Fixed** by resolving the path before `relative_to` and falling back to the path as-given when it is outside the repo (`try/except ValueError`). Verified: both the relative `--csv-out` and default invocations now exit 0, and the regenerated CSV is byte-identical to the committed `figtable_extraction_sweep_rerun_27pdf_20260604_PR.csv` (winner var18: tables 40→83.8 %, figures 84 %). ruff clean. | [Bug 126](#bug-126--flatten_to_csv-crashed-on-its-own-success-message) |
 
+| B-127 | Observed (2026-07-18) | Low | Eval tooling, `eval/sweeps/_lib.py` × `scripts/eval/_lib.py` × `sys.modules["_lib"]` | **Two different `_lib` modules compete for one entry in `sys.modules`, so import order decides which one a caller gets.** Both `eval/sweeps/grounding.py` and `scripts/eval/compute_proxy_metrics.py` insert their own directory at `sys.path[0]` and then `import _lib`; whichever executes first claims `sys.modules["_lib"]` for the rest of the process, and the second silently receives the other package's module. Reproduced 2026-07-18 while adding a B-108 regression test: a module-scope `from eval.sweeps import grounding` made `tests/eval/test_compute_proxy_metrics.py::test_meta_json_has_required_fields` fail under some `pytest-randomly` orderings while passing in isolation. Mitigated in tests only — the existing fixtures load these scripts by file path and pop `sys.modules["_lib"]` on teardown, and the new B-108 test was rewritten to match. **No wrong result has been demonstrated from the standalone production scripts**, each of which runs in its own process where only one `_lib` is ever imported. Open as a latent hazard: the real fix is package-relative imports (`from . import _lib`) instead of `sys.path` mutation, deliberately deferred as an import-architecture change. | [Bug 127](#bug-127--two-_lib-modules-share-one-sysmodules-entry) |
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
 
 ---
@@ -9500,3 +9501,76 @@ print(f"E01 flatten: {n} rows -> {shown}")
 Both invocations — a relative `--csv-out`, and the default (no `--csv-out`) — now exit 0, and
 the regenerated CSV is byte-identical to the committed frozen
 `figtable_extraction_sweep_rerun_27pdf_20260604_PR.csv`. ruff clean.
+
+---
+
+## Bug 127 — two `_lib` modules share one `sys.modules` entry
+
+**Status / Severity / Surface** — Observed (2026-07-18) · Low · Eval tooling.
+`eval/sweeps/_lib.py` × `scripts/eval/_lib.py` × `sys.modules["_lib"]`.
+
+### Symptom
+
+`tests/eval/test_compute_proxy_metrics.py::test_meta_json_has_required_fields` failed in a
+full-suite run while passing on its own and passing when `tests/eval/` was run as a
+directory. Re-running the suite made it pass again — the repository has `pytest-randomly`
+installed, so test order differs per run and the failure only appears for orderings that
+load one module before the other.
+
+### Evidence
+
+Two distinct modules share the same importable name:
+
+```
+./eval/sweeps/_lib.py
+./scripts/eval/_lib.py
+```
+
+Both consumers put their own directory first on the path and then import it unqualified:
+
+```
+eval/sweeps/grounding.py:31            sys.path.insert(0, str(Path(__file__).resolve().parent))
+eval/sweeps/grounding.py:33            import _lib
+scripts/eval/compute_proxy_metrics.py:39  sys.path.insert(0, str(Path(__file__).resolve().parent))
+scripts/eval/compute_proxy_metrics.py:41  import _lib
+```
+
+Demonstrated directly:
+
+```python
+import eval.sweeps.grounding      # puts eval/sweeps on sys.path[0]
+import _lib
+_lib.__file__                     # -> .../eval/sweeps/_lib.py
+```
+
+### Diagnosis
+
+`sys.modules` is keyed by module *name*, not by path. The first `import _lib` in a process
+wins and every later `import _lib` returns that same object, whichever directory the second
+caller had put on the path. This is import-order dependence, not a race and not
+non-determinism: for a fixed order the outcome is fixed.
+
+The trigger was a test of mine, not a change in the modules. Adding the B-108 regression test
+with a module-scope `from eval.sweeps import grounding` claimed `sys.modules["_lib"]` at
+collection time, before any proxy-metrics test ran.
+
+### Mitigation
+
+Test-level only. The pre-existing fixtures in `tests/eval/test_compute_proxy_metrics.py` and
+`tests/eval/sweeps/test_grounding.py` already load these scripts with
+`importlib.util.spec_from_file_location` and pop `sys.modules["_lib"]` on teardown, which is
+why the collision had not surfaced before. `tests/eval/sweeps/test_grounding_output_defaults.py`
+was rewritten to follow the same pattern.
+
+### Fix
+
+**Not fixed.** The correct fix is to stop mutating `sys.path` and import the helper
+package-relatively (`from . import _lib`, or a distinct module name per package), so the two
+modules can never contend for one entry. That is an import-architecture change across both
+trees and was deliberately deferred rather than folded into a bug fix.
+
+Scope of the risk as currently understood: **no wrong result has been demonstrated from the
+production scripts.** Each runs standalone in its own process, where only one `_lib` is ever
+imported. The demonstrated failure is confined to a shared-process test session. Anything that
+imports both trees in one process — a future test, a notebook, an aggregate driver — is exposed
+until the imports are made explicit.
