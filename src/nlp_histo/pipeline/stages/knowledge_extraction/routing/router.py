@@ -430,7 +430,7 @@ class MapOutputRouter:
         conf_str = f"{bundle.confidence:.2f}" if bundle.confidence is not None else "n/a"
 
         # B-051: polarity hard-fail overrides any theta-based decision. Emit
-        # ONLY POLARITY_CONFLICT — never co-emit a low-agreement reason
+        # only POLARITY_CONFLICT — never co-emit a low-agreement reason
         # because the embedding score was not actually low.
         if (
             bundle.score_details is not None

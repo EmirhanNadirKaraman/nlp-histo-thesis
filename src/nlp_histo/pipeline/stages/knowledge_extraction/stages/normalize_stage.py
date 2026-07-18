@@ -32,7 +32,7 @@ from ..entities.umls_utils import best_cui as _best_cui
 logger = logging.getLogger(__name__)
 
 # Synonym dictionary
-# synonyms.yaml is the SINGLE source of truth — there is no hardcoded fallback.
+# synonyms.yaml is the single source of truth — there is no hardcoded fallback.
 # It ships as package data inside the `entities` subpackage and is located through
 # importlib.resources, not through a filesystem-depth calculation: an installed
 # wheel has no repository tree, and a `parents[n]` walk would silently resolve to

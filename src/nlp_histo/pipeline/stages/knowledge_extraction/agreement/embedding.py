@@ -202,7 +202,7 @@ def _align_precomputed(
        penalises a broad claim absorbing all best-matches from the other set.
     4. Contradiction penalty: combined polarity + numeric heuristics.
 
-    Grounding penalty is NOT applied here — it is caller-level (EmbeddingScorer).
+    Grounding penalty is not applied here — it is caller-level (EmbeddingScorer).
     """
     score, _ = _align_precomputed_with_breakdown(
         emb_a, emb_b, a_claims, b_claims,

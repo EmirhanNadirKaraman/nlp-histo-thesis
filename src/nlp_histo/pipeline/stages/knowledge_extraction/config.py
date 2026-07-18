@@ -32,9 +32,9 @@ into every ``self._config_snapshot`` so analytical tooling that diffs
 ``manifest.json`` / ``PipelineRun.config_snapshot`` / TraceCollector JSONL
 across runs can branch on the layout:
 
-* **v1** — ``enable_router`` / ``router_single_voter_policy`` /
+* v1 — ``enable_router`` / ``router_single_voter_policy`` /
   ``legacy_single_voter_policy`` lived under ``map``.
-* **v2** — those three fields moved to a dedicated ``RoutingConfig`` sub-config
+* v2 — those three fields moved to a dedicated ``RoutingConfig`` sub-config
   (2026-05-26).
 
 Historical artifacts predate this stamp; readers should treat the absence of
@@ -333,8 +333,7 @@ class AgreementConfig:
 
     embedder: str = "gemini"
     """Embedding model backing the agreement scorer's similarity. ``"gemini"``
-    (production default — matches the historical hardcoded ``GeminiEmbedder`` in
-    ``scripts/run_paper.py``) or ``"openai"``. Pin to whichever embedder won the
+    (production default) or ``"openai"``. Pin to whichever embedder won the
     ``map_theta_sweep --embedder`` comparison; ``build_runner`` /
     ``build_batch_runner`` read it to construct ``embed_fn``. Any other value
     raises in ``_make_embed_fn``."""
@@ -343,15 +342,15 @@ class AgreementConfig:
     """How findings are matched between two voters when scoring agreement.
 
     * ``"soft_max"`` (default, unchanged) — bidirectional soft coverage: each
-      finding takes its best counterpart WITH replacement (many-to-one). Uses
+      finding takes its best counterpart with replacement (many-to-one). Uses
       the full ``tau``/``count_alpha``/``reuse_weight``/``contradiction_weight``
       penalty set.
-    * ``"greedy"`` / ``"hungarian"`` — ONE-TO-ONE matching (each finding matched
+    * ``"greedy"`` / ``"hungarian"`` — one-to-one matching (each finding matched
       at most once; greedy = iterative best-pair, hungarian = global optimum via
       ``scipy.optimize.linear_sum_assignment``). Scored by a precision/recall F1
       over matched similarities, so over/under-production is penalised. ``tau``
       is reused as the minimum valid-pair similarity; ``count_alpha`` /
-      ``reuse_weight`` / ``contradiction_weight`` do NOT apply to the one-to-one
+      ``reuse_weight`` / ``contradiction_weight`` do not apply to the one-to-one
       modes. Calibrated via the ``map_alignment`` stage. Any value outside
       ``{"soft_max", "greedy", "hungarian"}`` raises at scoring time."""
 
@@ -374,13 +373,13 @@ class AgreementConfig:
     embedding similarity is high. Preserves the B-051 safety guard that
     prevents paraphrased contradictions from being accepted as agreement.
 
-    When ``False``, the conflict marker is **still** recorded in
+    When ``False``, the conflict marker is still recorded in
     ``bundle.score_details["hard_fail_reason"]`` (so sweep harnesses can count
     it via ``n_polarity_conflict_chunks``), but the scorer's natural decision
-    (KEEP / REJECT / ESCALATE from theta) is **not** overridden. This is an
-    *ablation* setting, not a production-tuning candidate — polarity-conflict
-    overrides exist for semantic safety, not for cost control. Default flip
-    should be backed by explicit evidence that B-051 is no longer a concern.
+    (KEEP / REJECT / ESCALATE from theta) is not overridden. Ablation-only
+    knob: the override exists for semantic safety, so don't flip it to save
+    cost. Flipping the default needs explicit evidence that B-051 is no longer
+    a concern.
 
     Applies to both cascade paths (legacy + router) — the polarity-conflict
     check sits inside ``AgreementChecker.compute``, which both paths funnel

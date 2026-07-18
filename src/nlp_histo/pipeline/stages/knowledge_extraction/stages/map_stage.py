@@ -4,7 +4,7 @@ MAP stage with Agreement-Based Cascading (ABC).
 For each chunk of sentences:
   Level 1  — run each voter LLM in parallel (one call per voter).
              Voters should be distinct models / providers so disagreement
-             reflects genuine architectural differences, not just sampling
+             reflects architectural differences rather than sampling
              noise (e.g. gemini-flash + deepseek + mistral).  When using
              same-provider voters, use temperature diversity and lower theta.
              If pairwise claim-embedding alignment >= theta, accept the
@@ -59,9 +59,9 @@ logger = logging.getLogger(__name__)
 # direct-API ChatOpenAI wrapper goes through the same OpenAI client at
 # https://generativelanguage.googleapis.com/v1beta/openai/..., so this
 # exception fires for Gemini voters too — not just OpenAI ones.
-# Historic note: a prior import targeted langchain_core.exceptions, where
-# this class does NOT exist; the fallback silently set the guard to None,
-# so length-limit errors went through the retry loop pointlessly.
+# Import from the openai SDK, not langchain_core.exceptions — the class does
+# not exist there, so the ImportError fallback would leave the guard None and
+# length-limit errors would go through the retry loop pointlessly.
 try:
     from openai import LengthFinishReasonError as _LengthFinishReasonError
 except ImportError:  # openai SDK absent (test contexts)
@@ -104,7 +104,7 @@ def _format_sentences(chunk: list[dict]) -> str:
 
 
 def _llm_fallback_spec(llm) -> tuple[str, str]:
-    """Best-effort (provider, model) extraction when caller did not pass specs.
+    """Extract (provider, model) from the LLM object when no specs were passed.
 
     The langchain chat clients usually expose ``model_name`` or ``model``;
     we fall back to the class name. The signature is informational; cache
@@ -137,7 +137,7 @@ class MapStage:
     voter_llms:
         List of LLMs used as Level-1 voters.  Use models from different
         providers (e.g. [ChatOpenAI(...), ChatAnthropic(...)]) so that
-        disagreement reflects genuine uncertainty rather than sampling noise.
+        disagreement reflects uncertainty rather than sampling noise.
         Must have at least one entry.
     escalation_llm:
         LLM for Level-2 escalation.  Only called when voters disagree below
@@ -274,7 +274,7 @@ class MapStage:
         # Records one InvocationUsage per chain.invoke() call. Populated in
         # _run_voters and _invoke_l3 by reading usage_metadata directly off
         # the raw AIMessage returned by build_map_chain's include_raw=True
-        # structured-output chain. Cache hits do NOT add a record (no API
+        # structured-output chain. Cache hits do not add a record (no API
         # call happened). See pipeline/stages/knowledge_extraction/costing/
         # invocation_usage.py for the rationale.
         from ..costing import InvocationUsage  # noqa: PLC0415 — local import
@@ -758,8 +758,8 @@ class MapStage:
         # Citation filter (B-080)
         # Drop findings whose citation fails structural validation against this
         # chunk's source index — the production check the dormant router-only
-        # ProvenanceValidator never ran on the legacy path. Runs on the SELECTED
-        # result (any level), BEFORE runner._replace_verbatim_from_db, so the
+        # ProvenanceValidator never ran on the legacy path. Runs on the selected
+        # result (any level), before runner._replace_verbatim_from_db, so the
         # optional verbatim check sees the cited sentence, not the DB paragraph.
         if self._citation_cfg.enabled and result is not None and result.findings:
             from nlp_histo.pipeline.stages.knowledge_extraction.provenance.citation_filter import filter_summary_by_citation  # noqa: PLC0415

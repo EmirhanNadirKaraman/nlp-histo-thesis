@@ -137,7 +137,7 @@ class CanonicalizeStage:
 
             # Group-level is_conflicted (B-049): True iff this group emitted
             # ≥2 polarity-bearing direction bins. Computed once per group and
-            # stamped on every CanonicalRule the group produces — this is NOT
+            # stamped on every CanonicalRule the group produces — this is not
             # a within-rule property (within a bin the direction is uniform
             # by construction). `partial` counts as polarity-bearing here per
             # the current `POLARITY_BEARING_DIRS`; semantic question on

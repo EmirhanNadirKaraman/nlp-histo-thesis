@@ -1,7 +1,7 @@
 """Filesystem persistence for knowledge_extraction-stage artifacts.
 
 This module is purely observational: it serialises stage outputs to JSONL +
-JSON without changing any extraction logic. Persistence is OFF by default —
+JSON without changing any extraction logic. Persistence is off by default —
 it is activated by passing ``artifact_root`` to :class:`KnowledgeExtractionRunner`.
 
 Layout::
@@ -482,8 +482,8 @@ class RunArtifactWriter:
 #
 # These take a fully-built RunArtifactWriter and the in-memory stage outputs.
 # Each function is a no-op when the writer is None, so callers can pass
-# ``writer = self._make_artifact_writer(...)`` unconditionally — both runners
-# stay clean of branching on artifact_root.
+# ``writer = self._make_artifact_writer(...)`` unconditionally instead of
+# branching on artifact_root.
 
 
 def non_groupable_reason(nf: Any) -> str:
@@ -802,7 +802,7 @@ def persist_map_findings(db, db_id: int | None, pmcid: str, chunk_summaries: lis
             pmcid, len(rows), db_id,
         )
     except Exception as exc:
-        # B-055: do NOT swallow. A failed bulk insert here means zero map
+        # B-055: do not swallow. A failed bulk insert here means zero map
         # findings persist while the run otherwise completes — silent
         # corruption. Re-raise so the finalize-level handler fails the run.
         logger.error(
@@ -1116,7 +1116,7 @@ def persist_rejection_summary(db, db_id: int | None, rejection_summary) -> None:
 def _copy_enum_logs(writer: "RunArtifactWriter", pmcid: str) -> None:
     """Mirror logs/{enum_observations,bad_findings}.jsonl into the per-PMCID dir.
 
-    Best-effort — missing files are silently skipped.
+    Missing files are skipped without error.
     """
     for name in ("enum_observations.jsonl", "bad_findings.jsonl"):
         src = writer.logs_dir() / name

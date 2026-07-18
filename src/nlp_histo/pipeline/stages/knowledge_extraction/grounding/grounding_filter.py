@@ -19,9 +19,9 @@ _ACTIVE_SPEC = get_active_spec()
 _DEFAULT_MODEL = _ACTIVE_SPEC.hf_id
 _DEFAULT_BATCH_SIZE = _ACTIVE_SPEC.batch_size
 
-# Module-level NLI pipeline singleton — shared across all GroundingFilter
-# instances and reused by RelateStage via relate_stage._get_nli_pipe().
-# Avoids reloading the model on each GroundingFilter instantiation.
+# Module-level NLI pipeline singleton, shared across GroundingFilter instances
+# and reused by RelateStage via relate_stage._get_nli_pipe() — one model load
+# per process.
 _NLI_PIPE_CACHE: dict[tuple[str, str | int, int], object] = {}
 
 
@@ -138,9 +138,9 @@ class GroundingFilter:
 
 # Helpers
 
-# DeBERTa-v3 has a 512-token limit shared between premise and hypothesis.
-# _compute_premise_budget() derives the per-call budget from the actual
-# hypothesis length so the joint sequence never exceeds the model limit.
+# DeBERTa-v3 shares a 512-token limit between premise and hypothesis, so
+# _compute_premise_budget() sizes the premise from the actual hypothesis
+# length to keep the joint sequence under the limit.
 _MODEL_MAX_TOKENS = 512  # hard cap; model_max_length can be unreliable (1e30)
 _PREMISE_BUDGET_FLOOR = 64  # never allocate less than this, even for huge hypotheses
 

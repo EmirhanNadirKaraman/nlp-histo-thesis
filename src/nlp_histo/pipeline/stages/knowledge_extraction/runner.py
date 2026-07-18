@@ -112,7 +112,7 @@ class KnowledgeExtractionRunner:
     ----------
     voter_llms:
         List of LangChain chat models used as Level-1 voters in the MAP stage.
-        Use cheap models from different providers for genuine independence
+        Use cheap models from different providers for independence
         (e.g. [DeepSeek, Gemini-Flash-Lite, Mistral-Large]).
     level2_voter_llms:
         List of LangChain chat models used as Level-2 voters.  Called only when
@@ -126,12 +126,12 @@ class KnowledgeExtractionRunner:
         which provides calibrated defaults for all thresholds and scoring
         constants.  Use dataclasses.replace() to override specific fields.
     scorer:
-        MapOutputScorer used to score voter agreement in the MAP stage.
-        Defaults to ``SemanticAgreementScorer(EmbeddingSimilarityStrategy)``
-        — Soiffer-style max-consensus with centrality-based best-output
-        selection. Pass ``EmbeddingScorer`` for the legacy mean-pairwise
-        behaviour, or ``CascadedCompositeScorer`` for the LP-thresholded
-        embedding + NER cascade.
+        MapOutputScorer that scores voter agreement in the MAP stage.
+        Defaults to ``SemanticAgreementScorer(EmbeddingSimilarityStrategy)``:
+        Soiffer-style max-consensus with centrality-based best-output selection.
+        Pass ``EmbeddingScorer`` for the legacy mean-pairwise behaviour, or
+        ``CascadedCompositeScorer`` for the LP-thresholded embedding + NER
+        cascade.
     output_dir:
         Where to write per-concept result JSON files.
     cache_path:
@@ -191,13 +191,12 @@ class KnowledgeExtractionRunner:
         self._cascade_log_dir: Path = output_dir / "cascade_decisions"
 
         # Default scorer: SemanticAgreementScorer over the strategy selected by
-        # cfg.agreement.scorer_kind (default "embedding" — preserves the historical
-        # hardcoded choice). Centrality-based best-output selection (Soiffer 2025) —
-        # the previous default was EmbeddingScorer, which left best_index unset and
-        # forced AgreementChecker.best() to fall back to a
-        # (mean_evidence_len, n_findings) heuristic. Pass embed_fn through so we
-        # don't silently fall back to OpenAIEmbedder when the caller supplied a
-        # different embedder. Invalid scorer_kind raises here.
+        # cfg.agreement.scorer_kind (default "embedding").
+        # Centrality-based best-output selection (Soiffer 2025)
+        # sets best_index; without it AgreementChecker.best() falls back to a
+        # (mean_evidence_len, n_findings) heuristic. embed_fn is passed through, so
+        # a caller-supplied embedder is used instead of OpenAIEmbedder. Invalid
+        # scorer_kind raises here.
         if scorer is None:
             from .agreement import SemanticAgreementScorer
             scorer = SemanticAgreementScorer.from_agreement_config(
@@ -207,10 +206,9 @@ class KnowledgeExtractionRunner:
         # Optional routing layer: grounding-first MapOutputRouter. Drops voters
         # that fail schema or provenance validation before they enter the
         # agreement matrix, and forwards per-voter grounding quality into
-        # AgreementContext so the scorer can use it for tie-breaking. Off by
-        # default — the legacy 3-tier L1 → L2 → L3 cascade is the default
-        # path. Enable with enable_router=True to switch to the L1 → L3 skip
-        # path described in MapStage._cascade.
+        # AgreementContext for scorer tie-breaking. Off by default, leaving the
+        # legacy 3-tier L1 → L2 → L3 cascade in place. enable_router=True
+        # switches to the L1 → L3 skip path described in MapStage._cascade.
         router = None
         if enable_router:
             from .agreement import AgreementChecker
@@ -274,41 +272,40 @@ class KnowledgeExtractionRunner:
         )
 
         self._cfg = cfg
-        self._db = db  # DatabaseConnection | None — persistence is fully optional
+        self._db = db  # DatabaseConnection | None (persistence optional)
         self._force_rerun = force_rerun
         self._run_ner = run_ner
 
         self._trace_enabled = trace_enabled
         self.trace_dir: Path = trace_dir or (output_dir / "traces")
 
-        # Filesystem artifact persistence — disabled when artifact_root is None.
-        # When enabled, every stage output is mirrored to runs/{run_id}/.
+        # Filesystem artifact persistence (None disables it). When set, every
+        # stage output is mirrored to runs/{run_id}/.
         self._artifact_root: Path | None = (
             Path(artifact_root) if artifact_root is not None else None
         )
         self._artifact_run_id_override: str | None = artifact_run_id
 
-        # Stores post-MAP findings (post-grounding when enabled, raw otherwise).
-        # NORMALIZE reads this.
+        # post-MAP findings (post-grounding when enabled, raw otherwise) → NORMALIZE
         self._scored_map_findings: dict[str, list[Finding]] = {}
-        # Stores NORMALIZE output per pmcid. Input to GROUP.
+        # NORMALIZE output per pmcid → GROUP
         self._normal_findings: dict[str, list[NormalFinding]] = {}
-        # Stores GROUP output per pmcid. Input to Phase 4 CANONICALIZE.
+        # GROUP output per pmcid → CANONICALIZE (phase 4)
         self._finding_groups: dict[str, list[FindingGroup]] = {}
-        # Stores CANONICALIZE output per pmcid. Input to Phase 5 RELATE.
+        # CANONICALIZE output per pmcid → RELATE (phase 5)
         self._canonical_rules: dict[str, list[CanonicalRule]] = {}
-        # Stores RELATE output per pmcid. Input to Phase 6 RESOLVE.
+        # RELATE output per pmcid → RESOLVE (phase 6)
         self._relations: dict[str, list[Relation]] = {}
-        # Stores raw NLI scores for all eligible pairs (including UNRELATED).
+        # raw NLI scores for all eligible pairs, including UNRELATED
         self._relate_raw_pairs: dict[str, list] = {}
-        # Stores pre-NLI gate skips per pmcid (SkippedPair[]).
+        # pre-NLI gate skips per pmcid (SkippedPair[])
         self._relate_skipped_pairs: dict[str, list] = {}
-        # Stores RESOLVE output per pmcid. Final knowledge base.
+        # RESOLVE output per pmcid (the final knowledge base)
         self._final_rules: dict[str, list[FinalRule]] = {}
 
         import dataclasses
         from .config import CONFIG_LAYOUT_VERSION
-        # Snapshot of config for traces (model introspection is best-effort).
+        # Config snapshot for traces; _model_name falls back to the class name.
         # ``config_layout_version`` is stamped so manifest.json / PipelineRun.
         # config_snapshot / TraceCollector JSONL consumers can branch on the
         # dataclass shape (v1 had routing-policy fields under ``map``; v2 has
@@ -421,7 +418,6 @@ class KnowledgeExtractionRunner:
             t_total = time.perf_counter()
             sentences = file_data["sentences_with_provenance"]
 
-            # Record ingestion
             if collector is not None:
                 te_ids = {s.get("text_element_id", 0) for s in sentences}
                 collector.record_ingestion(
@@ -452,7 +448,6 @@ class KnowledgeExtractionRunner:
                         len(chunk_summaries),
                         sum(len(cs.findings) for cs in chunk_summaries))
 
-            # Record chunking info (chunk_size is on MapStage)
             if collector is not None:
                 collector.record_chunking(
                     total_chunks=len(chunk_summaries),

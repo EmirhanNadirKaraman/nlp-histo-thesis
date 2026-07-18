@@ -356,10 +356,8 @@ class BatchKnowledgeExtractionRunner:
         failed_job_summaries: list[dict] = []
         for job in handle.jobs:
             if job.status == "failed":
-                # Expand the failure log to include provider/model/request_count
-                # so a silent multi-model rejection (B-020 class) is obvious in
-                # stdout. Previously this said only "Job <id> failed" with no
-                # provider context.
+                # Log provider/model/request_count so a silent multi-model
+                # rejection (B-020 class) is obvious in stdout.
                 logger.warning(
                     "[%s] Batch job FAILED — provider=%s model=%s request_count=%d job_id=%s — "
                     "skipping its %d result(s). This usually means a model mismatch (OpenAI), "
@@ -485,10 +483,10 @@ class BatchKnowledgeExtractionRunner:
         # because the cached audit_trail.map_chunks carry no per-chunk source
         # index. With no source index the citation filter has nothing to validate
         # against and would emit one "empty chunk" WARNING per chunk. Detect the
-        # whole-handle case, skip the filter, and note it ONCE at debug. Verified
+        # whole-handle case, skip the filter, and note it once at debug. Verified
         # no-op: under the shipped config the filter drops 0 findings anyway (see
         # B-083). The per-chunk warning stays live for the real pipeline, where a
-        # single empty chunk among populated ones is genuinely suspicious.
+        # single empty chunk among populated ones is suspicious.
         _citation_active = _cit.enabled and bool(handle.chunk_map)
         if _cit.enabled and not handle.chunk_map:
             logger.debug(
@@ -697,7 +695,7 @@ class BatchKnowledgeExtractionRunner:
             # Issue G — post-run row-count audit (batch parity with sync).
             # Gate on pipeline_run_db_id too (B-084): with --no-db nothing was
             # persisted (every per-stage persister no-ops), so the audit would
-            # FAIL every table by construction. Only audit when this run is
+            # fail every table by construction. Only audit when this run is
             # actually writing to the DB.
             if self._db is not None and pipeline_run_db_id is not None:
                 try:
