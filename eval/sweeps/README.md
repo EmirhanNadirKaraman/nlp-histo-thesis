@@ -77,16 +77,21 @@ After `out/summaries/` contains a Run B (grounding-enabled) baseline:
 
 ```bash
 python eval/sweeps/grounding.py
-head -40 eval/results/grounding_sweep.md
+head -40 out/eval_sweeps/grounding_sweep.md
 ```
 
-Outputs:
+Outputs (in the generated tree, so a run leaves the worktree clean — B-108):
 
-- `eval/results/grounding_sweep.csv` — one row per threshold; columns
+- `out/eval_sweeps/grounding_sweep.csv` — one row per threshold; columns
   documented in the file's leading `#`-comment metadata block.
-- `eval/results/grounding_sweep.md` — human-readable report with the
+- `out/eval_sweeps/grounding_sweep.md` — human-readable report with the
   disclaimer, metadata, interpretation, warnings (when applicable),
   retention table, per-paper detail.
+
+`eval/results/grounding_sweep.md` is a **tracked thesis snapshot** (5 papers,
+run `grounding_compare_calv1_runB_20260516T163007`) and is deliberately not the
+default target: this sweep pins no input set, so it reports the current corpus
+rather than that snapshot. Pass `--out-md` explicitly to regenerate it.
 
 Common variations:
 

@@ -149,12 +149,15 @@ detail section in [`BUGS.md`](BUGS.md) if it closes a bug.
   cost money" error. Pairs naturally with the B-107 fix (same silent-fallback class).
   See [`BUGS.md`](BUGS.md) B-109.
 
-- [ ] **B-108 — stop `eval/sweeps/grounding.py` overwriting a tracked artifact.**
-  The §12-documented command rewrites the tracked `eval/results/grounding_sweep.md` from
-  the committed 2026-05-16 / 5-paper snapshot to whatever is currently in `out/summaries`
-  (15 papers) — input drift, not non-determinism, and the new numbers match no published
-  table. Pin the input set, default the output to an untracked path, or untrack the `.md`
-  as regenerable output; decide alongside the other frozen-artifact paths in the module.
+- [x] **B-108 — `eval/sweeps/grounding.py` no longer overwrites a tracked artifact
+  (2026-07-18, `7f1bef2`).** The §12 command rewrote the tracked
+  `eval/results/grounding_sweep.md` — a 2026-05-16 / 5-paper snapshot — with numbers from
+  whatever sat in `out/summaries` (now 15 papers), matching no published table. Of the
+  three options, **default the output to an untracked path** was chosen: pinning the input
+  would stop the sweep reporting the current corpus, and untracking the `.md` would drop a
+  cited artifact. `DEFAULT_OUT_CSV` / `DEFAULT_OUT_MD` now point at `out/eval_sweeps/`;
+  `--out-md` still reaches the tracked path for a deliberate regeneration. Verified by
+  running the §12 command verbatim: snapshot sha256 unchanged, worktree clean.
   See [`BUGS.md`](BUGS.md) B-108.
 
 - [x] **B-102 — clean-room reproducibility: cwd-relative data paths anchored

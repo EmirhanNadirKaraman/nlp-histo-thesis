@@ -751,12 +751,10 @@ that freedom from paid calls is structural rather than a property of the current
 provider credential unset. They previously exited with `GOOGLE_API_KEY not set` before
 reaching the cache, demanding a key they never used (B-109, fixed).
 
-One caveat before you run them:
-
-* **`eval/sweeps/grounding.py` overwrites the tracked `eval/results/grounding_sweep.md`**
-  with numbers from whatever is currently in `out/summaries` — it does not reproduce the
-  committed 5-paper version. Expect a dirty worktree; `git checkout eval/results/` to
-  restore (BUGS.md B-108).
+`eval/sweeps/grounding.py` writes to `out/eval_sweeps/`, so it leaves the worktree
+clean (B-108, fixed). It reports whatever is currently in `out/summaries` and pins no
+input set, so it does **not** reproduce the tracked 5-paper snapshot at
+`eval/results/grounding_sweep.md`; pass `--out-md` explicitly to regenerate that.
 
 Each of these loads scispaCy + the UMLS KB (several GB of RSS). **Run them one at a
 time** — concurrent runs will exhaust memory on a 16–32 GB machine.
