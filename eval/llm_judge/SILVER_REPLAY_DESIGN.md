@@ -2,6 +2,12 @@
 
 End-to-end and per-stage evaluation via **silver MAP findings replayed through stages 2–6**.
 
+> **Path note:** this design predates the `nlp_histo` packaging move. Paths below of the form
+> `eval/silver/matching/*` and `eval/silver/data/schemas.py` now live under
+> `src/nlp_histo/evaluation/*` (matcher, embedders, schemas, jsonl_utils, split; import as
+> `nlp_histo.evaluation.*`), and `pipeline/stages/summarization/*` is now
+> `src/nlp_histo/pipeline/stages/knowledge_extraction/*`.
+
 Companion to `STAGE_EVAL_DESIGN.md` (which covers per-stage *isolated* judges). This doc covers the *cumulative* per-stage evaluation that falls out of one architectural move: take silver MAP findings already produced by `eval/silver/generation/generator.py`, push them through the same NORMALIZE → GROUP → CANONICALIZE → RELATE → RESOLVE code paths the pipeline uses, and compare the pipeline's output to the silver-replay output at every stage exit.
 
 The result is **end-to-end F1 plus a stage-by-stage F1 curve from one silver source** — without hand-curating any silver gold at NORMALIZE/GROUP/CANONICALIZE/RELATE/RESOLVE.

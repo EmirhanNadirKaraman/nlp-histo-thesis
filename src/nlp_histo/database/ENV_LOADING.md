@@ -24,15 +24,27 @@ from nlp_histo.database import get_db_connection
 
 ## How It Works
 
-The `.env` file is now loaded at the **module level** in `db_connection.py`:
+The `.env` file is loaded at the **module level** in `db_connection.py`, discovered by walking
+**up from the current working directory** — never relative to this module, because the package
+is installed (a file-relative walk would find nothing and silently keep the postgres/localhost
+defaults):
 
 ```python
 # database/db_connection.py
 try:
-    from dotenv import load_dotenv
-    env_path = Path(__file__).parent.parent / '.env'
-    if env_path.exists():
-        load_dotenv(env_path)
+    from dotenv import find_dotenv, load_dotenv
+    from .env_routing import raise_on_routing_conflict
+
+    # NLP_HISTO_ENV_FILE names a file explicitly; otherwise search upward from CWD.
+    _explicit = os.getenv("NLP_HISTO_ENV_FILE")
+    _found = _explicit or find_dotenv(usecwd=True)
+
+    # An explicit selection that conflicts with already-exported DB_* vars raises here.
+    # load_dotenv does NOT override the environment (env-wins, B-113).
+    raise_on_routing_conflict(_explicit)
+
+    if _found and Path(_found).exists():
+        load_dotenv(_found)
 except ImportError:
     pass
 
@@ -80,7 +92,7 @@ One place to maintain the dotenv loading logic instead of copying it everywhere.
 
 ### ✅ **Same Behavior**
 Works exactly the same way, just cleaner:
-- Looks for `.env` in project root
+- Discovers `.env` by walking **up from the current working directory** (`find_dotenv(usecwd=True)`); set `NLP_HISTO_ENV_FILE` to name one explicitly
 - Falls back to environment variables if .env not found
 - Gracefully handles missing python-dotenv package
 

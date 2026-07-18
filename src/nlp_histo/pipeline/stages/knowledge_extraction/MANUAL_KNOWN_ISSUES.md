@@ -17,7 +17,7 @@ Each issue has a **severity**, the **file:location** to touch, a description, an
 
 ### DES-3 — RESOLVE scoring weights are hand-tuned, not empirically validated
 **Severity:** Low  
-**File:** `resolve_stage.py:48–63` (constants)  
+**File:** `config.py` `ResolveConfig` (weights `grounding_weight` / `support_boost_per_rel` / `contradict_pen_per_rel`, etc.), consumed in `resolve_stage.py`  
 **Symptom:** Weights were chosen to produce intuitively reasonable distributions, not fit
 to a gold-labeled dataset.  
 **Fix options:**

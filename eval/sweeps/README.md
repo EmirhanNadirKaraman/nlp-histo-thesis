@@ -40,7 +40,7 @@ The Layer A invariant is enforced by a subprocess import-safety test in
 `tests/eval/sweeps/test_grounding.py` that asserts the script does not
 load `transformers`, `torch`, `openai`, `anthropic`, `google.genai`,
 `google.generativeai`, `vertexai`, `sentence_transformers`, or any
-`pipeline.stages.summarization.llm_providers` symbol.
+`nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers` symbol.
 
 ## Currently supported sweeps (Layer A)
 
@@ -62,8 +62,8 @@ would be misleading.
 
 | Knob | Why Layer A isn't enough | Blocking work |
 |---|---|---|
-| MAP `theta` / `reject_theta` | needs per-voter AuditableSummary outputs to re-score agreement at different gates | B-052: persist per-voter MAP outputs |
-| Cascade scorer choice | same — re-runs the agreement gate | B-052 |
+| MAP `theta` / `reject_theta` | needs per-voter AuditableSummary outputs to re-score agreement at different gates | Layer B replay engine (per-voter outputs now persisted — `sum_map_voter_outputs`, B-052 — but nothing replays them yet) |
+| Cascade scorer choice | same — re-runs the agreement gate | Layer B replay engine |
 | NLI model swap | would need to re-score every premise/claim pair | full replay engine; can run locally (no API), but requires loading the NLI model |
 | `chunk_size` / `chunk_overlap` | changes the input to MAP itself | full replay starting at MAP |
 | Voter model set / cascade profile | changes MAP outputs | full replay starting at MAP |
@@ -144,7 +144,7 @@ warnings:
 4. Update the **Currently supported sweeps** table above.
 
 Hard rule when adding a new sweep: if the script imports anything from
-`transformers`, `torch`, an LLM SDK, or `pipeline.stages.summarization.llm_providers`,
+`transformers`, `torch`, an LLM SDK, or `nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers`,
 it does not belong here. That's Layer B. Move it to `eval/replay/`
 (once that exists) instead.
 

@@ -75,9 +75,9 @@ the ORM-created schema and will not initialise an empty database.
 
 Knowledge extraction uses a three-tier voter cascade over **LangChain** chat models —
 LangChain is a production dependency, not a legacy import. Providers in the roster:
-DeepSeek, Gemini (Flash-Lite / Flash), Mistral, Kimi, OpenAI (GPT-4o-mini / 4.1-nano /
-4.1-mini) and Anthropic Claude (Haiku at L2, Sonnet at L3). Prices for all of them live
-in the packaged `model_prices.json`.
+Gemini (Flash-Lite / Flash), OpenAI (GPT-4o-mini / 4.1-nano / 4.1-mini) and Anthropic
+Claude (Haiku at L2, Sonnet at L3). Prices for these live in the packaged
+`model_prices.json`.
 
 The test suite makes **no** paid calls: voters are faked and the NLI/embedding models are
 local or cached.

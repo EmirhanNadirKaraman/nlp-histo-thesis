@@ -563,7 +563,7 @@ layout independently emits — the supplementary source rehydrates
 exactly the bboxes that drop tried to suppress.
 
 ### Fix
-`media_cropper.py::crop()` takes a new keyword-only parameter
+`media_cropper.py::crop()` takes a new parameter
 `drop_tables_inside_figures: bool = False`. When True, the
 "Supplementary source" loop skips any layout TABLE/RECONSTRUCTED_TABLE
 element whose bbox area is ≥0.8 inside any FIGURE/PICTURE on the same
@@ -2458,7 +2458,7 @@ Sweep `out/summaries/runs/.../relate/<pmcid>/raw_pairs.jsonl` for pairs where on
 
 ### Status / Severity / Surface
 
-* **Status:** Observed
+* **Status:** Superseded (2026-05-15) by B-049 — `_split_by_direction` no longer folds into the largest bin, so the `:117-120` tie-break no longer exists.
 * **Severity:** Low — affects only the edge case where two non-unclear directions tie on count *and* the group additionally has unclear/no_direction members that need to be parked on the "largest" direction. Same input + same member order is reproducible today.
 * **Surface:** `pipeline/stages/summarization/current_stages/canonicalize_stage.py:117-120`
 
@@ -3199,7 +3199,7 @@ Pending.
 
 ### Status / Severity / Surface
 
-Observed (2026-05-15) · Medium · `pipeline/stages/summarization/runner.py:905` (`load_paper_from_db`).
+Fixed (2026-05-15) · Medium · `pipeline/stages/summarization/runner.py` (`load_paper_from_db`) — now routes through the process-wide `get_small_nlp('en_core_sci_sm')` singleton (`umls_resources.py`), so the model loads once. The symptom below describes the original (pre-fix) behavior.
 
 ### Symptom
 
@@ -3857,6 +3857,8 @@ The audit deferred this because the optional REDUCE+RULES block is off by defaul
   * New `Rule._lowercase_type` `field_validator(mode="before")` so any legacy Title-Case payload (cached LLM output, hand-authored test fixtures) round-trips cleanly.
   * `RuleCounts` field names lowercased to `diagnostic`, `prognostic`, `management`.
 * `pipeline/stages/summarization/helpers/grounding_filter.py` — `_recompute_audit` reads `counts["diagnostic"]` etc., matching the new `Rule.type` casing.
+
+*Later note: the RULE/REDUCE block was retired wholesale in `d98a310`, so `Rule.type`, `RuleCounts`, and `_recompute_audit` no longer exist in the tree — this fix was not reverted; the feature it touched was deleted.*
 * `pipeline/stages/summarization/prompts.py` — RULE OutputFormat block now shows `"type": "diagnostic|prognostic|management"` and `"rules_by_type": {{"diagnostic": N, "prognostic": N, "management": N}}`.
 * `tests/summarization/test_enum_alias_repair.py` — `test_rule_type_lowercase_validates`, `test_rule_type_case_repair` (parametrised over Title-Case / UPPERCASE legacy variants), `test_rule_counts_uses_lowercase_field_names`.
 * `tests/test_inspector.py` fixture updated (the only in-tree consumer that hand-wrote a Title-Case `Rule.type` payload).
@@ -4675,7 +4677,7 @@ Mirrors the sync wiring. Order of work, cheapest first:
 
 ## Bug 62 — documented router-on production cascade never actually enabled
 
-**Status / Severity / Surface:** Observed (2026-05-23) / High / Summarisation, MAP
+**Status / Severity / Surface:** Fixed (2026-05-23) / High / Summarisation, MAP
 cascade selection + config reproducibility.
 
 **Symptom:** The thesis docs describe `MapOutputRouter` (grounding-first gating,
@@ -4815,6 +4817,8 @@ _SYNONYMS_YAML = Path(__file__).parent / "synonyms.yaml"
 
 * `current_stages/synonyms.yaml` → does not exist (`find` returns only the package-root copy).
 * `_load_synonyms()` catches the `FileNotFoundError` and returns `dict(_SYNONYMS_FALLBACK)` (the hardcoded dict), logging only at debug level.
+
+*Later note: a subsequent refactor moved `synonyms.yaml` into `.../knowledge_extraction/entities/`, loads it via `importlib.resources`, and removed the hardcoded fallback (the YAML is now the single source of truth) — so the "chose fixing the path over moving the YAML" decision and the `_SYNONYMS_FALLBACK` symbol are both historical.*
 * Key comparison: YAML has 48 keys, the fallback has 48 keys, and 0 keys are in the YAML but not the fallback — they are currently in sync, which is why there is no behavioural symptom.
 
 ### Diagnosis
@@ -5645,7 +5649,7 @@ immediately surfaced [Bug 81](#bug-81--gemini-l1-voter-cross-paper-contamination
 from one voter.
 
 ### Verification
-`tests/summarization/helpers/test_citation_filter.py` (10 tests): valid citation
+`tests/summarization/helpers/test_citation_filter.py` (12 tests): valid citation
 kept; nonexistent position / te_id mismatch / cross-document / unparseable each
 dropped; mixed batch drops only the invalid finding; fabricated verbatim opt-in;
 empty-chunk and empty-findings no-ops.
@@ -6482,7 +6486,7 @@ separate bounded repair if/when that work is scheduled.
 
 ## Bug 95 — Direct-run scripts under `scripts/` lack a repository-root bootstrap
 
-**Status / Severity / Surface.** Observed · Medium · nine scripts directly under `scripts/`.
+**Status / Severity / Surface.** Fixed (2026-07-13, 3e8c819) · Medium · nine scripts directly under `scripts/`.
 
 **Symptom.** Eight of the nine self-document a bare direct command that cannot work as
 written, e.g.:
@@ -6549,7 +6553,7 @@ index, i.e. an **out-of-band schema change** in an otherwise Alembic-managed sch
 its bootstrap does not address that. The index arguably belongs in a migration — flagged
 for a separate decision (repair, retire, or migrate).
 
-## Bug 95 — approved repair scope (2026-07-13)
+### Bug 95 — approved repair scope (2026-07-13)
 
 The repair is split three ways:
 
@@ -7933,8 +7937,8 @@ to an untracked path, or untrack the `.md` and treat it as regenerable output.
 
 ## Bug 109 — Free, cached experiments hard-require an unused `GOOGLE_API_KEY`
 
-**Status / Severity / Surface** — Observed (2026-07-16) · Medium · Eval UX.
-`eval/silver/analysis/map_context.py:81` × frozen embedding caches.
+**Status / Severity / Surface** — Fixed (2026-07-16, ec11eec) · Medium · Eval UX.
+`eval/silver/analysis/map_context.py` × frozen embedding caches.
 
 ### Symptom
 
@@ -7962,10 +7966,12 @@ than telling them the truth, which is that the run is free and complete offline.
 
 ### Fix
 
-Not fixed. Defer key resolution until an actual cache miss (construct the embedder
-lazily). This has a second benefit: a miss would then fail with an explicit "this would
-have cost money" error instead of silently billing — the same class of silent-fallback
-problem as B-107.
+Fixed (ec11eec). With `strict_cache_only=True` the gemini/openai branches in
+`map_context.py` build a `_NoLiveEmbedding` and never resolve an API key, so a cache miss
+raises instead of silently billing. E14/E03/E10/E11/E12 pass `strict_cache_only=True` (e.g.
+`heldout_eval.py`), so the offline replays serve every embedding from the cache with no
+credential and no client. (The originally-proposed lazy-construction approach was not the one
+taken; the eager path still exists in the non-strict `else` branch for live callers.)
 
 ### Mitigation
 
@@ -8751,18 +8757,23 @@ Local code is exonerated on the available evidence:
 
 ### Consequences
 
-* **§6 `acquire download` cannot succeed today**, for any paper in the bounded sample.
-  A supervisor rebuilding the corpus from scratch is blocked until the upstream layout is
-  identified. `§6` says so plainly.
+* **§6 `acquire download` was blocked at the time of this note** (later fixed — see the
+  B-118 update below), for any paper in the bounded sample. A supervisor rebuilding the corpus
+  from scratch was blocked until the upstream layout was identified.
 * **`acquire unpack` is unverifiable** as a side effect: no tarball can be obtained, and
   none remain on disk (they are deleted after `organize`).
 * **Nothing downstream is affected.** The existing corpus (1132 PDFs, 977 ingested) is on
   disk, and every other documented command — ingest, NER, replay, the experiments — was
   verified against it.
 
-### Not fixed, deliberately
+### Superseded by B-118 (fixed 2026-07-16, 27ed0f8)
 
-No acquisition code was changed. The evidence identifies where the fault is **not**
+**Update:** this was subsequently fixed — B-118 changed `acquisition/downloader.py`
+`candidate_urls()` to follow NCBI's OA packages to their relocated `/pub/pmc/deprecated/`
+tree, so `acquire download` works again. The original "not fixed, deliberately" analysis
+below predates that fix.
+
+Original analysis: no acquisition code had been changed at that point. The evidence identifies where the fault is **not**
 (our rewrite, our path derivation) but does not establish the current NCBI layout, and
 guessing at a replacement URL would be speculation dressed as a fix. Settling it needs
 someone to determine where OA packages now live — e.g. by listing `/pub/pmc/` on the FTP
@@ -9394,6 +9405,11 @@ The gitignore negations are surgical: **only** those files. The bundle's own
 
 REPRODUCE.md Step 8 now lists **eight** free bundle-based experiments (was seven), and Step
 11 lists **three** DB provenance experiments (was two).
+
+*(Later revision: a subsequent edit moved E03 (grounding sweep) behind the DB restore — its
+grounding step needs the corpus paragraphs — so Step 8 now lists **seven** cache-only
+experiments and Step 11's DB group covers **four** (E03 + E02/E02b/E02c). The B-125 fix itself
+is unchanged.)*
 
 ### Verification
 

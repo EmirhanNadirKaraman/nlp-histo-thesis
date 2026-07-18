@@ -13,7 +13,7 @@ Each issue has a **severity**, the **file:location** to touch, a description, an
 
 ### ACC-2 — `relation_type` LLM variance splits the same fact into different groups
 **Severity:** High  
-**File:** `map_stage.py` / `prompts.py` (extraction), `group_stage.py:55–56` (grouping key)  
+**File:** `map_stage.py` / `prompts.py` (extraction), `group_stage.py:57–70` (`_group_id` grouping key)  
 **Symptom:** "CD30 was expressed" can legitimately be tagged `expression` or `has_feature`
 depending on which model or chunk sees it. Same physical fact → different `relation_type` →
 different `FindingGroup` → never deduplicated or compared in RELATE.  
@@ -26,23 +26,19 @@ different `FindingGroup` → never deduplicated or compared in RELATE.
   and `expression` groups in a typical paper output.
 
 
-### ACC-6 — `unclear` direction findings inflated into the largest direction bin in CANONICALIZE
-**Severity:** High  
+### ACC-6 — `unclear` direction findings inflated into the largest direction bin in CANONICALIZE — **RESOLVED (B-049)**
+**Severity:** Resolved (was High)  
 **File:** `canonicalize_stage.py` (`_split_by_direction`)  
-**Symptom:** When a group has e.g. 3 positive + 1 negative + 2 unclear findings, all unclear go
-into the positive bin. This inflates the positive count, can make the negative bin appear
-negligible, and masks real directional ambiguity in the canonical rule.  
-**Fix options:**
-- Create a separate `unclear` CanonicalRule for unclear-direction findings (analogous to how
-  positive and negative get separate rules).
-- Or: exclude unclear findings from direction bins entirely and set `is_conflicted=True` on
-  the group when unclear count is significant relative to total.
-- Minimum: store `direction_counts` on `CanonicalRule` so downstream stages can see the raw
-  split, not just the bin they were assigned to.
+**Original symptom:** When a group had e.g. 3 positive + 1 negative + 2 unclear findings, all
+unclear went into the positive bin — inflating the positive count and masking directional
+ambiguity in the canonical rule.  
+**Resolution (B-049):** `_split_by_direction` no longer folds. Every observed direction
+(including `unclear`/`no_direction`) gets its own CanonicalRule bin, sorted for determinism;
+RELATE / corpus_relate skip the non-polarity bins. The symptom no longer occurs.
 
 ### DES-1 — RESOLVE ignores cross-paper relations when scoring FinalRules
 **Severity:** High  
-**File:** `runner.py:381–388` (RESOLVE call), `resolve_stage.py`  
+**File:** `runner.py:624` (RESOLVE call; corpus-relate runs earlier at `runner.py:586`), `resolve_stage.py`  
 **Symptom:** `corpus_relate_incremental` runs before per-paper RELATE and writes cross-paper
 relations to DB, but RESOLVE only receives per-paper `Relation[]` (line 382). A rule
 contradicted by 5 other papers scores identically to one with no cross-paper contradictions.
@@ -63,7 +59,7 @@ outcome for every relation type (CUI match preferred; `_norm_outcome` /
 
 ### ACC-11 — `infer_direction()` keyword heuristic incorrect for complex clinical negation
 **Severity:** Medium  
-**File:** `normalize_stage.py:275–291` (`infer_direction`)  
+**File:** `normalize_stage.py:213` (`infer_direction`)  
 **Symptom:** The heuristic uses prefix/substring matching without syntax awareness.
 Incorrect cases: "not uncommon" → negative (wrong; means positive), "no significant difference"
 → negative (direction-neutral claim about an association), "non-specific" → negative (wrong).  
@@ -87,10 +83,13 @@ from single-paper and multi-paper runs are not on the same scale. Any downstream
 applied uniformly across both types is miscalibrated.  
 **Fix:** Document the two modes clearly in output JSON and add a `scoring_mode` field to
 `FinalRule`. Consider normalizing scores to a common range post-hoc when merging outputs.
+*(Partly shipped: the field exists as `score_mode` on `FinalRule`, set to
+`relations_present`/`relations_absent` in `resolve_stage.py`. The two-formula scale mismatch
+itself is unaddressed, so the issue stands.)*
 
 ### DES-8 — RESOLVE scoring weights are hand-tuned, not empirically validated
 **Severity:** Low  
-**File:** `resolve_stage.py:48–63` (constants)  
+**File:** `config.py` `ResolveConfig` (weights `grounding_weight` / `support_boost_per_rel` / `contradict_pen_per_rel`, etc.), consumed in `resolve_stage.py`  
 **Symptom:** Weights (`_GROUNDING_WEIGHT=0.60`, `_SUPPORT_BOOST_PER_REL=0.08`,
 `_CONTRADICT_PEN_PER_REL=0.15`, etc.) were chosen to produce intuitively reasonable score
 distributions, not derived from a gold-labeled dataset. There is no evaluation harness
@@ -108,7 +107,7 @@ linear regression over the weight constants.
 
 ### DES-9 — `_best_scope()` uses scope from highest-grounding finding only
 **Severity:** Low  
-**File:** `normalize_stage.py:358–364` (`_best_scope`)  
+**File:** `normalize_stage.py:312` (`_best_scope`)  
 **Symptom:** When merging a cluster of findings, the representative scope is taken from the
 single highest-grounding finding. A well-grounded but scope-sparse finding (no fields extracted)
 wins over a lower-grounding finding that has full scope populated.  
@@ -122,7 +121,7 @@ take the first non-None value across the cluster (or the majority value).
 | ID | Severity | Stage | One-line description |
 |----|----------|-------|----------------------|
 | ACC-2 | High | MAP/GROUP | `relation_type` variance splits same fact into different groups |
-| ACC-6 | High | CANONICALIZE | `unclear` direction findings inflated into largest bin |
+| ACC-6 | Resolved (B-049) | CANONICALIZE | `unclear` findings inflated into largest bin — now each direction gets its own bin |
 | DES-1 | High | RESOLVE | Cross-paper relations ignored in FinalRule scoring |
 | ACC-10 | FIXED | CORPUS RELATE | Cross-paper gate skips outcome gating for non-expression rules — outcome gate now applied for all relation types |
 | ACC-11 | Medium | NORMALIZE | `infer_direction()` wrong on complex clinical negation |

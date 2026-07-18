@@ -50,11 +50,11 @@
 
 ## Plots
 
-![Retention curve at varying thresholds](../../../../../../../private/var/folders/cg/ds8cj9yd2tvgb5cg2_53kdph0000gn/T/pytest-of-emir/pytest-37/test_main_writes_two_pngs_agai0/retention.png)
+![Retention curve at varying thresholds](grounding_retention.png)
 
 *Retention curve: blue line is the fraction of scored findings the filter would keep at each candidate threshold; green and red lines are the mean grounding score of survivors and rejects respectively.*
 
-![Distribution of grounding scores](../../../../../../../private/var/folders/cg/ds8cj9yd2tvgb5cg2_53kdph0000gn/T/pytest-of-emir/pytest-37/test_main_writes_two_pngs_agai0/distribution.png)
+![Distribution of grounding scores](grounding_score_distribution.png)
 
 *Distribution: stacked histogram of every persisted grounding score, coloured by what the producer run actually did at write time. A bimodal distribution means the filter has little gray zone to discriminate.*
 

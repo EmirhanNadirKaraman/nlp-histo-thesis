@@ -35,8 +35,7 @@ duplicated implementations.
 
 ```
 eval/silver/
-├── data/             schemas, JSONL IO, deterministic splits, DB-backed sampling + export
-├── matching/         embedding adapters, embedding caches, finding alignment, P/R/F1
+├── data/             DB-backed sampling + export (sampler, exporter, export pipeline)
 ├── generation/       silver-label generation CLI + library, and its prompts
 ├── reporting/        Markdown/CSV inspection reports and the HTML dashboard
 ├── analysis/         evaluation drivers, calibration sweeps, replay context, score analyses
@@ -48,10 +47,13 @@ eval/silver/
 └── __init__.py
 ```
 
-The six subpackages layer strictly downward — `data` depends on nothing else here;
-`matching`, `generation` and `reporting` depend on `data`; `analysis` depends on
-`data`/`matching`/`reporting`; `bridges` depends on `analysis`. The import graph is
-acyclic, and no lower layer imports an upper one.
+The embedding adapters/caches and the finding-alignment matcher (formerly `matching/`), the
+Pydantic schemas, the JSONL IO helpers, and the deterministic dev/test split now live in the
+installed package under `src/nlp_histo/evaluation/` (import as `nlp_histo.evaluation.*`); the
+harness depends on them from there. The remaining subpackages layer strictly downward —
+`data` depends on nothing else here; `generation` and `reporting` depend on `data`; `analysis`
+depends on `data`/`reporting` and `nlp_histo.evaluation`; `bridges` depends on `analysis`. The
+import graph is acyclic, and no lower layer imports an upper one.
 
 Facts worth keeping in mind:
 
@@ -76,9 +78,10 @@ python -m eval.silver.data.export_pipeline --help
 ```
 
 Select source cases and export pipeline findings for them. **Database-backed:** these
-require access to the PostgreSQL instance. `data/` also holds the Pydantic schemas
-(`schemas`), JSONL helpers (`jsonl_utils`) and the deterministic dev/test split
-(`split`), which are pure offline utilities.
+require access to the PostgreSQL instance. The Pydantic schemas
+(`nlp_histo.evaluation.schemas`), JSONL helpers (`nlp_histo.evaluation.jsonl_utils`) and the
+deterministic dev/test split (`nlp_histo.evaluation.split`) are pure offline utilities that
+now live in the installed package.
 
 ### Silver-label generation — `generation/`
 
@@ -90,14 +93,14 @@ Produces silver findings from source cases (`generate` CLI → `generator` libra
 prompts in `prompts`). **This workflow uses Anthropic / Opus and can make paid API
 calls.**
 
-### Matching and evaluation — `matching/` + `analysis/`
+### Matching and evaluation — `nlp_histo.evaluation.matching` + `analysis/`
 
 ```bash
 python -m eval.silver.analysis.evaluate --help
 ```
 
-`matching/` provides the embedding adapters (`embedders`), the embedding caches and the
-alignment + P/R/F1 metrics (`matcher`); `analysis/evaluate` drives them. The embedding
+`nlp_histo.evaluation.matching` provides the embedding adapters (`embedders`), the embedding
+caches and the alignment + P/R/F1 metrics (`matcher`); `analysis/evaluate` drives them. The embedding
 providers (OpenAI / Gemini) **can make paid API calls on a cache miss**; a warm local
 embedding cache is not guaranteed.
 

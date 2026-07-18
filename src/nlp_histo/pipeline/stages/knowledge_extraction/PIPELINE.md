@@ -50,7 +50,7 @@ knowledge_extraction/
 - `costing/` — `collector.py`, `pricing.py`, `invocation_usage.py`, `report.py`
 - `interfaces/` — Protocols: `agreement.py`, `grounding.py`, `scoring.py`, `similarity.py`
 - `validation/` — shared validation models
-- NER is a **repo-root** module: `named_entity_recognition/ner.py` (not under `knowledge_extraction/`).
+- NER lives in the sibling package `nlp_histo/ner/ner.py` (not under `knowledge_extraction/`).
 
 **Why these modules stay at the top level.** Each is a primitive the subpackages depend on,
 so pushing it down would either invert the dependency direction or create a one-file package
@@ -106,7 +106,7 @@ result JSON + DB persistence
 
 MAP and CANONICALIZE make LLM calls.
 GROUNDING FILTER and RELATE share one NLI model instance. The active model is
-selected from the registry in `configs/nli_models.yaml` (default
+selected from the registry in `resources/nli_models.yaml` (default
 `pubmedbert_mednli` = `pritamdeka/PubMedBERT-MNLI-MedNLI`; overridable via
 `$NLP_HISTO_NLI_MODEL`), resolved by `nli_config.py`.
 NORMALIZE, GROUP, and RESOLVE are fully deterministic.
@@ -156,8 +156,8 @@ Orchestrates the full pipeline for one paper. Entry point: `runner.process(file_
 ### Key parameters
 | Parameter | Default | Effect |
 |-----------|---------|--------|
-| `theta` | 0.7 | MAP agreement threshold. 0.0 disables cascading (always accept L1). |
-| `grounding_threshold` | 0.3 | NLI entailment threshold for MAP findings filter. `None` disables. |
+| `theta` | 0.8 | MAP agreement threshold (`MapConfig` default; the frozen thesis config sets 0.9). 0.0 disables cascading (always accept L1). |
+| `grounding_threshold` | None (disabled) | NLI entailment threshold for MAP findings filter (`GroundingConfig` default is `None` — filter off). |
 | `run_ner` | `True` | Whether to run scispaCy NER after RESOLVE. |
 | `force_rerun` | `False` | Ignore disk cache and reprocess from scratch. |
 | `db` | `None` | `DatabaseConnection` or `None`. All DB persistence is skipped when `None`. |
@@ -264,7 +264,7 @@ Findings sharing the same `(te_id, subject_entity, outcome_entity, relation_type
 
 ## `entities/synonyms.yaml`
 
-Canonical source of entity synonym mappings. Loaded by `_load_synonyms()` at startup with the hardcoded dict as fallback.
+Canonical source of entity synonym mappings — the single source of truth. Loaded by `_load_synonyms()` at startup; a missing or invalid file yields an empty map (there is no hardcoded fallback).
 
 **Format:** `lowercase surface form: Canonical Name`
 
@@ -277,9 +277,10 @@ installed package, and NORMALIZE loads it **package-locally** — relative to th
 to the working directory — which is why it resolves from any CWD. Relocating it into
 `entities/` changed only its location; the resource content itself was not changed.
 
-`configs/nli_models.yaml` (the NLI registry that `grounding/nli_config.py` resolves) is the
-counter-example: it lives outside every package and is deliberately *not* package data. It is
-read repo-root-relative, which the supported editable install resolves.
+`resources/nli_models.yaml` (the NLI registry that `grounding/nli_config.py` resolves) is,
+like the synonyms file, **package data** under `nlp_histo.resources` — loaded package-local via
+`importlib.resources`, not repo-root-relative, so it resolves identically from a wheel or an
+editable install (override the path with `$NLP_HISTO_NLI_MODELS`).
 
 ---
 
@@ -317,7 +318,7 @@ Deterministic reduction of `FindingGroup` → `CanonicalRule`. No LLM call today
 
 ### Design decisions
 - Predicate selection is deterministic — no LLM hallucination surface here.
-- `unclear` findings are assigned to the largest direction bin (known limitation — inflates majority count when there is a meaningful split).
+- Every observed direction (including `unclear`/`no_direction`) gets its own CanonicalRule bin (B-049 — no folding); non-polarity bins are emitted but stay inert in the relation graph.
 
 ---
 
@@ -397,7 +398,7 @@ Cache file: `out/summaries/pipeline_cache.json`. Avoids re-running expensive LLM
 
 ---
 
-## `named_entity_recognition/ner.py`
+## `nlp_histo/ner/ner.py`
 
 Runs scispaCy `en_core_sci_lg` + UMLS linker on all `TextElement` rows for a paper. Saves to the `entities` table.
 
@@ -482,5 +483,4 @@ Note: `--export-flagged-csv` is only supported in single-run mode. In diff mode,
 
 | # | File | Issue |
 |---|------|-------|
-| 1 | `canonicalize_stage.py` | `unclear` findings assigned to the largest direction bin — inflates majority count when the split is meaningful |
-| 2 | `relate_stage.py` | Same NLI model used for grounding (sentence↔claim) and rule-to-rule comparison — different tasks, different score distributions |
+| 1 | `relate_stage.py` | Same NLI model used for grounding (sentence↔claim) and rule-to-rule comparison — different tasks, different score distributions |

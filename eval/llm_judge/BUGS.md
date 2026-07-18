@@ -72,7 +72,7 @@ buckets.setdefault(bucket, []).append(r.get(label_key) == positive_value)
 
 **File:** `prompts.py`
 
-Tested `anyOf` against the live API — confirmed working. All 7 fields converted from `["type", "null"]` array syntax to `anyOf`:
+Tested `anyOf` against the live API — confirmed working. All 9 fields converted from `["type", "null"]` array syntax to `anyOf`:
 - Q1: `correct_direction`, `correct_subject_entity`, `correct_outcome_entity`
 - Q3: `subject_entity`, `outcome_entity`
 - Q5 silver_findings: `subject_entity`, `outcome_entity`, `direction`

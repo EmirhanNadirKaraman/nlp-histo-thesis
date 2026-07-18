@@ -53,8 +53,8 @@ Citation format: `[S1|PMC123456|789]` where:
 │  produced by the historical standalone NER utilities (see below).           │
 │                                                                             │
 │  Production path = agreement-based cascading (ABC) over a multi-provider    │
-│  voter pool (DeepSeek, Gemini, Mistral, Claude Haiku, Claude Sonnet 4.6),   │
-│  via direct provider APIs (no LangChain on this path).                      │
+│  voter pool (Gemini, OpenAI, Claude Haiku + Sonnet 4.6),                    │
+│  via direct provider APIs (LangChain-wrapped clients).                      │
 │                                                                             │
 │   MAP ─► GROUNDING ─► NORMALIZE ─► GROUP ─► CANONICALIZE ─► RELATE ─► RESOLVE │
 │    │         │            │          │           │            │         │    │
@@ -125,7 +125,7 @@ nlp-histo/
 │
 ├── configs/                            # user-editable run config: run.yaml, paper_selection/*.yaml
 ├── scripts/                            # developer utilities, inspectors, eval helpers (not a package)
-├── tests/                              # pytest suite (96 test files, 1697 tests; knowledge-extraction-heavy)
+├── tests/                              # pytest suite (97 test files, 1697 tests; knowledge-extraction-heavy)
 ├── docs/                               # project docs — REPRODUCE, HOW_TO_RUN, STRUCTURE, BUGS, THESIS, EXPERIMENTS
 ├── reports/                            # frozen document-extraction rubric reports (stage6/stage7)
 │
@@ -162,7 +162,7 @@ console command, `nlp-histo`:
 nlp-histo --help                # db · acquire · ingest · ner · knowledge · replay
 nlp-histo db init               # create + verify the schema
 nlp-histo ingest --pdf-dir files/organized_pdfs
-nlp-histo knowledge --profile cheap --pmcid PMC1448691 --sync   # ⚠ costs money
+nlp-histo knowledge PMC1448691 --profile cheap --sync --health-check no   # ⚠ costs money
 nlp-histo replay chapter9 --artifact-root .                     # offline, free
 ```
 
@@ -281,12 +281,10 @@ so no `cd` is needed to make imports work.
 # working directory.
 nlp-histo ner extract
 
-# The two exporters default to a *CWD-relative* output directory, so run them from
-# inside the package directory to keep writing where they always have:
-#   merge_entities_by_umls  -> named_entity_recognition/umls_entities_lg/
-#   export_disease_entities -> named_entity_recognition/disease_entities_lg/
-# (the `cd` is only for the output location; pass --output-dir to place it elsewhere)
-cd named_entity_recognition
+# The two exporters write to a *CWD-relative* output directory:
+#   merge_entities_by_umls  -> ./umls_entities_lg/
+#   export_disease_entities -> ./disease_entities_lg/
+# Run them from wherever you want the output; pass --output-dir to place it elsewhere.
 
 # Export per-UMLS-concept JSON/TXT (all concepts) — reads DB, writes files
 nlp-histo ner merge
@@ -388,7 +386,7 @@ Every summary includes:
 | PDF Parsing | Docling, PyMuPDF, Marker, Nougat |
 | Database | PostgreSQL + SQLAlchemy |
 | NER | scispacy (en_core_sci_lg) + UMLS linker |
-| LLM Pipeline | Multi-provider agreement-based cascade — DeepSeek, Gemini, Mistral, Claude Haiku, Claude Sonnet 4.6 (direct provider APIs) |
+| LLM Pipeline | Multi-provider agreement-based cascade — Gemini (Flash-Lite/Flash), OpenAI (GPT-4o-mini/GPT-4.1-nano/GPT-4.1-mini), Claude (Haiku 4.5 / Sonnet 4.6), via direct provider APIs |
 | NLI backbone | PubMedBERT (MNLI/MedNLI-tuned, default `pubmedbert_mednli`) for grounding + relation classification |
 | Structured Output | Pydantic schemas |
 | Evaluation | Opus silver-label judge + grounding/relation NLI; UMLS concept matching |

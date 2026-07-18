@@ -19,7 +19,7 @@ experiment tested and what its numbers mean**. The raw CSVs live in the
 > beaten by the cascade.
 
 **Dataset:** all results below are **in-sample calibration** on `related15`
-(15-paper ILP cluster, 454 cases / 2 280 frozen-config MAP findings; Opus silver
+(15-paper ILP cluster, 454 cases / 2 294 frozen-config MAP findings; Opus silver
 labels). Selection metric is `strict_f1_optimal` (strict-F1 under the optimal /
 Hungarian one-to-one matcher); greedy is a reported diagnostic only. Out-of-sample
 generalization is the separate held-out test (E14, **done** — the 5-voter config generalizes,
@@ -207,26 +207,28 @@ diversity and the audit trail. Caveat: silver is Opus and Sonnet ≈ Opus, so a 
 (`embedding`/`soft_max`, gemini embedder, θ 0.5/0.6/0.7 — where the ensemble, not
 escalation, decides). L3 excluded. Two readings: **decision** (Δ strict-F1, N=3→N=2)
 and **attribution** (most-disagreeable = drop leaving highest remaining agreement).
-Read the *deltas*, not the absolute F1 (0.37–0.47 is the diagnostic config, not the
+Read the *deltas*, not the absolute F1 (0.53–0.60 is the diagnostic config, not the
 0.71 production config).
-**Result (post-B-074):** the bug genuinely distorted this experiment — unlike E06b/c
-(fixed config), dropping a voter *changes the early-accept rate*, so the two arms had
-different corruption and the deltas didn't cancel; verdicts shifted on re-run. The key
-pattern is **θ-dependent (a sign-flip around θ0.6)**: the agreeable OpenAI voters
-(`gpt-4o-mini`, `gpt-4.1-nano`) are *useful at low θ* — dropping them **hurts**
-(−0.058 / −0.038 at θ0.5) — but *liabilities at high θ* — dropping them **helps a lot**
-(+0.094 / +0.084 at θ0.7, spiking escalation 0.19→0.35). `gemini-flash-lite` is the
-disagreement-driver (most disagreeable at every θ); dropping it helps most at low θ
-(+0.034) and tapers to ~0 by θ0.7 — the opposite trend.
-**Interpretation:** at low θ the cheap voters' consensus matches silver (they earn their
-seat); as the quality bar rises, that consensus is increasingly on chunks that *should*
-escalate, so removing the agreeable voters just forces escalation to Sonnet → "drop
-helps" = *escalate more → approach Sonnet* (the same phenomenon as E10/E11, per-voter).
-The cheap voters' agreement is the weak link relative to Sonnet. **No production
-change:** diagnostic mid-θ config; production θ0.9 escalates ~96 % so this is moot —
-consistent with E06b/c's "keep all." E12 is the mechanistic close-up of *why* production
-escalates aggressively.
-**Artifact:** `E12_voter_loo/20260622T165730.csv` *(re-run 2026-06-22; the LOO is a 6-voter diagnostic by design — `_make_voters` stays 6 — so the verdict is unchanged: no production change)*
+**Result:** dropping a voter *changes the early-accept rate* (unlike the fixed-config
+E06b/c), so the two arms escalate differently. **Dropping either agreeable L1 OpenAI voter
+(`gpt-4o-mini`, `gpt-4.1-nano`) helps strict-F1 at every θ — and more as θ rises:**
++0.042 / +0.043 at θ0.5, up to +0.063 / +0.061 at θ0.7, while their escalation climbs
+~0.08→0.13. `gemini-flash-lite` is the disagreement-driver (most disagreeable at every θ);
+dropping it helps only slightly and also rises with θ (+0.003 → +0.005). The three L2 voters
+(`gemini-flash`, `gpt-4.1-mini`, `claude-haiku`) are noise-level to drop (−0.002 to ~0 across
+θ). The small negative on `claude-haiku` here (−0.0018 @θ0.7) is within noise and is **not**
+the basis for the shipped haiku drop — that decision is made in E06c/E08 at the production
+operating point (θ0.9 / escalate), where drop-haiku is +0.0016 vs keep-all and the case is
+cost + evaluator-independence, not a strict-F1 gain. There is **no** low-θ regime where
+dropping the cheap L1 voters hurts.
+**Interpretation:** the agreeable cheap voters' consensus increasingly lands on chunks that
+*should* escalate, so removing them forces escalation to Sonnet → "drop helps" = *escalate
+more → approach Sonnet* (the same phenomenon as E10/E11, per-voter); the effect grows with θ
+because a higher bar makes more of that cheap consensus wrong. The cheap voters' agreement is
+the weak link relative to Sonnet. **No production change:** diagnostic mid-θ config; production
+θ0.9 escalates ~96 % so this is moot — consistent with E06b/c's "keep all." E12 is the
+mechanistic close-up of *why* production escalates aggressively.
+**Artifact:** `E12_voter_loo/20260717T180222.csv` *(6-voter LOO by design — `_make_voters` stays 6 — so the verdict is unchanged: no production change)*
 
 ---
 

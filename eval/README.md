@@ -27,8 +27,7 @@ larger sync or batch runs.
 alembic upgrade head
 
 python -m eval.llm_judge \
-  --mode sync --tests q1 --n 1 --max-requests 3 \
-  --results-dir /tmp/judge_smoke
+  --mode sync --tests q1 --n 1 --max-requests 3
 ```
 
 ---
@@ -121,13 +120,11 @@ python -m eval.llm_judge --mode batch --no-submit --tests q1 --n 10
 ```bash
 # 1. Tiny sync run — 2 papers, Q1 only, cap 3 API calls
 python -m eval.llm_judge \
-  --mode sync --tests q1 --n 2 --max-requests 3 \
-  --results-dir /tmp/judge_smoke
+  --mode sync --tests q1 --n 2 --max-requests 3
 
 # 2. Verify cache hit — re-run same command, expect "0 uncached, 3 cached"
 python -m eval.llm_judge \
-  --mode sync --tests q1 --n 2 --max-requests 3 \
-  --results-dir /tmp/judge_smoke
+  --mode sync --tests q1 --n 2 --max-requests 3
 
 # 3. Inspect cache in Postgres
 psql "$DATABASE_URL" -c \
@@ -136,19 +133,18 @@ psql "$DATABASE_URL" -c \
 # 4. Force refresh and re-run
 python -m eval.llm_judge \
   --mode sync --tests q1 --n 2 --max-requests 3 \
-  --force-refresh-cache --results-dir /tmp/judge_smoke
+  --force-refresh-cache
 
 # 5. Batch dry run — no API calls, writes pending_requests.jsonl
 python -m eval.llm_judge \
-  --mode batch --no-submit --tests q1 --n 2 --max-requests 5 \
-  --results-dir /tmp/judge_batch
+  --mode batch --no-submit --tests q1 --n 2 --max-requests 5
 ```
 
 ---
 
 ## Output files
 
-All written to `--results-dir` (default: `eval/llm_judge_results/`).
+All written to `eval/llm_judge_results/` (the fixed output directory).
 
 | File | Contents |
 |------|----------|

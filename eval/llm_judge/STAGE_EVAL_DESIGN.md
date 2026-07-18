@@ -98,7 +98,7 @@ Adapter status: see §0 + §5.4. Today's MVP judges read DB; the JSONL is parall
 
 - `AgreementChecker` with default `EmbeddingScorer()` (`map_stage.py:141`). Switchable to other scorers via constructor.
 - `theta = 0.7` (`map_stage.py:99`) — accept-threshold; pairwise claim-embedding alignment ≥ θ → KEEP L1 best.
-- `reject_theta = 0.2` (`map_stage.py:118`) — hard-reject; ≤ reject_theta forces escalation.
+- `reject_theta = 0.0` default (`map_stage.py`) — hard-reject; ≤ reject_theta forces escalation. (The frozen thesis config sets `0.2` in `run.yaml`.)
 - Decision flow (`compute` → `ScoreBundle.decision ∈ {KEEP, ESCALATE, REJECT}`, `map_stage.py:481-494`).
 - Best voter pick: `self._agreement.best(voters, bundle)` (`:486, :502, :512`).
 
@@ -366,7 +366,7 @@ Rejection reasons recorded: `category_mismatch`, `relation_type_mismatch`, `subj
 
 **NLI model**
 
-- `cross-encoder/nli-deberta-v3-large` (`:43`). Singleton shared with `GroundingFilter` (`:48`).
+- `pritamdeka/PubMedBERT-MNLI-MedNLI` (registry key `pubmedbert_mednli`; the earlier `cross-encoder/nli-deberta-v3-large` is now a non-default registry entry). Singleton shared with `GroundingFilter`.
 - `batch_size = 16` (`:269`).
 - Sliding-window support (`:67-106`): long premises split via `_split_windows`; per-label scores max-pooled across windows (`:100-104`).
 
@@ -628,7 +628,7 @@ MVP judges consume Postgres rows written by the same `KnowledgeExtractionRunner`
 
 ```bash
 python -m eval.llm_judge --mode sync --tests q1,q2,q3 --n 2 \
-  --max-requests 12 --results-dir /tmp/judge_smoke
+  --max-requests 12
 ```
 
 against a run that populated both DB and JSONL will succeed today. The JSONL is supplementary: it enables offline replay (`eval/silver/analysis/pipeline_sweep.py`, `map_theta_sweep.py`), it preserves `finding_id` / `skipped_pairs` / `raw_pairs` for Later judges, and it gives a portable thesis archive. If/when we run eval against a DB-less archive, build §9's adapter.
@@ -694,7 +694,7 @@ Add (MVP requirement):
                        # judge_run_id, timestamps, summarization cascade name
 ```
 
-Optional for Later: co-locate at `<artifact_root>/<run_id>/eval/judge_<judge_run_id>/…`. Not required by MVP — `--results-dir` is already a CLI arg.
+Optional for Later: co-locate at `<artifact_root>/<run_id>/eval/judge_<judge_run_id>/…`. Not required by MVP — results go to the fixed `eval/llm_judge_results/` directory.
 
 ### 11.4 Haiku-pipeline smoke (2 papers)
 
@@ -707,8 +707,7 @@ Optional for Later: co-locate at `<artifact_root>/<run_id>/eval/judge_<judge_run
     --q1-findings 5 --q2-relations 3 \
     --q3-with-extraction-paragraphs 1 \
     --q3-zero-extraction-paragraphs 1 \
-    --max-requests 12 \
-    --results-dir /tmp/judge_haiku_smoke
+    --max-requests 12
   ```
 - **Pass criteria:**
   - ≥ 1 row in each of `q1_precision.jsonl`, `q2_relations.jsonl`, `q3_recall.jsonl`.
@@ -730,8 +729,7 @@ Optional for Later: co-locate at `<artifact_root>/<run_id>/eval/judge_<judge_run
     --tests q1,q2,q3 --n 15 \
     --q1-findings 20 --q2-relations 10 \
     --q3-with-extraction-paragraphs 3 \
-    --q3-zero-extraction-paragraphs 2 \
-    --results-dir eval/reports/sonnet_15
+    --q3-zero-extraction-paragraphs 2
   ```
 - **Pass criteria:** §10.1–§10.3 "Sonnet" thresholds.
 - **Compare to Haiku:** write `eval/reports/sonnet_15/comparison_vs_haiku.csv` with per-test deltas (`grounding_rate`, `label_agreement_rate`, `has_gaps_rate`, mean `fields_changed`). Any drop > 5 pp triggers triage of the summarization output (the judge is held fixed, so a drop is on the pipeline).

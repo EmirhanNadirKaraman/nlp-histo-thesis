@@ -19,7 +19,7 @@ but does **not** store the full voter `AuditableSummary` objects.
 
 ## Proposed Schema
 
-New file: `pipeline/stages/summarization/voter_cache.py`
+New file: `pipeline/stages/knowledge_extraction/voter_cache.py`
 
 ```python
 from __future__ import annotations
@@ -59,7 +59,7 @@ class MapVoterRecord(BaseModel):
     Enables full cascade replay at any theta without re-invoking any LLM.
     """
     # Cache key — same format as PipelineCache._map_key()
-    cache_key: str                    # ",".join(sorted text_element_ids)
+    cache_key: str                    # versioned pipe-joined: schema|prompt|stage|cascade|voter_cfg_hash|nli_model|input_hash
 
     # Chunk content for auditability
     chunk_sentences: list[str]        # formatted sentence strings sent to all voters
