@@ -115,7 +115,9 @@ def organize_pdfs(
     if not input_dir.exists():
         raise FileNotFoundError(
             f"Extracted-corpus directory not found: {input_dir} "
-            "(run `nlp-histo acquire unpack` first)"
+            "(the default --source aws route writes this tree directly, so check "
+            "the path from `acquire download`; on --source ftp, run "
+            "`nlp-histo acquire unpack` first)"
         )
 
     print(f"Organizing files from: {input_dir}")

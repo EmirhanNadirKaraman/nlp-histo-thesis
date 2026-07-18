@@ -79,15 +79,17 @@ def build_llm(model: str = "gemini"):
     - "sonnet" — Claude Sonnet 4.6 via Anthropic (needs ANTHROPIC_API_KEY).
     """
     if model == "gemini":
-        import os
-        from langchain_google_vertexai import ChatVertexAI
+        from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers import (
+            gemini_direct_chat,
+        )
 
-        return ChatVertexAI(
-            model="gemini-2.5-flash-lite",
-            project=os.environ["VERTEX_PROJECT"],
-            location="global",
+        # Same model the production cascade runs at L1, reached the same way:
+        # Gemini's OpenAI-compatible endpoint with GOOGLE_API_KEY, not Vertex with
+        # a GCP project. Keeps this script on one auth path with the pipeline.
+        return gemini_direct_chat(
+            "gemini-2.5-flash-lite",
             temperature=0.0,
-            timeout=20,   # fail fast: normal responses are 5-10s
+            request_timeout=20,   # fail fast: normal responses are 5-10s
         )
     if model == "haiku":
         from langchain_anthropic import ChatAnthropic

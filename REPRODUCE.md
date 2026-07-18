@@ -178,7 +178,7 @@ python -m pytest -q
 ruff check .
 ```
 
-Expect **1697 passed** and `All checks passed!`. Takes three to four minutes. If this
+Expect **1720 passed** and `All checks passed!`. Takes three to four minutes. If this
 fails, fix the install before going further — every step below assumes it passes.
 
 ## Step 5 — Verify the two files you received

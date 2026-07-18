@@ -13,7 +13,7 @@ Options:
 Output file: out/inspect/map_normalize_<PMCID>_<timestamp>.json
 
 LLM used: single Vertex AI model (gemini-2.5-flash-lite) for all voters +
-escalation (one API key, minimum calls).  Set VERTEX_PROJECT in .env before
+escalation (one API key, minimum calls).  Set GOOGLE_API_KEY in .env before
 running.
 """
 from __future__ import annotations
@@ -93,15 +93,13 @@ def load_sentences(pmcid: str) -> list[dict]:
 
 
 def build_llm():
-    import os
-    from langchain_google_vertexai import ChatVertexAI
-
-    return ChatVertexAI(
-        model="gemini-2.5-flash-lite",
-        project=os.environ["VERTEX_PROJECT"],
-        location="global",
-        temperature=0.0,
+    from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers import (
+        gemini_direct_chat,
     )
+
+    # Gemini's OpenAI-compatible endpoint (GOOGLE_API_KEY), the path the production
+    # cascade takes -- not Vertex, which required a GCP project.
+    return gemini_direct_chat("gemini-2.5-flash-lite", temperature=0.0)
 
 
 def main() -> None:

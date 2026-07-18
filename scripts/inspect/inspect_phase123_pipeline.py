@@ -92,15 +92,13 @@ def load_sentences(pmcid: str) -> list[dict]:
 
 
 def build_llm():
-    from langchain_google_vertexai import ChatVertexAI
-    import os
-
-    return ChatVertexAI(
-        model="gemini-2.5-flash-lite",
-        project=os.environ["VERTEX_PROJECT"],
-        location="global",
-        temperature=0.0,
+    from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers import (
+        gemini_direct_chat,
     )
+
+    # Gemini's OpenAI-compatible endpoint (GOOGLE_API_KEY), the path the production
+    # cascade takes -- not Vertex, which required a GCP project.
+    return gemini_direct_chat("gemini-2.5-flash-lite", temperature=0.0)
 
 
 def main() -> None:
