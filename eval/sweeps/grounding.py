@@ -34,8 +34,15 @@ import _lib  # type: ignore  # noqa: E402
 
 SWEEP_NAME = "grounding_threshold"
 DEFAULT_INPUT = Path("out/summaries")
-DEFAULT_OUT_CSV = Path("eval/results/grounding_sweep.csv")
-DEFAULT_OUT_MD = Path("eval/results/grounding_sweep.md")
+# Outputs default into the generated tree, not into eval/results/ (B-108).
+# `eval/results/grounding_sweep.md` is a tracked thesis snapshot: 5 papers, run
+# grounding_compare_calv1_runB_20260516T163007, config hash 149023b87374cbc2.
+# This sweep has no frozen input pin -- it reads whatever is in out/summaries --
+# so a default run tracks the corpus, not that snapshot, and writing there
+# rewrote a published table with numbers matching no published result. Pass
+# --out-md explicitly to regenerate the snapshot deliberately.
+DEFAULT_OUT_CSV = Path("out/eval_sweeps/grounding_sweep.csv")
+DEFAULT_OUT_MD = Path("out/eval_sweeps/grounding_sweep.md")
 DEFAULT_THRESHOLDS = "0.30,0.40,0.50,0.60,0.70,0.80,0.90,0.95"
 
 logger = logging.getLogger("eval.sweeps.grounding")
