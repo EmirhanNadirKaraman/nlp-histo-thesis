@@ -16,16 +16,16 @@ force `ChunkDecision.ESCALATE` regardless of the embedding score.
 
 Policy v1 (intentionally conservative)
 --------------------------------------
-Hard-fail iff **two comparable findings** carry directions
+Hard-fail iff two comparable findings carry directions
 `{positive, negative}` (exact pair, in any order).
 
-**Comparability** = strict equality on four structural fields after
+Comparability = strict equality on four structural fields after
 ``.strip().casefold()`` on the two strings:
     subject_entity, outcome_entity, relation_type, category
 Any ``None`` on either side disqualifies the pair (we cannot compare what
 we cannot identify).
 
-**Polarity values intentionally EXCLUDED from v1**:
+Polarity values intentionally EXCLUDED from v1:
     - ``absent``  — semantically overlaps with ``negative`` in
       biomarker-expression contexts ("marker absent" ≈ "marker not present").
       A clean rule needs calibration evidence — tracked by B-025.
@@ -34,7 +34,7 @@ we cannot identify).
       on this would be inconsistent.
     - ``unclear`` / ``no_direction`` — no polarity signal to contradict.
 
-**Scope fields intentionally EXCLUDED from v1 comparability**:
+Scope fields intentionally EXCLUDED from v1 comparability:
     ``FindingScope.{disease_subtype, tissue_site, treatment_context, ...}``
     are not part of the comparability key. Same biomarker / different
     cohort / opposite direction will therefore hard-fail today — a

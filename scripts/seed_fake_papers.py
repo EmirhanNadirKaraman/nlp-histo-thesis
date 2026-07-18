@@ -53,9 +53,7 @@ from nlp_histo.database import get_db_connection, Document, TextElement  # noqa:
 logger = logging.getLogger("seed_fake_papers")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Synthetic content
-# ─────────────────────────────────────────────────────────────────────────────
 
 # Paragraph design: keep each paragraph short so spaCy's sentence splitter
 # produces clean per-claim sentences for MAP. Use almost-identical wording
@@ -133,9 +131,7 @@ FAKE_PAPERS: list[FakePaper] = [
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # DB operations
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _delete_paper(session, pmcid: str) -> bool:
     """Delete a Document by pmcid (cascades to TextElements). Returns True

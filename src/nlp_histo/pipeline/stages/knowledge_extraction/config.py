@@ -202,7 +202,7 @@ class ResolveConfig:
     relations-absent (single-paper run or RELATE skipped).
     """
 
-    # ── Relations-present mode ────────────────────────────────────────────────
+    # Relations-present mode
     grounding_weight: float = 0.60
     """Grounding score multiplier; max 0.60 contribution to final score."""
 
@@ -230,7 +230,7 @@ class ResolveConfig:
     contradict_pen_cap: float = 0.30
     """Maximum total contradiction penalty."""
 
-    # ── Relations-absent mode ─────────────────────────────────────────────────
+    # Relations-absent mode
     no_rel_grounding_weight: float = 0.80
     """Grounding weight when no RELATE output (scores spread across [0, 1])."""
 
@@ -268,7 +268,7 @@ class HybridConfig:
     these. The four weights blend additively in ``compute_pair``:
     ``score = w_category·cat + w_embedding·embed + w_entity·ent + w_evidence·evid``.
 
-    **Convention: weights should sum to 1.0** for a calibrated score in
+    Convention: weights should sum to 1.0 for a calibrated score in
     ``[0, 1]`` (matches the score range expected by the theta / reject_theta
     fallbacks). Not enforced in code today — strict enforcement would change
     behaviour for callers that historically built ``HybridStructuredSimilarity``

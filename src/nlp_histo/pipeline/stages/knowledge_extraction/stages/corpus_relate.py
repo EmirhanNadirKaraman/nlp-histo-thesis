@@ -202,7 +202,7 @@ class CorpusRelateStage:
         )
         self._db = db  # optional DatabaseConnection for DB persistence
 
-    # ── Public API ─────────────────────────────────────────────────────────────
+    # Public API
 
     def relate_from_dir(
         self,
@@ -235,7 +235,7 @@ class CorpusRelateStage:
         -------
         List of CorpusRelation objects written to output_path.
         """
-        # ── Resolve the file list ──────────────────────────────────────────────
+        # Resolve the file list
         if manifest is not None:
             selected: dict[str, tuple[Path, dict]] = self._load_manifest(manifest)
         else:
@@ -257,7 +257,7 @@ class CorpusRelateStage:
             "manifest" if manifest is not None else run_selection,
         )
 
-        # ── Build canonical rule pool + lookup indexes ─────────────────────────
+        # Build canonical rule pool + lookup indexes
         all_rules: list[CanonicalRule] = []
         id_to_pmcid: dict[str, str] = {}     # canonical_id → source PMCID
         rule_meta: dict[str, dict] = {}      # canonical_id → raw rule dict
@@ -284,7 +284,7 @@ class CorpusRelateStage:
             len(all_rules), len(pmcids_loaded),
         )
 
-        # ── Run RelateStage on the full pool ───────────────────────────────────
+        # Run RelateStage on the full pool
         if len(all_rules) < 2:
             logger.warning(
                 "CORPUS RELATE: fewer than 2 rules across the corpus — nothing to compare"
@@ -301,7 +301,7 @@ class CorpusRelateStage:
             )
             corpus_relations = self._enrich(raw_relations, id_to_pmcid, rule_meta)
 
-        # ── Write output ───────────────────────────────────────────────────────
+        # Write output
         intra_count = sum(1 for r in corpus_relations if r.same_paper)
         cross_count = len(corpus_relations) - intra_count
 
@@ -336,7 +336,7 @@ class CorpusRelateStage:
 
         return corpus_relations
 
-    # ── Incremental API ────────────────────────────────────────────────────────
+    # Incremental API
 
     def relate_incremental(
         self,
@@ -573,7 +573,7 @@ class CorpusRelateStage:
         except Exception as exc:
             logger.warning("CORPUS RELATE: DB persist failed: %s", exc, exc_info=True)
 
-    # ── Run-selection ──────────────────────────────────────────────────────────
+    # Run-selection
 
     def _select_runs(
         self,
@@ -714,7 +714,7 @@ class CorpusRelateStage:
 
         return result
 
-    # ── Enrichment ─────────────────────────────────────────────────────────────
+    # Enrichment
 
     def _enrich(
         self,
@@ -746,24 +746,24 @@ class CorpusRelateStage:
             meta_b = rule_meta.get(cid_b, {})
 
             corpus_rel = CorpusRelation(
-                # ── inherited Relation fields ──────────────────────────────────
+                # inherited Relation fields
                 rule_id_a=cid_a,
                 rule_id_b=cid_b,
                 relation_type=rel.relation_type,
                 nli_score_a_to_b=rel.nli_score_a_to_b,
                 nli_score_b_to_a=rel.nli_score_b_to_a,
-                # ── corpus-level provenance ────────────────────────────────────
+                # corpus-level provenance
                 relation_id=relation_id,
                 comparison_scope="intra_paper" if same_paper else "cross_paper",
                 same_paper=same_paper,
                 pmcid_a=pmcid_a,
                 pmcid_b=pmcid_b,
-                # ── structural metadata (from rule A; gate ensures A and B share these) ─
+                # structural metadata (from rule A; gate ensures A and B share these)
                 subject_entity=meta_a.get("subject_entity") or "",
                 outcome_entity=meta_a.get("outcome_entity") or "",
                 category=meta_a.get("category") or "",
                 relation_type_structural=meta_a.get("relation_type") or "",
-                # ── per-rule fields ────────────────────────────────────────────
+                # per-rule fields
                 direction_a=meta_a.get("direction"),
                 direction_b=meta_b.get("direction"),
                 predicate_a=meta_a.get("predicate_text") or "",
@@ -778,7 +778,7 @@ class CorpusRelateStage:
                 study_coverage_a=meta_a.get("study_coverage") or "unknown",
                 is_conflicted_b=meta_b.get("is_conflicted") or False,
                 study_coverage_b=meta_b.get("study_coverage") or "unknown",
-                # ── scope qualifier check (v1: not yet implemented) ────────────
+                # scope qualifier check (v1: not yet implemented)
                 scope_check_result="scope_unknown",
                 scope_note="",
             )
@@ -787,7 +787,7 @@ class CorpusRelateStage:
         return result
 
 
-# ── CLI entry point ────────────────────────────────────────────────────────────
+# CLI entry point
 
 def _main() -> None:
     logging.basicConfig(

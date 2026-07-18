@@ -39,7 +39,7 @@ except ImportError:
     print("ERROR: jinja2 is required.  pip install jinja2", file=sys.stderr)
     sys.exit(1)
 
-# ── Bootstrap path so we can import from project root ─────────────────────────
+# Bootstrap path so we can import from project root
 _ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_ROOT))
 
@@ -74,7 +74,7 @@ def _load_corpus_index(path: Path | None) -> dict:
 _CORPUS_RELATIONS_PATH: Path | None = None
 
 
-# ── Jinja2 env (reuse the same templates as the static generator) ─────────────
+# Jinja2 env (reuse the same templates as the static generator)
 
 def _make_env() -> Environment:
     template_dir = Path(__file__).parent / "templates"
@@ -84,7 +84,7 @@ def _make_env() -> Environment:
     )
 
 
-# ── DB helpers ─────────────────────────────────────────────────────────────────
+# DB helpers
 
 def _get_db():
     from nlp_histo.database import get_db_connection  # noqa: PLC0415
@@ -178,7 +178,7 @@ def _index_rows_from_db(session) -> list[dict]:
     return index_rows
 
 
-# ── Routes ─────────────────────────────────────────────────────────────────────
+# Routes
 
 @app.route("/")
 def index():
@@ -287,7 +287,7 @@ def reload_corpus():
     )
 
 
-# ── JSON API ───────────────────────────────────────────────────────────────────
+# JSON API
 
 @app.route("/api/runs")
 def api_runs():
@@ -333,7 +333,7 @@ def api_paper(pmcid: str, run_id: str):
     )
 
 
-# ── Error pages ────────────────────────────────────────────────────────────────
+# Error pages
 
 @app.errorhandler(404)
 def not_found(e):
@@ -345,7 +345,7 @@ def not_found(e):
     )
 
 
-# ── CLI entry point ────────────────────────────────────────────────────────────
+# CLI entry point
 
 def main() -> None:
     global _corpus_index, _CORPUS_RELATIONS_PATH
@@ -364,7 +364,7 @@ def main() -> None:
                              "Auto-detected from out/summaries/ if not provided.")
     args = parser.parse_args()
 
-    # ── Resolve corpus_relations.json ─────────────────────────────────────
+    # Resolve corpus_relations.json
     if args.corpus_relations:
         _CORPUS_RELATIONS_PATH = Path(args.corpus_relations)
     else:

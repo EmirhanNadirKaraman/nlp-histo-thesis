@@ -37,7 +37,7 @@ _PER_DOC_COUNT_FIELDS: Tuple[str, ...] = (
 )
 
 
-# ── IO ────────────────────────────────────────────────────────────────────────
+# IO
 
 
 def load_manifest(path: Path) -> Dict[str, Any]:
@@ -50,7 +50,7 @@ def load_manifest(path: Path) -> Dict[str, Any]:
         raise ValueError(f"manifest {path} is not valid JSON: {exc}") from exc
 
 
-# ── Diff helpers ──────────────────────────────────────────────────────────────
+# Diff helpers
 
 
 def _docs_by_pmcid(manifest: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
@@ -173,7 +173,7 @@ def compute_per_doc_count_diffs(
     return diffs
 
 
-# ── Rendering ─────────────────────────────────────────────────────────────────
+# Rendering
 
 
 def _fmt(value: Any) -> str:
@@ -207,7 +207,7 @@ def render_markdown(
         out.append(f"* **B (variant):**  `{path_b}`")
         out.append("")
 
-    # ── Overview ────────────────────────────────────────────────────────────
+    # Overview
     out.append("## Overview")
     out.append("")
     overview_rows = [
@@ -237,7 +237,7 @@ def render_markdown(
                "⚠️  Config digests differ — A and B were run with different knobs.")
     out.append("")
 
-    # ── Summary ────────────────────────────────────────────────────────────
+    # Summary
     out.append("## Batch summary")
     out.append("")
     out.append(_md_table(
@@ -247,7 +247,7 @@ def render_markdown(
     ))
     out.append("")
 
-    # ── Counts ─────────────────────────────────────────────────────────────
+    # Counts
     cd = compute_counts_diff(a, b)
     out.append("## Counts (summed across documents)")
     out.append("")
@@ -257,7 +257,7 @@ def render_markdown(
     ))
     out.append("")
 
-    # ── Reason histogram ───────────────────────────────────────────────────
+    # Reason histogram
     rd = compute_reason_diff(a, b)
     out.append("## Reason histogram (NodeScorer R0/R1/R2/R3/R-color)")
     out.append("")
@@ -267,7 +267,7 @@ def render_markdown(
     ))
     out.append("")
 
-    # ── Status changes ─────────────────────────────────────────────────────
+    # Status changes
     sc = compute_status_changes(a, b)
     out.append("## Per-document status changes")
     out.append("")
@@ -280,7 +280,7 @@ def render_markdown(
         out.append("_No status changes._")
     out.append("")
 
-    # ── Per-doc count deltas ───────────────────────────────────────────────
+    # Per-doc count deltas
     cdd = compute_per_doc_count_diffs(a, b)
     out.append("## Per-document count differences")
     out.append("")
@@ -319,7 +319,7 @@ def render_json_diff(
     }
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
+# CLI
 
 
 def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:

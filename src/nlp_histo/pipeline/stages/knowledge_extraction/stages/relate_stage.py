@@ -47,7 +47,7 @@ from ..grounding.nli_config import get_active_spec
 
 logger = logging.getLogger(__name__)
 
-# ── Module-level NLI singleton ─────────────────────────────────────────────────
+# Module-level NLI singleton
 # Delegates to the grounding_filter module-level cache so the same model
 # instance is shared with GroundingFilter (loaded once per process).
 
@@ -75,7 +75,7 @@ def _get_nli_pipe(model_name: str = _NLI_MODEL, batch_size: int = _DEFAULT_BATCH
 
 
 
-# ── NLI helpers ────────────────────────────────────────────────────────────────
+# NLI helpers
 
 def _nli_scores(pairs: list[tuple[str, str]], pipe) -> list[dict[str, float]]:
     """
@@ -184,7 +184,7 @@ def _classify_pair(
     return None  # UNRELATED
 
 
-# ── Pruning ────────────────────────────────────────────────────────────────────
+# Pruning
 
 def _norm_subject(entity: str) -> str:
     """
@@ -368,7 +368,7 @@ def _build_nli_text(
     return f"{prefix}{base}"
 
 
-# ── Public API ─────────────────────────────────────────────────────────────────
+# Public API
 
 class RelateStage:
     """

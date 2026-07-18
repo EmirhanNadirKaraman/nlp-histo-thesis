@@ -58,7 +58,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.routing.policy import (  # n
 from nlp_histo.pipeline.stages.knowledge_extraction.routing.routing_dataset import RoutingDataset  # noqa: E402
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
+# CLI
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
@@ -86,7 +86,7 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-# ── Metric computation ─────────────────────────────────────────────────────────
+# Metric computation
 
 def compute_at_theta(
     ag_records,
@@ -144,7 +144,7 @@ def compute_at_theta(
     }
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
+# Main
 
 def main() -> None:
     args = parse_args()
@@ -177,7 +177,7 @@ def main() -> None:
     print(f"  acceptable      : {len(acceptable)}")
     print(f"  unacceptable    : {len(labeled) - len(acceptable)}")
 
-    # ── Scorer compatibility check ─────────────────────────────────────────────
+    # Scorer compatibility check
     warnings: list[str] = []
     scorers_in_file: set[str] = {r.agreement_scorer for r in ag_records if r.agreement_scorer}
     if scorers_in_file and spec.scorer_name not in scorers_in_file:
@@ -192,10 +192,10 @@ def main() -> None:
         print(f"\n[WARNING] {msg}")
         warnings.append(msg)
 
-    # ── Compute metrics ────────────────────────────────────────────────────────
+    # Compute metrics
     metrics = compute_at_theta(ag_records, labeled, acceptable, spec.theta)
 
-    # ── Selection objective ────────────────────────────────────────────────────
+    # Selection objective
     alpha = args.cost_alpha
     selection_objective: float | None = None
     if metrics["escalation_rate"] is not None and metrics["false_accept_rate"] is not None:

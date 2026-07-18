@@ -19,7 +19,7 @@ Reproducibility
 
 Cost coverage
 -------------
-The active 6-stage cascade only spends LLM API tokens in **MAP**.  GROUNDING
+The active 6-stage cascade only spends LLM API tokens in MAP.  GROUNDING
 and RELATE run a local NLI model; NORMALIZE, GROUP, CANONICALIZE, and
 RESOLVE are deterministic UMLS / embedding stages.  Their LLM API cost is
 $0.  Compute time / GPU is out of scope here.
@@ -51,9 +51,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import (
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Reference numbers
-# ─────────────────────────────────────────────────────────────────────────────
 
 # Observed per-chunk tokens (from PMC10047158 escalation_report L3 call).
 # Used as the canonical "one LLM call on one MAP chunk" estimate for every
@@ -205,9 +203,7 @@ def _extract_chunk_counts(report: dict) -> tuple[int, int, int]:
     return n, l2, l3
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # DB helpers
-# ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
 class PaperMeta:
@@ -297,9 +293,7 @@ def pick_percentile(papers: list[PaperMeta], p: float) -> tuple[int, PaperMeta]:
     return idx, papers[idx]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Cost estimation
-# ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
 class StageCost:
@@ -390,9 +384,7 @@ def estimate_map(
     return rows
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Cumulative spend across the smallest P% of papers
-# ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
 class CumulativePoint:
@@ -450,9 +442,7 @@ def cumulative_cost_by_cut(
     return out
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Markdown rendering
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _money(v: float | None) -> str:
     return "n/a" if v is None else f"${v:,.4f}"

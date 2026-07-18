@@ -152,7 +152,7 @@ def main() -> int:
                     "render_skipped":          ev.render_skipped,
                 }
 
-    # ── Report ────────────────────────────────────────────────────────────────
+    # Report
     print(f"{'row':<14} {'visually_blank':<15} {'brightness':<12} {'dark_frac':<10} {'inv_char_frac':<14} render_skipped")
     for name, r in results.items():
         print(
@@ -164,7 +164,7 @@ def main() -> int:
             f"{r['render_skipped']}"
         )
 
-    # ── Assertions ────────────────────────────────────────────────────────────
+    # Assertions
     failures: list[str] = []
 
     vis = results["visible"]

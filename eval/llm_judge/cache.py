@@ -33,7 +33,7 @@ class JudgeCache:
         """
         self._db = db
 
-    # ── Key ──────────────────────────────────────────────────────────────────
+    # Key
 
     @staticmethod
     def make_key(
@@ -56,7 +56,7 @@ class JudgeCache:
         )
         return hashlib.sha256(blob.encode()).hexdigest()[:32]
 
-    # ── CRUD ─────────────────────────────────────────────────────────────────
+    # CRUD
 
     def get(self, key: str) -> dict | None:
         """Return the raw result_payload (Opus judgment) for this key, or None on miss.
@@ -172,7 +172,7 @@ class JudgeCache:
         """No-op — connection lifecycle is managed by DatabaseConnection."""
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 
 def sa_now():
     """Return a SQLAlchemy server-side now() expression."""

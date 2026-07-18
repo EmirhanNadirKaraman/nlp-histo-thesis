@@ -5,7 +5,7 @@ from typing import List, Literal
 from pydantic import BaseModel, Field
 
 
-# ── Source (Opus input) ────────────────────────────────────────────────────────
+# Source (Opus input)
 
 class SourceCase(BaseModel):
     """One TextElement paragraph sampled for silver-label generation."""
@@ -16,7 +16,7 @@ class SourceCase(BaseModel):
     path_string: str
 
 
-# ── Silver findings (Opus output) ─────────────────────────────────────────────
+# Silver findings (Opus output)
 
 class SilverFindingScope(BaseModel):
     """Mirrors pipeline FindingScope exactly."""
@@ -54,7 +54,7 @@ class SilverCaseResult(BaseModel):
     findings: List[SilverFinding]
 
 
-# ── Pipeline output ────────────────────────────────────────────────────────────
+# Pipeline output
 
 class PipelineFinding(BaseModel):
     """One row from sum_map_findings, exported for a given case."""
@@ -92,7 +92,7 @@ class PipelineCaseOutput(BaseModel):
     findings: List[PipelineFinding]
 
 
-# ── Matching / evaluation ──────────────────────────────────────────────────────
+# Matching / evaluation
 
 class FieldMismatch(BaseModel):
     field: str

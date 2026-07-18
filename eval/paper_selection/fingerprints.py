@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 _PROGRESS_EVERY = 100
 
-# ── UMLS semantic-type buckets ────────────────────────────────────────────────
+# UMLS semantic-type buckets
 # Keys are TUI codes; semantic types not listed here fall through to the
 # generic ``entities`` set only.
 
@@ -71,7 +71,7 @@ OUTCOME_TUIS: set[str] = {
 }
 
 
-# ── Regex patterns ────────────────────────────────────────────────────────────
+# Regex patterns
 
 _CD_MARKER_RE = re.compile(r"\bCD[- ]?\d+[a-z]?\b", re.IGNORECASE)
 _KI67_RE      = re.compile(r"\bKi[- ]?67\b", re.IGNORECASE)
@@ -103,7 +103,7 @@ _GENE_BLOCKLIST: set[str] = {
 }
 
 
-# ── Keyword dictionaries ──────────────────────────────────────────────────────
+# Keyword dictionaries
 
 DISEASE_KEYWORDS: set[str] = {
     "carcinoma", "lymphoma", "melanoma", "sarcoma", "leukemia", "leukaemia",
@@ -159,7 +159,7 @@ GENERIC_NOISE: set[str] = {
 }
 
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# Config
 
 @dataclass
 class FingerprintConfig:
@@ -177,7 +177,7 @@ class FingerprintConfig:
     extra_tissue_keywords:  set[str] = field(default_factory=set)
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 _ABBREV_RE = re.compile(r"\b[A-Z]{2,5}\b")
@@ -222,7 +222,7 @@ def _bucket_from_semantic_types(semtypes: list[str]) -> set[str]:
     return buckets
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
+# Public API
 
 def build_fingerprint(paper: RawPaper, config: FingerprintConfig | None = None) -> PaperFingerprint:
     """Convert a :class:`RawPaper` into a :class:`PaperFingerprint`.
@@ -233,7 +233,7 @@ def build_fingerprint(paper: RawPaper, config: FingerprintConfig | None = None) 
 
     fp = PaperFingerprint(pmcid=paper.pmcid, title=paper.title)
 
-    # ── Workload counters ───────────────────────────────────────────────────
+    # Workload counters
     fp.n_text_elements = len(paper.text_elements)
     fp.n_paragraphs    = len(paper.text_elements)
     fp.n_sentences     = sum(_count_sentences(t) for t in paper.text_elements)
@@ -246,7 +246,7 @@ def build_fingerprint(paper: RawPaper, config: FingerprintConfig | None = None) 
     n_tokens = sum(len(_TOKEN_RE.findall(t)) for t in paper.text_elements)
     fp.n_tokens_est = n_tokens or None
 
-    # ── Entity buckets (NER + UMLS) ─────────────────────────────────────────
+    # Entity buckets (NER + UMLS)
     counts: dict[str, int] = {}
     for ent in paper.entities:
         if cfg.min_umls_score and ent.umls_score is not None and ent.umls_score < cfg.min_umls_score:
@@ -279,7 +279,7 @@ def build_fingerprint(paper: RawPaper, config: FingerprintConfig | None = None) 
     # from a real semantic-type hit.
     fp.entities -= GENERIC_NOISE
 
-    # ── Regex markers + keyword dictionaries ────────────────────────────────
+    # Regex markers + keyword dictionaries
     full_text = "\n".join(paper.text_elements)
     full_lower = full_text.lower()
 
@@ -308,7 +308,7 @@ def build_fingerprint(paper: RawPaper, config: FingerprintConfig | None = None) 
 
     fp.entity_counts = counts
 
-    # ── Layout / quality stats used by hardness ─────────────────────────────
+    # Layout / quality stats used by hardness
     para_lens = [len(t) for t in paper.text_elements] or [0]
     very_short = sum(1 for n in para_lens if 0 < n < 60)
     very_long  = sum(1 for n in para_lens if n > 1500)

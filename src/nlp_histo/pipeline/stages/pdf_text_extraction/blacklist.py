@@ -42,7 +42,7 @@ class BlacklistManager:
         self._lock = threading.Lock()
         self._entries: dict[str, dict] = self._load()
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def contains(self, pmcid: str) -> bool:
         with self._lock:
@@ -76,7 +76,7 @@ class BlacklistManager:
         with self._lock:
             return len(self._entries)
 
-    # ── Persistence ───────────────────────────────────────────────────────────
+    # Persistence
 
     def _load(self) -> dict:
         """Load the blacklist, tolerating both the new per-item map and the

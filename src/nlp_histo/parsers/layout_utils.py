@@ -21,13 +21,13 @@ Covers:
 import re
 from collections import defaultdict
 
-# ── Element type sets ─────────────────────────────────────────────────────────
+# Element type sets
 DOCLING_MASK_TYPES = {'PICTURE', 'CAPTION', 'TABLE', 'RECONSTRUCTED_TABLE'}
 TEXT_ELEMENT_TYPES = {'TEXT', 'PARAGRAPH', 'SECTION_HEADER', 'TITLE', 'LIST', 'LIST_ITEM'}
 SKIP_TYPES         = {'TABLE', 'FIGURE', 'PICTURE', 'CAPTION', 'RECONSTRUCTED_TABLE', 'FOOTNOTE'}
 CAPTION_PATTERN    = re.compile(r'^(Table|Figure)\s+\d+', re.IGNORECASE)
 
-# ── Character normalisation ───────────────────────────────────────────────────
+# Character normalisation
 # PDFs sometimes encode fi/fl/ff etc. as Unicode ligature codepoints (U+FB00–FB06).
 # Docling/poppler may emit these as literal Unicode chars OR as PostScript glyph
 # name strings like "/uniFB01" (surrounded by spaces: "in /uniFB02 uenza").
@@ -58,7 +58,7 @@ def fix_ligatures(text: str) -> str:
     return text
 
 
-# ── Bounding-box helpers ──────────────────────────────────────────────────────
+# Bounding-box helpers
 def bbox_overlaps(a, b) -> bool:
     """Return True if Docling bbox dicts a and b overlap."""
     return not (a['x1'] >= b['x2'] or a['x2'] <= b['x1'] or
@@ -127,7 +127,7 @@ def merge_rects(rects) -> list:
     return merged
 
 
-# ── Caption-matching helpers ──────────────────────────────────────────────────
+# Caption-matching helpers
 FIG_NUM_RE = re.compile(r'^figure\s+(\d+)', re.IGNORECASE)
 TAB_NUM_RE = re.compile(r'^table\s+(\d+)',  re.IGNORECASE)
 
@@ -211,7 +211,7 @@ def nearest_caption(el, captions):
     return best
 
 
-# ── Figure panel detection ────────────────────────────────────────────────────
+# Figure panel detection
 def count_panels(page, bbox, page_height, min_gap_px=8, white_threshold=248) -> int:
     """
     Detect how many side-by-side panels a figure contains by finding white
@@ -247,7 +247,7 @@ def count_panels(page, bbox, page_height, min_gap_px=8, white_threshold=248) -> 
     return gaps + 1
 
 
-# ── Artifact filtering ────────────────────────────────────────────────────────
+# Artifact filtering
 MIN_ANCHOR_H = 15  # pts — minimum bbox height to qualify as a substantial block
 
 _NON_BIO_ENT_LABELS = frozenset({
@@ -333,7 +333,7 @@ def filter_artifacts(elements, nlp=None) -> list:
     return kept
 
 
-# ── Paragraph relevance filtering ─────────────────────────────────────────────
+# Paragraph relevance filtering
 _BOILERPLATE_STARTS = re.compile(
     r'^(Keywords?[:\s]|Author Contributions?:|Funding:|'
     r'Institutional Review Board|Informed Consent|'
@@ -400,7 +400,7 @@ def is_relevant_para(text: str, nlp=None) -> bool:
     return any(tok.pos_ == 'VERB' for tok in doc) or has_bio_entity(doc)
 
 
-# ── Text extraction ───────────────────────────────────────────────────────────
+# Text extraction
 def _reference_list_skip_set(elements) -> set:
     """
     Return a set of indices for LIST/LIST_ITEM elements that belong to a
@@ -540,7 +540,7 @@ def extract_text(
     return rows, n_skipped + n_deduped
 
 
-# ── Text saving ───────────────────────────────────────────────────────────────
+# Text saving
 def save_text(rows, out_path, pmcid: str, label: str = '', ordered: bool = True):
     """
     Write extracted text rows to a .txt file.

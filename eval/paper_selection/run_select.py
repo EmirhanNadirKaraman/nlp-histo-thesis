@@ -30,7 +30,7 @@ from .selectors import SelectionConfig, select_calibration_set
 logger = logging.getLogger("eval.paper_selection.run_select")
 
 
-# ── Validation ───────────────────────────────────────────────────────────────
+# Validation
 
 def _validate_selection(
     result: SelectionResult,
@@ -108,7 +108,7 @@ def _validate_selection(
     return issues
 
 
-# ── CLI ──────────────────────────────────────────────────────────────────────
+# CLI
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
@@ -176,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
 
-    # ── Load papers ─────────────────────────────────────────────────────────
+    # Load papers
     if args.jsonl:
         loader = JSONLLoader(args.jsonl)
         logger.info("Loading from JSONL: %s", args.jsonl)
@@ -193,7 +193,7 @@ def main(argv: list[str] | None = None) -> int:
         logger.error("No papers loaded — aborting")
         return 2
 
-    # ── Outlier filter ──────────────────────────────────────────────────────
+    # Outlier filter
     if args.max_text_elements is not None:
         kept = [p for p in raw_papers if len(p.text_elements) <= args.max_text_elements]
         dropped = len(raw_papers) - len(kept)
@@ -204,13 +204,13 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         raw_papers = kept
 
-    # ── Fingerprint ─────────────────────────────────────────────────────────
+    # Fingerprint
     fp_cfg = FingerprintConfig()
     t_fp = time.perf_counter()
     fingerprints = build_fingerprints(raw_papers, fp_cfg)
     logger.info("Fingerprints built in %.1fs", time.perf_counter() - t_fp)
 
-    # ── Select ──────────────────────────────────────────────────────────────
+    # Select
     sel_cfg = SelectionConfig(
         k_related=args.k_related,
         k_diverse=args.k_diverse,
@@ -258,7 +258,7 @@ def main(argv: list[str] | None = None) -> int:
         result = select_calibration_set(fingerprints, config=sel_cfg, allow_overlap=allow_overlap)
     logger.info("Selection complete in %.1fs", time.perf_counter() - t_sel)
 
-    # ── Print summary ───────────────────────────────────────────────────────
+    # Print summary
     print(f"\n=== Calibration set: {args.output_version} ===")
     for bucket in ("related", "diverse", "hard"):
         ids = getattr(result, bucket)
@@ -272,7 +272,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print("\nAll sanity checks passed.")
 
-    # ── Write outputs ───────────────────────────────────────────────────────
+    # Write outputs
     if args.dry_run:
         print("\n[dry-run] Skipping file writes.")
         return 0

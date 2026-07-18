@@ -49,7 +49,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.routing.routing_dataset impo
 )
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
+# CLI
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
@@ -64,21 +64,21 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-# ── Decision collapsing ────────────────────────────────────────────────────────
+# Decision collapsing
 
 def _collapse(decision: str) -> str:
     """Collapse raw decision to KEEP or DEFERRED (escalate + reject → DEFERRED)."""
     return "KEEP" if decision == "keep" else "DEFERRED"
 
 
-# ── Loading ────────────────────────────────────────────────────────────────────
+# Loading
 
 def _load_indexed(path: str) -> dict[tuple[str, str], RoutingRecord]:
     records = list(RoutingDataset.iter_records(path))
     return {(r.pmcid, r.chunk_id): r for r in records}
 
 
-# ── Matrix cell ────────────────────────────────────────────────────────────────
+# Matrix cell
 
 def _make_cell() -> dict:
     return {
@@ -114,7 +114,7 @@ def _update_cell(cell: dict, rec_a: RoutingRecord, rec_b: RoutingRecord) -> None
         cell["n_keep_ok_false"] += 1
 
 
-# ── Core comparison ────────────────────────────────────────────────────────────
+# Core comparison
 
 def compare(
     records_a: dict[tuple[str, str], RoutingRecord],
@@ -215,7 +215,7 @@ def compare(
     }
 
 
-# ── I/O ────────────────────────────────────────────────────────────────────────
+# I/O
 
 def write_matrix_csv(report: dict, out_dir: Path) -> None:
     """Write 2×2 confusion matrix as CSV."""
@@ -266,7 +266,7 @@ def write_compare_report(report: dict, out_dir: Path) -> None:
     print(f"[report]  {path}")
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
+# Main
 
 def main() -> None:
     args = parse_args()

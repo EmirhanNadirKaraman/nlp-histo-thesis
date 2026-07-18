@@ -32,7 +32,7 @@ class CategoryJaccardScorer:
         return ScoreBundle(embedding_agreement=score)
 
 
-# ── Pure helpers ───────────────────────────────────────────────────────────────
+# Pure helpers
 
 def _category_set(output: AuditableSummary) -> frozenset[str]:
     return frozenset(f.category for f in output.findings)

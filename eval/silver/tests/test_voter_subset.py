@@ -46,7 +46,7 @@ def _cfg(**over):
     return base
 
 
-# ── cache filtering ──────────────────────────────────────────────────────────
+# cache filtering
 
 def test_filtered_cache_does_not_mutate_original():
     cache = _cache()
@@ -89,7 +89,7 @@ def test_subset_meta_and_counts():
     assert m._subset_voter_counts("all") == (3, 3)
 
 
-# ── backward-compat checkpoint key (live-run safety) ─────────────────────────
+# backward-compat checkpoint key (live-run safety)
 
 def test_all_voter_subset_key_is_6tuple_backward_compat():
     k_all = m._canonical_key("gemini", "v", 0.9, 0.2, "keep", True, "all")
@@ -111,7 +111,7 @@ def test_cell_and_row_key_agree_with_voter_subset():
     assert len(m._cell_key_from_row(row_old)) == 6                       # → "all" → 6-tuple
 
 
-# ── stage cell shapes ────────────────────────────────────────────────────────
+# stage cell shapes
 
 def test_screen_cells_use_each_configs_fixed_theta(monkeypatch):
     monkeypatch.setattr(m, "VOTER_SUBSET_SCREEN_CONFIGS",

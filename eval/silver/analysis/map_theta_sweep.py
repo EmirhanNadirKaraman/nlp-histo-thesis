@@ -96,7 +96,7 @@ from nlp_histo.evaluation.schemas import (
 )
 from nlp_histo.evaluation.split import filter_by_split
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
+# Paths
 
 PRIMER_DIR   = Path("eval/data/map_primer")
 PRIMER_PATH  = PRIMER_DIR / "primer.json"
@@ -105,7 +105,7 @@ REPORTS_DIR  = Path("eval/reports")
 SOURCE_PATH  = Path("eval/data/source_cases_related15.jsonl")
 SILVER_PATH  = Path("eval/data/silver_findings_related15.jsonl")
 
-# ── Voter configs (production setup) ─────────────────────────────────────────
+# Voter configs (production setup)
 
 def _make_voters():
     from nlp_histo.pipeline.stages.knowledge_extraction.batch.voter_configs import (
@@ -182,7 +182,7 @@ def _build_scorer(spec: ScorerSpec, embed_fn):
         raise ValueError(f"Unknown scorer kind: {spec.kind!r} (expected 'embedding' or 'hybrid')")
     return SemanticAgreementScorer(strategy=strategy)
 
-# ── PrimerHandle ──────────────────────────────────────────────────────────────
+# PrimerHandle
 
 @dataclass
 class PrimerHandle:
@@ -254,7 +254,7 @@ class PrimerHandle:
         )
 
 
-# ── PRIME ─────────────────────────────────────────────────────────────────────
+# PRIME
 
 def run_prime(cases: list[SourceCase], primer_path: Path = PRIMER_PATH) -> PrimerHandle:
     """Build chunk maps for all cases, submit all L1+L2+L3 batch jobs, save primer."""
@@ -342,7 +342,7 @@ def run_prime(cases: list[SourceCase], primer_path: Path = PRIMER_PATH) -> Prime
     return handle
 
 
-# ── RETRY FAILED ──────────────────────────────────────────────────────────────
+# RETRY FAILED
 
 def run_retry_failed(primer_path: Path = PRIMER_PATH) -> PrimerHandle:
     """Resubmit only the failed batch jobs, preserving all already-collected raw results.
@@ -419,7 +419,7 @@ def run_retry_failed(primer_path: Path = PRIMER_PATH) -> PrimerHandle:
     return handle
 
 
-# ── COLLECT ───────────────────────────────────────────────────────────────────
+# COLLECT
 
 def _strip_flag(custom_id: str, handle: PrimerHandle) -> bool:
     """Determine strip_thinking flag from custom_id level and voter index."""
@@ -571,7 +571,7 @@ def _build_voter_cache(handle: PrimerHandle, cache_path: Path = CACHE_PATH) -> N
     logger.info("Voter cache written → %s", cache_path)
 
 
-# ── SWEEP ─────────────────────────────────────────────────────────────────────
+# SWEEP
 
 def _ev(x):
     """Enum → its ``.value`` (a plain string); anything else unchanged.
@@ -983,7 +983,7 @@ def run_sweep(
     return rows
 
 
-# ── Reporting ─────────────────────────────────────────────────────────────────
+# Reporting
 
 def _write_csv(path: Path, rows: list[dict], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1026,7 +1026,7 @@ def _print_table(rows: list[dict]) -> None:
           "Esc = fraction escalated to L3. Pol = legacy_single_voter_policy.")
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# Main
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="MAP theta sweep harness")
@@ -1097,7 +1097,7 @@ def main() -> None:
     primer_path      = primer_dir / "primer.json"
     voter_cache_path = primer_dir / "voter_cache.json"
 
-    # ── PRIME ──
+    # PRIME
     # Only prime/all consume the source-case split. Loading it for
     # collect/sweep is wasteful AND the old "cases=N" log line misled a
     # user into thinking `collect` had submitted N cases. collect/sweep operate
@@ -1121,7 +1121,7 @@ def main() -> None:
                         args.split, len(filtered_cases), args.seed, args.dev_fraction)
             handle = run_prime(filtered_cases, primer_path)
 
-    # ── REBUILD CACHE (no API calls) ──
+    # REBUILD CACHE (no API calls)
     if args.mode == "rebuild-cache":
         if not primer_path.exists():
             print(f"No primer found at {primer_path}.", file=sys.stderr)
@@ -1130,7 +1130,7 @@ def main() -> None:
         print("Voter cache rebuilt from saved primer. Ready to sweep.")
         return
 
-    # ── RETRY FAILED ──
+    # RETRY FAILED
     if args.mode == "retry-failed":
         if not primer_path.exists():
             print(f"No primer found at {primer_path}. Run `prime` first.", file=sys.stderr)
@@ -1139,7 +1139,7 @@ def main() -> None:
         print("Failed jobs resubmitted. Run `collect` to retrieve results.")
         return
 
-    # ── COLLECT / poll loop ──
+    # COLLECT / poll loop
     if args.mode == "collect":
         if not primer_path.exists():
             print("No primer found. Run `prime` first.", file=sys.stderr)
@@ -1171,7 +1171,7 @@ def main() -> None:
                 j = ProviderJob.from_dict(jd)
                 logger.info("  job %s  provider=%s  status=%s", j.job_id, j.provider, j.status)
 
-    # ── SWEEP ──
+    # SWEEP
     if args.mode in ("sweep", "all"):
         if not voter_cache_path.exists():
             print(f"Voter cache not found: {voter_cache_path}. Run prime + collect first.", file=sys.stderr)

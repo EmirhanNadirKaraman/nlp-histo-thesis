@@ -22,7 +22,7 @@ from pathlib import Path
 REPORTS_DIR = Path("eval/reports")
 
 
-# ── CSV loading ───────────────────────────────────────────────────────────────
+# CSV loading
 
 def _load_csv(path: Path) -> list[dict]:
     with path.open(encoding="utf-8") as fh:
@@ -34,7 +34,7 @@ def _latest_matching(reports_dir: Path, pattern: str) -> Path | None:
     return matches[-1] if matches else None
 
 
-# ── HTML template ─────────────────────────────────────────────────────────────
+# HTML template
 
 _HTML = """\
 <!DOCTYPE html>
@@ -224,7 +224,7 @@ if (relateConSlice.length) {{
 """
 
 
-# ── Table & best-box builders ─────────────────────────────────────────────────
+# Table & best-box builders
 
 def _prf_table(rows: list[dict], label_key: str, label_header: str) -> str:
     if not rows:
@@ -293,7 +293,7 @@ def _relate_table(rows: list[dict], fix_key: str, fix_val: str,
     )
 
 
-# ── JSON serialiser for chart data ────────────────────────────────────────────
+# JSON serialiser for chart data
 
 def _to_chart_json(rows: list[dict], numeric_keys: list[str]) -> str:
     out = []
@@ -311,7 +311,7 @@ def _to_chart_json(rows: list[dict], numeric_keys: list[str]) -> str:
     return json.dumps(out)
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# Main
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate sweep dashboard HTML")
@@ -326,7 +326,7 @@ def main() -> None:
     reports_dir = Path(args.reports)
     timestamp   = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
 
-    # ── Load CSVs ──
+    # Load CSVs
     def _load(explicit: str | None, pattern: str, label: str) -> list[dict]:
         path = Path(explicit) if explicit else _latest_matching(reports_dir, pattern)
         if path is None or not path.exists():
@@ -347,7 +347,7 @@ def main() -> None:
     split         = grounding_rows[0].get("split", "dev") if grounding_rows else "dev"
     sim_threshold = grounding_rows[0].get("sim_threshold", "—") if grounding_rows else "—"
 
-    # ── Build HTML fragments ──
+    # Build HTML fragments
     eval_best_box     = _best_box(eval_rows, "threshold")
     grounding_best_box = _best_box(grounding_rows, "grounding_threshold")
 

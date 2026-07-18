@@ -11,7 +11,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditableSumma
 from .providers import EmbedFn, OpenAIEmbedder
 
 
-# ── Polarity vocabulary for contradiction heuristic ──────────────────────────────
+# Polarity vocabulary for contradiction heuristic
 
 _POSITIVE = frozenset({
     "positive", "present", "increased", "detected", "high",
@@ -25,7 +25,7 @@ _NEGATIVE = frozenset({
 _NEGATIONS = frozenset({"not", "no", "without", "lack", "lacking", "never", "neither", "nor"})
 _NEG_WINDOW = 3   # tokens before a polarity keyword to check for negation
 
-# ── Numeric contradiction heuristic ──────────────────────────────────────────────
+# Numeric contradiction heuristic
 
 _NUM_RE = re.compile(r"\b(\d+(?:\.\d+)?)")
 _NUMERIC_RATIO_THRESHOLD = 2.0   # max/min ratio above which numbers are "contradictory"

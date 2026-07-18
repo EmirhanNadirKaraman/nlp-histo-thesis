@@ -238,7 +238,7 @@ def main() -> int:
     if args.pmcids and args.from_selection:
         parser.error("--pmcids and --from-selection are mutually exclusive")
 
-    # ── Resolve the (possibly isolated) summaries dir + corpus_relations target ──
+    # Resolve the (possibly isolated) summaries dir + corpus_relations target
     summaries_dir = Path(args.summaries_dir) if args.summaries_dir else _SUMMARIES_DIR
     corpus_relations = (
         summaries_dir.parent / "corpus_relations.json"
@@ -248,7 +248,7 @@ def main() -> int:
     # Make the profile resolvable to voter_configs.get_profile()
     os.environ["NLP_HISTO_PROFILE"] = args.profile
 
-    # ── Resolve which papers to rebuild ─────────────────────────────────────
+    # Resolve which papers to rebuild
     if args.from_selection:
         pmcids = _load_pmcids_from_selection(Path(args.from_selection))
         paths = _match_summary_paths(pmcids, summaries_dir)
@@ -266,7 +266,7 @@ def main() -> int:
 
     logger.info("Rebuilding downstream stages for %d papers from cached MAP", len(paths))
 
-    # ── Build the same batch runner run_paper.py uses ───────────────────────
+    # Build the same batch runner run_paper.py uses
     logger.info("Building batch runner with profile=%s …", args.profile)
     runner = build_batch_runner(
         profile_name=args.profile,
@@ -280,7 +280,7 @@ def main() -> int:
         output_dir=summaries_dir.parent if args.summaries_dir else Path("out/summaries"),
     )
 
-    # ── Rebuild each paper ──────────────────────────────────────────────────
+    # Rebuild each paper
     succeeded: list[str] = []
     failed: list[tuple[str, str]] = []
     for i, path in enumerate(paths, 1):
@@ -326,7 +326,7 @@ def main() -> int:
         for pmcid, err in failed:
             logger.warning("  FAILED  %s  %s", pmcid, err)
 
-    # ── Post-rebuild cross-paper corpus_relate ──────────────────────────────
+    # Post-rebuild cross-paper corpus_relate
     # Forward the active relate config (scope_aware_nli, use_verbatim_for_nli,
     # NLI thresholds) so the corpus_relate NLI matches the within-paper one.
     _run_corpus_relate(

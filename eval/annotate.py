@@ -52,7 +52,7 @@ MAX_PER_DOC = 200   # skip documents with more than this many items (0 = no limi
 TERM_WIDTH = 82
 WRAP_WIDTH = TERM_WIDTH - 4
 
-# ── ANSI helpers ───────────────────────────────────────────────────────────────
+# ANSI helpers
 RESET  = "\033[0m"
 BOLD   = "\033[1m"
 DIM    = "\033[2m"
@@ -70,7 +70,7 @@ def c(color: str, text: str) -> str:
     return f"{color}{text}{RESET}"
 
 
-# ── Item dataclass (shared across all modes) ───────────────────────────────────
+# Item dataclass (shared across all modes)
 @dataclass
 class Item:
     doc_id:  str
@@ -80,7 +80,7 @@ class Item:
     meta:    dict = field(default_factory=dict)  # extra fields (page, image_path, …)
 
 
-# ── Parsers ────────────────────────────────────────────────────────────────────
+# Parsers
 def parse_text(path: Path) -> list[Item]:
     """Parse eval/out/text/*_text.txt — [Section] headers + plain paragraphs."""
     doc_id  = path.stem.replace("_text", "")
@@ -240,7 +240,7 @@ def load_items(mode: str, max_per_doc: int = 0, sweep_dir: Path | None = None) -
     return all_items
 
 
-# ── Annotation persistence ─────────────────────────────────────────────────────
+# Annotation persistence
 SHARE_MAP_PATH = ANN_DIR / "share_map.json"
 
 
@@ -369,7 +369,7 @@ def ann_key(item: Item) -> str:
     return f"{item.doc_id}::{item.label}::{item.index}"
 
 
-# ── Input helpers ──────────────────────────────────────────────────────────────
+# Input helpers
 
 _STANDARD_LABELS = frozenset({"correct", "incorrect", "skipped"})
 _RUBRIC_PATH = HERE / "label_rubric.yaml"
@@ -524,7 +524,7 @@ def getch() -> str:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
 
-# ── PDF source resolution ──────────────────────────────────────────────────────
+# PDF source resolution
 
 def resolve_pdf_dir(sweep_dir: Path | None, explicit: Path | None) -> Path | None:
     """Resolve the source-PDF directory.
@@ -654,7 +654,7 @@ def open_pdf(pdf_path: Path, page: int | None = None) -> None:
         pass
 
 
-# ── Display ────────────────────────────────────────────────────────────────────
+# Display
 def render(item: Item, items: list[Item], ann: dict[str, str], mode: str,
            pdf_dir: Path | None = None,
            sweep_dir: Path | None = None) -> None:
@@ -795,7 +795,7 @@ def show_metrics(items: list[Item], ann: dict[str, str], mode: str) -> None:
     getch()
 
 
-# ── Main loop ──────────────────────────────────────────────────────────────────
+# Main loop
 def _parse_cli(argv: list[str] | None = None):
     import argparse
     VALID_MODES = (
@@ -952,7 +952,7 @@ def main() -> None:
             print(f"\n  Saved to {ann_path(mode, variant)}\n")
             return
 
-    # ── Second pass: revisit skipped items ────────────────────────────────────
+    # Second pass: revisit skipped items
     skipped_indices = [i for i, it in enumerate(items)
                        if ann.get(ann_key(it)) == "skipped"]
     if skipped_indices:

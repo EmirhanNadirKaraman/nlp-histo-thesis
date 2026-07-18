@@ -307,7 +307,7 @@ def _run_demo(demo: dict) -> dict:
     old_hits  = _spotlight(old_rows, demo["find_marker"])
     new_hits  = _spotlight(new_rows, demo["find_marker"])
 
-    # ── Report ───────────────────────────────────────────────────────────────
+    # Report
     def _state_line(label: str, s: dict) -> str:
         reasons = ", ".join(f"{k}={v}" for k, v in sorted(s["drop_reasons"].items())) or "—"
         return (
@@ -339,7 +339,7 @@ def _run_demo(demo: dict) -> dict:
     _hit_summary(old_hits, "OLD")
     _hit_summary(new_hits, "NEW")
 
-    # ── Render PNG overlays for the spotlight elements ───────────────────────
+    # Render PNG overlays for the spotlight elements
     images: list[dict] = []
     seen_pages: set[int] = set()
     for h in new_hits[:3]:

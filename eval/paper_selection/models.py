@@ -49,7 +49,7 @@ class PaperFingerprint:
     # Free-form workload / quality stats (mean paragraph length, abbrev density …)
     source_stats: dict[str, float | int | str] = field(default_factory=dict)
 
-    # ── Convenience accessors ────────────────────────────────────────────────
+    # Convenience accessors
 
     def is_empty(self) -> bool:
         """True when there is essentially no usable content."""

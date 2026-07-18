@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """E03 — grounding trade-off curve vs threshold (the "deliberate trade" figure).
 
-Reads the E03 grounding **sweep CSV** and plots how the grounding threshold
+Reads the E03 grounding sweep CSV and plots how the grounding threshold
 trades silver agreement for groundedness:
 
   * retention  (fraction of MAP findings kept) -- falls

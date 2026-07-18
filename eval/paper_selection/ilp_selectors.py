@@ -35,7 +35,7 @@ from .selectors import (
 logger = logging.getLogger(__name__)
 
 
-# ── PuLP availability ────────────────────────────────────────────────────────
+# PuLP availability
 
 try:
     import pulp as _pulp  # type: ignore
@@ -58,7 +58,7 @@ def _require_pulp() -> None:
         ) from _PULP_IMPORT_ERROR
 
 
-# ── ILP-specific knobs ───────────────────────────────────────────────────────
+# ILP-specific knobs
 
 @dataclass
 class ILPConfig:
@@ -69,7 +69,7 @@ class ILPConfig:
     the corresponding greedy heuristic — small enough to keep solver time
     short, large enough to discriminate tied candidates.
     """
-    # ── Candidate pool sizing ────────────────────────────────────────────
+    # Candidate pool sizing
     # Per-bucket caps applied before building the ILP.
     related_candidate_limit: int = 80
     diverse_candidate_limit: int = 100
@@ -78,7 +78,7 @@ class ILPConfig:
     # (use 0 to disable capping). Prefer the per-bucket fields above.
     candidate_limit: int | None = None
 
-    # ── Solver knobs ─────────────────────────────────────────────────────
+    # Solver knobs
     # Solver time budget (seconds, per-bucket). None = no limit.
     time_limit_seconds: float | None = 30.0
     # Stream CBC's own progress (LP root, cuts, nodes, gap) to stdout.
@@ -87,7 +87,7 @@ class ILPConfig:
     # it has exactly k papers selected. Falls back to prescore otherwise.
     accept_feasible: bool = True
 
-    # ── Related ──────────────────────────────────────────────────────────
+    # Related
     related_quality_weight: float = 0.05   # × paper_quality_score(i)
     related_length_penalty: float = 0.02   # × normalised n_sentences
     # Edge sparsification: keep an edge (i,j) iff its relatedness score is
@@ -96,7 +96,7 @@ class ILPConfig:
     related_pair_top_m:    int   = 15
     related_pair_threshold: float = 0.01
 
-    # ── Diverse ──────────────────────────────────────────────────────────
+    # Diverse
     diverse_concept_weights: dict[str, float] = field(
         default_factory=lambda: {
             "disease":   0.30,
@@ -141,14 +141,14 @@ class ILPConfig:
     # CUIs are off by default; raw count vastly outpaces structured buckets.
     diverse_include_cuis: bool = False
 
-    # ── Hard ─────────────────────────────────────────────────────────────
+    # Hard
     hard_top_normalized_pool: int = 30
     hard_top_absolute_pool:   int = 30
     hard_medium_pool_low_pct: float = 0.40
     hard_medium_pool_high_pct: float = 0.65
 
 
-# ── Solver helpers ───────────────────────────────────────────────────────────
+# Solver helpers
 
 def _solve(prob: "_pulp.LpProblem", time_limit_seconds: float | None,
            tag: str = "", verbose: bool = False) -> int:
@@ -247,7 +247,7 @@ def _prescore_fallback(
     return ranked, rationale
 
 
-# ── Candidate pre-scoring ────────────────────────────────────────────────────
+# Candidate pre-scoring
 
 def _related_prescore(p: PaperFingerprint) -> float:
     """Favour short, entity-rich papers with disease/biomarker/gene anchors."""
@@ -324,7 +324,7 @@ def _length_penalty(p: PaperFingerprint, ref_sentences: int = 350) -> float:
     return min(p.n_sentences / max(ref_sentences, 1), 2.0)
 
 
-# ── Related ILP ──────────────────────────────────────────────────────────────
+# Related ILP
 
 def _retained_related_edges(
     pool: list[PaperFingerprint],
@@ -511,7 +511,7 @@ def select_related_papers_ilp(
     return chosen, rationale
 
 
-# ── Diverse ILP ──────────────────────────────────────────────────────────────
+# Diverse ILP
 
 # Concepts pulled from each fingerprint, prefixed by bucket. Prefixing keeps
 # concept identifiers globally unique and lets us weight per-bucket directly.
@@ -853,7 +853,7 @@ def select_diverse_papers_ilp(
     return chosen, rationale
 
 
-# ── Hard ILP ─────────────────────────────────────────────────────────────────
+# Hard ILP
 
 def select_hard_papers_ilp(
     fingerprints: list[PaperFingerprint],
@@ -1036,7 +1036,7 @@ def select_hard_papers_ilp(
     return chosen, rationale
 
 
-# ── Calibration set (ILP-end-to-end) ─────────────────────────────────────────
+# Calibration set (ILP-end-to-end)
 
 def select_calibration_set_ilp(
     fingerprints: list[PaperFingerprint],

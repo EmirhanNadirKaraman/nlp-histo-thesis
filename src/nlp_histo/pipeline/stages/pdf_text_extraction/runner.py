@@ -268,7 +268,7 @@ class PipelineRunner:
         # process; safe to call from each PipelineRunner constructor.
         self._seed_pipeline()
 
-    # ── Seeding ───────────────────────────────────────────────────────────────
+    # Seeding
 
     def _seed_pipeline(self) -> None:
         """Seed pipeline-owned randomness.
@@ -316,7 +316,7 @@ class PipelineRunner:
             "TATR, OCR, scispaCy).", seed,
         )
 
-    # ── Config hash (used to invalidate stage cache) ──────────────────────────
+    # Config hash (used to invalidate stage cache)
 
     def _compute_config_hash(self) -> str:
         """Compute a stable hash of the output-affecting config surface.
@@ -364,7 +364,7 @@ class PipelineRunner:
             enabled=self._cfg.runtime.skip_existing_outputs,
         )
 
-    # ── Stage factory helpers ─────────────────────────────────────────────────
+    # Stage factory helpers
 
     def _get_layout_extractor(self):
         if self._layout_extractor is None:
@@ -510,7 +510,7 @@ class PipelineRunner:
             )
         return self._visualizer
 
-    # ── Single document ───────────────────────────────────────────────────────
+    # Single document
 
     def run_document(
         self,
@@ -597,7 +597,7 @@ class PipelineRunner:
                 stats.write()
             self._current_stats = None
 
-    # ── Stats helpers ─────────────────────────────────────────────────────────
+    # Stats helpers
 
     def _stage(self, name: str):
         """Context manager that times a stage if stats are enabled, else no-op."""
@@ -849,13 +849,13 @@ class PipelineRunner:
         else:
             layout, layout_pre_recon, masked_layout, detection = self._steps_1_3_4_standard(pdf_path, pmcid, cache)
 
-        # ── Step 2b: Visualization ────────────────────────────────────────────
+        # Step 2b: Visualization
         if vis := self._get_visualizer():
             with self._stage("STEP2B_VISUALIZATION"):
                 vis.visualize_layout(layout, pmcid)
                 vis.visualize_detections(detection, layout, pmcid)
 
-        # ── Step 5: Artifact filtering ────────────────────────────────────────
+        # Step 5: Artifact filtering
         # Reminder: bump STAGE_CACHE_VERSION[StageName.FILTERING] in
         # stage_cache.py if this stage's behaviour OR the on-disk format
         # changes (e.g. new module-level constant in
@@ -876,7 +876,7 @@ class PipelineRunner:
                 )
             self._record(lambda s: s.set_count("after_filter", len(masked_layout.elements)))
 
-        # ── Step 5b: Raw text dump (pre-assembly) ─────────────────────────────
+        # Step 5b: Raw text dump (pre-assembly)
         if self._cfg.text.write_raw_text:
             raw_path = self._cfg.paths.text_raw_dir / f"{pmcid}_raw.txt"
             self._cfg.paths.text_raw_dir.mkdir(parents=True, exist_ok=True)
@@ -887,7 +887,7 @@ class PipelineRunner:
                         f.write(f"[{el.type}] {text}\n\n")
             logger.info("[%s] Raw text written to %s", pmcid, raw_path)
 
-        # ── Step 6: Text assembly ─────────────────────────────────────────────
+        # Step 6: Text assembly
         # Reminder: bump STAGE_CACHE_VERSION[StageName.TEXT_ASSEMBLY] in
         # stage_cache.py if this stage's behaviour OR the on-disk format
         # changes (e.g. ContextAwareStitcher logic changes).
@@ -904,7 +904,7 @@ class PipelineRunner:
             )
         self._record(lambda s: s.set_count("text_rows", len(rows)))
 
-        # ── Step 7: Media cropping ────────────────────────────────────────────
+        # Step 7: Media cropping
         logger.info("[%s] Step 7 — media cropping", pmcid)
         with self._stage("STEP7_MEDIA_CROPPING"):
             cropper = self._get_media_cropper()
@@ -961,7 +961,7 @@ class PipelineRunner:
             )
             logger.info("[%s] Multi-source crops written (docling / docling_recon / full)", pmcid)
 
-        # ── Step 8: Outputs ───────────────────────────────────────────────────
+        # Step 8: Outputs
         logger.info("[%s] Step 8 — writing outputs", pmcid)
         with self._stage("STEP8_OUTPUTS"):
             for output in self._get_outputs():
@@ -969,7 +969,7 @@ class PipelineRunner:
 
         return rows
 
-    # ── Batch processing ──────────────────────────────────────────────────────
+    # Batch processing
 
     def run_batch(
         self,
@@ -1188,7 +1188,7 @@ def main(argv=None) -> None:
 
     args, TableDetectorType = _parse_args(argv)
 
-    # ── Canonical defaults (preserved from prior behaviour) ────────────────────
+    # Canonical defaults (preserved from prior behaviour)
     cfg = PipelineConfig()
     cfg.database.enabled = True if args.db_enabled is None else args.db_enabled
     cfg.text.write_raw_text = True if args.write_raw_text is None else args.write_raw_text
@@ -1197,7 +1197,7 @@ def main(argv=None) -> None:
         True if args.skip_existing_in_db is None else args.skip_existing_in_db
     )
 
-    # ── Sweep overrides (no-op when flag omitted) ──────────────────────────────
+    # Sweep overrides (no-op when flag omitted)
     if args.detector is not None:
         cfg.table_detector = {
             "tatr":    TableDetectorType.TATR,
@@ -1241,7 +1241,7 @@ def main(argv=None) -> None:
 
     pdfs = sorted(args.pdf_dir.glob(args.glob))
 
-    # ── Single-PDF papers only: drop entire packages that shipped supplements ───
+    # Single-PDF papers only: drop entire packages that shipped supplements
     if args.main_pdf_only:
         from collections import defaultdict as _dd
         _by = _dd(list)
@@ -1254,7 +1254,7 @@ def main(argv=None) -> None:
             "packages dropped entirely", len(pdfs), _dropped,
         )
 
-    # ── Page counting (shared by the page filter and the shortest-first sort) ──
+    # Page counting (shared by the page filter and the shortest-first sort)
     if args.max_pages is not None or args.min_pages is not None or args.sort_by_pages:
         import fitz  # type: ignore  # optional dep — import inside the function
 

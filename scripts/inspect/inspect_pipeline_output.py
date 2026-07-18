@@ -48,7 +48,7 @@ except ImportError:
     sys.exit(1)
 
 
-# ── Suspicious-entity heuristics ──────────────────────────────────────────────
+# Suspicious-entity heuristics
 
 # Biomedical taxonomy strings that often leak into subject_entity due to UMLS
 # normalization overshooting (CEAN → Cetacea, etc.)
@@ -208,7 +208,7 @@ def _is_low_grounding(obj: dict, threshold: float = 0.4) -> bool:
     return gs is not None and gs < threshold
 
 
-# ── Sentence text lookup ───────────────────────────────────────────────────────
+# Sentence text lookup
 
 def _build_sentence_lookup(data: dict) -> dict[str, str]:
     """
@@ -264,7 +264,7 @@ def _build_sentence_lookup(data: dict) -> dict[str, str]:
     return lookup
 
 
-# ── Lineage builder ────────────────────────────────────────────────────────────
+# Lineage builder
 
 def _build_lineage_index(data: dict) -> dict[str, Any]:
     """
@@ -315,7 +315,7 @@ def _build_lineage_index(data: dict) -> dict[str, Any]:
     return lineage
 
 
-# ── DB → data dict reconstruction ─────────────────────────────────────────────
+# DB → data dict reconstruction
 
 def build_data_from_db(pmcid: str, run_id: str, session) -> dict | None:
     """
@@ -343,7 +343,7 @@ def build_data_from_db(pmcid: str, run_id: str, session) -> dict | None:
 
     db_id = run.id
 
-    # ── Final rules (joined with canonical rules for missing fields) ──────────
+    # Final rules (joined with canonical rules for missing fields)
     CRAlias = aliased(SumCanonicalRule)
     fr_rows = (
         session.query(SumFinalRule, CRAlias)
@@ -379,7 +379,7 @@ def build_data_from_db(pmcid: str, run_id: str, session) -> dict | None:
             "group_id":             cr.group_id if cr else None,
         })
 
-    # ── Canonical rules ───────────────────────────────────────────────────────
+    # Canonical rules
     cr_rows = (
         session.query(SumCanonicalRule)
         .filter_by(pipeline_run_id=db_id)
@@ -406,7 +406,7 @@ def build_data_from_db(pmcid: str, run_id: str, session) -> dict | None:
         for cr in cr_rows
     ]
 
-    # ── Relations ─────────────────────────────────────────────────────────────
+    # Relations
     rel_rows = (
         session.query(SumRelation)
         .filter_by(pipeline_run_id=db_id)
@@ -423,7 +423,7 @@ def build_data_from_db(pmcid: str, run_id: str, session) -> dict | None:
         for r in rel_rows
     ]
 
-    # ── MAP findings (grouped into chunks) ────────────────────────────────────
+    # MAP findings (grouped into chunks)
     mf_rows = (
         session.query(SumMapFinding)
         .filter_by(pipeline_run_id=db_id)
@@ -464,7 +464,7 @@ def build_data_from_db(pmcid: str, run_id: str, session) -> dict | None:
         )
     ]
 
-    # ── Normal findings + spans ───────────────────────────────────────────────
+    # Normal findings + spans
     nf_rows = (
         session.query(SumNormalFinding)
         .filter_by(pipeline_run_id=db_id)
@@ -477,7 +477,7 @@ def build_data_from_db(pmcid: str, run_id: str, session) -> dict | None:
         .all()
     ) if nf_ids else []
 
-    # ── Collect all text_element_ids for a single batch query ─────────────
+    # Collect all text_element_ids for a single batch query
     # From normal finding spans
     te_ids_spans = {sp.text_element_id for sp in span_rows if sp.text_element_id}
 
@@ -556,7 +556,7 @@ def build_context_from_db(
                          corpus_connections=corpus_connections)
 
 
-# ── Template context builders ──────────────────────────────────────────────────
+# Template context builders
 
 def _enrich_final_rule(
     fr: dict,
@@ -600,7 +600,7 @@ def _enrich_final_rule(
     }
 
 
-# ── Paragraph context lookup (DB-backed, best-effort) ────────────────────────
+# Paragraph context lookup (DB-backed, best-effort)
 #
 # The rule card wants to surface the *full paragraph* containing the
 # representative verbatim sentence — that's ``text_elements.text_content``
@@ -665,7 +665,7 @@ def _lookup_paragraphs(rules: list[dict]) -> dict[str, str | None]:
     return out
 
 
-# ── NLI input reconstruction ──────────────────────────────────────────────────
+# NLI input reconstruction
 #
 # Mirrors ``pipeline/stages/knowledge_extraction/stages/relate_stage.py::
 # _build_nli_text`` so the inspector can show the *exact text* that the
@@ -875,7 +875,7 @@ def build_context(
     }
 
 
-# ── Cross-run diff helpers ────────────────────────────────────────────────────
+# Cross-run diff helpers
 
 def _stable_key(rule: dict) -> tuple:
     """Deterministic match key for a final rule or canonical rule."""
@@ -1062,7 +1062,7 @@ def build_diff_context(
     }
 
 
-# ── Flagged CSV export ────────────────────────────────────────────────────────
+# Flagged CSV export
 
 _CSV_COLUMNS = [
     "pmcid",
@@ -1184,7 +1184,7 @@ def export_flagged_csv(
     return len(rows)
 
 
-# ── Renderer ───────────────────────────────────────────────────────────────────
+# Renderer
 
 def _make_env() -> Environment:
     template_dir = Path(__file__).parent / "templates"
@@ -1269,7 +1269,7 @@ def render_diff(
     )
 
 
-# ── Batch mode ────────────────────────────────────────────────────────────────
+# Batch mode
 
 def render_batch(
     source_dir: Path,
@@ -1285,7 +1285,7 @@ def render_batch(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # ── Auto-detect corpus_relations.json ─────────────────────────────────────
+    # Auto-detect corpus_relations.json
     corpus_data: dict | None = None
     corpus_index: dict[str, list[dict]] = {}
     if corpus_relations_path is None:
@@ -1412,7 +1412,7 @@ def render_batch(
     print(f"\nBatch index written to: {index_path}  ({len(index_rows)} papers)")
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
+# CLI
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -1470,7 +1470,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # ── Batch mode ──────────────────────────────────────────────────────────────
+    # Batch mode
     if args.batch_dir is not None:
         if args.json_path or args.compare or args.export_flagged_csv:
             print(
@@ -1493,7 +1493,7 @@ def main() -> None:
         )
         return
 
-    # ── Single / diff mode — require json_path ──────────────────────────────────
+    # Single / diff mode — require json_path
     if args.json_path is None:
         parser.error("json_path is required unless using --batch-dir")
 
@@ -1502,7 +1502,7 @@ def main() -> None:
         print(f"ERROR: file not found: {json_path}", file=sys.stderr)
         sys.exit(1)
 
-    # ── Cross-run diff mode ─────────────────────────────────────────────────────
+    # Cross-run diff mode
     if args.compare is not None:
         if args.export_flagged_csv:
             print(
@@ -1526,7 +1526,7 @@ def main() -> None:
         render_diff(json_path, compare_path, output_path, args.low_gs_threshold)
         return
 
-    # ── Single-run mode ─────────────────────────────────────────────────────────
+    # Single-run mode
     if args.output:
         output_path = args.output
     else:

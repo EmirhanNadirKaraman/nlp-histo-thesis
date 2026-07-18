@@ -39,7 +39,7 @@ MODEL = "claude-opus-4-7"
 MAX_TOKENS = 12000  # ~30 structured pairs ≈ 3–4k tokens; generous, no truncation
 TOOL_NAME = "emit_relation_pairs"
 
-# ── Paths ────────────────────────────────────────────────────────────────────
+# Paths
 API_DIR = _REPO_ROOT / "eval" / "data" / "relation_pairs" / "api_requests"
 REQUEST_JSONL = API_DIR / "relation_pairs_batch_requests.jsonl"
 BATCH_STATES = API_DIR / "batch_states.json"           # list of submitted batches
@@ -59,7 +59,7 @@ def batch_number_of(custom_id: str) -> int:
     return int(custom_id.removeprefix(CUSTOM_ID_PREFIX))
 
 
-# ── Structured-output tool ───────────────────────────────────────────────────
+# Structured-output tool
 # Item fields are derived from SCHEMA_KEYS (single source) minus ``id``: ids are
 # assigned deterministically per batch on collection, so they are always
 # contiguous and correct regardless of model numbering.

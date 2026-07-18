@@ -12,8 +12,8 @@ The variant→stage mapping is imported from `run_all_sweeps.ALL_SWEEPS` (the
 authoritative source), so new variants are picked up automatically.
 
 Deciding metric per stage:
-  * detector stages  → table **crop F1** (which detector/threshold crops best);
-  * every later stage → table **strict F1** (the headline rubric metric).
+  * detector stages  → table crop F1 (which detector/threshold crops best);
+  * every later stage → table strict F1 (the headline rubric metric).
 
 By default it scores `out/sweeps/` fresh and analyses ONLY the variants present
 there — i.e. only the freshly re-run variants, never the old baseline. Stages

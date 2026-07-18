@@ -67,7 +67,7 @@ def main() -> None:
 
     correct_keys = [k for k, v in ann.items() if v == "correct"]
 
-    # ── Per-doc tracking ──────────────────────────────────────────────────────
+    # Per-doc tracking
     per_doc: dict[str, dict[str, int]] = defaultdict(lambda: {"found": 0, "total": 0})
     missing: list[tuple[str, str, str]] = []   # (pmcid, type, text)
 
@@ -87,7 +87,7 @@ def main() -> None:
     found = sum(d["found"] for d in per_doc.values())
     recall = found / total if total else 0.0
 
-    # ── Summary ───────────────────────────────────────────────────────────────
+    # Summary
     print(f"{'─' * 52}")
     print(f"  Labeled 'correct' : {total}")
     print(f"  Found in pipeline : {found}")
@@ -95,7 +95,7 @@ def main() -> None:
     print(f"  Recall            : {recall:.1%}")
     print(f"{'─' * 52}")
 
-    # ── Per-doc breakdown ─────────────────────────────────────────────────────
+    # Per-doc breakdown
     print(f"\n  {'PMCID':<48}  found / total   recall")
     print(f"  {'─' * 48}  {'─' * 13}   {'─' * 6}")
     for pmcid, counts in sorted(per_doc.items()):
@@ -105,7 +105,7 @@ def main() -> None:
         bar = "█" * int(r_ * 20) + "░" * (20 - int(r_ * 20))
         print(f"  {pmcid:<48}  {f_:>3} / {t_:<3}       [{bar}] {r_:.0%}")
 
-    # ── Missing elements ──────────────────────────────────────────────────────
+    # Missing elements
     if args.missing:
         print(f"\n  Missing elements ({len(missing)}):")
         print(f"  {'─' * 52}")

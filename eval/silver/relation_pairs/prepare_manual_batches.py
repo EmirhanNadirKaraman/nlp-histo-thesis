@@ -11,7 +11,7 @@ the SAME definition blocks (``prompt_spec``) and feed the SAME
   python -m eval.silver.relation_pairs.prepare_manual_batches
 
 writes ``eval/prompts/relation_pairs/batch_01_prompt.txt … batch_10_prompt.txt``.
-Each prompt asks for **30 claim-pairs** (10/10/10) with IDs ``pair_{30k-29:04d}`` …
+Each prompt asks for 30 claim-pairs (10/10/10) with IDs ``pair_{30k-29:04d}`` …
 ``pair_{30k:04d}`` (batch 10 → pair_0271…pair_0300). The user pastes each response
 into ``eval/data/relation_pairs/raw_batches/batch_0k.jsonl``.
 """

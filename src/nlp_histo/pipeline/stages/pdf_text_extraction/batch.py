@@ -94,7 +94,7 @@ class ParallelBatchRunner:
         # same run.
         self._run_id: Optional[str] = None
 
-    # ── Per-thread runner factory ─────────────────────────────────────────────
+    # Per-thread runner factory
 
     def _get_runner(self):
         """Return (or create) the PipelineRunner for the current thread."""
@@ -109,7 +109,7 @@ class ParallelBatchRunner:
             self._local.runner = runner
         return self._local.runner
 
-    # ── Worker ────────────────────────────────────────────────────────────────
+    # Worker
 
     def _process_one(self, pdf_path: Path, pmcid: str) -> str:
         """
@@ -135,7 +135,7 @@ class ParallelBatchRunner:
                 self._blacklist.add(pmcid, reason=str(exc))
             return "failed"
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def run(
         self,

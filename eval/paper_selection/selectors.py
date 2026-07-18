@@ -24,7 +24,7 @@ from .models import HardnessBreakdown, PaperFingerprint, SelectionResult
 logger = logging.getLogger(__name__)
 
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# Config
 
 @dataclass
 class SelectionConfig:
@@ -55,7 +55,7 @@ class SelectionConfig:
     hardness:    Hardness   = field(default_factory=Hardness)
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 
 def _by_pmcid(fps: list[PaperFingerprint]) -> dict[str, PaperFingerprint]:
     return {p.pmcid: p for p in fps}
@@ -91,7 +91,7 @@ def _greedy_related_seed(eligible: list[PaperFingerprint],
     return scored[0][1]
 
 
-# ── related ───────────────────────────────────────────────────────────────────
+# related
 
 def select_related_papers(
     fingerprints: list[PaperFingerprint],
@@ -169,7 +169,7 @@ def select_related_papers(
     return chosen, rationale
 
 
-# ── diverse ───────────────────────────────────────────────────────────────────
+# diverse
 
 def select_diverse_papers(
     fingerprints: list[PaperFingerprint],
@@ -239,7 +239,7 @@ def select_diverse_papers(
     return chosen, rationale
 
 
-# ── hard ─────────────────────────────────────────────────────────────────────
+# hard
 
 def _classify_hard(
     candidates: list[PaperFingerprint],
@@ -344,7 +344,7 @@ def select_hard_papers(
     return chosen[:k], rationale
 
 
-# ── calibration set (15 papers) ──────────────────────────────────────────────
+# calibration set (15 papers)
 
 def select_calibration_set(
     fingerprints: list[PaperFingerprint],

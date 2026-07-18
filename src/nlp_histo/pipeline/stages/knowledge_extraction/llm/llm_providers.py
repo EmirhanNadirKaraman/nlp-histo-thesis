@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from langchain_anthropic import ChatAnthropic
 
 
-# ── Direct APIs ─────────────────────────────────────────────────────────────────
+# Direct APIs
 
 def gemini_direct_chat(
     model: str,

@@ -35,7 +35,7 @@ def _cache(n_l1=3, n_l2=3):
     }
 
 
-# ── _drop_voter: nulls exactly index i, shares the rest, never mutates source ──
+# _drop_voter: nulls exactly index i, shares the rest, never mutates source
 
 def test_drop_voter_nulls_only_target_index():
     cache = _cache()
@@ -64,7 +64,7 @@ def test_drop_voter_l2_independent_of_l1():
     assert d["PMC1|1"]["l1"] is cache["PMC1|1"]["l1"]      # L1 untouched when dropping L2
 
 
-# ── label self-guard ─────────────────────────────────────────────────────────
+# label self-guard
 
 def test_voter_labels_shape_matches_make_voters():
     l1, l2 = _voter_labels()

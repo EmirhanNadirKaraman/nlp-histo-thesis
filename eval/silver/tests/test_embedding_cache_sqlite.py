@@ -14,7 +14,7 @@ from nlp_histo.evaluation.matching.matcher import (
 )
 
 
-# ── SQLite backend round-trip ────────────────────────────────────────────────
+# SQLite backend round-trip
 
 def test_sqlite_miss_set_save_hit(tmp_path):
     db = tmp_path / "c.sqlite"
@@ -64,7 +64,7 @@ def test_normalisation_matches_json_backend(tmp_path):
     assert j._make_key("  Hello ") == s._make_key("hello")
 
 
-# ── JSON → SQLite import ──────────────────────────────────────────────────────
+# JSON → SQLite import
 
 def _write_json_cache(path, model, entries):
     path.write_text(json.dumps({"embedding_model": model, "entries": entries}), encoding="utf-8")
@@ -107,7 +107,7 @@ def test_import_default_sqlite_path(tmp_path):
     assert stats["dest"].endswith("embedding_cache_gemini.sqlite")
 
 
-# ── Factory / backend switch ──────────────────────────────────────────────────
+# Factory / backend switch
 
 def test_factory_defaults_to_sqlite(tmp_path, monkeypatch):
     monkeypatch.delenv("NLP_HISTO_EMBEDDING_CACHE_BACKEND", raising=False)

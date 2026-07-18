@@ -150,7 +150,7 @@ def main() -> None:
     for r in rows:
         r["cost_norm"] = round(r["cost_per_chunk"] / cmax, 4)
 
-    # ── verification anchor: the calibrated operating point reproduces the E07 5-voter strict-F1 ──
+    # verification anchor: the calibrated operating point reproduces the E07 5-voter strict-F1
     qa = next((r for r in rows
                if abs(_f(r, "theta") - BEST_THETA) < 1e-9
                and abs(_f(r, "reject_theta") - BEST_REJECT_THETA) < 1e-9), None)
@@ -159,14 +159,14 @@ def main() -> None:
           f"{_f(qa, 'strict_f1_optimal') if qa else None} vs anchor {_ANCHOR_SF1}  "
           f"[{'OK' if ok else '⚠️ MISMATCH — check the E07 CSV / pins'}]")
 
-    # ── frontiers under both cost models (robustness check) ──
+    # frontiers under both cost models (robustness check)
     fr_cost = _pareto(rows, "cost_per_chunk")
     fr_esc = _pareto(rows, "escalate_rate")
     for i, r in enumerate(rows):
         r["on_frontier_cost"] = "true" if i in fr_cost else "false"
         r["on_frontier_escalate"] = "true" if i in fr_esc else "false"
 
-    # ── tagged operating points (all on the shipped config's θ-curve) ──
+    # tagged operating points (all on the shipped config's θ-curve)
     quality_pt = max(rows, key=lambda r: _f(r, "strict_f1_optimal"))
     eligible = [r for r in rows if _f(r, "strict_f1_optimal") >= MIN_ECONOMY_F1]
     economy_pt = min(eligible or rows, key=lambda r: r["cost_per_chunk"])
@@ -177,7 +177,7 @@ def main() -> None:
     economy_pt["operating_point"] = (economy_pt["operating_point"] + "|economy").strip("|")
     knee_pt["operating_point"] = (knee_pt["operating_point"] + "|knee").strip("|")
 
-    # ── print frontier (cost-sorted) ──
+    # print frontier (cost-sorted)
     print(f"\n{'struct':8}{'θ':>5}{'rej':>5}{'strF1':>8}{'cost/ch':>9}{'cnorm':>7}"
           f"{'esc':>6}{'L2inv':>6}{'L3inv':>6}  frontier(cost/esc)  pt")
     for r in sorted(rows, key=lambda r: r["cost_per_chunk"]):

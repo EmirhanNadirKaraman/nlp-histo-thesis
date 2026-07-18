@@ -67,7 +67,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.routing.policy import (  # n
 )
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
+# CLI
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
@@ -89,7 +89,7 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# Helpers
 
 def _objective(r: PolicyEvaluationResult, alpha: float) -> float | None:
     """Return selection_objective; fall back to computing from components."""
@@ -111,7 +111,7 @@ def _compact_winner(r: PolicyEvaluationResult) -> dict:
     }
 
 
-# ── PuLP selector ──────────────────────────────────────────────────────────────
+# PuLP selector
 
 def select_with_pulp(
     candidates: list[PolicyEvaluationResult],
@@ -141,7 +141,7 @@ def select_with_pulp(
     # Assign pre-computed or fallback objective
     objectives = {r.policy_id: _objective(r, alpha) for r in eligible}
 
-    # ── Full constraints: FAR + recall ─────────────────────────────────────────
+    # Full constraints: FAR + recall
     prob = pulp.LpProblem("select_policy", pulp.LpMinimize)
     x = {r.policy_id: pulp.LpVariable(f"x_{r.policy_id}", cat="Binary") for r in eligible}
 
@@ -184,7 +184,7 @@ def select_with_pulp(
         )
         return selected, True, None, runner_up
 
-    # ── Infeasible — relax recall constraint ───────────────────────────────────
+    # Infeasible — relax recall constraint
     infeasibility_reason = (
         f"No policy satisfies both false_accept_rate ≤ {max_false_accept} "
         f"and recall ≥ {min_recall}."
@@ -211,7 +211,7 @@ def select_with_pulp(
         )
         return selected, False, infeasibility_reason, None
 
-    # ── Cannot satisfy FAR — return minimum-FAR candidate ─────────────────────
+    # Cannot satisfy FAR — return minimum-FAR candidate
     infeasibility_reason += "  Cannot satisfy false_accept_rate constraint at any candidate."
     with_far = [r for r in eligible if r.false_accept_rate is not None]
     if with_far:
@@ -221,7 +221,7 @@ def select_with_pulp(
     return None, False, infeasibility_reason + "  No candidates with false_accept_rate.", None
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
+# Main
 
 def main() -> None:
     args = parse_args()

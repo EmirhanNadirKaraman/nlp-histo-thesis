@@ -21,7 +21,7 @@ from nlp_histo.evaluation.schemas import (
 )
 
 
-# ── helpers ────────────────────────────────────────────────────────────────────
+# helpers
 
 def _silver(case_id="PMC1|1", claims=("claim A",), **kw) -> SilverCaseResult:
     findings = [
@@ -55,7 +55,7 @@ def _unit_vec(dim: int, idx: int) -> list[float]:
     return v
 
 
-# ── cosine ─────────────────────────────────────────────────────────────────────
+# cosine
 
 def test_cosine_identical():
     v = [1.0, 0.0, 0.0]
@@ -72,7 +72,7 @@ def test_cosine_zero_vector():
     assert _cosine([0.0, 0.0], [1.0, 0.0]) == 0.0
 
 
-# ── normalize ──────────────────────────────────────────────────────────────────
+# normalize
 
 def test_normalize_lowercases():
     assert _normalize("ER+") == "er+"
@@ -82,7 +82,7 @@ def test_normalize_none():
     assert _normalize(None) == ""
 
 
-# ── field mismatches ───────────────────────────────────────────────────────────
+# field mismatches
 
 def test_no_mismatches_when_fields_match():
     sf = SilverFinding(category="IHC", claim="x",
@@ -108,7 +108,7 @@ def test_mismatch_detected_for_direction():
     assert any(m.field == "direction" for m in mismatches)
 
 
-# ── match_case ─────────────────────────────────────────────────────────────────
+# match_case
 
 def _mock_embedder(texts):
     """Deterministic embeddings: same text → same unit vector (hash-bucketed)."""
@@ -176,7 +176,7 @@ def test_empty_pipeline(mock_emb):
     assert result.unmatched_pipeline == []
 
 
-# ── compute_metrics ────────────────────────────────────────────────────────────
+# compute_metrics
 
 @patch("nlp_histo.evaluation.matching.matcher.get_embeddings")
 def test_metrics_perfect(mock_emb):

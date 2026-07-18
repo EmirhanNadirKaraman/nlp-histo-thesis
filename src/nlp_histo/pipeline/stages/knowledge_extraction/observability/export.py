@@ -24,7 +24,7 @@ from typing import Any
 from .collector import TraceCollector
 
 
-# ── Primary write helpers ──────────────────────────────────────────────────────
+# Primary write helpers
 
 
 def append_jsonl(record: dict[str, Any], path: Path) -> None:
@@ -60,7 +60,7 @@ def flush_collector(
         append_jsonl(ct.to_dict(), trace_dir / "chunks.jsonl")
 
 
-# ── CSV flatten helpers ────────────────────────────────────────────────────────
+# CSV flatten helpers
 
 
 def export_run_summary_csv(runs_jsonl: Path, out_csv: Path) -> int:
@@ -210,7 +210,7 @@ def export_all_csv(trace_dir: Path) -> dict[str, int]:
     return counts
 
 
-# ── Internal helpers ───────────────────────────────────────────────────────────
+# Internal helpers
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:

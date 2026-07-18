@@ -79,7 +79,7 @@ FUNNEL_STAGES = [
 ]
 
 
-# ── run selection ──────────────────────────────────────────────────────────
+# run selection
 
 
 def select_runs(session, status: str, all_runs: bool):
@@ -111,7 +111,7 @@ def _count_by_run(session, model):
     return {rid: n for rid, n in rows}
 
 
-# ── funnel ────────────────────────────────────────────────────────────────
+# funnel
 
 
 def build_funnel(session, runs):
@@ -308,7 +308,7 @@ def build_funnel_from_files(summaries_dir: Path, status: str, all_runs: bool):
     return per_run, _aggregate_funnel(per_run), dict(by_category), reasons
 
 
-# ── knowledge graph ─────────────────────────────────────────────────────────
+# knowledge graph
 
 
 class _UnionFind:
@@ -447,7 +447,7 @@ def build_graph(records, top: int, run_label):
     }
 
 
-# ── output ──────────────────────────────────────────────────────────────────
+# output
 
 
 def _write_csv(path: Path, fieldnames, rows):
@@ -541,7 +541,7 @@ def _fmt(x):
     return f"{x:.3f}" if isinstance(x, (int, float)) else "—"
 
 
-# ── plots ─────────────────────────────────────────────────────────────────
+# plots
 
 
 def make_plots(out: Path, agg, g):
@@ -599,7 +599,7 @@ def make_plots(out: Path, agg, g):
         plt.close(fig)
 
 
-# ── main ─────────────────────────────────────────────────────────────────
+# main
 
 
 def main():

@@ -45,7 +45,7 @@ from typing import Any, Iterable
 logger = logging.getLogger(__name__)
 
 
-# ── JSON coercion ────────────────────────────────────────────────────────────
+# JSON coercion
 
 def _to_jsonable(obj: Any) -> Any:
     """Coerce an arbitrary object into a JSON-safe structure.
@@ -91,7 +91,7 @@ def _dumps(obj: Any) -> str:
     return json.dumps(_to_jsonable(obj), ensure_ascii=False, default=str)
 
 
-# ── Low-level writers ────────────────────────────────────────────────────────
+# Low-level writers
 
 def write_jsonl(path: Path, records: Iterable[Any]) -> int:
     """Bulk-write records as JSONL via temp-file + rename. Returns row count.
@@ -166,7 +166,7 @@ def _csv_value(v: Any) -> Any:
     return _dumps(v)
 
 
-# ── Manifest ─────────────────────────────────────────────────────────────────
+# Manifest
 
 @dataclass
 class RunManifest:
@@ -266,7 +266,7 @@ def _try_git_commit() -> str | None:
     return None
 
 
-# ── Top-level writer ─────────────────────────────────────────────────────────
+# Top-level writer
 
 class RunArtifactWriter:
     """Per-run filesystem writer for knowledge_extraction-stage outputs.
@@ -350,7 +350,7 @@ class RunArtifactWriter:
         )
         return merged
 
-    # ── manifest ────────────────────────────────────────────────────────────
+    # manifest
 
     @property
     def manifest(self) -> RunManifest:
@@ -394,7 +394,7 @@ class RunArtifactWriter:
             logger.error("Failed to write manifest: %s", exc, exc_info=True)
             raise
 
-    # ── stage path helpers ──────────────────────────────────────────────────
+    # stage path helpers
 
     def stage_dir(self, stage: str, pmcid: str | None = None) -> Path:
         d = self.run_dir / stage
@@ -409,7 +409,7 @@ class RunArtifactWriter:
     def logs_dir(self) -> Path:
         return self.run_dir / "logs"
 
-    # ── stage writers ───────────────────────────────────────────────────────
+    # stage writers
 
     def write_stage_jsonl(
         self,
@@ -478,7 +478,7 @@ class RunArtifactWriter:
         return write_csv(path, rows, columns)
 
 
-# ── Stage persisters (shared by sync + batch runners) ────────────────────────
+# Stage persisters (shared by sync + batch runners)
 #
 # These take a fully-built RunArtifactWriter and the in-memory stage outputs.
 # Each function is a no-op when the writer is None, so callers can pass
@@ -583,7 +583,7 @@ def build_rejection_summary(
     )
 
 
-# ── DB persistence (shared between sync + batch runners) ────────────────────
+# DB persistence (shared between sync + batch runners)
 # These functions encapsulate every write into the ``sum_*`` tables. Both
 # ``KnowledgeExtractionRunner`` and ``BatchKnowledgeExtractionRunner`` forward to them so
 # that schema/order changes happen in exactly one place. All take ``db`` as

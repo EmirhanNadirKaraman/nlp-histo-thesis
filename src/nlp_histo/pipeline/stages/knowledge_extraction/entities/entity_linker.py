@@ -35,7 +35,7 @@ def enrich_rules_with_cuis(
     *,
     batch_size: int = 32,
 ) -> None:
-    """Fill in subject_cui / outcome_cui on rules **in-place**.
+    """Fill in subject_cui / outcome_cui on rules in-place.
 
     Skips rules that already have both CUIs set (typically propagated from
     NORMALIZE).  Silently no-ops when the linker is unavailable or has been

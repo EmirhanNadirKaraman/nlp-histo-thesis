@@ -2,7 +2,7 @@
 
 The production counterpart to the *dormant* router-only ``ProvenanceValidator``
 gate. The legacy L1→L2→L3 cascade (``enable_router=False``, the production path)
-runs **no** citation validation — a MAP finding can cite a sentence position or
+runs no citation validation — a MAP finding can cite a sentence position or
 ``text_element_id`` that does not exist in its chunk and still ship. This filter
 closes that gap by dropping such findings from the SELECTED chunk summary, in
 every cascade path and at every escalation level (L1/L2/L3).
@@ -110,7 +110,7 @@ def filter_summary_by_citation(
     check_verbatim: bool = False,
     fabricated_threshold: float = DEFAULT_FABRICATED_THRESHOLD,
 ) -> tuple[AuditableSummary, list[Finding]]:
-    """Drop findings with hard citation failures from ``summary`` **in place**.
+    """Drop findings with hard citation failures from ``summary`` in place.
 
     Returns ``(summary, dropped)``. ``summary.findings`` is replaced with the
     kept subset; ``dropped`` is the list of removed Findings (for logging /

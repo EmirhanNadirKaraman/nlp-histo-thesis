@@ -229,7 +229,7 @@ class MapStage:
         self.chunk_overlap = chunk_overlap
         self._chunk_workers = chunk_workers
 
-        # ── Cascade provenance for cache keys / run artifacts ─────────────────
+        # Cascade provenance for cache keys / run artifacts
         # Best-effort fallback: when callers don't pass voter_specs we still
         # produce a cascade_signature, but it's based on type+id rather than
         # provider/model so it won't be cross-process stable.
@@ -270,7 +270,7 @@ class MapStage:
         except Exception:  # noqa: BLE001
             self._nli_model_id = ""
 
-        # ── Invocation-time usage capture ──────────────────────────────────────
+        # Invocation-time usage capture
         # Records one InvocationUsage per chain.invoke() call. Populated in
         # _run_voters and _invoke_l3 by reading usage_metadata directly off
         # the raw AIMessage returned by build_map_chain's include_raw=True
@@ -282,7 +282,7 @@ class MapStage:
         self._invocation_usage_records: list = []
         self._invocation_usage_lock = threading.Lock()
 
-        # ── Per-voter output buffer ────────────────────────────────────────────
+        # Per-voter output buffer
         # Captures every voter's AuditableSummary (or failure) per (chunk,
         # level, voter_index). The runner reads this via
         # ``voter_output_records()`` after MAP completes and persists into
@@ -292,7 +292,7 @@ class MapStage:
         self._voter_output_records: list[dict] = []
         self._voter_output_lock = threading.Lock()
 
-    # ── Run-metadata helpers ────────────────────────────────────────────────────
+    # Run-metadata helpers
 
     def _make_metadata(self, provider: str, model: str) -> MapRunMetadata:
         return MapRunMetadata(
@@ -330,7 +330,7 @@ class MapStage:
             "l3_voter":          {"provider": self._l3_spec[0], "model": self._l3_spec[1]},
         }
 
-    # ── Public API ─────────────────────────────────────────────────────────────
+    # Public API
 
     def process(
         self,
@@ -584,7 +584,7 @@ class MapStage:
 
         return live_results  # type: ignore[return-value]
 
-    # ── ABC cascade ────────────────────────────────────────────────────────────
+    # ABC cascade
 
     def _cascade(
         self,
@@ -627,7 +627,7 @@ class MapStage:
         _producer: tuple[str, str] | None = None
         result: AuditableSummary | None = None
 
-        # ── Level 1 decision (shared evaluate_chunk path) ───────────────────
+        # Level 1 decision (shared evaluate_chunk path)
         l1_outcome = evaluate_chunk(
             voters,
             chunk=chunk,
@@ -755,7 +755,7 @@ class MapStage:
                     voter_timings=None, selected_voter_index=0,
                 )
 
-        # ── Citation filter (B-080) ─────────────────────────────────────────
+        # Citation filter (B-080)
         # Drop findings whose citation fails structural validation against this
         # chunk's source index — the production check the dormant router-only
         # ProvenanceValidator never ran on the legacy path. Runs on the SELECTED
@@ -834,7 +834,7 @@ class MapStage:
         if _escalation_level == 3 and result is not None:
             self._record_l3_decision(pmcid=pmcid, chunk_id=chunk_id)
 
-        # ── Build chunk trace ───────────────────────────────────────────────
+        # Build chunk trace
         if collector is not None:
             self._record_chunk_trace(
                 collector=collector,
@@ -850,7 +850,7 @@ class MapStage:
                 escalation_level=_escalation_level,
             )
 
-        # ── Escalation counter (thread-safe) ────────────────────────────────
+        # Escalation counter (thread-safe)
         with self._escalation_lock:
             ec = self._last_escalation_counts
             ec["total"] += 1
@@ -1150,7 +1150,7 @@ class MapStage:
             escalation_level=escalation_level,
         ))
 
-    # ── Invocation-time usage capture (sole source of truth for cost) ────────
+    # Invocation-time usage capture (sole source of truth for cost)
 
     def _record_invocation_usage(
         self,
@@ -1490,7 +1490,7 @@ class MapStage:
         with self._escalation_lock:
             return dict(self._last_escalation_counts)
 
-    # ── Helpers ────────────────────────────────────────────────────────────────
+    # Helpers
 
     def _make_chunks(self, sentences: list[dict]) -> list[list[dict]]:
         """Split sentences into overlapping fixed-size chunks.

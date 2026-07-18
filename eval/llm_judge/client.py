@@ -40,7 +40,7 @@ def _parse_tool_use(message: Any) -> dict:
     raise ValueError(f"No tool_use block in response: {message.content}")
 
 
-# ── Sync mode ────────────────────────────────────────────────────────────────
+# Sync mode
 
 def call_opus_sync(
     client: Any,
@@ -65,7 +65,7 @@ def call_opus_sync(
     return _parse_tool_use(msg)
 
 
-# ── Batch mode ───────────────────────────────────────────────────────────────
+# Batch mode
 
 def build_batch_requests(
     requests: list[JudgeRequest],

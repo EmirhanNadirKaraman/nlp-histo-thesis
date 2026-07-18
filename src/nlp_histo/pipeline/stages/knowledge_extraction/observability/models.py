@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-# ── Chunk-level models ──────────────────────────────────────────────────────────
+# Chunk-level models
 
 
 @dataclass
@@ -109,7 +109,7 @@ class ChunkTrace:
         return dataclasses.asdict(self)
 
 
-# ── Run-level models ────────────────────────────────────────────────────────────
+# Run-level models
 
 
 @dataclass

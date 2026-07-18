@@ -37,7 +37,7 @@ from dataclasses import field
 from pathlib import Path
 from typing import Any, Callable
 
-# ── Path configuration — bound by main(), never at import ─────────────────────
+# Path configuration — bound by main(), never at import
 # The replay reads a repository-shaped artifact tree (out/summaries/…, eval/data/…,
 # eval/reports/…) and writes a results tree. An installed wheel has no repository
 # beside it, and guessing relative to the caller's cwd silently produces a wrong
@@ -51,7 +51,7 @@ LOG_PATH: Path = None  # type: ignore[assignment]
 
 DEFAULT_OUTPUT_SUBPATH = Path("out") / "thesis_results" / "chapter9_offline_replay"
 
-# ── The chapter-9 artifact contract ───────────────────────────────────────────
+# The chapter-9 artifact contract
 #
 # --artifact-root is not a flat bundle of results: it is a REPOSITORY-SHAPED tree of
 # frozen artifacts. The replay reads pipeline outputs (out/summaries/…), frozen
@@ -427,7 +427,7 @@ def _write_csv(path: Path, header: list[str], rows: list[list[Any]]) -> None:
             w.writerow(row)
 
 
-# ── Analysis 1: Provenance carry-rate ─────────────────────────────────────────
+# Analysis 1: Provenance carry-rate
 def analyse_provenance_carry_rate() -> AnalysisResult:
     """Fraction of FinalRules whose verbatim, NLI score, and DB pointer
     triple are populated. Reads ``out/summaries/summaries/*.json``.
@@ -558,7 +558,7 @@ def analyse_provenance_carry_rate() -> AnalysisResult:
     )
 
 
-# ── Analysis 2: Grounding retention rate ──────────────────────────────────────
+# Analysis 2: Grounding retention rate
 def analyse_grounding_retention() -> AnalysisResult:
     """Per-paper grounding-filter retention at the production threshold
     (0.5). Reads pre- and post-grounding finding counts from
@@ -665,7 +665,7 @@ def analyse_grounding_retention() -> AnalysisResult:
     )
 
 
-# ── Analysis 3: Polarity-conflict count from cascade decision logs ────────────
+# Analysis 3: Polarity-conflict count from cascade decision logs
 def analyse_polarity_conflict_counts() -> AnalysisResult:
     """Count POLARITY_CONFLICT reason codes per paper and per level
     from cascade-decision JSONL logs.
@@ -797,7 +797,7 @@ def analyse_polarity_conflict_counts() -> AnalysisResult:
     )
 
 
-# ── Analysis 4: Theta heatmap from sweep CSV ──────────────────────────────────
+# Analysis 4: Theta heatmap from sweep CSV
 def analyse_theta_heatmap() -> AnalysisResult:
     """Heatmap of strict_f1 over (theta, reject_theta) for one scorer,
     extracted from the existing joint-sweep CSV in eval/reports/.
@@ -940,7 +940,7 @@ def analyse_theta_heatmap() -> AnalysisResult:
     )
 
 
-# ── Analysis 5: Bootstrap CI cascade vs Sonnet ────────────────────────────────
+# Analysis 5: Bootstrap CI cascade vs Sonnet
 STRICT_FIELDS = {"category", "relation_type", "direction"}
 
 
@@ -1242,7 +1242,7 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     )
 
 
-# ── Analysis 6: EXP F on the held-out test split ──────────────────────────────
+# Analysis 6: EXP F on the held-out test split
 def analyse_exp_f_test_split() -> AnalysisResult:
     """Run the held-out test confirmation by calling map_theta_sweep.run_sweep
     with split='test' at the production cascade config. Replay-only; no
@@ -1365,7 +1365,7 @@ def analyse_exp_f_test_split() -> AnalysisResult:
     )
 
 
-# ── Analysis 7: NLI four-mode A/B ─────────────────────────────────────────────
+# Analysis 7: NLI four-mode A/B
 def analyse_nli_ab() -> AnalysisResult:
     """A/B compare available corpus_relations.json outputs by label
     distribution and pairwise label-change matrix.
@@ -1475,7 +1475,7 @@ def analyse_nli_ab() -> AnalysisResult:
     )
 
 
-# ── Analysis 8: Per-rubric variant-18 F1 breakdown ────────────────────────────
+# Analysis 8: Per-rubric variant-18 F1 breakdown
 def analyse_variant18_rubric() -> AnalysisResult:
     """Extract variant 18's per-rubric-dimension F1 row from stage6_PR.md
     (the final completed staged-sweep report).
@@ -1562,7 +1562,7 @@ def analyse_variant18_rubric() -> AnalysisResult:
     )
 
 
-# ── Analysis 9: Provenance example ────────────────────────────────────────────
+# Analysis 9: Provenance example
 def analyse_provenance_example() -> AnalysisResult:
     """Pick one FinalRule with a complete provenance triple and dump the
     full trail (source paragraph → MAP finding → NLI score → canonical
@@ -1668,7 +1668,7 @@ def analyse_provenance_example() -> AnalysisResult:
     )
 
 
-# ── Analysis 10: Paired bootstrap CI on the cascade-vs-Sonnet gap ─────────────
+# Analysis 10: Paired bootstrap CI on the cascade-vs-Sonnet gap
 def _build_cascade_outputs(voter_cache, agreement_embed_fn, dev_filter):
     """Replay the production cascade per chunk and return per-case
     PipelineCaseOutputs filtered to ``dev_filter`` cases.
@@ -1910,7 +1910,7 @@ def _bootstrap_interpretation(boot) -> str:
             "Report the gap as descriptive, not significant.")
 
 
-# ── Analysis 11: NLI four-mode A/B (regenerate scope_* modes) ─────────────────
+# Analysis 11: NLI four-mode A/B (regenerate scope_* modes)
 def _regenerate_corpus_relations(mode_name: str, *,
                                  scope_aware_nli: bool,
                                  use_verbatim_for_nli: bool,
@@ -2104,7 +2104,7 @@ def analyse_nli_four_mode_ab() -> AnalysisResult:
     )
 
 
-# ── Analysis 12: Real-profile grounding and polarity evidence ─────────────────
+# Analysis 12: Real-profile grounding and polarity evidence
 def _build_real_profile_findings_per_chunk(voter_cache, dev_filter,
                                              agreement_embed_fn):
     """Replay the production cascade on the dev split via _replay and
@@ -2388,7 +2388,7 @@ def analyse_real_profile_grounding_polarity() -> AnalysisResult:
     )
 
 
-# ── Driver ────────────────────────────────────────────────────────────────────
+# Driver
 ANALYSES: list[tuple[str, Callable[[], AnalysisResult]]] = [
     ("01_provenance_carry_rate",          analyse_provenance_carry_rate),
     ("02_grounding_retention",            analyse_grounding_retention),

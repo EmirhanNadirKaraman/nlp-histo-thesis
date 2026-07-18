@@ -95,7 +95,7 @@ _FLAT_FIELD_PAIRS = [
 STRICT_FIELDS = {"category", "relation_type", "direction"}
 
 
-# ── Embedding input ────────────────────────────────────────────────────────────
+# Embedding input
 
 def _embedding_input(finding: Union[SilverFinding, PipelineFinding]) -> str:
     """Build a richer embedding input from multiple structured fields."""
@@ -110,7 +110,7 @@ def _embedding_input(finding: Union[SilverFinding, PipelineFinding]) -> str:
     return " | ".join(p.strip() for p in parts if p.strip())
 
 
-# ── Embedding cache ────────────────────────────────────────────────────────────
+# Embedding cache
 
 class EmbeddingCache:
     """
@@ -265,7 +265,7 @@ def import_json_cache_to_sqlite(json_path, sqlite_path=None, batch: int = 2000) 
     """Import a JSON embedding cache into SQLite (B-064) — non-destructive, idempotent.
 
     The JSON file is read-only here (never modified or deleted). Its entries are
-    already keyed by ``sha256(model\\0 text…)``, so keys are copied **verbatim**
+    already keyed by ``sha256(model\\0 text…)``, so keys are copied verbatim
     and stay compatible with :class:`SQLiteEmbeddingCache`. Re-running is a no-op
     for already-present keys (``INSERT OR IGNORE``). Returns a stats dict.
     """
@@ -316,7 +316,7 @@ def import_json_cache_to_sqlite(json_path, sqlite_path=None, batch: int = 2000) 
     }
 
 
-# ── Embedding fetch ────────────────────────────────────────────────────────────
+# Embedding fetch
 
 def get_embeddings(
     texts: list[str],
@@ -348,7 +348,7 @@ def get_embeddings(
     return results  # type: ignore[return-value]
 
 
-# ── Cosine similarity ──────────────────────────────────────────────────────────
+# Cosine similarity
 
 def _cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b))
@@ -359,7 +359,7 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot / (mag_a * mag_b)
 
 
-# ── Field mismatch detection ───────────────────────────────────────────────────
+# Field mismatch detection
 
 def _normalize(text: str | None) -> str:
     return (text or "").lower().strip()
@@ -382,7 +382,7 @@ def _field_mismatches(silver_finding: SilverFinding, pipeline_finding: PipelineF
     return mismatches
 
 
-# ── Similarity matrix ──────────────────────────────────────────────────────────
+# Similarity matrix
 
 def compute_sim_matrix(
     silver: SilverCaseResult,
@@ -417,7 +417,7 @@ def compute_sim_matrix(
     return sim, silver_texts, pipeline_texts
 
 
-# ── Matcher strategies ─────────────────────────────────────────────────────────
+# Matcher strategies
 # A matcher strategy maps a pre-computed similarity matrix + threshold to a list
 # of matched (silver_i, pipeline_j) index pairs. ``match_from_matrix`` assembles
 # the MatchResult around whichever strategy is supplied; greedy is the default.
@@ -487,7 +487,7 @@ MATCHERS: dict[str, MatchFn] = {
 }
 
 
-# ── Matching from pre-computed matrix ──────────────────────────────────────────
+# Matching from pre-computed matrix
 
 def match_from_matrix(
     silver: SilverCaseResult,
@@ -545,7 +545,7 @@ def match_from_matrix(
     )
 
 
-# ── Convenience wrapper (backward-compatible) ──────────────────────────────────
+# Convenience wrapper (backward-compatible)
 
 def match_case(
     silver: SilverCaseResult,
@@ -563,7 +563,7 @@ def match_case(
     return match_from_matrix(silver, pipeline, sim, threshold, match_fn=match_fn)
 
 
-# ── Metrics ────────────────────────────────────────────────────────────────────
+# Metrics
 
 def _strict_tp(match_results: list[MatchResult]) -> float:
     """Strict TP: full credit (1.0) if no important field mismatches, else 0.5."""

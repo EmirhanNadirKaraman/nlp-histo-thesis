@@ -111,7 +111,7 @@ class PyMuPDFMediaCropper:
         figures: List[CroppedMedia] = []
         tables:  List[CroppedMedia] = []
 
-        # ── Figures ───────────────────────────────────────────────────────────
+        # Figures
         if self._config.save_figure_crops:
             merged_figures: dict = {}
             claimed_captions: dict = {}   # caption_key → num of figure that claimed it
@@ -198,7 +198,7 @@ class PyMuPDFMediaCropper:
                 if media:
                     figures.append(media)
 
-        # ── Tables ────────────────────────────────────────────────────────────
+        # Tables
         if self._config.save_table_crops:
             merged_tables: dict = {}
 
@@ -360,7 +360,7 @@ class PyMuPDFMediaCropper:
         )
         return figures, tables
 
-    # ── Internal ──────────────────────────────────────────────────────────────
+    # Internal
 
     def _crop_element(
         self,

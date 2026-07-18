@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
-# ── Geometry ──────────────────────────────────────────────────────────────────
+# Geometry
 
 @dataclass
 class BoundingBox:
@@ -53,7 +53,7 @@ class BoundingBox:
         )
 
 
-# ── Detection ─────────────────────────────────────────────────────────────────
+# Detection
 
 @dataclass
 class DetectedRegion:
@@ -73,7 +73,7 @@ class TableDetectionResult:
     page_dims: Dict[int, Dict[str, float]] = field(default_factory=dict)
 
 
-# ── Layout ────────────────────────────────────────────────────────────────────
+# Layout
 
 @dataclass
 class LayoutElement:
@@ -119,7 +119,7 @@ class LayoutResult:
         return [el.to_dict() for el in self.elements]
 
 
-# ── Text assembly ─────────────────────────────────────────────────────────────
+# Text assembly
 
 @dataclass
 class HierarchicalRow:
@@ -133,7 +133,7 @@ class HierarchicalRow:
     source_chunks: List[str] = field(default_factory=list)
 
 
-# ── Media ─────────────────────────────────────────────────────────────────────
+# Media
 
 @dataclass
 class CroppedMedia:

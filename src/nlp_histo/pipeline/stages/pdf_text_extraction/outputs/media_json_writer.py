@@ -78,7 +78,7 @@ class MediaJsonWriter:
             len(figures), len(tables), out_path.name,
         )
 
-    # ── Internal ──────────────────────────────────────────────────────────────
+    # Internal
 
     @staticmethod
     def _serialise(media: CroppedMedia) -> dict:

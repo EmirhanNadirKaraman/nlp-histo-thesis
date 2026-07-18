@@ -43,7 +43,7 @@ _PROMPT = "Reply with the single word: ok."
 _EMBED_INPUT = ["CD30 is positive in ALCL"]
 
 
-# ── Model inventory (sourced from production config) ──────────────────────────
+# Model inventory (sourced from production config)
 
 def _inventory() -> dict[str, list[str]]:
     """{provider: [chat model ids]} — deduped, in tier order."""
@@ -69,7 +69,7 @@ def _inventory() -> dict[str, list[str]]:
     }
 
 
-# ── Per-provider tiny chat probes ─────────────────────────────────────────────
+# Per-provider tiny chat probes
 
 def _probe_openai_chat(models: list[str]) -> bool:
     key = os.environ.get("OPENAI_API_KEY")
@@ -243,7 +243,7 @@ def cmd_sync_real() -> int:
     return 0 if ok else 1
 
 
-# ── Batch path (the prime submits batches to ALL THREE providers) ─────────────
+# Batch path (the prime submits batches to ALL THREE providers)
 
 # (batch-provider name, env var). Anthropic's batch provider key is "claude".
 _BATCH_PROBES = [

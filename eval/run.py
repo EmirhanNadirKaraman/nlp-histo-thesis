@@ -44,7 +44,7 @@ MAX_FILE_MB    = 10.0  # skip PDFs larger than this (too long / image-heavy)
 def make_config() -> PipelineConfig:
     cfg = PipelineConfig()
 
-    # ── Redirect all outputs into eval/out/ ───────────────────────────────────
+    # Redirect all outputs into eval/out/
     cfg.paths = PathConfig(
         output_root        = OUT,
         files_root         = ROOT / "files",
@@ -62,7 +62,7 @@ def make_config() -> PipelineConfig:
         run_metadata_dir   = OUT / "run_metadata",
     )
 
-    # ── Visualization: annotated PDFs for detection auditing ──────────────────
+    # Visualization: annotated PDFs for detection auditing
     cfg.visualization = VisualizationConfig(
         enabled                     = True,
         save_tatr_visualization     = True,
@@ -70,26 +70,26 @@ def make_config() -> PipelineConfig:
         max_pages                   = None,
     )
 
-    # ── Text: also dump raw pre-assembly elements for debugging ───────────────
+    # Text: also dump raw pre-assembly elements for debugging
     cfg.text = TextAssemblyConfig(
         write_raw_text = True,
     )
 
     cfg.database = DatabaseConfig(enabled=True)
 
-    # ── Cropping: merge same-caption same-page detections from TATR + Docling ──
+    # Cropping: merge same-caption same-page detections from TATR + Docling
     cfg.cropping = CroppingConfig(
         merge_tables_by_caption=True,
         expand_tables_with_footnotes=True,
     )
 
-    # ── Table detector: hybrid (Docling + TATR) ───────────────────────────────
+    # Table detector: hybrid (Docling + TATR)
     cfg.table_detector = TableDetectorType.HYBRID
 
-    # ── Reconstruct tables from list elements where Docling misses them ───────
+    # Reconstruct tables from list elements where Docling misses them
     cfg.docling = DoclingConfig(reconstruct_tables_from_lists=True)
 
-    # ── Runtime: expose seed explicitly ──────────────────────────────────────
+    # Runtime: expose seed explicitly
     cfg.runtime = RuntimeConfig(
         seed=SEED,
         blacklist_if_rows_exceed=200,
@@ -108,7 +108,7 @@ def main() -> None:
     cfg = make_config()
     cfg.prepare()
 
-    # ── Sample N_SAMPLES PDFs reproducibly ───────────────────────────────────
+    # Sample N_SAMPLES PDFs reproducibly
     all_pdfs  = sorted(PDF_DIR.glob("*.pdf"))
     min_bytes = MIN_FILE_MB * 1024 * 1024
     max_bytes = MAX_FILE_MB * 1024 * 1024
@@ -124,7 +124,7 @@ def main() -> None:
     sample = rng.sample(eligible, min(N_SAMPLES, len(eligible)))
     sample.sort()  # stable order within the sample for readable logs
 
-    # ── Skip already-completed documents ─────────────────────────────────────
+    # Skip already-completed documents
     json_dir   = OUT / "json"
     remaining  = [p for p in sample if not (json_dir / f"{p.stem}_media.json").exists()]
     n_done     = len(sample) - len(remaining)

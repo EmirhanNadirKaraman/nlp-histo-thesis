@@ -85,7 +85,7 @@ class DetectionVisualizer:
             return
         self._render(detection.pdf_path, layout=layout, detection=detection, pmcid=pmcid)
 
-    # ── Internal ──────────────────────────────────────────────────────────────
+    # Internal
 
     def _render(
         self,
@@ -105,7 +105,7 @@ class DetectionVisualizer:
         max_pages = self._config.max_pages or len(doc)
         type_counts: dict = {}
 
-        # ── Pre-compute detection rects per page for overlap checks ──────────
+        # Pre-compute detection rects per page for overlap checks
         detection_rects_by_page: dict[int, list] = {}
         if detection:
             for region in detection.regions:
@@ -115,7 +115,7 @@ class DetectionVisualizer:
                         region.bbox.to_fitz_rect(doc[pg - 1].rect.height)
                     )
 
-        # ── Draw layout elements ──────────────────────────────────────────────
+        # Draw layout elements
         if layout:
             for el in layout.elements:
                 if el.page < 1 or el.page > len(doc):
@@ -153,7 +153,7 @@ class DetectionVisualizer:
                     )
                 type_counts[el.type] = type_counts.get(el.type, 0) + 1
 
-        # ── Draw detection regions ────────────────────────────────────────────
+        # Draw detection regions
         if detection:
             for region in detection.regions:
                 if region.bbox.page < 1 or region.bbox.page > len(doc):
@@ -173,7 +173,7 @@ class DetectionVisualizer:
                     color=color,
                 )
 
-        # ── Legend on page 1 ─────────────────────────────────────────────────
+        # Legend on page 1
         if len(doc) > 0 and type_counts:
             first_page = doc[0]
             lx, ly = 20, 20

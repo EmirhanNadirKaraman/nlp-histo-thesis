@@ -63,7 +63,7 @@ SWEEP = [0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
 _DEFAULTS = RelateConfig()  # frozen pipeline thresholds (0.50 / 0.50)
 
 
-# ── rule-shim ────────────────────────────────────────────────────────────────
+# rule-shim
 def build_shim(claim: str, entity: str | None):
     """Minimal CanonicalRule stand-in for the relate_stage NLI helpers.
 
@@ -81,7 +81,7 @@ def build_shim(claim: str, entity: str | None):
     )
 
 
-# ── metrics (pure python, no sklearn dependency) ─────────────────────────────
+# metrics (pure python, no sklearn dependency)
 def confusion(gold: list[str], pred: list[str]) -> dict[str, dict[str, int]]:
     m = {g: {p: 0 for p in CLASSES} for g in CLASSES}
     for g, p in zip(gold, pred):
@@ -110,7 +110,7 @@ def accuracy(gold: list[str], pred: list[str]) -> float:
     return sum(1 for g, p in zip(gold, pred) if g == p) / len(gold) if gold else 0.0
 
 
-# ── scoring ──────────────────────────────────────────────────────────────────
+# scoring
 def score_mode(records: list[dict], scope_aware: bool, pipe) -> list[dict]:
     """Compute bidirectional NLI scores once per mode (threshold-independent).
 
@@ -194,7 +194,7 @@ def main() -> None:
     pipe = _get_nli_pipe()
     rows: list[dict] = []
 
-    # ── per mode: score once, then default (primary) + diagnostic sweep ──
+    # per mode: score once, then default (primary) + diagnostic sweep
     cached: dict[str, list[dict]] = {}
     primary: dict[str, dict] = {}
     for mode in MODES:
@@ -219,13 +219,13 @@ def main() -> None:
                 "recall": round(d["recall"], 4), "f1": round(d["f1"], 4), "support": int(d["support"]),
             })
 
-    # ── scope-aware vs predicate-only (at default) ──
+    # scope-aware vs predicate-only (at default)
     print("\n── scope-aware vs predicate-only (default thresholds) ──")
     d_acc = primary["scope_aware"]["accuracy"] - primary["predicate_only"]["accuracy"]
     d_mf1 = primary["scope_aware"]["macro_f1"] - primary["predicate_only"]["macro_f1"]
     print(f"  Δaccuracy(scope−pred) = {d_acc:+.4f}   Δmacro-F1 = {d_mf1:+.4f}")
 
-    # ── accuracy by difficulty (default thresholds) — quantifies the easy-skew ──
+    # accuracy by difficulty (default thresholds) — quantifies the easy-skew
     print("\n── accuracy by difficulty (default thresholds) ──")
     for mode in MODES:
         pd = per_difficulty(records, primary[mode]["gold"], primary[mode]["pred"])
@@ -239,7 +239,7 @@ def main() -> None:
                 "accuracy": round(pd[d]["accuracy"], 4), "class": d, "support": pd[d]["n"],
             })
 
-    # ── DIAGNOSTIC threshold sweep (NOT tuning — does not change RelateConfig) ──
+    # DIAGNOSTIC threshold sweep (NOT tuning — does not change RelateConfig)
     print("\n── DIAGNOSTIC threshold sweep (sensitivity only; pipeline NOT retuned) ──")
     for mode in MODES:
         scored = cached[mode]

@@ -32,7 +32,7 @@ YELLOW = "\033[33m"
 CYAN   = "\033[36m"
 
 
-# ── Label classification ───────────────────────────────────────────────────────
+# Label classification
 
 def classify_figure(label: str) -> str:
     """'tp' | 'fp' | 'skip'"""
@@ -57,7 +57,7 @@ def classify_table(label: str) -> str:
     return "skip"
 
 
-# ── Loaders ───────────────────────────────────────────────────────────────────
+# Loaders
 
 def load_ann(mode: str) -> dict[str, str]:
     p = ANN_DIR / f"annotations_{mode}.json"
@@ -76,7 +76,7 @@ def load_ground_truth() -> dict[str, dict[str, int]]:
     return records
 
 
-# ── Metrics ───────────────────────────────────────────────────────────────────
+# Metrics
 
 def metrics(tp: int, fp: int, fn: int) -> dict:
     p = tp / (tp + fp) if (tp + fp) else None
@@ -89,12 +89,12 @@ def pct(v) -> str:
     return f"{v:.1%}" if v is not None else "  N/A "
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# Main
 
 def main() -> None:
     gt = load_ground_truth()
 
-    # ── Figures ───────────────────────────────────────────────────────────────
+    # Figures
     fig_ann  = load_ann("json_figures")
     fig_tp   = sum(1 for v in fig_ann.values() if classify_figure(v) == "tp")
     fig_fp   = sum(1 for v in fig_ann.values() if classify_figure(v) == "fp")
@@ -102,7 +102,7 @@ def main() -> None:
     fig_skip = sum(1 for v in fig_ann.values() if classify_figure(v) == "skip")
     fig_m    = metrics(fig_tp, fig_fp, fig_fn)
 
-    # ── Tables ────────────────────────────────────────────────────────────────
+    # Tables
     table_modes = {
         "full":          "json_tables_full",
         "docling":       "json_tables_docling",
@@ -121,7 +121,7 @@ def main() -> None:
 
         table_results[variant] = metrics(tp, fp, fn) | {"skip": skip}
 
-    # ── Output ────────────────────────────────────────────────────────────────
+    # Output
     W = 68
     print(f"\n{BOLD}{'─' * W}{RESET}")
     print(f"  {'':22} {'Precision':>10} {'Recall':>10} {'F1':>8}   TP / FP / FN")
@@ -145,7 +145,7 @@ def main() -> None:
     print(f"{BOLD}{'─' * W}{RESET}")
     print(f"  {DIM}total actual tables: {total_actual_tables} (from ground_truth.csv){RESET}")
 
-    # ── Label breakdowns ──────────────────────────────────────────────────────
+    # Label breakdowns
     sections = [
         ("Figures",               fig_ann,            classify_figure),
         ("Tables — hybrid/full",  load_ann("json_tables_full"),          classify_table),

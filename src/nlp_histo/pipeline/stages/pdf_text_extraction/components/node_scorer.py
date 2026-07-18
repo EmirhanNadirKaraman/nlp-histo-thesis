@@ -57,7 +57,7 @@ from nlp_histo.pipeline.stages.pdf_text_extraction.models.scored_node import Sco
 
 logger = logging.getLogger(__name__)
 
-# ── Type classification ───────────────────────────────────────────────────────
+# Type classification
 
 _ALWAYS_KEEP = frozenset({
     "FIGURE", "PICTURE",
@@ -92,7 +92,7 @@ class NodeScorer:
         self._cfg = config
         self._page_dims = page_dims
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def score(
         self,
@@ -150,7 +150,7 @@ class NodeScorer:
             )
         return [self.score(el, ev) for el, ev in zip(elements, evidences)]
 
-    # ── Internal ──────────────────────────────────────────────────────────────
+    # Internal
 
     def _score_text_node(
         self,

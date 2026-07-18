@@ -40,7 +40,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-# ── Model IDs ─────────────────────────────────────────────────────────────────
+# Model IDs
 
 # L1 — cheapest tier
 GEMINI_L1 = "gemini-2.5-flash-lite"
@@ -64,7 +64,7 @@ CLAUDE_HAIKU  = "claude-haiku-4-5-20251001"
 CLAUDE_SONNET = "claude-sonnet-4-6"
 
 
-# ── Voter list factories (back-compat for run_paper.py) ───────────────────────
+# Voter list factories (back-compat for run_paper.py)
 
 def make_l1_voters():
     """L1 voter list: Gemini-Flash-Lite, GPT-4o-mini, GPT-4.1-nano.
@@ -95,7 +95,7 @@ def make_l3_voter():
     return VoterBatchConfig(CLAUDE_L3, provider="claude")
 
 
-# ── Profiles ──────────────────────────────────────────────────────────────────
+# Profiles
 
 @dataclass
 class CascadeProfile:

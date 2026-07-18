@@ -79,9 +79,7 @@ _DEFAULT_SIM_THRESHOLD = 0.55
 _STATE_SCHEMA_VERSION = 1
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Phase / experiment registry
-# ─────────────────────────────────────────────────────────────────────────────
 
 PHASE_ORDER = (
     "gemini_branch",   # Phase 1A — EXP 1 → 2 → 3
@@ -174,9 +172,7 @@ class ExperimentSpec:
     run: Callable[[ExperimentContext], ExperimentResult] | None = None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # State persistence (durable across invocations)
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _git_commit() -> Optional[str]:
     try:
@@ -230,9 +226,7 @@ def _save_state(
     tmp.replace(path)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # CSV writer (header-only when empty + sibling status.json)
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _write_csv_rows(path: Path, rows: list[dict]) -> str:
     """Write rows to CSV. If ``rows`` is empty, write only a status.json marker.
@@ -273,9 +267,7 @@ def _write_csv_rows(path: Path, rows: list[dict]) -> str:
     return "ok"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Sweep helpers (shared across EXPs 1-6, F)
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _per_scorer_best(rows: list[dict], metric: str = "strict_f1") -> list[dict]:
     """Group rows by ``scorer`` and keep the max-``metric`` row per group.
@@ -355,9 +347,7 @@ def _agreement_weight_grid_around(base_cfg) -> list:
     return specs
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Calibration EXPs (executable)
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _run_branch_scorer_comparison(
     ctx: ExperimentContext, embedder: str, exp_label: str,
@@ -726,9 +716,7 @@ def _run_exp_f(ctx: ExperimentContext) -> ExperimentResult:
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Validation EXPs (stubs)
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _stub_result(exp_id: str, recipe: str) -> ExperimentResult:
     return ExperimentResult(
@@ -878,7 +866,7 @@ def _run_exp_b2(ctx):
     rows: list[dict] = []
     skipped_notes: list[str] = []
 
-    # ── (1) L1 per-voter rows ────────────────────────────────────────────────
+    # (1) L1 per-voter rows
     l1_outputs_per_voter = []
     for v_idx, model in enumerate(l1_models[: shape["n_l1_voters"]]):
         outs = _b2_build_voter_outputs(
@@ -897,7 +885,7 @@ def _run_exp_b2(ctx):
             "notes":                      _b2_baseline_note("l1_only", ctx.split),
         })
 
-    # ── (2) L1-best oracle row (uses silver to pick best L1 voter per case) ──
+    # (2) L1-best oracle row (uses silver to pick best L1 voter per case)
     oracle_outs = _b2_l1_best_oracle(
         l1_outputs_per_voter, silver_by_case, embedder, embed_cache, ctx.sim_threshold,
     )
@@ -917,7 +905,7 @@ def _run_exp_b2(ctx):
         "notes":                      _b2_baseline_note("l1_best_oracle", ctx.split),
     })
 
-    # ── (3) L2 per-voter rows (mid-tier — if populated in cache) ─────────────
+    # (3) L2 per-voter rows (mid-tier — if populated in cache)
     l2_outputs_per_voter: list = []
     if shape["l2_populated_chunks"] > 0 and shape["n_l2_voters"] > 0:
         for v_idx, model in enumerate(l2_models[: shape["n_l2_voters"]]):
@@ -942,7 +930,7 @@ def _run_exp_b2(ctx):
             "(re-prime with L2 voters if you want the mid-tier baseline)."
         )
 
-    # ── (4) L3-only (Sonnet) row ─────────────────────────────────────────────
+    # (4) L3-only (Sonnet) row
     l3_outs = _b2_build_voter_outputs(
         voter_cache, level="l3", voter_index=0, case_filter=_case_in_split,
     )
@@ -958,7 +946,7 @@ def _run_exp_b2(ctx):
         "notes":                      _b2_baseline_note("l3_only", ctx.split),
     })
 
-    # ── (5) Cascade row (if PROVISIONAL_FINAL_MAP_CONFIG present) ────────────
+    # (5) Cascade row (if PROVISIONAL_FINAL_MAP_CONFIG present)
     pfm = ctx.state.get("PROVISIONAL_FINAL_MAP_CONFIG")
     if pfm:
         try:
@@ -1022,7 +1010,7 @@ def _run_exp_b2(ctx):
     )
 
 
-# ── EXP B.2 helpers ──────────────────────────────────────────────────────────
+# EXP B.2 helpers
 
 # Module-level constants so tests can monkey-patch without touching env.
 _B2_CACHE_PATH  = _REPO_ROOT / "eval" / "data" / "map_primer" / "voter_cache.json"
@@ -1376,9 +1364,7 @@ def _run_exp_e(ctx):
     ))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Experiment registry
-# ─────────────────────────────────────────────────────────────────────────────
 
 ALL_EXPERIMENTS: list[ExperimentSpec] = [
     ExperimentSpec(
@@ -1462,9 +1448,7 @@ EXP_BY_NAME = {e.name: e for e in ALL_EXPERIMENTS}
 EXP_BY_ID = {e.exp_id: e for e in ALL_EXPERIMENTS}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Listing / menu
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _print_phase_menu() -> None:
     print("Summarisation experiment orchestrator — phase-based execution.\n")
@@ -1516,9 +1500,7 @@ def _print_variants_table(experiments: list[ExperimentSpec]) -> None:
         print(_fmt(r))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Experiment selection (phase / exp / only filters + dependency handling)
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _resolve_experiments(
     *,
@@ -1615,9 +1597,7 @@ def _topological_order(experiments: list[ExperimentSpec]) -> list[ExperimentSpec
     return out
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Orchestration: run + state persistence + manifest
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _orchestrate(
     experiments: list[ExperimentSpec],
@@ -1634,7 +1614,7 @@ def _orchestrate(
 
     ``fail_fast=True`` stops after the first experiment that raises ``SystemExit``
     (hard-fail on missing state) or any other exception (failed run). Stubs and
-    manual experiments do **not** trigger fail-fast — they return normally with
+    manual experiments do not trigger fail-fast — they return normally with
     ``status="skipped"`` and never increment the failure counter. State and the
     per-invocation manifest are still written before the function returns,
     regardless of whether fail-fast tripped.
@@ -1755,9 +1735,7 @@ def _orchestrate(
     return 0 if failed == 0 else 1
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # CLI
-# ─────────────────────────────────────────────────────────────────────────────
 
 def main(argv: Optional[list] = None) -> int:
     p = argparse.ArgumentParser(

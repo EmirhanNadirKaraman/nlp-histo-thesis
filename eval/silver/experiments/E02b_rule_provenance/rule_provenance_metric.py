@@ -24,7 +24,7 @@ four-link chain the thesis documents, entirely over persisted ``sum_*`` rows:
 
 IDs (``canonical_id`` / ``normal_id``) are unique *per* ``pipeline_run_id``, so
 every resolution is run-scoped. Provenance is a per-run structural property, so
-the carry-rate is computed **per run** and the production run set (the
+the carry-rate is computed per run and the production run set (the
 ``related15`` papers) is headlined; the per-run table shows it is not
 cherry-picked.
 
@@ -172,7 +172,7 @@ def main() -> None:
                 "carry_rate": round(carried / n_final, 4) if n_final else None,
             })
 
-    # ── aggregate ────────────────────────────────────────────────────────────
+    # aggregate
     total = sum(r["final_rules"] for r in per_run)
     carried_total = sum(r["carried"] for r in per_run)
     rel = [r for r in per_run if r["in_related15"]]
@@ -215,7 +215,7 @@ def main() -> None:
     print(f"  all runs with final rules    {carried_total:>6} / {total:<6} "
           f"{pct(carried_total, total)}")
 
-    # ── CSV ──────────────────────────────────────────────────────────────────
+    # CSV
     out_dir = REPORTS_DIR / "E02b_rule_provenance"
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = out_dir / f"rule_provenance_{ts}.csv"

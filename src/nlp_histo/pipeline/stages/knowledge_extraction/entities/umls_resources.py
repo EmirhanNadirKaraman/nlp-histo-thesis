@@ -14,7 +14,7 @@ The loader is silent-failing: if scispaCy / the model is unavailable,
 deliberate for the live per-paper pipeline, which is allowed to skip CUI work
 and carry on.
 
-It is **not** acceptable for workflows whose published numbers depend on CUI
+It is not acceptable for workflows whose published numbers depend on CUI
 enrichment: silently skipping the linker there produces plausible-but-wrong
 output that reports success (B-107). Those callers must use ``require_umls()``,
 which probes the loader and raises ``UmlsUnavailableError`` instead of degrading.
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 # MEMORY line format used by the per-paper pipeline runner.
 _mem: MemoryLogger = get_default_memory_logger()
 
-# ── Process-wide state ────────────────────────────────────────────────────────
+# Process-wide state
 
 _NLP = None
 _LINKER = None

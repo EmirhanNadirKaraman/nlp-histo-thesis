@@ -124,15 +124,15 @@ def main() -> None:
 
     findings = load_findings_from_db(pmcid)
 
-    # ── NORMALIZE ──────────────────────────────────────────────────────────────
+    # NORMALIZE
     normal_findings = NormalizeStage().normalize(findings, pmcid)
     logger.info("NORMALIZE: %d findings → %d NormalFindings", len(findings), len(normal_findings))
 
-    # ── GROUP ──────────────────────────────────────────────────────────────────
+    # GROUP
     groups = GroupStage().group(normal_findings, pmcid)
     logger.info("GROUP: %d NormalFindings → %d FindingGroups", len(normal_findings), len(groups))
 
-    # ── Summary table ──────────────────────────────────────────────────────────
+    # Summary table
     print()
     print(f"{'group_id':<36} {'subject':<10} {'outcome':<20} {'members':>7}  {'directions'}")
     print("-" * 90)
@@ -143,7 +143,7 @@ def main() -> None:
         print(f"{g.group_id:<36} {subj:<10} {outc:<20} {len(g.member_ids):>7}   {dirs}")
     print()
 
-    # ── Write output ───────────────────────────────────────────────────────────
+    # Write output
     out_dir = pathlib.Path("out/inspect")
     out_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")

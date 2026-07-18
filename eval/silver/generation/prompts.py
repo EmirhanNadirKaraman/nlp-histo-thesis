@@ -2,7 +2,7 @@
 
 The silver ``SYSTEM_PROMPT`` is *derived* from the voter MAP prompt
 (``pipeline.stages.knowledge_extraction.llm.prompts._MAP_SYSTEM``) so silver labels are
-extracted under the **same instructions** as the cascade voters — only the
+extracted under the same instructions as the cascade voters — only the
 model tier differs. Two voter-only pieces are stripped, because silver inputs
 are raw paragraphs with no sentence IDs and the ``extract_findings`` tool has no
 ``evidence`` field (and neither piece affects the matched-strict-F1):

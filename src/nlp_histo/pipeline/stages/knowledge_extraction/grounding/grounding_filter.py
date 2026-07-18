@@ -70,7 +70,7 @@ class GroundingFilter:
         self._batch_size = batch_size
         self._device = device if device is not None else _get_device()
 
-    # ── Public API ─────────────────────────────────────────────────────────────
+    # Public API
 
     def filter_findings(self, summary: AuditableSummary) -> AuditableSummary:
         """Delegates to filter_findings_with_scores; discards the dropped list."""
@@ -105,7 +105,7 @@ class GroundingFilter:
 
         return summary.model_copy(update={"findings": kept}), dropped
 
-    # ── Internals ──────────────────────────────────────────────────────────────
+    # Internals
 
     @property
     def _pipe(self):
@@ -136,7 +136,7 @@ class GroundingFilter:
         return [s >= self.threshold for s in scores]
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# Helpers
 
 # DeBERTa-v3 has a 512-token limit shared between premise and hypothesis.
 # _compute_premise_budget() derives the per-call budget from the actual

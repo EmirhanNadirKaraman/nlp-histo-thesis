@@ -66,7 +66,7 @@ logging.basicConfig(
 logger = logging.getLogger("run_single_model")
 
 
-# ── LLM factory ────────────────────────────────────────────────────────────────
+# LLM factory
 
 MODEL_CHOICES = ("gemini", "haiku", "sonnet")
 
@@ -106,7 +106,7 @@ def build_llm(model: str = "gemini"):
     raise ValueError(f"unknown --model {model!r}; expected one of {MODEL_CHOICES}")
 
 
-# ── Runner factories ───────────────────────────────────────────────────────────
+# Runner factories
 
 def build_batch_runners(
     *,
@@ -202,7 +202,7 @@ def build_runner(
     )
 
 
-# ── DB helpers ─────────────────────────────────────────────────────────────────
+# DB helpers
 
 def _fetch_all_pmcids() -> list[str]:
     from nlp_histo.database import get_db_connection
@@ -362,7 +362,7 @@ def sample_pmcids(n: int, seed: int) -> list[str]:
     return chosen
 
 
-# ── Result printer ─────────────────────────────────────────────────────────────
+# Result printer
 
 def _print_result(result: dict) -> None:
     pmcid = result["pmcid"]
@@ -410,7 +410,7 @@ def _print_result(result: dict) -> None:
     print(f"\n  Full result → {out_path}")
 
 
-# ── Entry point ────────────────────────────────────────────────────────────────
+# Entry point
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -481,12 +481,12 @@ def main() -> None:
         parser.print_help()
         sys.exit(1)
 
-    # ── Batch mode (Claude Haiku batch API for MAP) ────────────────────────────
+    # Batch mode (Claude Haiku batch API for MAP)
     if args.batch:
         results = run_batch_mode(pmcids, args)
         n_ok = sum(1 for r in results if r["status"] in ("success", "skipped"))
     else:
-        # ── Sync mode (one paper at a time, single LLM wired into every slot) ──
+        # Sync mode (one paper at a time, single LLM wired into every slot)
         logger.info("Building single-model runner (model=%s)…", args.model)
         runner = build_runner(
             trace=args.trace,
@@ -525,7 +525,7 @@ def main() -> None:
     if len(pmcids) > 1:
         logger.info("Batch complete: %d/%d succeeded", n_ok, len(pmcids))
 
-    # ── Corpus-level relation stage (requires ≥2 successful papers) ───────────
+    # Corpus-level relation stage (requires ≥2 successful papers)
     summaries_dir = Path("out/summaries/summaries")
     corpus_json   = Path("out/summaries/corpus_relations.json")
     ran_corpus    = False
@@ -543,7 +543,7 @@ def main() -> None:
     elif n_ok < 2:
         logger.info("Skipping corpus relate (need ≥2 successful papers; got %d)", n_ok)
 
-    # ── HTML inspector ─────────────────────────────────────────────────────────
+    # HTML inspector
     if not args.no_html:
         try:
             sys.path.insert(0, str(Path(__file__).parent / "inspect"))

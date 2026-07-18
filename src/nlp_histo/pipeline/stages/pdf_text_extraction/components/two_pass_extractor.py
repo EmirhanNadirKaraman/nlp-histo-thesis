@@ -71,7 +71,7 @@ from nlp_histo.pipeline.stages.pdf_text_extraction.models.scored_node import (
 
 logger = logging.getLogger(__name__)
 
-# ── Element type sets ─────────────────────────────────────────────────────────
+# Element type sets
 
 # Elements eligible to act as the body anchor (top-most real text on a page)
 _ANCHOR_ELIGIBLE = frozenset({"TEXT", "LIST_ITEM", "PARAGRAPH", "SECTION_HEADER"})
@@ -155,7 +155,7 @@ class TwoPassTextExtractor:
         self._extractor1: Optional[DoclingLayoutExtractor] = None
         self._extractor2: Optional[DoclingLayoutExtractor] = None
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def process(self, pdf_path: Path) -> TwoPassResult:
         """
@@ -177,7 +177,7 @@ class TwoPassTextExtractor:
 
         logger.info("=== TwoPassTextExtractor: %s ===", pdf_path.name)
 
-        # ── Pass 1 ────────────────────────────────────────────────────────────
+        # Pass 1
         pass1_layout   = self._pass1_layout(pdf_path)
         scored_nodes   = self._score_nodes(pdf_path, pass1_layout)
         body_extents   = self._find_body_extents(scored_nodes, pass1_layout.page_dims)
@@ -190,7 +190,7 @@ class TwoPassTextExtractor:
             pdf_path, pass1_layout.page_dims, body_extents, scored_nodes
         )
 
-        # ── Pass 2 ────────────────────────────────────────────────────────────
+        # Pass 2
         # Re-extract from the masked PDF; fall back to original if masking was
         # skipped (no accepted anchors found, or masking produced zero regions).
         extraction_source = masked_path if masked_path is not None else pdf_path
@@ -218,7 +218,7 @@ class TwoPassTextExtractor:
             table_elements=tbl_els,
         )
 
-    # ── Pass 1: layout ────────────────────────────────────────────────────────
+    # Pass 1: layout
 
     def _pass1_layout(self, pdf_path: Path) -> LayoutResult:
         if self._extractor1 is None:
@@ -230,7 +230,7 @@ class TwoPassTextExtractor:
         logger.info("Pass 1 — Docling layout extraction")
         return self._extractor1.extract(pdf_path)
 
-    # ── Pass 1: evidence + scoring ────────────────────────────────────────────
+    # Pass 1: evidence + scoring
 
     def _score_nodes(
         self,
@@ -267,7 +267,7 @@ class TwoPassTextExtractor:
                 )
         return scored
 
-    # ── Pass 1: body-extent detection ─────────────────────────────────────────
+    # Pass 1: body-extent detection
 
     def _find_body_extents(
         self,
@@ -336,7 +336,7 @@ class TwoPassTextExtractor:
 
         return extents
 
-    # ── Pass 1: masking ───────────────────────────────────────────────────────
+    # Pass 1: masking
 
     def _apply_masks(
         self,
@@ -376,7 +376,7 @@ class TwoPassTextExtractor:
             page_h    = page_info.get("height", 842.0)
             page_w    = page_info.get("width",  595.0)
 
-            # ── 1. Header strip ───────────────────────────────────────────────
+            # 1. Header strip
             fitz_header_bottom = max(0.0, ext["top_y"] - margin)
             # Docling coords: y1=page_h (top of page), y2=page_h-fitz_header_bottom
             docling_y1 = page_h
@@ -390,7 +390,7 @@ class TwoPassTextExtractor:
                     "  Header strip  page=%d  fitz(0 → %.1f)", page_no, fitz_header_bottom
                 )
 
-            # ── 2. Footer strip ───────────────────────────────────────────────
+            # 2. Footer strip
             fitz_footer_top = min(page_h, ext["bottom_y"] + margin)
             # Docling coords: y1=page_h-fitz_footer_top (top of footer), y2=0
             docling_y1_f = page_h - fitz_footer_top
@@ -405,7 +405,7 @@ class TwoPassTextExtractor:
                     page_no, fitz_footer_top, page_h,
                 )
 
-            # ── 3. Sidebar elements ───────────────────────────────────────────
+            # 3. Sidebar elements
             # Identical logic to region_masker.py Category 1, but the x-gap
             # analysis runs on accepted body nodes rather than all elements, so
             # ghost text cannot corrupt the column-boundary estimate.
@@ -433,7 +433,7 @@ class TwoPassTextExtractor:
             ext["left_bound"]  = left_bound
             ext["right_bound"] = right_bound
 
-        # ── 3b. Sidebar elements (element-level, cross-page) ─────────────────
+        # 3b. Sidebar elements (element-level, cross-page)
         # Build a per-page sidebar predicate from the bounds computed above,
         # then walk all scored nodes (accepted AND rejected) and mask those
         # whose bbox is narrow and outside the body column.
@@ -466,14 +466,14 @@ class TwoPassTextExtractor:
                 mask_bboxes.append(el.bbox)
                 n_sidebar += 1
 
-        # ── 4. Individual rejected node bboxes ────────────────────────────────
+        # 4. Individual rejected node bboxes
         for node in scored_nodes:
             if node.keep or node.element.type not in _MASKABLE_TYPES:
                 continue
             mask_bboxes.append(node.element.bbox)
             n_nodes += 1
 
-        # ── 5. Figure, table, and structural-chrome regions ───────────────────
+        # 5. Figure, table, and structural-chrome regions
         # Mirrors Step 3 of the standard pipeline: mask figure/table bboxes so
         # that Pass-2 Docling does not return their interior text as body TEXT
         # elements.  Controlled by TwoPassConfig.mask_figures / mask_tables.
@@ -579,7 +579,7 @@ class TwoPassTextExtractor:
             )
             return None
 
-    # ── Pass 2: re-extraction ─────────────────────────────────────────────────
+    # Pass 2: re-extraction
 
     def _pass2_layout(self, pdf_path: Path) -> LayoutResult:
         if self._extractor2 is None:
@@ -592,7 +592,7 @@ class TwoPassTextExtractor:
         return self._extractor2.extract(pdf_path)
 
 
-# ── Module-level helper ───────────────────────────────────────────────────────
+# Module-level helper
 
 def _separate_by_role(
     elements: List[LayoutElement],

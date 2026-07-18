@@ -57,7 +57,7 @@ Stages 3–4 (voter_subset) are OPTIONAL — skip them and BEST_VOTER_SUBSET sta
 "all" — unless you are chasing a cost-efficient cascade by dropping a diluting voter
 (only meaningful at lower theta, where the cheap voters actually drive decisions).
 
-METRIC / MATCHER — selection uses **optimal / Hungarian** one-to-one semantic
+METRIC / MATCHER — selection uses optimal / Hungarian one-to-one semantic
 matching (max embedding-similarity assignment) as the PRIMARY matcher: metric
 ``strict_f1_optimal``, tie-break lower ``escalate_rate``, then ``f1_optimal``,
 then simpler/closer-to-default config. ``greedy`` matching is reported (``*_greedy``
@@ -67,7 +67,7 @@ optimal *by embedding similarity*, NOT a globally optimal strict-F1 assignment.
 CALIBRATION SPLIT — runs on ``--split all`` by default because the silver
 calibration set is small and a stable point estimate is wanted. ``--split
 dev``/``test`` stay available for sensitivity/debugging but are NOT the default.
-**Sweep scores are CALIBRATION metrics, not unbiased held-out performance.** The
+Sweep scores are CALIBRATION metrics, not unbiased held-out performance. The
 held-out final evaluation is a SEPARATE runbook step (pin → ``run_paper.py
 --sync`` → ``export_pipeline`` → ``evaluate --matcher optimal``); only that score
 is reported as generalization.
@@ -124,13 +124,11 @@ from nlp_histo.evaluation.matching.matcher import SIMILARITY_THRESHOLD
 from eval.silver.analysis.map_context import _load_map_context  # reused loader
 from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfig, HybridConfig
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Pin-as-you-go winners. Edit after each stage. Current values = the E06 family_refine
 # QUALITY winner (gemini/hybrid/greedy, entity-heavy blend, θ=0.9): strict_f1_optimal
 # 0.7133 at escalate_rate 0.962 — CONFIRMED by map_theta (E07) at the full score fn.
 # The cheap "economy" operating point is NOT pinned here; it lives in the E06 frontier
 # CSV / VOTER_SUBSET_SCREEN_CONFIGS (run voter_subset stages to pursue it).
-# ─────────────────────────────────────────────────────────────────────────────
 FINALIST_STRUCTURES: list[tuple[str, str, str]] = [   # (embedder, scorer_kind, alignment)
     # E05 structure_screen 2026-06-21 (sweep_20260621T134042) — 12 finalists,
     # ranked by strict_f1_optimal at each structure's max-F1 cell. Annotations =
@@ -203,9 +201,7 @@ BEST_SINGLE_VOTER_POLICY = "escalate"   # SHIPPED gate, chosen by E08 map_gates 
 #                                         so the escalate map_theta re-run regenerates the shipped curve WITHOUT re-selecting θ.
 BEST_FORCE_ESCALATE_POLARITY = True     # E08 — force-escalate on polarity conflict (unchanged default; ~no effect at θ0.9).
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Grids. (theta/reject reuse the validated map_theta_sweep engine grids.)
-# ─────────────────────────────────────────────────────────────────────────────
 EMBEDDER_GRID = ("gemini", "openai")
 SCORER_GRID = ("embedding", "hybrid")
 ALIGNMENT_GRID = ("soft_max", "greedy", "hungarian")
@@ -299,7 +295,7 @@ _FINALIST_EMPTY_MSG = (
     "  3. Re-run: python -m eval.silver.analysis.run_new_summarization_sweeps --stage family_refine"
 )
 
-# ── Voter-subset / leave-one-voter-out (targeted, AFTER family_refine) ────────
+# Voter-subset / leave-one-voter-out (targeted, AFTER family_refine)
 # Single-voter drops only (no combined L1+L2 drops yet). drop_lN_i removes the
 # i-th voter of level N (stable index → model; see docs/EXPERIMENTS.md).
 VOTER_SUBSET_GRID = (
@@ -458,7 +454,7 @@ _CSV_FIELDS = [
 ]
 
 
-# ── ScorerSpec builders ──────────────────────────────────────────────────────
+# ScorerSpec builders
 
 def _pinned_agreement(alignment: str) -> AgreementConfig:
     """AgreementConfig at the pinned BEST_* weights, with the given alignment.
@@ -529,7 +525,7 @@ def _refine_specs(emb: str, scorer: str, alignment: str) -> list[ScorerSpec]:
     return specs
 
 
-# ── Voter-subset filtering + identity (leave-one-voter-out) ──────────────────
+# Voter-subset filtering + identity (leave-one-voter-out)
 
 def _voter_labels() -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
     """Canonical index→(provider, model) for L1 and L2, from _make_voters()."""
@@ -625,7 +621,7 @@ def _spec_from_config(cfg: dict) -> ScorerSpec:
     return ScorerSpec(name, sk, weights)
 
 
-# ── Per-stage plan (specs + axes + name→{kind,alignment,embedder} maps) ───────
+# Per-stage plan (specs + axes + name→{kind,alignment,embedder} maps)
 
 def _stage_plan(stage: str):
     """Return (embedders, specs, thetas, rejects, policies, polarities,
@@ -694,7 +690,7 @@ def _effective_specs(emb: str, specs: list[ScorerSpec], embedder_of) -> list[Sco
     return [s for s in specs if embedder_of[s.name] == emb]
 
 
-# ── Ranking (primary metric, tie-breaks: escalate, f1_optimal, simpler config) ─
+# Ranking (primary metric, tie-breaks: escalate, f1_optimal, simpler config)
 
 def _deviation(row: dict) -> int:
     """Count of fields differing from the production defaults (gemini / embedding /
@@ -838,7 +834,7 @@ def _select_finalists(rows: list[dict], metric: str, top_k: int, keep_within: fl
     return [(s, reasons[s], evidence[s]) for s, _ in ranked if s in reasons]
 
 
-# ── Cells + checkpoint / resume ──────────────────────────────────────────────
+# Cells + checkpoint / resume
 
 def _stage_voter_subset(stage: str) -> str:
     """Grid stages run a single voter subset: 'all' (screen/family), or BEST_VOTER_SUBSET
@@ -1035,7 +1031,7 @@ def _cleanup_checkpoint(stage: str) -> None:
             p.unlink()
 
 
-# ── Variant listing (from _iter_cells, the same source the run uses) ─────────
+# Variant listing (from _iter_cells, the same source the run uses)
 
 def _list_variants(stage: str) -> list[str]:
     """Human-readable per-cell names (no API, no cache needed)."""
@@ -1202,7 +1198,7 @@ def _report_structure_screen(rows: list[dict], args, csv_path: Path) -> None:
     print("]")
 
 
-# ── Voter-subset reports (config blocks for the next stage + pin hints) ───────
+# Voter-subset reports (config blocks for the next stage + pin hints)
 
 def _num(v):
     if v in (None, ""):

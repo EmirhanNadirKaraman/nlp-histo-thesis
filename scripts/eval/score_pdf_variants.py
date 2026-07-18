@@ -16,12 +16,12 @@ Reads, for each sweep variant under ``out/sweeps/<variant>/``:
 
 Emits four metrics per (variant, kind):
 
-  * **crop** F1   — bbox correctness, with GT-derived recall denominator
-  * **caption** accuracy (P only) — caption-attachment correctness on
+  * crop F1   — bbox correctness, with GT-derived recall denominator
+  * caption accuracy (P only) — caption-attachment correctness on
                                     detected items
-  * **footnote** accuracy (P only) — footnote-inclusion correctness on
+  * footnote accuracy (P only) — footnote-inclusion correctness on
                                      detected items
-  * **strict** F1 — all three dims must score 1.0 for TP
+  * strict F1 — all three dims must score 1.0 for TP
 
 Compound labels (``"wrong caption + missing footnotes"``) are split on
 ``+`` and combined element-wise via MIN (most pessimistic per dim).
@@ -57,7 +57,7 @@ _DIM_NAMES = ("crop", "caption", "footnote", "mask")
 _GT_RECALL_DIMS = frozenset({"crop", "mask"})
 
 
-# ── Label classification (kept in sync with eval/precision_recall.py) ─────────
+# Label classification (kept in sync with eval/precision_recall.py)
 
 
 def classify_figure(label: str) -> str:
@@ -88,7 +88,7 @@ def classify_table(label: str) -> str:
     return "skip"
 
 
-# ── Loaders ───────────────────────────────────────────────────────────────────
+# Loaders
 
 
 def load_emitted_crops(sweep_dir: Path) -> Tuple[set[str], set[str]]:
@@ -145,7 +145,7 @@ def load_ground_truth() -> Dict[str, Dict[str, int]]:
     return out
 
 
-# ── Detector mode resolution ──────────────────────────────────────────────────
+# Detector mode resolution
 
 
 # Map sweep directory name → (table_mode, figure_mode) for label lookup.
@@ -173,7 +173,7 @@ def detector_modes(variant_dir: Path) -> Tuple[str, str]:
     return table_mode, "json_figures"
 
 
-# ── Metrics ───────────────────────────────────────────────────────────────────
+# Metrics
 
 
 def metrics(tp: int, fp: int, fn: int) -> Dict[str, Optional[float]]:
@@ -184,7 +184,7 @@ def metrics(tp: int, fp: int, fn: int) -> Dict[str, Optional[float]]:
             "precision": p, "recall": r, "f1": f1}
 
 
-# ── Label rubric loading + parsing ────────────────────────────────────────────
+# Label rubric loading + parsing
 
 
 _BUILTIN_RUBRIC = {
@@ -205,10 +205,10 @@ def load_rubric(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
     to per-dimension scores (merged across shared / figure / table blocks).
 
     Supports two YAML formats:
-      * **New (2026-05-19):** three top-level blocks ``shared_labels:``,
+      * New (2026-05-19): three top-level blocks ``shared_labels:``,
         ``figure_labels:``, ``table_labels:``.  The flat dict merges all
         three so any label looked up by name still resolves.
-      * **Legacy:** a single top-level ``labels:`` block.
+      * Legacy: a single top-level ``labels:`` block.
 
     Falls back to the built-in rubric if the file is missing, YAML import
     fails, or no recognised block is present.
@@ -489,7 +489,7 @@ def score_kind_rubric(
         else:
             strict_fp += 1
 
-    # ── Per-dim metrics ──────────────────────────────────────────────────────
+    # Per-dim metrics
     result_dims: Dict[str, Optional[Dict[str, Any]]] = {}
     for d in _DIM_NAMES:
         agg = per_dim[d]
@@ -518,7 +518,7 @@ def score_kind_rubric(
         m["fp_by_label"] = dict(agg["fp_by_label"])
         result_dims[d] = m
 
-    # ── Strict overall ───────────────────────────────────────────────────────
+    # Strict overall
     if fn_count is not None:
         s_fn = fn_count
     elif total_actual is not None:
@@ -592,7 +592,7 @@ def score_kind(
     return m
 
 
-# ── Rendering ─────────────────────────────────────────────────────────────────
+# Rendering
 
 
 def _fmt(v) -> str:
@@ -803,7 +803,7 @@ def render_markdown_rubric(rows: List[Dict[str, Any]], *,
     return "\n".join(out) + "\n"
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# Main
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -842,7 +842,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         else {"figures": {}, "tables": {}}
     )
 
-    # ── Optional pre-scoring review of unknown labels ────────────────────────
+    # Optional pre-scoring review of unknown labels
     if args.review_unknown and not args.legacy:
         all_label_dicts: List[Dict[str, str]] = []
         for variant_dir in sorted(p for p in args.sweeps_root.iterdir() if p.is_dir()):

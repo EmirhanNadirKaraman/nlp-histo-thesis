@@ -43,7 +43,7 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# ── Reason code vocabularies ───────────────────────────────────────────────────
+# Reason code vocabularies
 
 _QUALITY_CODES = [
     "CORRECT_GROUNDING",      # all claims correctly grounded in source
@@ -61,7 +61,7 @@ _COMPARISON_CODES = _QUALITY_CODES + [
     "BOTH_UNACCEPTABLE",      # neither reliable; keep_ok=False
 ]
 
-# ── Judge output schemas ───────────────────────────────────────────────────────
+# Judge output schemas
 
 class QualityLabel(BaseModel):
     """Output schema for single-output quality evaluation (types A and C)."""
@@ -80,7 +80,7 @@ class ComparisonLabel(BaseModel):
     explanation: str
 
 
-# ── Prompt templates ───────────────────────────────────────────────────────────
+# Prompt templates
 
 _QUALITY_SYSTEM = """\
 You are a histopathology research assistant evaluating whether LLM-extracted findings \
@@ -147,7 +147,7 @@ Compare and return a structured label.\
 """
 
 
-# ── LLM + chain construction ───────────────────────────────────────────────────
+# LLM + chain construction
 
 def _make_llm(judge_model: str):
     if judge_model.startswith("claude"):
@@ -177,7 +177,7 @@ def _build_comparison_chain(llm):
     )
 
 
-# ── Finding formatter ──────────────────────────────────────────────────────────
+# Finding formatter
 
 def _format_findings(output_dict: dict | None) -> str:
     if not output_dict:
@@ -197,7 +197,7 @@ def _format_findings(output_dict: dict | None) -> str:
     return "\n\n".join(lines)
 
 
-# ── Record type classifier ─────────────────────────────────────────────────────
+# Record type classifier
 
 def _record_type(rec: dict) -> Literal["A", "B", "C"]:
     if rec.get("decision") == "keep":
@@ -207,7 +207,7 @@ def _record_type(rec: dict) -> Literal["A", "B", "C"]:
     return "C"
 
 
-# ── Per-record labeling ────────────────────────────────────────────────────────
+# Per-record labeling
 
 def _label_record(
     rec: dict,
@@ -264,7 +264,7 @@ def _print_dry_run(rec: dict, label_type: str) -> None:
         print(f"\n--- findings ---\n{_format_findings(rec.get('output'))[:400]}")
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
+# CLI
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(

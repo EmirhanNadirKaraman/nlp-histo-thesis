@@ -52,7 +52,7 @@ class HybridTableDetector:
                 TATRTableDetector(tatr_config or TATRConfig()),
             ]
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def detect(self, pdf_path: Path) -> TableDetectionResult:
         """
@@ -90,7 +90,7 @@ class HybridTableDetector:
 
         return self._merge(results, pdf_path)
 
-    # ── Merging logic ─────────────────────────────────────────────────────────
+    # Merging logic
 
     def _merge(
         self, results: List[TableDetectionResult], pdf_path: Path

@@ -68,7 +68,7 @@ def main() -> int:
 
     client = get_client()
 
-    # ── poll all batches until every one has ended (every --poll-interval s) ───
+    # poll all batches until every one has ended (every --poll-interval s)
     while True:
         all_ended = True
         for st in states:
@@ -87,7 +87,7 @@ def main() -> int:
         print(f"  … not all ended; re-checking in {args.poll_interval}s (Ctrl-C to stop)\n")
         time.sleep(args.poll_interval)
 
-    # ── gather results, latest-submitted batch wins per custom_id ─────────────
+    # gather results, latest-submitted batch wins per custom_id
     merged: dict[str, object] = {}
     raw_dump: list[dict] = []
     for st in states:  # submission order; later overwrites earlier
@@ -103,7 +103,7 @@ def main() -> int:
         for d in raw_dump:
             fh.write(json.dumps(d, ensure_ascii=False) + "\n")
 
-    # ── extract per batch ─────────────────────────────────────────────────────
+    # extract per batch
     RAW_BATCHES_DIR.mkdir(parents=True, exist_ok=True)
     failed: list[str] = []
     ok = 0

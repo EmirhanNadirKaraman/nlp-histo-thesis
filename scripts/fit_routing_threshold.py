@@ -52,7 +52,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.routing.routing_dataset impo
 load_dotenv()
 
 
-# ── CLI ────────────────────────────────────────────────────────────────────────
+# CLI
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
@@ -77,7 +77,7 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-# ── Data loading ───────────────────────────────────────────────────────────────
+# Data loading
 
 def load_fitting_data(
     records_path: str | Path,
@@ -106,7 +106,7 @@ def load_fitting_data(
     return all_records, ag_records, labeled, acceptable, unacceptable
 
 
-# ── Metrics ────────────────────────────────────────────────────────────────────
+# Metrics
 
 def _fmt(v: float | None) -> str:
     """Format float for CSV; empty string for NaN/None."""
@@ -163,7 +163,7 @@ def compute_metrics(
     return rows
 
 
-# ── Threshold selection ────────────────────────────────────────────────────────
+# Threshold selection
 
 def select_theta(
     metrics: list[dict],
@@ -216,7 +216,7 @@ def select_theta(
     return best["theta"], best, False, warnings
 
 
-# ── I/O ────────────────────────────────────────────────────────────────────────
+# I/O
 
 def write_csv(metrics: list[dict], out_dir: Path) -> None:
     path = out_dir / "metrics.csv"
@@ -312,7 +312,7 @@ def plot_curves(
     print(f"[plot]     {path}")
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
+# Main
 
 def main() -> None:
     args = parse_args()

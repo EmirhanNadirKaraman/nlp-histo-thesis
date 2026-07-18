@@ -36,7 +36,7 @@ from nlp_histo.pipeline.stages.pdf_text_extraction.models.dto import (
 logger = logging.getLogger(__name__)
 
 
-# ── Stage names ───────────────────────────────────────────────────────────────
+# Stage names
 
 class StageName:
     """Disk paths depend on these. Renaming a value here invalidates the
@@ -47,7 +47,7 @@ class StageName:
     TEXT_ASSEMBLY = "text_assembly"
 
 
-# ── Cache version ─────────────────────────────────────────────────────────────
+# Cache version
 #
 # !!! BUMP THIS WHEN ANY OF THE FOLLOWING CHANGES FOR A CACHED STAGE !!!
 #   * the on-disk JSON format (loader/dumper schema)
@@ -84,7 +84,7 @@ _LOADER_EXPECTED_ERRORS = (
 )
 
 
-# ── Inline atomic write helpers ───────────────────────────────────────────────
+# Inline atomic write helpers
 # Inlined deliberately rather than extracted from
 # `knowledge_extraction.persistence.write_json` — see B-027 plan "implementation
 # contingency". The summarisation helper has many branches (Pydantic,
@@ -139,7 +139,7 @@ def _atomic_write_text(path: Path, content: str) -> None:
         raise
 
 
-# ── Per-stage (loader, dumper, summarise) triples ─────────────────────────────
+# Per-stage (loader, dumper, summarise) triples
 
 def dump_table_detection(result: TableDetectionResult) -> dict:
     return {
@@ -222,7 +222,7 @@ def load_hierarchical_rows(path: Path) -> list[HierarchicalRow]:
     ]
 
 
-# ── _StageCache ───────────────────────────────────────────────────────────────
+# _StageCache
 
 class _StageCache:
     """Per-(stage, pmcid) JSON cache with config-hash invalidation.

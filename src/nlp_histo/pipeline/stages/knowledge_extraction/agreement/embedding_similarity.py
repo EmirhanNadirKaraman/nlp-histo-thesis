@@ -180,7 +180,7 @@ class EmbeddingSimilarityStrategy:
         )
         return matrix, breakdowns
 
-    # ── Shared internals ───────────────────────────────────────────────────────
+    # Shared internals
 
     def _build_matrix_and_breakdowns(
         self,

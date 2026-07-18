@@ -40,7 +40,7 @@ from .pricing import PriceBook
 logger = logging.getLogger(__name__)
 
 
-# ── Aggregation primitives ──────────────────────────────────────────────────
+# Aggregation primitives
 
 
 @dataclass
@@ -104,7 +104,7 @@ def _sum_cost(records: Iterable[LLMUsageRecord], book: PriceBook) -> Aggregate:
     return agg
 
 
-# ── Scenario building ────────────────────────────────────────────────────────
+# Scenario building
 
 
 @dataclass
@@ -304,7 +304,7 @@ def _annotate_scenarios(rows: list[ScenarioRow], n_papers: int) -> None:
             )
 
 
-# ── Cascade & batch savings ──────────────────────────────────────────────────
+# Cascade & batch savings
 
 
 def _cascade_savings(
@@ -401,7 +401,7 @@ def _batch_savings(
     }
 
 
-# ── Public API ───────────────────────────────────────────────────────────────
+# Public API
 
 
 def build_report_from_records(
@@ -486,7 +486,7 @@ def write_cost_reports(
     return out
 
 
-# ── Markdown rendering ───────────────────────────────────────────────────────
+# Markdown rendering
 
 
 def _money(x: float | None) -> str:

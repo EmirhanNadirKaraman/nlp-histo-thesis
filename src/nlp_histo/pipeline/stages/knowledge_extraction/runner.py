@@ -324,7 +324,7 @@ class KnowledgeExtractionRunner:
             "escalation_model": _model_name(escalation_llm),
         }
 
-    # ── Public API ─────────────────────────────────────────────────────────────
+    # Public API
 
     @property
     def last_map_escalation_counts(self) -> dict[str, int]:
@@ -862,7 +862,7 @@ class KnowledgeExtractionRunner:
         )
         return stage.relate_from_dir(src, out, run_selection=run_selection, manifest=manifest)
 
-    # ── Disk I/O ───────────────────────────────────────────────────────────────
+    # Disk I/O
 
     @staticmethod
     def load_paper_from_db(pmcid: str, db_url: str | None = None) -> dict:
@@ -947,7 +947,7 @@ class KnowledgeExtractionRunner:
             self._db, db_id, status, error=error, narrative_summary=narrative_summary,
         )
 
-    # ── Phase 2: DB persistence ────────────────────────────────────────────────
+    # Phase 2: DB persistence
 
     def _clear_normalized_run_data(self, db_id: int, pmcid: str) -> None:
         _persistence_clear_normalized_run_data(self._db, db_id, pmcid)
@@ -955,7 +955,7 @@ class KnowledgeExtractionRunner:
     def _replace_verbatim_from_db(self, chunk_summaries: list) -> None:
         _persistence_replace_verbatim_from_db(self._db, chunk_summaries)
 
-    # ── Filesystem artifact persistence (opt-in) ───────────────────────────────
+    # Filesystem artifact persistence (opt-in)
 
     def _make_artifact_writer(
         self, run_id: str, pmcid: str,

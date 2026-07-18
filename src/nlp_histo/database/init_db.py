@@ -1,11 +1,11 @@
 """Fresh-database initializer:  ``python -m database.init_db``
 
-Creates and verifies the current SQLAlchemy ORM schema on a **new** PostgreSQL
+Creates and verifies the current SQLAlchemy ORM schema on a new PostgreSQL
 database. Table creation is delegated to the existing
 ``DatabaseConnection.create_tables()`` (``Base.metadata.create_all``) — this module
 adds configuration validation, state classification, and verification around it.
 
-Alembic is **not** used for fresh initialization: revision 0001 references
+Alembic is not used for fresh initialization: revision 0001 references
 ``documents``, which no revision creates, so ``alembic upgrade head`` cannot build
 an empty database. See the README's "Schema ownership" section.
 
@@ -82,7 +82,7 @@ class SchemaReport:
     extra_tables: list[str] = field(default_factory=list)
 
 
-# ── Configuration ────────────────────────────────────────────────────────────
+# Configuration
 
 def load_env(env_path: Path | None = None) -> None:
     """Load the project's .env using the same convention as db_connection.py."""
@@ -132,7 +132,7 @@ def target_description(cfg: Mapping[str, str]) -> str:
     return format_target_config(cfg)
 
 
-# ── Verification (small, testable units; each takes an Inspector-like object) ──
+# Verification (small, testable units; each takes an Inspector-like object)
 
 def expected_tables() -> list[str]:
     return sorted(Base.metadata.tables)
@@ -210,7 +210,7 @@ def verify_schema(inspector, present: Iterable[str]) -> list[Problem]:
             + verify_unique_constraints(inspector, present))
 
 
-# ── State classification (must run BEFORE any create_tables() call) ───────────
+# State classification (must run BEFORE any create_tables() call)
 
 def _inspector(engine):
     """Indirection so tests can substitute an Inspector without patching SQLAlchemy."""
@@ -235,7 +235,7 @@ def classify(inspector) -> SchemaReport:
     return SchemaReport(EXTRA_OBJECTS if extra else CURRENT, [], [], extra)
 
 
-# ── Smoke test (never commits; rolls back in a finally block) ─────────────────
+# Smoke test (never commits; rolls back in a finally block)
 
 def run_smoke(engine) -> None:
     """Insert one Document + TextElement, read them back, roll everything back.
@@ -278,7 +278,7 @@ def run_smoke(engine) -> None:
         conn.close()
 
 
-# ── CLI ──────────────────────────────────────────────────────────────────────
+# CLI
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(

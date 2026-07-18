@@ -41,18 +41,18 @@ from nlp_histo.pipeline.stages.pdf_text_extraction.config import DoclingConfig, 
 OUTPUT_DIR = Path("out/docling_compare")
 CACHE_ROOT = OUTPUT_DIR / "layout_cache"
 
-# ── Variant definitions ───────────────────────────────────────────────────────
+# Variant definitions
 # Each entry: (name, DoclingConfig).  Add or remove entries freely.
 # The first variant is treated as the baseline for diff comparisons.
 
 _BASE = DoclingConfig()
 
 VARIANTS: Dict[str, DoclingConfig] = {
-    # ── Baseline ──────────────────────────────────────────────────────────────
+    # Baseline
     # OCR disabled — relies entirely on embedded PDF text layer (production default)
     "no_ocr": _BASE,
 
-    # ── OCR engine comparisons ────────────────────────────────────────────────
+    # OCR engine comparisons
     # OCR on non-text regions only (native text is used where available)
     "ocr_easyocr": replace(_BASE, do_ocr=True, ocr_engine=OcrEngine.EASYOCR),
     "ocr_tesseract": replace(_BASE, do_ocr=True, ocr_engine=OcrEngine.TESSERACT),
@@ -65,18 +65,18 @@ VARIANTS: Dict[str, DoclingConfig] = {
         _BASE, do_ocr=True, force_full_page_ocr=True, ocr_engine=OcrEngine.TESSERACT
     ),
 
-    # ── Image resolution comparisons ─────────────────────────────────────────
+    # Image resolution comparisons
     # Higher resolution improves OCR quality at the cost of speed
     "scale_1x": replace(_BASE, images_scale=1.0),
     "scale_3x": replace(_BASE, images_scale=3.0),
 
-    # ── Table structure analysis ──────────────────────────────────────────────
+    # Table structure analysis
     # Disabling skips table-structure model; tables become plain text blocks
     "no_table_structure": replace(_BASE, do_table_structure=False),
 }
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 
 def _write_rows(rows, path: Path, pmcid: str, variant: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -150,7 +150,7 @@ def process_pdf(
     return results
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# Main
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Compare Docling extraction options")

@@ -10,11 +10,11 @@ Network behaviour: same NCBI OA endpoint, same ``tgz`` link selection, same
 ``ftp://`` → ``https://`` scheme fix, same 0.5 s politeness delay, same skip-and-continue
 handling for papers outside the OA subset.
 
-⚠ **NCBI's OA API currently advertises paths it does not serve.** Every legacy FTP tree
+NCBI's OA API currently advertises paths it does not serve. Every legacy FTP tree
 was moved under ``/pub/pmc/deprecated/`` (NCBI readme, updated 2026-04-10) while
 ``oa.fcgi`` still returns the pre-move URLs, so the advertised link 404s for every paper.
 :func:`candidate_urls` therefore tries the advertised URL first and the relocated one
-second. **NCBI will delete the legacy files in August 2026**; after that this module
+second. NCBI will delete the legacy files in August 2026; after that this module
 stops working and must move to the AWS OA service
 (https://pmc.ncbi.nlm.nih.gov/tools/cloud/). See BUGS.md B-118.
 """
@@ -44,9 +44,9 @@ _GZIP_MAGIC = b"\x1f\x8b"
 class DownloadReport:
     """Outcome of one ``download_papers`` run.
 
-    The three categories are deliberately distinct: **skipped** is a legitimate,
+    The three categories are deliberately distinct: skipped is a legitimate,
     expected outcome (already on disk, or the paper is simply not in the OA subset),
-    while **failed** means we asked for something that should have been there and did
+    while failed means we asked for something that should have been there and did
     not get it. Only the latter makes the run unsuccessful.
     """
 
@@ -113,7 +113,7 @@ def get_download_link(pmcid: str) -> str | None:
         return None
 
 
-# ── AWS Open-Access dataset (the successor to the FTP tarballs) ───────────────
+# AWS Open-Access dataset (the successor to the FTP tarballs)
 #
 # NLM publishes the OA Subset on AWS, free and without login
 # (https://pmc.ncbi.nlm.nih.gov/tools/cloud/, https://registry.opendata.aws/ncbi-pmc).
@@ -146,7 +146,7 @@ def publisher_pdf_filename(xml_bytes: bytes) -> str:
 
         <self-uri content-type="pmc-pdf" xlink:href="dermatopathology-08-00036.pdf"/>
 
-    The value is **untrusted**: it is publisher-supplied text that becomes a path we
+    The value is untrusted: it is publisher-supplied text that becomes a path we
     write to. Everything below is a rejection, not a repair — a surprising value means we
     do not understand the article, and guessing is how you get a wrong identifier or a
     write outside the corpus directory.
@@ -210,7 +210,7 @@ def aws_object_keys(pmcid: str) -> List[str]:
 
     The trailing dot in the prefix matters: ``PMC839591.`` must not match ``PMC8395919…``.
 
-    Version selection is **numeric**, so v10 beats v9 — a lexical ``max`` would pick
+    Version selection is numeric, so v10 beats v9 — a lexical ``max`` would pick
     ``.9`` and quietly serve a superseded article.
 
     Pagination is followed to exhaustion. S3 caps a response at 1000 keys and signals
@@ -245,12 +245,12 @@ def download_paper_aws(pmcid: str, corpus_dir: Path, *, overwrite: bool = False)
     """Fetch one paper's PDF + XML from AWS into ``corpus_dir/<pmcid>/``.
 
     Reproduces exactly what ``acquire unpack`` produces from a tarball — the XML as
-    ``<PMCID>.nxml``, the PDF under the **publisher's** filename — so ``acquire organize``
+    ``<PMCID>.nxml``, the PDF under the publisher's filename — so ``acquire organize``
     consumes it unchanged and both sources reach the *same* document ID. AWS names its
     objects ``PMC8395919.1.pdf``; using that would mint ``PMC8395919.1`` as a new document
     ID and duplicate a paper the corpus already holds (B-119).
 
-    The XML is fetched **first**, because it is what names the PDF.
+    The XML is fetched first, because it is what names the PDF.
 
     Returns ``"succeeded"``, ``"failed"`` or ``"skipped"`` — the same three-way outcome
     the FTP path reports (B-117), so neither source can turn a miss into a success.
@@ -348,7 +348,7 @@ def download_object(url: str, target: Path, *, magic: bytes | None = None) -> bo
     return True
 
 
-# ── legacy FTP tarballs (works until NCBI deletes them, August 2026) ──────────
+# legacy FTP tarballs (works until NCBI deletes them, August 2026)
 
 def candidate_urls(advertised: str) -> List[str]:
     """The URLs worth trying for an OA package the API advertises, in order.
@@ -358,10 +358,10 @@ def candidate_urls(advertised: str) -> List[str]:
     URL 404s for every paper — verified 0/5 across 2010–2025 publications, with the same
     file present at 7 556 375 bytes under ``deprecated/`` (B-118).
 
-    The advertised URL is tried **first** so this repairs itself the day NCBI updates its
+    The advertised URL is tried first so this repairs itself the day NCBI updates its
     API, and the relocation is a fallback rather than a hard-coded assumption.
 
-    ⚠ **The fallback has an expiry date.** NCBI states the legacy files "will be removed
+    The fallback has an expiry date. NCBI states the legacy files "will be removed
     in August 2026". After that both candidates 404 and acquisition fails loudly — which
     is correct, and is the signal to migrate to the AWS OA service
     (https://pmc.ncbi.nlm.nih.gov/tools/cloud/). See THESIS.md.
@@ -442,7 +442,7 @@ def download_papers(
     ``organize`` follows directly and no unpack step is needed.
 
     ``source="ftp"`` fetches the legacy ``.tar.gz`` packages into ``output_dir`` and still
-    requires ``acquire unpack``. **NCBI deletes that tree in August 2026** (B-118); it is
+    requires ``acquire unpack``. NCBI deletes that tree in August 2026 (B-118); it is
     kept only so a mid-migration corpus can still be resumed.
 
     Returns a :class:`DownloadReport`. Validates its inputs before creating anything: a
@@ -454,10 +454,10 @@ def download_papers(
 
     Outcomes are counted in three buckets, and the distinction is the point (B-117):
 
-    * **succeeded** — a valid archive is on disk;
-    * **skipped** — already present, or the paper is not in the OA subset. Both are
+    * succeeded — a valid archive is on disk;
+    * skipped — already present, or the paper is not in the OA subset. Both are
       expected and neither is an error;
-    * **failed** — NCBI advertised a package we could not get, or what arrived was not a
+    * failed — NCBI advertised a package we could not get, or what arrived was not a
       usable archive. Any of these makes the run unsuccessful, even alongside successes.
     """
     pmcid_file = Path(pmcid_file)

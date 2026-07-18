@@ -136,7 +136,7 @@ def evaluate_chunk(
     )
 
 
-# ── Per-chunk decision log ─────────────────────────────────────────────────
+# Per-chunk decision log
 
 
 @dataclass

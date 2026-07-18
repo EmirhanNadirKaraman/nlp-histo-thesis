@@ -26,7 +26,7 @@ COST_WARNING = (
 )
 
 
-# ── handlers: each imports its workflow lazily, then delegates ────────────────
+# handlers: each imports its workflow lazily, then delegates
 
 def _db(args: argparse.Namespace) -> int:
     from nlp_histo.database import init_db
@@ -120,7 +120,7 @@ def _replay(args: argparse.Namespace) -> int:
     return replay.main(args.forwarded)
 
 
-# ── parser ────────────────────────────────────────────────────────────────────
+# parser
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(

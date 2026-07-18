@@ -52,7 +52,7 @@ class PipelineCache:
         self._misses = {"map": 0}
         self._load()
 
-    # ── Persistence ────────────────────────────────────────────────────────────
+    # Persistence
 
     def _load(self) -> None:
         if not self.path.exists():
@@ -71,7 +71,7 @@ class PipelineCache:
             encoding="utf-8",
         )
 
-    # ── Key builders ───────────────────────────────────────────────────────────
+    # Key builders
 
     @staticmethod
     def _input_hash(sentences: list[dict]) -> str:
@@ -102,7 +102,7 @@ class PipelineCache:
             PipelineCache._input_hash(sentences),
         ))
 
-    # ── MAP ────────────────────────────────────────────────────────────────────
+    # MAP
 
     def get_map(
         self,
@@ -178,7 +178,7 @@ class PipelineCache:
             return None
         return outputs
 
-    # ── Stats ──────────────────────────────────────────────────────────────────
+    # Stats
 
     def stats_str(self) -> str:
         lines = ["Cache stats:"]

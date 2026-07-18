@@ -42,7 +42,7 @@ def _row_for_cell(c: dict) -> dict:
     }
 
 
-# ── cell-key round-trip (the drift guard) ────────────────────────────────────
+# cell-key round-trip (the drift guard)
 
 def test_cell_and_row_keys_agree_incl_csv_strings():
     c = next(iter(m._iter_cells("map_theta")))
@@ -59,7 +59,7 @@ def test_cell_and_row_keys_agree_incl_csv_strings():
     assert m._cell_key_from_cell(c) == m._cell_key_from_row(csv_row)
 
 
-# ── signature reacts to weight VALUES, not just spec names ────────────────────
+# signature reacts to weight VALUES, not just spec names
 
 def test_plan_signature_tracks_weights_not_just_names():
     args = _args()
@@ -84,7 +84,7 @@ def test_plan_signature_tracks_run_params():
         m._plan_signature("map_theta", cells, _args(seed=7))
 
 
-# ── resume integration (stubbed engine) ──────────────────────────────────────
+# resume integration (stubbed engine)
 
 @pytest.fixture
 def patched(monkeypatch, tmp_path):

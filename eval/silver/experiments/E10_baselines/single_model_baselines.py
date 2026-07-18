@@ -120,7 +120,7 @@ def main() -> None:
         co = [c for c in case_outputs if c.case_id in ctx.silver_by_case]
         return _evaluate_outputs(co, ctx.silver_by_case, ctx.embedder, ctx.embed_cache, SIMILARITY_THRESHOLD)
 
-    # ── cascade (in-run, calibrated SHIPPED config) ──
+    # cascade (in-run, calibrated SHIPPED config)
     # Cascade arm = the calibrated voter selection (BEST_VOTER_SUBSET=drop_l2_2 → 5-voter,
     # Claude-Haiku dropped), filtered the SAME way the sweep does. The single-model baselines
     # below stay on the FULL 6-voter cache (Haiku is still a legitimate single-model baseline).
@@ -146,12 +146,12 @@ def main() -> None:
     rows = [{"system": f"CASCADE ({n_voters}-voter)", "model": "gemini/hybrid/greedy θ0.9", **casc,
              "cost_per_chunk": round(casc_cost, 2)}]
 
-    # ── verification anchor ──
+    # verification anchor
     flag = "OK" if abs(casc["strict_f1_optimal"] - _ANCHOR_CASCADE_STRICT_F1) < 5e-4 else "⚠️ MISMATCH"
     print(f"verification: cascade strict_f1={casc['strict_f1_optimal']:.4f} "
           f"vs E07 {_ANCHOR_CASCADE_STRICT_F1}  [{flag}]")
 
-    # ── each model alone ──
+    # each model alone
     voters = [("l1", i, v) for i, v in enumerate(L1)] + [("l2", i, v) for i, v in enumerate(L2)] \
         + [("l3", i, v) for i, v in enumerate(L3_list)]
     for level, idx, v in voters:

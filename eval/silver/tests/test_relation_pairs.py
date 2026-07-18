@@ -46,7 +46,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.stages.relate_stage import (
 from nlp_histo.pipeline.stages.knowledge_extraction.models import DirectionEnum, RelationTypeLabel
 
 
-# ── prompt batch arithmetic ──────────────────────────────────────────────────
+# prompt batch arithmetic
 def test_batch_id_range():
     assert prep.batch_id_range(1) == ("0001", "0030")
     assert prep.batch_id_range(10) == ("0271", "0300")
@@ -64,7 +64,7 @@ def test_render_batch_contains_ids_and_no_verbatim():
     assert "verbatim" not in schema_line
 
 
-# ── fixtures: a valid synthetic 300-record set ───────────────────────────────
+# fixtures: a valid synthetic 300-record set
 def _make_records() -> list[dict]:
     recs = []
     cycle = [("SUPPORTING", "paraphrase"), ("CONTRADICTING", "opposite_direction"),
@@ -92,7 +92,7 @@ def _write_batch(tmp_path, batch_number: int, records: list[dict]):
     return p
 
 
-# ── per-record validation ────────────────────────────────────────────────────
+# per-record validation
 def test_validate_record_accepts_good():
     rec = _make_records()[0]
     assert validate_record(rec, 1, expected_id="pair_0001") == []
@@ -119,7 +119,7 @@ def test_validate_record_out_of_order_id():
     assert any("out of order" in e for e in errs)
 
 
-# ── per-batch validation ─────────────────────────────────────────────────────
+# per-batch validation
 def test_load_batch_good(tmp_path):
     batch1 = _make_records()[:30]
     p = _write_batch(tmp_path, 1, batch1)
@@ -146,7 +146,7 @@ def test_load_batch_wrong_count(tmp_path):
     assert any("expected 30 records" in e for e in errs), errs
 
 
-# ── full-set validation ──────────────────────────────────────────────────────
+# full-set validation
 def test_validate_full_good():
     errs, warnings, stats = validate_full(_make_records())
     assert errs == [], errs
@@ -177,7 +177,7 @@ def test_normalize_claim():
     assert normalize_claim("Ki-67 HIGH!!") == normalize_claim("ki 67 high")
 
 
-# ── rule-shim → _build_nli_text ──────────────────────────────────────────────
+# rule-shim → _build_nli_text
 def test_shim_predicate_only_is_bare_claim():
     shim = build_shim("Ki-67 high predicts worse survival", "breast carcinoma")
     assert _build_nli_text(shim, scope_aware=False) == "Ki-67 high predicts worse survival"
@@ -194,7 +194,7 @@ def test_shim_scope_aware_no_entity_is_bare():
     assert _build_nli_text(shim, scope_aware=True) == "some claim"
 
 
-# ── _classify_pair label mapping ─────────────────────────────────────────────
+# _classify_pair label mapping
 def _scores(ent: float, con: float) -> dict[str, float]:
     return {"entailment": ent, "contradiction": con, "neutral": 1.0 - ent - con}
 
@@ -226,7 +226,7 @@ def test_same_polarity_guard_blocks_contradiction():
     assert lab is None  # two positive findings cannot contradict
 
 
-# ── API batch request building ───────────────────────────────────────────────
+# API batch request building
 def test_custom_id_roundtrip():
     assert api_common.custom_id_for(1) == "relation_batch_01"
     assert api_common.custom_id_for(10) == "relation_batch_10"
@@ -268,7 +268,7 @@ def test_assign_ids_contiguous_per_batch():
     assert out1[5]["claim_a"] == "c5"
 
 
-# ── calibration/evaluation split ─────────────────────────────────────────────
+# calibration/evaluation split
 def test_split_records_stratified_reproducible():
     recs = _make_records()
     calib, ev = split_records(recs, calib_frac=0.5, seed=42)
@@ -295,7 +295,7 @@ def test_split_records_fraction():
     assert len(calib) == 60 and len(ev) == 240  # 20 per label calib
 
 
-# ── SCHEMA_KEYS as the single field source ───────────────────────────────────
+# SCHEMA_KEYS as the single field source
 def test_required_keys_are_schema_keys():
     assert REQUIRED_KEYS == set(SCHEMA_KEYS)
     # the structured-output tool item fields = SCHEMA_KEYS minus the post-hoc id
@@ -308,7 +308,7 @@ def test_validate_record_full_schema_record_ok():
     assert validate_record(rec, 1, expected_id=rec["id"]) == []
 
 
-# ── relation_subtype validity + gold-label compatibility ─────────────────────
+# relation_subtype validity + gold-label compatibility
 def test_validate_record_rejects_invalid_subtype():
     rec = copy.deepcopy(_make_records()[0])
     rec["relation_subtype"] = "totally_made_up"
@@ -330,7 +330,7 @@ def test_subtype_compatibility_matrix_holds_for_fixtures():
         assert rec["relation_subtype"] in RELATION_SUBTYPES_BY_LABEL[rec["gold_label"]]
 
 
-# ── evaluator uses the spec's gold→RELATE mapping ────────────────────────────
+# evaluator uses the spec's gold→RELATE mapping
 def test_evaluator_uses_gold_to_relate_label():
     assert GOLD_MAP is GOLD_TO_RELATE_LABEL
     assert GOLD_MAP == {"SUPPORTING": "SUPPORT", "CONTRADICTING": "CONTRADICT",

@@ -18,7 +18,7 @@ from unittest.mock import patch
 from eval.silver.analysis.pipeline_sweep import _classify_pair_offline, run_relate_sweep
 
 
-# ── _classify_pair_offline ────────────────────────────────────────────────────
+# _classify_pair_offline
 
 def test_classify_pair_offline_support():
     pair = {"ent_a_to_b": 0.9, "ent_b_to_a": 0.9, "con_a_to_b": 0.1, "con_b_to_a": 0.1}
@@ -51,7 +51,7 @@ def test_classify_pair_offline_contradict_priority_over_entailment():
     assert _classify_pair_offline(pair, ent_t=0.55, con_t=0.65) == "CONTRADICT"
 
 
-# ── run_relate_sweep fixture test ─────────────────────────────────────────────
+# run_relate_sweep fixture test
 
 def test_run_relate_sweep_nonzero_from_fixture():
     """Sweep produces correct label counts from a small fixture pair list."""
@@ -97,7 +97,7 @@ def test_run_relate_sweep_multiple_thresholds():
     assert len(rows) == 4  # 2 ent × 2 con
 
 
-# ── corpus_relate tuple-unpack regression ─────────────────────────────────────
+# corpus_relate tuple-unpack regression
 
 _RULE_A = {
     "canonical_id": "CR_aaa",

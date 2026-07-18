@@ -29,7 +29,7 @@ def _rest(name: str) -> str:
     return name.split("__", 3)[3]
 
 
-# ── _refine_specs: applicable weights only ───────────────────────────────────
+# _refine_specs: applicable weights only
 
 @pytest.mark.parametrize("align", ["greedy", "hungarian"])
 def test_refine_embedding_one_to_one_sweeps_tau_only(align):
@@ -77,7 +77,7 @@ def test_refine_specs_namespaced_by_embedder():
     assert all(n.startswith("gemini__") for n in g)
 
 
-# ── _select_finalists: CELL-LEVEL Pareto (quality + economy + knee) ──────────
+# _select_finalists: CELL-LEVEL Pareto (quality + economy + knee)
 
 def _cells(*specs):
     """specs: (emb, scorer_kind, align, theta, strict_f1, cost). Multi-θ cells —
@@ -158,7 +158,7 @@ def test_select_finalists_empty():
     assert _select_finalists([], "strict_f1_optimal", 2, 0.02) == []
 
 
-# ── _stamp_row: scorer_kind/variant split + inert-weight blanking ────────────
+# _stamp_row: scorer_kind/variant split + inert-weight blanking
 
 def test_stamp_row_one_to_one_splits_names_and_blanks_inert():
     name = "gemini__hybrid__hungarian__base"
@@ -184,7 +184,7 @@ def test_stamp_row_soft_max_keeps_soft_align():
     assert r["contradiction_weight"] == 0.20       # NOT blanked under soft_max
 
 
-# ── _deviation: the "simpler config" tie-break ───────────────────────────────
+# _deviation: the "simpler config" tie-break
 
 def test_deviation_default_row_is_zero():
     row = {

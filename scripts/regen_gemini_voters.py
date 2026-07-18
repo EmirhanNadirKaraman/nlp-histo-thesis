@@ -103,7 +103,7 @@ def main() -> None:
     provider = build_providers({"gemini"})["gemini"]
     state = _load_state(state_path)
 
-    # ── Submit (only if not already submitted in a prior run) ────────────────
+    # Submit (only if not already submitted in a prior run)
     if not state["jobs"]:
         reqs = _build_gemini_requests(cache)
         by_model: dict[str, list] = defaultdict(list)
@@ -121,7 +121,7 @@ def main() -> None:
         print(f"resuming: {len(state['jobs'])} job(s) already submitted, "
               f"{len(state['retrieved'])} retrieved, {len(state['raw'])} raw results so far")
 
-    # ── Poll until all jobs done, retrieving as they complete ────────────────
+    # Poll until all jobs done, retrieving as they complete
     waited = 0
     while True:
         jobs = [ProviderJob.from_dict(d) for d in state["jobs"]]
@@ -152,7 +152,7 @@ def main() -> None:
         waited += POLL_SECS
         print(f"  …{waited}s, {len(pending)} job(s) pending")
 
-    # ── Parse + splice ONLY the Gemini slots (vi=0, l1/l2) ───────────────────
+    # Parse + splice ONLY the Gemini slots (vi=0, l1/l2)
     n_ok = n_fail = 0
     for custom_id, content in state["raw"].items():
         parts = custom_id.split("__")

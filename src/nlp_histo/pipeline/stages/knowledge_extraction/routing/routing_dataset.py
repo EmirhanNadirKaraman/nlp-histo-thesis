@@ -11,12 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 class RoutingRecord(BaseModel):
-    # ── Identity ──────────────────────────────────────────────────────────────
+    # Identity
     pmcid: str
     chunk_id: str
     chunk_text: str            # formatted [S1|..] source — for inspection + judge prompt
 
-    # ── Routing summary ───────────────────────────────────────────────────────
+    # Routing summary
     n_voters: int              # total voters before routing
     n_eligible: int            # voters that passed all validation gates
     gate_origin: str           # "schema_gate" | "grounding_gate" | "agreement_gate"
@@ -27,7 +27,7 @@ class RoutingRecord(BaseModel):
     deferral_score: float | None  # max(avg_sim); None when agreement gate not reached
     agreement_scorer: str      # class name of the scorer used
 
-    # ── Outputs ───────────────────────────────────────────────────────────────
+    # Outputs
     # output: what _cascade() actually returned to the caller
     #   KEEP          → best eligible voter output (cheap path)
     #   ESCALATE/REJECT → escalation model output (expensive path)
@@ -40,7 +40,7 @@ class RoutingRecord(BaseModel):
     best_eligible_exists: bool
     best_eligible_voter_index: int | None   # original voter index in the voters list
 
-    # ── Post-hoc label fields (filled by human reviewer or strong judge) ──────
+    # Post-hoc label fields (filled by human reviewer or strong judge)
     keep_ok: bool | None = None
     strong_judge_score: float | None = None
     strong_judge_preferred: str | None = None  # "output" | "voter" | "neither"
@@ -69,7 +69,7 @@ class RoutingDataset:
         with self._path.open("a", encoding="utf-8") as f:
             f.write(record.model_dump_json() + "\n")
 
-    # ── Static I/O (mirrors AgreementDataset API) ─────────────────────────────
+    # Static I/O (mirrors AgreementDataset API)
 
     @staticmethod
     def save(records: list[RoutingRecord], path: str | Path) -> None:

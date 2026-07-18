@@ -30,7 +30,7 @@ from ..models import (
 logger = logging.getLogger(__name__)
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# Helpers
 
 def _sha8(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:8]
@@ -80,7 +80,7 @@ def _split_by_direction(
     return sorted(bins.items())
 
 
-# ── Public API ─────────────────────────────────────────────────────────────────
+# Public API
 
 class CanonicalizeStage:
     """CANONICALIZE stage: FindingGroup[] → CanonicalRule[]."""

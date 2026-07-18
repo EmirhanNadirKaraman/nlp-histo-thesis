@@ -71,7 +71,7 @@ from nlp_histo.evaluation.matching.embedders import OpenAIEmbedder
 from nlp_histo.evaluation.split import assign_split
 
 
-# ── Voter spec: position in voter_cache list → (model, family) ──────────────
+# Voter spec: position in voter_cache list → (model, family)
 # Matches `pipeline.stages.knowledge_extraction.batch.voter_configs.make_l*_voters`
 # at the time of this script. If the production profile changes, update here.
 VOTER_SPECS = [
@@ -210,7 +210,7 @@ def main(argv=None) -> int:
             "dev_fraction":       args.dev_fraction,
         })
 
-    # ── Family-level aggregate ─────────────────────────────────────────────
+    # Family-level aggregate
     families: dict[str, list[dict]] = {}
     for r in rows:
         families.setdefault(r["family"], []).append(r)
@@ -224,7 +224,7 @@ def main(argv=None) -> int:
         avg_b = statistics.mean(r["mean_best_per_silver_sim"] for r in vs)
         print(f"{fam:<12} {len(vs):>9} {avg_m:>18.4f} {avg_b:>22.4f}")
 
-    # ── CSV ───────────────────────────────────────────────────────────────
+    # CSV
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%S")
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -236,7 +236,7 @@ def main(argv=None) -> int:
             writer.writerow(r)
     print(f"\nWrote: {csv_path}")
 
-    # ── Interpretation hint ───────────────────────────────────────────────
+    # Interpretation hint
     print("\nInterpretation:")
     print("  mean_matched_sim diverging across families → bias in the matched-pair zone.")
     print("  mean_best_per_silver_sim diverging across families → bias is threshold-free")

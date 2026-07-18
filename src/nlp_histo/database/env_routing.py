@@ -2,7 +2,7 @@
 
 Two small pieces, both from B-113:
 
-**Conflict detection.** ``NLP_HISTO_ENV_FILE`` chooses *which* file is read; it does not
+Conflict detection. ``NLP_HISTO_ENV_FILE`` chooses *which* file is read; it does not
 make that file's values win. python-dotenv loads with ``override=False``, and that
 precedence — environment beats file beats default — is deliberate and documented
 (``ENV_LOADING.md``): it is how you override one value for one command. The failure mode
@@ -11,11 +11,11 @@ configuration", and when an inherited ``DB_NAME`` quietly wins, a command aimed 
 scratch database writes to production instead. That happened during the 2026-07-16 ingest
 verification and was caught only by a hand-written assertion.
 
-So: when — and only when — an env file was named **explicitly**, a disagreement about
+So: when — and only when — an env file was named explicitly, a disagreement about
 *where the connection points* is an error rather than a silent substitution. Ordinary
 automatic ``.env`` discovery is untouched, and so is the documented env-wins behaviour.
 
-**Target rendering.** ``format_target()`` is the single place that formats a resolved
+Target rendering. ``format_target()`` is the single place that formats a resolved
 connection for humans. Never the password, never a URL carrying credentials.
 """
 from __future__ import annotations

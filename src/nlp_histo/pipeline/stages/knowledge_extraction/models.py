@@ -16,7 +16,7 @@ from .enum_logging import log_bad_finding, log_enum_observation
 _log = logging.getLogger(__name__)
 
 
-# ── Schema / prompt versioning ────────────────────────────────────────────────
+# Schema / prompt versioning
 # Bump these whenever the MAP output schema or prompt changes in a
 # behaviour-affecting way. They are included in cache keys / run metadata so
 # stale outputs don't collide with new ones.
@@ -39,7 +39,7 @@ CANONICALIZE_DIRECTION_POLICY_VERSION: str = "per_direction_no_folding_v2"
 MAP_AGREEMENT_POLICY_VERSION: str = "polarity_hard_fail_v1"
 
 
-# ── Cascade signature helper ──────────────────────────────────────────────────
+# Cascade signature helper
 def compute_finding_id(
     pmcid: str,
     chunk_id: str,
@@ -63,7 +63,7 @@ def compute_cascade_signature(voter_specs: list[tuple[str, str]]) -> str:
 
     Used in MAP cache keys and run-artifact metadata so the same chunk under a
     different cascade configuration is considered a cache miss. This signature
-    captures **identity only** — provider + model. Sampler settings
+    captures identity only — provider + model. Sampler settings
     (temperature, top_p) are captured separately by
     ``compute_voter_config_hash`` so a temperature tweak under the same
     (provider, model) still invalidates the cache.
@@ -137,7 +137,7 @@ class MapRunMetadata(BaseModel):
     voter_config_hash:  str = ""
 
 
-# ── Phase 1: new enums and scope model ────────────────────────────────────────
+# Phase 1: new enums and scope model
 
 class DirectionEnum(str, Enum):
     positive      = "positive"
@@ -264,7 +264,7 @@ class FindingScope(BaseModel):
         return self
 
 
-# ── MAP output ─────────────────────────────────────────────────────────────────
+# MAP output
 
 _CATEGORY_VALID: tuple[str, ...] = (
     "morphology", "IHC", "molecular_genetics", "staging",
@@ -664,7 +664,7 @@ class AuditableSummary(BaseModel):
         return clean
 
 
-# ── Phase 2: NORMALIZE output ─────────────────────────────────────────────────
+# Phase 2: NORMALIZE output
 
 class SourceSpan(BaseModel):
     """Provenance pointer to a single sentence in the source document."""
@@ -699,7 +699,7 @@ class NormalFinding(BaseModel):
     mean_grounding_score: float | None      # mean of grounding_score across source findings
 
 
-# ── Phase 3: GROUP output ─────────────────────────────────────────────────────
+# Phase 3: GROUP output
 
 class FindingGroup(BaseModel):
     """
@@ -725,7 +725,7 @@ class FindingGroup(BaseModel):
     scope_heterogeneity:  float                  # 0.0 = all scope fields agree; 1.0 = maximum variation
 
 
-# ── Phase 2 forward-looking model (not wired in Phase 1) ──────────────────────
+# Phase 2 forward-looking model (not wired in Phase 1)
 
 class AtomicFinding(BaseModel):
     """
@@ -745,7 +745,7 @@ class AtomicFinding(BaseModel):
     grounding_score:  float | None
 
 
-# ── Phase 4: CANONICALIZE output ──────────────────────────────────────────────
+# Phase 4: CANONICALIZE output
 
 class CanonicalRule(BaseModel):
     """
@@ -796,7 +796,7 @@ class CanonicalRule(BaseModel):
     representative_text_element_id:  int | None = None
 
 
-# ── Phase 5: RELATE output ────────────────────────────────────────────────────
+# Phase 5: RELATE output
 
 class RelationTypeLabel(str, Enum):
     SUPPORT        = "SUPPORT"
@@ -838,7 +838,7 @@ class RawNLIPair(BaseModel):
     pmcid_b:     str = ""                 # source paper for rule_id_b (corpus-level only)
 
 
-# ── Phase 6: RESOLVE output ───────────────────────────────────────────────────
+# Phase 6: RESOLVE output
 
 class FinalRule(BaseModel):
     """
@@ -861,7 +861,7 @@ class FinalRule(BaseModel):
     member_normal_ids:     List[str]
     mean_grounding_score:  float | None
     finding_count:         int
-    # ── Scoring ──────────────────────────────────────────────────────────────
+    # Scoring
     final_score:           float                 # 0–1, higher is better
     support_count:         int                   # SUPPORT relations touching this rule
     contradict_count:      int                   # CONTRADICT relations touching this rule
@@ -881,7 +881,7 @@ class FinalRule(BaseModel):
     score_mode:            Literal["relations_present", "relations_absent"] = "relations_absent"
 
 
-# ── Corpus-level RELATE output ────────────────────────────────────────────────
+# Corpus-level RELATE output
 
 class CorpusRelation(Relation):
     """
@@ -927,7 +927,7 @@ class CorpusRelation(Relation):
     scope_note:               str = ""
 
 
-# ── Rejection summary ──────────────────────────────────────────────────────────
+# Rejection summary
 
 class RejectedFinding(BaseModel):
     """A finding dropped or excluded at a pipeline stage, with reason metadata."""

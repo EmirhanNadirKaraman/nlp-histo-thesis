@@ -22,7 +22,7 @@ from typing import Iterable, Protocol
 from .models import HardnessBreakdown, PaperFingerprint
 
 
-# ── Protocols ─────────────────────────────────────────────────────────────────
+# Protocols
 
 class PairMetric(Protocol):
     """Score a pair of papers; higher = more related."""
@@ -39,7 +39,7 @@ class PaperMetric(Protocol):
     def score(self, paper: PaperFingerprint) -> float: ...
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 
 def _jaccard(a: Iterable[str], b: Iterable[str]) -> float:
     sa, sb = set(a), set(b)
@@ -54,7 +54,7 @@ def _safe_div(num: float, denom: float) -> float:
     return num / denom if denom else 0.0
 
 
-# ── Relatedness ───────────────────────────────────────────────────────────────
+# Relatedness
 
 @dataclass
 class RelatednessWeights:
@@ -96,7 +96,7 @@ class Relatedness:
         return s
 
 
-# ── Diversity ─────────────────────────────────────────────────────────────────
+# Diversity
 
 @dataclass
 class DiversityWeights:
@@ -152,7 +152,7 @@ class Diversity:
         return coverage - w.pairwise_penalty * mean_pair - w.near_duplicate_penalty * near_dupes
 
 
-# ── Hardness ──────────────────────────────────────────────────────────────────
+# Hardness
 
 @dataclass
 class HardnessWeights:
@@ -202,7 +202,7 @@ class Hardness:
         n_sent = max(paper.n_sentences, 1)
         n_te   = max(paper.n_text_elements, 1)
 
-        # ── Content complexity ────────────────────────────────────────────
+        # Content complexity
         ent_density        = len(paper.entities | paper.disease_entities
                                   | paper.biomarker_entities | paper.gene_entities) / n_sent
         unique_ent_density = len(paper.entity_counts) / n_sent
@@ -217,7 +217,7 @@ class Hardness:
         if abbr_density > cfg.ref_abbrev_density:
             reasons.append(f"high abbreviation density ({abbr_density:.2f}/sentence)")
 
-        # ── Layout complexity ─────────────────────────────────────────────
+        # Layout complexity
         table_density   = paper.n_tables   / n_te
         caption_density = paper.n_captions / n_te
         short_rate      = float(paper.source_stats.get("very_short_paragraphs", 0)) / n_te
@@ -240,7 +240,7 @@ class Hardness:
         if isinstance(layout_noise, (int, float)):
             layout = layout * (1 - w.layout_noise_weight) + float(layout_noise) * w.layout_noise_weight
 
-        # ── Relation complexity ───────────────────────────────────────────
+        # Relation complexity
         anchor_count = (
             len(paper.biomarker_entities)
             + len(paper.gene_entities)
@@ -256,7 +256,7 @@ class Hardness:
             + w.relation_complexity * relation
         )
 
-        # ── Workload factor + absolute hardness ───────────────────────────
+        # Workload factor + absolute hardness
         workload = math.log1p(paper.n_chunks) / math.log1p(max(cfg.ref_chunks, 1))
         absolute = normalized * math.log1p(paper.n_chunks)
 

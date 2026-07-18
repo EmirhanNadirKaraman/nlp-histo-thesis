@@ -47,7 +47,7 @@ logging.basicConfig(
 logger = logging.getLogger("two_pass_extract")
 
 
-# ── Config helpers ────────────────────────────────────────────────────────────
+# Config helpers
 
 def make_two_pass_config() -> TwoPassConfig:
     """
@@ -60,26 +60,26 @@ def make_two_pass_config() -> TwoPassConfig:
         # Pixel rendering
         render_dpi=150,
 
-        # Blank-space detection (Rule R1) ─────────────────────────────────────
+        # Blank-space detection (Rule R1)
         # A region with mean brightness ≥ 245 AND < 2% dark pixels is blank.
         blank_brightness_threshold=245.0,
         blank_dark_pixel_max_fraction=0.02,
 
-        # Word-count fallback (Rule R2, only when rendering unavailable) ───────
+        # Word-count fallback (Rule R2, only when rendering unavailable)
         # Trigger when fitz char coverage < 5% for text with ≥ 8 chars.
         min_char_coverage_threshold=0.05,
         min_text_chars_for_word_check=8,
 
-        # Dense-text heuristic (Rule R3) ─────────────────────────────────────
+        # Dense-text heuristic (Rule R3)
         max_chars_per_bbox_pt=15.0,
 
-        # Header-zone hint ────────────────────────────────────────────────────
+        # Header-zone hint
         max_top_fraction_header=0.15,  # top 15% of page = "header zone"
 
-        # Body-anchor finding ─────────────────────────────────────────────────
+        # Body-anchor finding
         min_anchor_word_count=5,
 
-        # Header-mask geometry ────────────────────────────────────────────────
+        # Header-mask geometry
         header_mask_margin_pt=3.0,
     )
 
@@ -93,7 +93,7 @@ def make_docling_config() -> DoclingConfig:
     )
 
 
-# ── Processing ────────────────────────────────────────────────────────────────
+# Processing
 
 def process_one(
     pdf_path: Path,
@@ -110,7 +110,7 @@ def process_one(
         logger.error("FAILED %s: %s", pmcid, exc, exc_info=True)
         return
 
-    # ── Write body text ───────────────────────────────────────────────────────
+    # Write body text
     # Convert Pass-2 text elements to the dict format expected by extract_text()
     element_dicts = [el.to_dict() for el in result.text_elements]
     rows, n_skipped = extract_text(element_dicts, nlp=None, pre_filter=True)
@@ -132,7 +132,7 @@ def process_one(
         len(result.figure_elements), len(result.table_elements),
     )
 
-    # ── Write rejection report ────────────────────────────────────────────────
+    # Write rejection report
     if result.rejected_nodes:
         rej_path = out_dir / f"{pmcid}_rejected.txt"
         with open(rej_path, "w", encoding="utf-8") as fh:
@@ -153,7 +153,7 @@ def process_one(
                 )
         logger.info("  Rejection report → %s", rej_path.name)
 
-    # ── Anchor summary ────────────────────────────────────────────────────────
+    # Anchor summary
     if result.header_anchors:
         for page_no, anchor in sorted(result.header_anchors.items()):
             logger.debug(
@@ -163,7 +163,7 @@ def process_one(
             )
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
+# CLI
 
 def collect_pdfs(target: Path, n: int) -> List[Path]:
     if target.is_file():
@@ -223,7 +223,7 @@ def main() -> None:
     logger.info("Done.")
 
 
-# ── Inline usage example (import API) ────────────────────────────────────────
+# Inline usage example (import API)
 
 def inline_example() -> None:
     """
@@ -238,7 +238,7 @@ def inline_example() -> None:
         print("Set `pdf` to an existing PDF path before running.")
         return
 
-    # ── 1. Build config ───────────────────────────────────────────────────────
+    # 1. Build config
     two_pass_cfg = TwoPassConfig(
         render_dpi=96,
         blank_brightness_threshold=245.0,
@@ -248,7 +248,7 @@ def inline_example() -> None:
     )
     docling_cfg = DoclingConfig(do_ocr=False)
 
-    # ── 2. Instantiate and run ─────────────────────────────────────────────────
+    # 2. Instantiate and run
     extractor = TwoPassTextExtractor(
         config=two_pass_cfg,
         docling_config=docling_cfg,
@@ -256,7 +256,7 @@ def inline_example() -> None:
     )
     result = extractor.process(pdf)
 
-    # ── 3. Inspect results ─────────────────────────────────────────────────────
+    # 3. Inspect results
     print(f"Pass-1: {len(result.pass1_layout)} elements, "
           f"{result.n_rejected} rejected as ghost text")
 
@@ -267,7 +267,7 @@ def inline_example() -> None:
     print(f"  figure elements: {len(result.figure_elements)}")
     print(f"  table elements : {len(result.table_elements)}")
 
-    # ── 4. Convert to hierarchical rows via existing extract_text() ───────────
+    # 4. Convert to hierarchical rows via existing extract_text()
     element_dicts = [el.to_dict() for el in result.text_elements]
     rows, n_skipped = extract_text(element_dicts, nlp=None, pre_filter=True)
 
@@ -276,7 +276,7 @@ def inline_example() -> None:
     for path_str, path_list, depth, para in rows[:3]:
         print(f"\n  [{path_str}]\n  {para[:120]}")
 
-    # ── 5. Inspect rejected ghost-text nodes ─────────────────────────────────
+    # 5. Inspect rejected ghost-text nodes
     print(f"\nRejected ghost-text nodes ({result.n_rejected}):")
     for node in result.rejected_nodes[:5]:
         el, ev = node.element, node.evidence

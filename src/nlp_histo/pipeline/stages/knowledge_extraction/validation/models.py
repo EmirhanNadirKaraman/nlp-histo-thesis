@@ -5,7 +5,7 @@ validators. Extracted here from ``routing/models.py`` so ``provenance/`` no
 longer has to import from ``routing/`` — which breaks the routing <-> provenance
 package dependency cycle.
 
-Keep this module a **leaf**: it must not import from ``routing/`` or
+Keep this module a leaf: it must not import from ``routing/`` or
 ``provenance/``. Routing-outcome types (``GateOrigin``, ``RoutingDecision``)
 stay in ``routing/models.py``.
 """
@@ -18,7 +18,7 @@ from enum import Enum
 class ReasonCode(str, Enum):
     """Reason codes produced by each gate in the routing pipeline."""
 
-    # ── Schema gate ────────────────────────────────────────────────────────────
+    # Schema gate
     INVALID_SCHEMA = "invalid_schema"
     MISSING_REQUIRED_FIELD = "missing_required_field"
     INVALID_CATEGORY = "invalid_category"
@@ -28,18 +28,18 @@ class ReasonCode(str, Enum):
     INVALID_TEXT_ELEMENT_ID = "invalid_text_element_id"
     NO_FINDINGS_EXTRACTED = "no_findings_extracted"
 
-    # ── Grounding gate — hard failures (→ REJECT when all voters fail) ─────────
+    # Grounding gate — hard failures (→ REJECT when all voters fail)
     NONEXISTENT_SOURCE = "nonexistent_source"
     CROSS_DOCUMENT_SOURCE_ERROR = "cross_document_source_error"
     FABRICATED_VERBATIM_SUPPORT = "fabricated_verbatim_support"
 
-    # ── Grounding gate — soft failures (→ ESCALATE) ────────────────────────────
+    # Grounding gate — soft failures (→ ESCALATE)
     WEAK_GROUNDING = "weak_grounding"
     PARTIAL_SUPPORT = "partial_support"
     AMBIGUOUS_SUPPORT = "ambiguous_support"
     UNSUPPORTED_CLAIM = "unsupported_claim"
 
-    # ── Agreement gate ─────────────────────────────────────────────────────────
+    # Agreement gate
     HIGH_AGREEMENT = "high_agreement"
     INSUFFICIENT_AGREEMENT = "insufficient_agreement"
     ESCALATED_DUE_TO_LOW_AGREEMENT = "escalated_due_to_low_agreement"

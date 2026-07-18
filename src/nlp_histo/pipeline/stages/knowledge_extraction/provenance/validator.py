@@ -107,7 +107,7 @@ class ProvenanceValidator:
             for idx, finding in enumerate(summary.findings)
         ]
 
-    # ── Internal ───────────────────────────────────────────────────────────────
+    # Internal
 
     def _validate_finding(self, idx: int, finding: Finding) -> FindingValidation:
         codes: list[ReasonCode] = []

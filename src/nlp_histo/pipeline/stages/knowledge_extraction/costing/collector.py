@@ -43,7 +43,7 @@ class UsageCollector:
         self._records: list[LLMUsageRecord] = []
         self._lock = threading.Lock()
 
-    # ── Inspection ───────────────────────────────────────────────────────────
+    # Inspection
 
     def records(self) -> list[LLMUsageRecord]:
         with self._lock:
@@ -53,7 +53,7 @@ class UsageCollector:
         with self._lock:
             return len(self._records)
 
-    # ── Direct recording APIs (used for batch / cache / explicit cases) ─────
+    # Direct recording APIs (used for batch / cache / explicit cases)
 
     def record(self, **fields: Any) -> LLMUsageRecord:
         fields.setdefault("run_id", self.run_id)
@@ -142,7 +142,7 @@ class UsageCollector:
             substage=substage, item_id=item_id,
         )
 
-    # ── LangChain integration ────────────────────────────────────────────────
+    # LangChain integration
 
     def callback(self, **context: Any) -> "UsageCallbackHandler":
         """Build a one-shot callback handler bound to the given call context.
@@ -157,7 +157,7 @@ class UsageCollector:
         """Convenience: ``chain.invoke(inp, config=collector.attach(...))``."""
         return {"callbacks": [self.callback(**context)]}
 
-    # ── Persistence ──────────────────────────────────────────────────────────
+    # Persistence
 
     def write_jsonl(self, path) -> int:
         with self._lock:

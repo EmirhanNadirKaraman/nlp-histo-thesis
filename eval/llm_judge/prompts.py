@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-# ── Shared filter rules ──────────────────────────────────────────────────────
+# Shared filter rules
 
 FILTER_RULES = """\
 <FilterRules>
@@ -26,7 +26,7 @@ ONLY extract from: methods, results, discussion, and case descriptions
       (but only the generalizable conclusions drawn from cases, not the case narrative itself).
 </FilterRules>"""
 
-# ── Controlled enums (matching pipeline models) ─────────────────────────────
+# Controlled enums (matching pipeline models)
 
 RELATION_TYPES = [
     "has_feature", "expression", "prognostic", "comparative",
@@ -39,9 +39,7 @@ CATEGORIES = [
 RELATION_LABELS = ["SUPPORT", "CONTRADICT", "SCOPE_QUALIFY", "UNRELATED"]
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Q1 — MAP finding precision / field correctness
-# ══════════════════════════════════════════════════════════════════════════════
 
 Q1_SYSTEM = """\
 You are an expert histopathologist verifying AI-extracted medical findings.
@@ -112,9 +110,7 @@ Q1_SCHEMA: dict[str, Any] = {
 }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Q2 — RELATE label accuracy (blind judging by default)
-# ══════════════════════════════════════════════════════════════════════════════
 
 Q2_SYSTEM = """\
 You are an expert reviewing logical relationships between medical claims
@@ -169,9 +165,7 @@ Q2_SCHEMA: dict[str, Any] = {
 }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Q3 — Recall gap check
-# ══════════════════════════════════════════════════════════════════════════════
 
 Q3_SYSTEM = f"""\
 You are an expert histopathologist reviewing a paragraph from a
@@ -234,9 +228,7 @@ Q3_SCHEMA: dict[str, Any] = {
 }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Q5 — Paragraph-level extraction F1
-# ══════════════════════════════════════════════════════════════════════════════
 
 Q5_SYSTEM = f"""\
 You are an expert histopathologist performing medical fact extraction from

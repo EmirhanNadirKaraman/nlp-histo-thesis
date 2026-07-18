@@ -250,7 +250,7 @@ def expand_tables_with_footnotes(
             )
             continue
 
-        # ── Upright table: expand downward (y-axis) ───────────────────────────
+        # Upright table: expand downward (y-axis)
         # Collect elements below the table on the same page, sorted closest first
         below = sorted(
             [(i, el) for i, el in candidates

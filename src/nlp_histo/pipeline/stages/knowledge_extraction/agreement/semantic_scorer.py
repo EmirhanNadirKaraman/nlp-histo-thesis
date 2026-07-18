@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 def _pass_frac(output: AuditableSummary) -> float:
     """
-    **Fallback signal only** — used when no ``AgreementContext`` is available (legacy path).
+    Fallback signal only — used when no ``AgreementContext`` is available (legacy path).
 
     Returns the fraction of findings with a non-empty evidence list.  This is a
     structural proxy, not a validator result: a finding can have a non-empty evidence
@@ -273,7 +273,7 @@ class SemanticAgreementScorer:
 
         return bundle
 
-    # ── Helpers ─────────────────────────────────────────────────────────────────
+    # Helpers
 
     def _build_matrix_pairwise(
         self, outputs: list[AuditableSummary]

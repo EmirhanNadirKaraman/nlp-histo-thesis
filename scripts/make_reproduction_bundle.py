@@ -10,15 +10,15 @@ to ask for, so what they receive can be *verified* rather than trusted.
 
 Two bundles, deliberately separate:
 
-* **replay** (~1.5 GB) — reproduces the published tables. No database, no API key:
+* replay (~1.5 GB) — reproduces the published tables. No database, no API key:
   ``replay chapter9`` never connects to PostgreSQL.
-* **database** (~485 MB live) — only for querying the corpus or re-running NER/knowledge.
+* database (~485 MB live) — only for querying the corpus or re-running NER/knowledge.
 
 The PDFs are deliberately NOT bundled: §6 re-acquires them from NLM's AWS dataset using
 ``files/target_pmc_ids.txt``, which is in the clone. That saves 5.2 GB of upload and avoids
 redistributing papers whose licences forbid it (322 of 1093 carry no CC licence).
 
-**SQLite consistency.** The embedding caches run in WAL mode, where a plain file copy is
+SQLite consistency. The embedding caches run in WAL mode, where a plain file copy is
 only consistent if nothing writes during it. Each is snapshotted with ``VACUUM INTO``,
 which takes a read transaction for the duration — a consistent, compacted copy — and is
 ``integrity_check``ed before packaging. Sidecars (``-wal``/``-shm``) are refused outright:
@@ -93,7 +93,7 @@ def _resolve(members, globs) -> list[Path]:
     return paths
 
 
-# ── SQLite: consistency is not assumed ────────────────────────────────────────
+# SQLite: consistency is not assumed
 
 def check_sqlite(path: Path, *, label: str) -> tuple[str, int]:
     """``integrity_check`` + row count, read-only. Raises on anything but ``ok``."""
@@ -149,7 +149,7 @@ def snapshot_sqlite(src: Path, dest: Path) -> tuple[int, int]:
     return rows_before, rows_after
 
 
-# ── content safety ────────────────────────────────────────────────────────────
+# content safety
 
 def audit_member(rel: str, path: Path) -> list[str]:
     """Reasons *path* must not be shipped. Empty list ⇒ clean."""

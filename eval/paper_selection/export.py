@@ -100,7 +100,7 @@ def _yaml_scalar(value) -> str:
     return s
 
 
-# ── Public exporter ──────────────────────────────────────────────────────────
+# Public exporter
 
 def write_calibration_set(
     result: SelectionResult,
@@ -121,7 +121,7 @@ def write_calibration_set(
         directory.mkdir(parents=True, exist_ok=True)
     by_pmcid = {fp.pmcid: fp for fp in fingerprints}
 
-    # ── YAML: roster only ───────────────────────────────────────────────────
+    # YAML: roster only
     roster = {
         version: {
             "related": list(result.related),
@@ -131,7 +131,7 @@ def write_calibration_set(
     }
     paths.yaml_path.write_text(_to_yaml(roster) + "\n", encoding="utf-8")
 
-    # ── JSON: full rationale + breakdowns ───────────────────────────────────
+    # JSON: full rationale + breakdowns
     relatedness = Relatedness()
     hardness = Hardness()
 
@@ -187,7 +187,7 @@ def write_calibration_set(
         encoding="utf-8",
     )
 
-    # ── CSV: one row per paper ──────────────────────────────────────────────
+    # CSV: one row per paper
     columns = [
         "pmcid", "bucket", "title",
         "n_sentences", "n_chunks", "n_text_elements",

@@ -16,7 +16,7 @@ labels; NO LLM calls, gemini embeddings only and cached):
   Stage 2  map_theta     theta × reject_theta (reject_theta < theta) on BEST_SCORER
   Stage 3  map_weights   H-EMB-01 weights (hybrid only) on BEST_SCORER/theta
 
-  Selection metric: **silver F1 / strict F1** (per-finding, vs Opus silver),
+  Selection metric: silver F1 / strict F1 (per-finding, vs Opus silver),
   with escalation rate reported and optionally constrained (--max-escalate).
 
 ────────────────────────────────────────────────────────────────────────────
@@ -89,10 +89,8 @@ from eval.silver.analysis.map_theta_sweep import (
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # BEST_* — winners pinned after each stage. Edit in place as each stage's CSV
 # lands; later stages dereference these (greedy stage-wise selection).
-# ─────────────────────────────────────────────────────────────────────────────
 
 BEST_SCORER = "embedding"        # Stage 1 winner: "embedding" | "hybrid"
 BEST_THETA = 0.80                # Stage 2 winner
@@ -110,9 +108,7 @@ BEST_RELATE_ENTAILMENT = 0.50
 BEST_RELATE_CONTRADICTION = 0.50
 BEST_CONTRADICTION_SIM = 0.70
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Grids.
-# ─────────────────────────────────────────────────────────────────────────────
 
 SCORER_CHOICES = ("embedding", "hybrid")
 
@@ -180,9 +176,7 @@ CSV_FIELDNAMES = [
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Stage registry (mirrors run_all_sweeps.py's SweepSpec + STAGE_ORDER).
-# ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
 class SweepSpec:
@@ -262,9 +256,7 @@ STAGES: dict[str, SweepSpec] = {
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # MAP stage grids (executable) — each returns (scorer_specs, thetas, reject_thetas).
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _spec_for(scorer: str) -> ScorerSpec:
     if scorer not in SCORER_CHOICES:
@@ -441,9 +433,7 @@ def _enumerate_cells(stage: str) -> list[str]:
     return []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Execution (MAP stages only).
-# ─────────────────────────────────────────────────────────────────────────────
 
 # _MapContext / _load_map_context were EXTRACTED to eval/silver/analysis/map_context.py
 # (2026-06-17) so the live loader is not stranded in this legacy module. Re-imported
@@ -554,9 +544,7 @@ def _pin_hint(stage: str, w: dict) -> str:
     return ""
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Listing / menu.
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _print_stage_menu() -> None:
     print("Summarisation calibration — staged sweeps (greedy; pin BEST_* after each stage)\n")
@@ -607,9 +595,7 @@ def _list_variants(stage: str, only: Optional[set]) -> None:
               "production default is True; this is the B-051 hard-fail ablation)")
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # CLI.
-# ─────────────────────────────────────────────────────────────────────────────
 
 def main(argv: Optional[list] = None) -> int:
     p = argparse.ArgumentParser(

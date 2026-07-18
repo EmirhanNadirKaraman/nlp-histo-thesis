@@ -68,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     by_key_a = {_key(r): r for r in rels_a}
     by_key_b = {_key(r): r for r in rels_b}
 
-    # ── 1. Totals ──────────────────────────────────────────────────────────
+    # 1. Totals
     print("\n=== Totals ===")
     print(f"  {args.label_a:>12}: {len(rels_a):>4} relations  ({args.file_a.name})")
     print(f"  {args.label_b:>12}: {len(rels_b):>4} relations  ({args.file_b.name})")
@@ -76,7 +76,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  {args.label_a}-only    : {len(set(by_key_a) - set(by_key_b)):>4}")
     print(f"  {args.label_b}-only    : {len(set(by_key_b) - set(by_key_a)):>4}")
 
-    # ── 2. Label distribution ──────────────────────────────────────────────
+    # 2. Label distribution
     la = Counter(r.get("relation_type") for r in rels_a)
     lb = Counter(r.get("relation_type") for r in rels_b)
     labels = sorted(set(la) | set(lb))
@@ -86,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {lbl:<18} {la.get(lbl, 0):>10} {lb.get(lbl, 0):>10}  "
               f"{lb.get(lbl, 0) - la.get(lbl, 0):+d}")
 
-    # ── 3. Same- vs cross-paper breakdown ──────────────────────────────────
+    # 3. Same- vs cross-paper breakdown
     sa = Counter(r.get("comparison_scope") for r in rels_a)
     sb = Counter(r.get("comparison_scope") for r in rels_b)
     print("\n=== Scope distribution ===")
@@ -94,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {s:<14} {args.label_a}={sa.get(s,0):>3}  {args.label_b}={sb.get(s,0):>3}  "
               f"Δ={sb.get(s,0) - sa.get(s,0):+d}")
 
-    # ── 4. Per-pair label change matrix ────────────────────────────────────
+    # 4. Per-pair label change matrix
     flip_counts: Counter = Counter()
     flip_examples: dict[tuple[str, str], list[tuple[dict, dict]]] = {}
     for k in sorted(by_key_a.keys() & by_key_b.keys()):
@@ -112,7 +112,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print("\n=== Label flips on shared pairs: none ===")
 
-    # ── 5. NLI score deltas on shared pairs ───────────────────────────────
+    # 5. NLI score deltas on shared pairs
     deltas_ab: list[float] = []
     deltas_ba: list[float] = []
     for k in by_key_a.keys() & by_key_b.keys():
@@ -135,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  p95 |Δ|         : {p95:.4f}")
         print(f"  max |Δ|         : {all_abs[-1]:.4f}")
 
-    # ── 6. Spot-check examples per flip kind ──────────────────────────────
+    # 6. Spot-check examples per flip kind
     if flip_counts:
         print(f"\n=== Spot-check examples (up to {args.examples} per flip kind) ===")
         for (ka, kb), pairs in flip_examples.items():

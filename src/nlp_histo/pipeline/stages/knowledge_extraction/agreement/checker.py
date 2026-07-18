@@ -56,7 +56,7 @@ class AgreementChecker:
         to ``ChunkDecision.ESCALATE`` whenever ``detect_polarity_conflict``
         finds comparable opposite-polarity findings. ``False`` still records
         the marker in ``bundle.score_details["hard_fail_reason"]`` (so sweep
-        harnesses can count conflicts) but does **not** override the scorer's
+        harnesses can count conflicts) but does not override the scorer's
         decision. Configured via ``AgreementConfig.force_escalate_on_polarity_conflict``.
     """
 
@@ -101,7 +101,7 @@ class AgreementChecker:
         # available for trace inspection, and BEFORE the theta fallback so a
         # True override cannot revert to KEEP regardless of similarity.
         #
-        # The conflict marker is **always** stamped into score_details when a
+        # The conflict marker is always stamped into score_details when a
         # conflict is detected — sweep harnesses count chunks via this marker
         # independent of whether escalation is forced. The decision override
         # is gated on ``force_escalate_on_polarity_conflict``: True (default)

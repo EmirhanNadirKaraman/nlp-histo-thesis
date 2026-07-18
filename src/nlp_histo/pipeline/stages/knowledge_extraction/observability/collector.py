@@ -55,7 +55,7 @@ class TraceCollector:
         self._status: str = "running"
         self._error: str | None = None
 
-    # ── Read-only properties ───────────────────────────────────────────────────
+    # Read-only properties
 
     @property
     def run_id(self) -> str:
@@ -69,7 +69,7 @@ class TraceCollector:
     def chunk_traces(self) -> list[ChunkTrace]:
         return list(self._chunk_traces)
 
-    # ── Stage recording ────────────────────────────────────────────────────────
+    # Stage recording
 
     def warn(self, msg: str) -> None:
         self._warnings.append(msg)
@@ -133,7 +133,7 @@ class TraceCollector:
             {"path": path, "type": artifact_type, "count": count}
         )
 
-    # ── Finalization ───────────────────────────────────────────────────────────
+    # Finalization
 
     def finalize(self, status: str, error: str | None = None) -> RunTrace:
         """

@@ -2,9 +2,9 @@
 """E14 — held-out generalization test (heldout15), RQ3 / Phase 4.
 
 Replays the FROZEN cascade config (θ0.9 / reject0.1, hybrid + entity-heavy scorer —
-the E06–E08 winner) on the **heldout15** primer and scores MAP findings vs heldout15
+the E06–E08 winner) on the heldout15 primer and scores MAP findings vs heldout15
 silver → ``strict_f1_optimal``. The headline generalization number: does the config
-calibrated on related15 (strict-F1 **0.7135**) hold on a *disjoint* 15-paper test set?
+calibrated on related15 (strict-F1 0.7135) hold on a *disjoint* 15-paper test set?
 
 ZERO voter API — replays the cached heldout15 primer (only cheap, one-time agreement
 embeddings, served from cache after the first run). It needs the heldout15 primer to
@@ -22,7 +22,7 @@ then (free):
   python -m eval.silver.experiments.E14_heldout.heldout_eval
   python -m eval.silver.experiments.E14_heldout.heldout_eval --theta-frontier
 
-``--theta-frontier`` also replays a θ grid as a **descriptive** cost-quality readout
+``--theta-frontier`` also replays a θ grid as a descriptive cost-quality readout
 (does the tradeoff generalize?) — NOT selection: heldout15 is the test set, the
 operating point is chosen on related15 (E09). See `BUGS.md`/THESIS for the
 select-on-related15 / report-on-heldout15 rule.
@@ -114,7 +114,7 @@ def main() -> int:
     voter_cache = _filtered_voter_cache(ctx.voter_cache, BEST_VOTER_SUBSET)
     print(f"  voter subset = {BEST_VOTER_SUBSET}")
 
-    # ── PRIMARY: frozen θ0.9/reject0.1 → strict-F1 vs silver ──
+    # PRIMARY: frozen θ0.9/reject0.1 → strict-F1 vs silver
     m, accept, invoked, escalate = _score(
         voter_cache, scorer, ctx.silver_by_case, ctx.embedder, ctx.embed_cache,
         args.sim_threshold, THETA, REJECT,
@@ -139,7 +139,7 @@ def main() -> int:
         "l3_invoked": invoked.get("l3", 0),
     }]
 
-    # ── OPTIONAL: θ frontier (descriptive cost-quality; NOT selection) ──
+    # OPTIONAL: θ frontier (descriptive cost-quality; NOT selection)
     if args.theta_frontier:
         print("\n── θ frontier on heldout15 (DESCRIPTIVE — does the cost-quality tradeoff generalize?) ──")
         print(f"  {'theta':>6} {'strict_f1':>10} {'escalate':>9} {'l3_calls':>9}")

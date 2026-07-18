@@ -49,7 +49,7 @@ RELATION_SUBTYPES_BY_LABEL = {
 }
 RELATION_SUBTYPES = tuple(s for subs in RELATION_SUBTYPES_BY_LABEL.values() for s in subs)
 
-# ── Shared definition blocks (identical text for manual + API paths) ─────────────
+# Shared definition blocks (identical text for manual + API paths)
 
 LABEL_DEFINITIONS = """\
 LABEL DEFINITIONS (the intended relation between claim_a and claim_b):

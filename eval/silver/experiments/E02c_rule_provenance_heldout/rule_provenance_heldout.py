@@ -134,7 +134,7 @@ def main() -> None:
             "with_mnids": n_with_mnids,
         }
 
-    # ── report ───────────────────────────────────────────────────────────────
+    # report
     def pct(n: int, d: int) -> str:
         return f"{n / d:7.2%}" if d else "    n/a"
 
@@ -163,7 +163,7 @@ def main() -> None:
     print("\nHeadline (held-out generalization):")
     print(f"  carry-rate {hl['carried']}/{hl['final_rules']}  {pct(hl['carried'], hl['final_rules'])}")
 
-    # ── CSV ──────────────────────────────────────────────────────────────────
+    # CSV
     out_dir = REPORTS_DIR / "E02c_rule_provenance_heldout"
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = out_dir / f"rule_provenance_heldout_{ts}.csv"

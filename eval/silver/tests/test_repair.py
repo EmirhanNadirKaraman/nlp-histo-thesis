@@ -11,7 +11,7 @@ from eval.silver.generation.prompts import EXTRACT_FINDINGS_TOOL
 from nlp_histo.evaluation.schemas import SilverFinding
 
 
-# ── _repair_finding_fields ─────────────────────────────────────────────────────
+# _repair_finding_fields
 
 def test_repair_category_demographics_to_demographic(caplog):
     """LLM alias 'demographics' (trailing s) is repaired to canonical 'demographic'."""
@@ -53,7 +53,7 @@ def test_repair_relation_type_demographic_unchanged():
     assert repaired["relation_type"] == "demographic"
 
 
-# ── SilverFinding schema ───────────────────────────────────────────────────────
+# SilverFinding schema
 
 def test_silver_finding_demographic_valid():
     """category='demographic' passes Pydantic validation."""
@@ -84,7 +84,7 @@ def test_silver_finding_unknown_category_rejected():
         SilverFinding(category="bogus_category", claim="x", confidence="medium")
 
 
-# ── Tool schema ────────────────────────────────────────────────────────────────
+# Tool schema
 
 def test_tool_schema_includes_demographic():
     """Regression guard: the LLM tool schema must list 'demographic' in the category enum."""
@@ -104,7 +104,7 @@ def test_tool_schema_excludes_demographics_plural():
     assert "demographics" not in category_enum
 
 
-# ── End-to-end: the bug-report example no longer gets dropped ─────────────────
+# End-to-end: the bug-report example no longer gets dropped
 
 def test_example_finding_survives_repair_and_validation():
     """The malformed example from the bug report parses correctly after repair.

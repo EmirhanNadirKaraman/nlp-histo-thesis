@@ -162,7 +162,7 @@ class SilverGenerator:
         batch_state_path = batch_state_path or self.output_path.with_suffix(".batch.json")
         client = anthropic.Anthropic(api_key=self.api_key)
 
-        # ── Resume: batch already submitted ───────────────────────────────────
+        # Resume: batch already submitted
         if batch_state_path.exists():
             state = json.loads(batch_state_path.read_text())
             batch_id = state["batch_id"]
@@ -222,7 +222,7 @@ class SilverGenerator:
             logger.info("Batch complete. Generated: %d  Errored: %d", generated, errored)
             return
 
-        # ── First run: filter uncached and submit ─────────────────────────────
+        # First run: filter uncached and submit
         uncached = []
         for case in cases:
             cache_key = f"{case.case_id}|{PROMPT_VERSION}|{self.model}"

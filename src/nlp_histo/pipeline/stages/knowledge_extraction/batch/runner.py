@@ -239,7 +239,7 @@ class BatchKnowledgeExtractionRunner:
             "escalation_model":     self._l3.model,
         }
 
-    # ── Public API ──────────────────────────────────────────────────────────────
+    # Public API
 
     def handle_path(self, pmcid: str) -> Path:
         return self._handle_dir / f"{pmcid}.batch.json"
@@ -462,7 +462,7 @@ class BatchKnowledgeExtractionRunner:
 
         pmcid = handle.pmcid
 
-        # ── Cache short-circuit (set by submit() when valid result on disk) ───
+        # Cache short-circuit (set by submit() when valid result on disk)
         if handle.cached_result_only:
             cached = self._load_result(pmcid)
             if cached is not None:
@@ -512,7 +512,7 @@ class BatchKnowledgeExtractionRunner:
                     )
             chunk_summaries.append(summary)
 
-        # ── Filesystem persistence setup (opt-in) ─────────────────────────────
+        # Filesystem persistence setup (opt-in)
         run_id = self._artifact_run_id_override or self._make_run_id(pmcid)
         writer = self._make_artifact_writer(run_id, pmcid, handle.cascade_signature)
         pipeline_run_db_id = handle.pipeline_run_db_id
@@ -531,10 +531,10 @@ class BatchKnowledgeExtractionRunner:
                         compute_finding_id(pmcid, cs.chunk_id, pos, f.claim)
                     )
 
-            # ── Verbatim-from-DB (replace LLM paraphrases before grounding) ──
+            # Verbatim-from-DB (replace LLM paraphrases before grounding)
             self._replace_verbatim_from_db(chunk_summaries)
 
-            # ── Grounding (matches sync ordering) ─────────────────────────────
+            # Grounding (matches sync ordering)
             grounding_rejected: list = []
             if self._grounding is not None:
                 new_summaries = []
@@ -545,11 +545,11 @@ class BatchKnowledgeExtractionRunner:
                         grounding_rejected.append((cs.chunk_id, f))
                 chunk_summaries = new_summaries
 
-            # ── MAP artifact persistence (filesystem + DB) ────────────────────
+            # MAP artifact persistence (filesystem + DB)
             persist_map_artifacts(writer, pmcid, chunk_summaries, grounding_rejected)
             self._persist_map_findings(pipeline_run_db_id, pmcid, chunk_summaries)
 
-            # ── Optional modern chain — produces canonical/relate/final ──────
+            # Optional modern chain — produces canonical/relate/final
             normal_findings: list = []
             finding_groups:  list = []
             canonical_rules: list = []
@@ -643,7 +643,7 @@ class BatchKnowledgeExtractionRunner:
                 persist_resolve_artifacts(writer, pmcid, final_rules, relations)
                 self._persist_final_rules(pipeline_run_db_id, pmcid, final_rules, cr_db_id_map)
 
-            # ── Rejection summary (sync parity) ───────────────────────────────
+            # Rejection summary (sync parity)
             rejection_summary = _build_rejection_summary(
                 pmcid=pmcid,
                 grounding_threshold=(
@@ -656,7 +656,7 @@ class BatchKnowledgeExtractionRunner:
             )
             self._persist_rejection_summary(pipeline_run_db_id, rejection_summary)
 
-            # ── NER + UMLS linking (optional) ─────────────────────────────────
+            # NER + UMLS linking (optional)
             if self._run_ner and self._db is not None:
                 logger.info("[%s] NER — running entity extraction + UMLS linking", pmcid)
                 try:
@@ -725,7 +725,7 @@ class BatchKnowledgeExtractionRunner:
                 writer.finalize("failed", error=str(exc))
             raise
 
-    # ── Filesystem artifact helpers ────────────────────────────────────────────
+    # Filesystem artifact helpers
 
     def _make_run_id(self, pmcid: str) -> str:
         """Mirror KnowledgeExtractionRunner._make_run_id format for consistency."""
@@ -857,7 +857,7 @@ class BatchKnowledgeExtractionRunner:
         except Exception as exc:
             logger.warning("[%s] batch cost report write failed (non-fatal): %s", pmcid, exc)
 
-    # ── DB / cache / verbatim helpers (parity with sync runner) ────────────────
+    # DB / cache / verbatim helpers (parity with sync runner)
     # TODO: deduplicate with KnowledgeExtractionRunner — these are line-for-line copies.
     # Lift into pipeline/stages/knowledge_extraction/persistence.py as module-level fns
     # taking ``db`` as a parameter so both runners share one implementation.
@@ -1010,7 +1010,7 @@ class BatchKnowledgeExtractionRunner:
                 exc_info=True,
             )
 
-    # ── Internal helpers ────────────────────────────────────────────────────────
+    # Internal helpers
 
     def _make_chunk_map(self, sentences: list[dict]) -> dict[str, list[dict]]:
         chunk_map: dict[str, list[dict]] = {}
@@ -1062,7 +1062,7 @@ class BatchKnowledgeExtractionRunner:
             m["input"]  += res.input_tokens
             m["output"] += res.output_tokens
 
-        # ── Pass 1: parse all voter outputs for every chunk ───────────────────
+        # Pass 1: parse all voter outputs for every chunk
         # chunk_voters[chunk_id] is a length-N list aligned to current_voters
         # (original voter-spec index): slot vi holds the parsed result for that
         # voter, or None when the batch job for that voter was missing/unparseable.
@@ -1103,7 +1103,7 @@ class BatchKnowledgeExtractionRunner:
                     voters_full[vi] = parsed
             chunk_voters[chunk_id] = voters_full
 
-        # ── Pass 2: batch-embed all unique claims upfront ─────────────────────
+        # Pass 2: batch-embed all unique claims upfront
         # Filter Nones — voters_full slots stay None when a voter's batch result
         # was missing or unparseable (B-065). Pass 3 below handles all-None
         # chunks via the survivor_indices filter; Pass 2 must do the same or
@@ -1184,7 +1184,7 @@ class BatchKnowledgeExtractionRunner:
             (cfg.provider, cfg.model) for cfg in current_voters
         ]
 
-        # ── Pass 3: agreement scoring from cache — no API calls ───────────────
+        # Pass 3: agreement scoring from cache — no API calls
         escalated: list[str] = []
         dropped_chunks: list[str] = []  # legacy drop-on-reject (reject_theta > 0)
 

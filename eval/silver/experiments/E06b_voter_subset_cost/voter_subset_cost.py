@@ -13,12 +13,12 @@ WHY A DEDICATED COSTER (not ``eval.silver.analysis.escalation_breakdown``)
 charges the FULL-ensemble per-tier prices (L2=9.6, L3=18). That is valid ONLY
 for ``voter_subset="all"``. Dropping a voter changes the tier's voter set, so:
 
-  * dropping an **L1** voter LOWERS the L1 price paid on *every* chunk — a real
+  * dropping an L1 voter LOWERS the L1 price paid on *every* chunk — a real
     saving ``escalation_breakdown`` ignores entirely (it omits the L1 term), and
-  * dropping an **L2** voter lowers the L2 price on the escalated chunks.
+  * dropping an L2 voter lowers the L2 price on the escalated chunks.
 
 So for the rows that actually matter (the drops), ``cost_frac`` mis-ranks them.
-This module charges the **reduced** tier price for each dropped-voter row, so a
+This module charges the reduced tier price for each dropped-voter row, so a
 drop's cost is comparable to ``all`` on the same axis.
 
 COST MODEL (per row)
@@ -166,7 +166,7 @@ def main() -> None:
     print(f"per-voter blended $/1M tok — L1={[round(x,2) for x in L1]} (Σ {sum(L1):.2f})  "
           f"L2={[round(x,2) for x in L2]} (Σ {sum(L2):.2f})  L3={L3:.2f}")
 
-    # ── derive cost + escalation columns per row ──
+    # derive cost + escalation columns per row
     for r in rows:
         cost, l1p, l2p = _cost_per_chunk(r, L1, L2, L3)
         nl1, nl2 = _f(r, "n_l1_invoked"), _f(r, "n_l2_invoked")
@@ -176,7 +176,7 @@ def main() -> None:
         r["l2_active_price"] = round(l2p, 4)
         r["cost_per_chunk"] = round(cost, 4)
 
-    # ── domination vs 'all' within each (variant, theta, reject_theta) group ──
+    # domination vs 'all' within each (variant, theta, reject_theta) group
     def gkey(r):
         return (r.get("variant", ""), r.get("theta", ""), r.get("reject_theta", ""))
 
@@ -195,7 +195,7 @@ def main() -> None:
             r["dominates_all"] = ("yes" if (df > 0 and r["cost_per_chunk"] < bc
                                             and r.get("voter_subset") != "all") else "")
 
-    # ── print per-config table ──
+    # print per-config table
     for (variant, theta, reject), grp in groups.items():
         base = next((x for x in grp if x.get("voter_subset") == "all"), None)
         bf = _f(base, "strict_f1_optimal") if base else 0.0
@@ -231,7 +231,7 @@ def main() -> None:
         print("\n(--print: no sidecar written)")
         return
 
-    # ── write sidecar NEXT TO the input CSV ──
+    # write sidecar NEXT TO the input CSV
     out = src.with_name(f"{src.stem}_cost.csv")
     fields = list(rows[0].keys())
     for c in _DERIVED:

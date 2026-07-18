@@ -390,11 +390,11 @@ class TwoPassConfig:
     scripts/verify_ghost_text_detection.py and scripts/thesis_demo_ghost_text.py.
     """
 
-    # ── Rendering ─────────────────────────────────────────────────────────────
+    # Rendering
     render_dpi: int = 150
     """DPI for rendering PDF pages to pixel arrays (higher = slower but more accurate)."""
 
-    # ── Blank-space detection (Rule R1) ───────────────────────────────────────
+    # Blank-space detection (Rule R1)
     blank_brightness_threshold: float = 245.0
     """
     Mean pixel luminance (0–255) above which a region is considered visually
@@ -407,7 +407,7 @@ class TwoPassConfig:
     counts as a blank region.  0.02 = at most 2% dark pixels → blank.
     """
 
-    # ── Word-count fallback (Rule R2, render_skipped only) ────────────────────
+    # Word-count fallback (Rule R2, render_skipped only)
     min_char_coverage_threshold: float = 0.05
     """
     char_coverage below this value triggers Rule R2 when rendering is skipped.
@@ -422,7 +422,7 @@ class TwoPassConfig:
     single-word decorative elements.
     """
 
-    # ── Header-zone hint (affects rejection message wording only) ────────────
+    # Header-zone hint (affects rejection message wording only)
     max_top_fraction_header: float = 0.15
     """
     Top ``max_top_fraction_header`` fraction of page height is considered the
@@ -430,7 +430,7 @@ class TwoPassConfig:
     string (e.g. "in header zone").  Does not change the keep/drop outcome.
     """
 
-    # ── Pass-1 figure / table masking ────────────────────────────────────────
+    # Pass-1 figure / table masking
     mask_figures: bool = True
     """
     When True, PICTURE/FIGURE bboxes detected in Pass 1 are added to the mask
@@ -446,7 +446,7 @@ class TwoPassConfig:
     paragraphs by Pass-2 Docling.
     """
 
-    # ── White-text ghost layer (Rule R-color) ────────────────────────────────
+    # White-text ghost layer (Rule R-color)
     max_white_char_fraction: float = 1.0
     """
     Fraction of near-white-colored characters in an element's bbox above which
@@ -463,7 +463,7 @@ class TwoPassConfig:
     Set to a value < 1.0 to re-enable.
     """
 
-    # ── Dense-text heuristic (Rule R3) ───────────────────────────────────────
+    # Dense-text heuristic (Rule R3)
     max_chars_per_bbox_pt: float = 15.0
     """
     Maximum ratio of text character count to bbox height in PDF points.
@@ -474,7 +474,7 @@ class TwoPassConfig:
     Set to 0 to disable.
     """
 
-    # ── Body-anchor finding ───────────────────────────────────────────────────
+    # Body-anchor finding
     min_anchor_word_count: int = 5
     """
     Minimum word count for an accepted TEXT/LIST_ITEM element to be eligible
@@ -482,7 +482,7 @@ class TwoPassConfig:
     (real ink, but ≤ 4 words) from becoming the anchor.
     """
 
-    # ── Header-mask geometry ──────────────────────────────────────────────────
+    # Header-mask geometry
     header_mask_margin_pt: float = 3.0
     """
     Gap in PDF points left between the bottom edge of the header mask and the

@@ -132,7 +132,7 @@ class RunManifestWriter:
             logger.exception("RunManifestWriter: failed to write manifest")
             return None
 
-    # ── Aggregation ───────────────────────────────────────────────────────────
+    # Aggregation
 
     def _aggregate(self) -> tuple:
         per_doc: List[Dict[str, Any]] = []
@@ -197,7 +197,7 @@ class RunManifestWriter:
         return per_doc, summary
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 
 def _jsonable(v: Any) -> Any:
     if isinstance(v, Path):

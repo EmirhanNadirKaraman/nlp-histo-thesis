@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     pass
 
 
-# ── RoutingPolicySpec ──────────────────────────────────────────────────────────
+# RoutingPolicySpec
 
 @dataclass
 class RoutingPolicySpec:
@@ -73,7 +73,7 @@ class RoutingPolicySpec:
         }
 
 
-# ── PolicyEvaluationResult ────────────────────────────────────────────────────
+# PolicyEvaluationResult
 
 class PolicyEvaluationResult(BaseModel):
     """
@@ -93,33 +93,33 @@ class PolicyEvaluationResult(BaseModel):
 
     model_config = {"extra": "ignore"}
 
-    # ── Identity ──────────────────────────────────────────────────────────────
+    # Identity
     policy_id: str
     scorer_name: str
     theta: float
     records_file: str = ""          # source JSONL path (traceability)
 
-    # ── Dataset counts ─────────────────────────────────────────────────────────
+    # Dataset counts
     n_records: int = 0
     n_agreement_gate: int = 0
     n_labeled: int = 0
     n_acceptable: int = 0           # keep_ok == True
 
-    # ── Metrics (None when no labeled data) ────────────────────────────────────
+    # Metrics (None when no labeled data)
     keep_precision: float | None = None
     false_accept_rate: float | None = None
     recall: float | None = None
     keep_rate: float | None = None
     escalation_rate: float | None = None    # computed from all AG records
 
-    # ── Selection objective proxy ──────────────────────────────────────────────
+    # Selection objective proxy
     selection_objective: float | None = None
     selection_objective_alpha: float | None = None  # alpha used when computing
 
     warnings: list[str] = []
 
 
-# ── PolicySelectionResult ─────────────────────────────────────────────────────
+# PolicySelectionResult
 
 class PolicySelectionResult(BaseModel):
     """
@@ -131,7 +131,7 @@ class PolicySelectionResult(BaseModel):
 
     model_config = {"extra": "ignore"}
 
-    # ── Selection outcome ──────────────────────────────────────────────────────
+    # Selection outcome
     selected_policy_id: str | None          # None if no feasible policy found
     feasible: bool                          # True if constraints were satisfiable
     candidates_evaluated: int
@@ -139,7 +139,7 @@ class PolicySelectionResult(BaseModel):
     constraints: dict                       # {"max_false_accept": 0.10, "min_recall": 0.70}
     selection_objective_alpha: float        # alpha used for selection_objective
 
-    # ── Compact winner summary ─────────────────────────────────────────────────
+    # Compact winner summary
     selected_scorer_name: str | None = None
     selected_theta: float | None = None
     selected_false_accept_rate: float | None = None
@@ -147,13 +147,13 @@ class PolicySelectionResult(BaseModel):
     selected_escalation_rate: float | None = None
     selected_selection_objective: float | None = None
 
-    # ── Runner-up and diagnostics ──────────────────────────────────────────────
+    # Runner-up and diagnostics
     runner_up_policy_id: str | None = None
     infeasibility_reason: str | None = None
     notes: str = ""
 
 
-# ── PolicyEvaluationStore ─────────────────────────────────────────────────────
+# PolicyEvaluationStore
 
 class PolicyEvaluationStore:
     """

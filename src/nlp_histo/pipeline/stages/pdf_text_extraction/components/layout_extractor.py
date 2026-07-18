@@ -9,7 +9,7 @@ each with its own `cache_dir`); the two-pass flow drives it through
 Caching and laziness:
 
   * The Docling DocumentConverter is loaded lazily on first `extract()`
-    and shared **process-wide** via `_DOCLING_CONVERTER_CACHE`, keyed by
+    and shared process-wide via `_DOCLING_CONVERTER_CACHE`, keyed by
     the tuple of options that influence converter state.  Sweep harnesses
     that run multiple variants in one process therefore pay the Docling
     load once.
@@ -88,7 +88,7 @@ class DoclingLayoutExtractor:
         # as TEXT so NodeScorer R3 can reject and mask them.
         self._max_caption_chars_per_pt = max_caption_chars_per_pt
 
-    # ── Lazy model loading ────────────────────────────────────────────────────
+    # Lazy model loading
 
     def _get_converter(self):
         if self._converter is not None:
@@ -167,7 +167,7 @@ class DoclingLayoutExtractor:
         except ImportError as exc:
             logger.warning("OCR engine '%s' not available, falling back to default: %s", engine, exc)
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def extract(self, pdf_path: Path) -> LayoutResult:
         """
@@ -193,7 +193,7 @@ class DoclingLayoutExtractor:
 
         return result
 
-    # ── Internal ──────────────────────────────────────────────────────────────
+    # Internal
 
     def _convert_with_timeout(self, converter, pdf_path: Path):
         """Run ``converter.convert()`` under ``DoclingConfig.timeout_sec``.
@@ -309,7 +309,7 @@ class DoclingLayoutExtractor:
             source="docling",
         )
 
-    # ── Cache helpers ─────────────────────────────────────────────────────────
+    # Cache helpers
 
     def _cache_path(self, pdf_path: Path) -> Optional[Path]:
         if self._cache_dir is None:

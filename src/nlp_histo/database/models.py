@@ -370,7 +370,7 @@ class PipelineRun(Base):
         return f"<PipelineRun(run_id='{self.run_id}', status='{self.status}')>"
 
 
-# ── Phase 2: MAP findings & Normalized findings ────────────────────────────────
+# Phase 2: MAP findings & Normalized findings
 
 class SumMapFinding(Base):
     """
@@ -530,7 +530,7 @@ class SumNormalFindingSpan(Base):
     )
 
 
-# ── Phase 3: Finding groups ────────────────────────────────────────────────────
+# Phase 3: Finding groups
 
 class SumFindingGroup(Base):
     """
@@ -595,7 +595,7 @@ class SumGroupMember(Base):
     )
 
 
-# ── Phase 4: Canonical rules ──────────────────────────────────────────────────
+# Phase 4: Canonical rules
 
 class SumCanonicalRule(Base):
     __tablename__ = "sum_canonical_rules"
@@ -633,7 +633,7 @@ class SumCanonicalRule(Base):
     )
 
 
-# ── Phase 5: Relations ────────────────────────────────────────────────────────
+# Phase 5: Relations
 
 class SumRelation(Base):
     __tablename__ = "sum_relations"
@@ -658,7 +658,7 @@ class SumRelation(Base):
     )
 
 
-# ── Phase 6: Final rules ──────────────────────────────────────────────────────
+# Phase 6: Final rules
 
 class SumFinalRule(Base):
     __tablename__ = "sum_final_rules"
@@ -700,7 +700,7 @@ class SumFinalRule(Base):
     )
 
 
-# ── Rejection summary ────────────────────────────────────────────────────────
+# Rejection summary
 
 class SumRejectionSummary(Base):
     """
@@ -780,7 +780,7 @@ class SumRejectedFinding(Base):
     )
 
 
-# ── Corpus-level relations (cross-paper / intra-paper graph) ──────────────────
+# Corpus-level relations (cross-paper / intra-paper graph)
 
 class SumCorpusRelation(Base):
     """
@@ -841,7 +841,7 @@ class SumCorpusRelation(Base):
     )
 
 
-# ── LLM judge evaluation cache ────────────────────────────────────────────────
+# LLM judge evaluation cache
 
 class LlmJudgeCache(Base):
     """

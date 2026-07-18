@@ -46,7 +46,7 @@ def main() -> int:
     total_keys = 0
     files_touched = 0
 
-    # ── per-variant label files + active share_map.json ──────────────────────
+    # per-variant label files + active share_map.json
     targets = sorted(_ANN_ROOT.glob("*/json_*.json"))
     share_map = _ANN_ROOT / "share_map.json"
     if share_map.exists():
@@ -81,7 +81,7 @@ def main() -> int:
             path.write_text(text)
             print(f"  dropped {len(hits):>2} keys from {rel}")
 
-    # ── ground_truth.csv row ─────────────────────────────────────────────────
+    # ground_truth.csv row
     gt_dropped = 0
     if _GT_CSV.exists():
         lines = _GT_CSV.read_text().splitlines(keepends=True)

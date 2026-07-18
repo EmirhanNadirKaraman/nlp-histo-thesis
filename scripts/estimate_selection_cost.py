@@ -65,7 +65,7 @@ logging.basicConfig(
 logger = logging.getLogger("estimate_selection_cost")
 
 
-# ── MAP defaults (mirror pipeline/stages/knowledge_extraction/config.py:MapConfig) ─
+# MAP defaults (mirror pipeline/stages/knowledge_extraction/config.py:MapConfig)
 
 DEFAULT_CHUNK_SIZE = 10
 DEFAULT_CHUNK_OVERLAP = 2
@@ -78,7 +78,7 @@ PROMPT_OVERHEAD_TOKENS = 1500
 # leans high rather than low — output drives the L3/Sonnet cost ($15/1M out).
 OUTPUT_TOKENS_PER_CHUNK = 1500
 
-# ── Calibration (silver) defaults ───────────────────────────────────────────
+# Calibration (silver) defaults
 # The map_theta_sweep PRIME runs EVERY voter on EVERY chunk (no escalation) so
 # the sweep can replay any theta — priced as project_map_cost at l2_rate=
 # l3_rate=1.0. The Opus SILVER step (eval.silver.generation.generate) is one judge call
@@ -91,7 +91,7 @@ DEFAULT_SILVER_MODEL = "claude-opus-4-7"   # = eval/silver/generation/generator.
 SILVER_OUTPUT_TOKENS = 1500
 
 
-# ── Cost matrix (per million tokens) ────────────────────────────────────────
+# Cost matrix (per million tokens)
 # Sourced live from
 #   pipeline/stages/knowledge_extraction/batch/voter_configs.py  (cascade structure)
 # and
@@ -162,7 +162,7 @@ def build_pricing(profile_name: str | None,
     return pricing, prof.name
 
 
-# ── YAML loader ─────────────────────────────────────────────────────────────
+# YAML loader
 
 def load_selection_yaml(path: Path) -> dict[str, str]:
     """Return ``{pmcid: bucket}`` in related → diverse → hard order, deduped."""
@@ -185,7 +185,7 @@ def load_selection_yaml(path: Path) -> dict[str, str]:
     return out
 
 
-# ── Chunk + token math ──────────────────────────────────────────────────────
+# Chunk + token math
 
 def count_chunks(n_sentences: int, chunk_size: int, chunk_overlap: int) -> int:
     """Mirror MapStage._make_chunks chunk count exactly."""
@@ -236,7 +236,7 @@ def per_chunk_input_tokens(text_tokens: int, n_chunks: int,
     return PROMPT_OVERHEAD_TOKENS + ceil(chunk_text_tokens)
 
 
-# ── Paper loading ───────────────────────────────────────────────────────────
+# Paper loading
 
 @dataclass
 class PaperStats:
@@ -315,7 +315,7 @@ def load_paper_stats(pmcid: str, bucket: str, *,
     )
 
 
-# ── Cost projection ─────────────────────────────────────────────────────────
+# Cost projection
 
 @dataclass
 class Scenario:
@@ -348,7 +348,7 @@ def project_map_cost(total_chunks: int, avg_in_tokens: int,
     return cost
 
 
-# ── Calibration (source-case) math ──────────────────────────────────────────
+# Calibration (source-case) math
 
 def summarize_cases(cases, *, tokenizer, chunk_size: int, chunk_overlap: int,
                     nlp) -> tuple[int, int, int]:
@@ -396,7 +396,7 @@ def silver_token_totals(cases, tokenizer,
     return in_tok, len(cases) * out_tokens_per_case
 
 
-# ── Estimators (one per mode) ────────────────────────────────────────────────
+# Estimators (one per mode)
 
 def run_cascade_estimate(args, *, book, pricing, resolved_profile, discount,
                          nlp, tokenizer) -> int:
@@ -565,7 +565,7 @@ def run_calibration_estimate(args, *, book, nlp, tokenizer) -> int:
     return 0
 
 
-# ── CLI ─────────────────────────────────────────────────────────────────────
+# CLI
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -629,7 +629,7 @@ def main() -> int:
         parser.print_help()
         return 1
 
-    # ── Shared setup (price book + sentencizer + tokenizer) ─────────────────
+    # Shared setup (price book + sentencizer + tokenizer)
     logger.info("Loading price book + cascade profile…")
     from nlp_histo.pipeline.stages.knowledge_extraction.costing import PriceBook
     book = PriceBook.load(args.prices)

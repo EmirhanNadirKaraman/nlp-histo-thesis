@@ -43,7 +43,7 @@ class TATRTableDetector:
         self._processor = None
         self._model = None
 
-    # ── Lazy model loading ────────────────────────────────────────────────────
+    # Lazy model loading
 
     def _load_model(self) -> None:
         global _SHARED_PROCESSOR, _SHARED_MODEL
@@ -74,7 +74,7 @@ class TATRTableDetector:
             self._processor = _SHARED_PROCESSOR
             self._model = _SHARED_MODEL
 
-    # ── Detection ─────────────────────────────────────────────────────────────
+    # Detection
 
     def detect(self, pdf_path: Path) -> TableDetectionResult:
         """

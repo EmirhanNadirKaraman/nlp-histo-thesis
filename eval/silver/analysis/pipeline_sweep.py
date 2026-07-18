@@ -82,7 +82,7 @@ RELATE_ENT_THRESHOLDS = [0.30, 0.40, 0.50, 0.60, 0.70]
 RELATE_CON_THRESHOLDS = [0.40, 0.50, 0.60, 0.70]
 
 
-# ── LLM / runner factory (mirrors run_paper_single_model.py) ──────────────────
+# LLM / runner factory (mirrors run_paper_single_model.py)
 
 def _build_llm():
     from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers import gemini_direct_chat
@@ -104,7 +104,7 @@ def _build_runner(config, output_dir: Path, force_rerun: bool = False):
     )
 
 
-# ── file_data builder from SourceCase ─────────────────────────────────────────
+# file_data builder from SourceCase
 
 _nlp = None
 
@@ -131,7 +131,7 @@ def case_to_file_data(case: SourceCase) -> dict:
     return {"pmcid": case.pmcid, "sentences_with_provenance": sentences}
 
 
-# ── Result → PipelineCaseOutput ───────────────────────────────────────────────
+# Result → PipelineCaseOutput
 
 def result_to_case_output(result: dict, case: SourceCase) -> PipelineCaseOutput:
     """Extract MAP findings from a runner result dict and build PipelineCaseOutput."""
@@ -173,7 +173,7 @@ def result_to_case_output(result: dict, case: SourceCase) -> PipelineCaseOutput:
     )
 
 
-# ── Grounding threshold filter ────────────────────────────────────────────────
+# Grounding threshold filter
 
 def _apply_grounding_threshold(
     co: PipelineCaseOutput,
@@ -186,7 +186,7 @@ def _apply_grounding_threshold(
     return co.model_copy(update={"findings": kept})
 
 
-# ── RELATE offline re-classification ─────────────────────────────────────────
+# RELATE offline re-classification
 
 def _classify_pair_offline(
     pair: dict,
@@ -203,7 +203,7 @@ def _classify_pair_offline(
     return "UNRELATED"
 
 
-# ── Evaluation helper ─────────────────────────────────────────────────────────
+# Evaluation helper
 
 def _evaluate_outputs(
     case_outputs: list[PipelineCaseOutput],
@@ -226,7 +226,7 @@ def _evaluate_outputs(
 
     Returns explicit ``*_greedy`` and ``*_optimal`` metric sets. The legacy
     ``precision``/``recall``/``f1``/``strict_f1``/``n_matched`` keys ALIAS the
-    **greedy** matcher (the historical default) for backward compatibility.
+    greedy matcher (the historical default) for backward compatibility.
     """
     STRICT_FIELDS = {"category", "relation_type", "direction"}
     n_silver = n_pipeline = 0
@@ -275,7 +275,7 @@ def _evaluate_outputs(
     }
 
 
-# ── PRIME mode ────────────────────────────────────────────────────────────────
+# PRIME mode
 
 def run_prime(cases: list[SourceCase], prime_dir: Path,
               force_reprime: bool = False) -> None:
@@ -334,7 +334,7 @@ def run_prime(cases: list[SourceCase], prime_dir: Path,
     logger.info("Prime done. done=%d  skipped=%d  failed=%d", n_done, n_skip, n_fail)
 
 
-# ── GROUNDING sweep mode ──────────────────────────────────────────────────────
+# GROUNDING sweep mode
 
 def run_grounding_sweep(
     cases: list[SourceCase],
@@ -406,7 +406,7 @@ def run_grounding_sweep(
     return rows
 
 
-# ── RELATE: corpus-level NLI pair generation ──────────────────────────────────
+# RELATE: corpus-level NLI pair generation
 
 def _build_corpus_nli_pairs(
     prime_dir: Path,
@@ -489,7 +489,7 @@ def _build_corpus_nli_pairs(
     return pairs_dicts
 
 
-# ── RELATE sweep mode ─────────────────────────────────────────────────────────
+# RELATE sweep mode
 
 def run_relate_sweep(
     all_pairs: list[dict],
@@ -536,7 +536,7 @@ def run_relate_sweep(
     return rows
 
 
-# ── CSV writers ───────────────────────────────────────────────────────────────
+# CSV writers
 
 def _write_csv(path: Path, rows: list[dict], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -568,7 +568,7 @@ def _print_grounding_table(rows: list[dict]) -> None:
           f"F1={float(best['f1']):.3f}")
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# Main
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -604,7 +604,7 @@ def main() -> None:
     silver_path = Path(args.silver) if args.silver else None
     timestamp   = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
 
-    # ── Load source cases and apply split ──
+    # Load source cases and apply split
     if not source_path.exists():
         print(f"source_cases.jsonl not found: {source_path}", file=sys.stderr)
         sys.exit(1)
@@ -618,11 +618,11 @@ def main() -> None:
     do_grounding = args.mode in ("grounding", "all")
     do_relate    = args.mode in ("relate", "all")
 
-    # ── PRIME ──
+    # PRIME
     if do_prime:
         run_prime(filtered_cases, prime_dir, force_reprime=args.force_reprime)
 
-    # ── Embedder (needed for grounding sweep) ──
+    # Embedder (needed for grounding sweep)
     if do_grounding:
         if not silver_path.exists():
             print(f"silver_findings.jsonl not found: {silver_path}", file=sys.stderr)
@@ -665,7 +665,7 @@ def main() -> None:
             ])
             _print_grounding_table(grounding_rows)
 
-    # ── RELATE sweep ──
+    # RELATE sweep
     if do_relate:
         corpus_pairs_cache = prime_dir / "corpus_nli_pairs.json"
         all_pairs = _build_corpus_nli_pairs(

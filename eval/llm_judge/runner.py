@@ -78,20 +78,20 @@ def run(cfg: RunConfig) -> None:
 
     cfg.results_dir.mkdir(parents=True, exist_ok=True)
 
-    # ── Cache ────────────────────────────────────────────────────────────────
+    # Cache
     db = get_db_connection()
     cache = JudgeCache(db)
     if cfg.force_refresh_cache:
         cache.clear_version(tasks=cfg.tests)
 
-    # ── Resume batch mode ────────────────────────────────────────────────────
+    # Resume batch mode
     if cfg.batch_id:
         import anthropic as _anthropic
         client = _anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
         _resume_batch(client, cfg, cache)
         return
 
-    # ── Phase 1: Paper selection + raw request building ──────────────────────
+    # Phase 1: Paper selection + raw request building
     # All DB queries happen here. Session is closed before cache operations to
     # avoid nested session_scope calls (scoped_session shares one session per
     # thread — inner close() would corrupt the outer scope).
@@ -150,7 +150,7 @@ def run(cfg: RunConfig) -> None:
 
     # Session is now closed — safe to open cache sessions without nesting.
 
-    # ── Phase 2: Cache filtering ─────────────────────────────────────────────
+    # Phase 2: Cache filtering
     # Cached rows are passed through parse_*_result() so derived fields
     # (fields_changed, is_correct, F1 stats) are always computed from raw judgments.
     all_requests: list[JudgeRequest] = []
@@ -166,7 +166,7 @@ def run(cfg: RunConfig) -> None:
         else:
             all_requests.append(req)
 
-    # ── Apply max-requests cap ───────────────────────────────────────────────
+    # Apply max-requests cap
     if cfg.max_requests is not None and len(all_requests) > cfg.max_requests:
         logger.warning(
             "Capping %d uncached requests to --max-requests=%d",
@@ -181,13 +181,13 @@ def run(cfg: RunConfig) -> None:
         len(all_skipped),
     )
 
-    # ── Dry-run: log what would be sent to Opus, then exit ───────────────────
+    # Dry-run: log what would be sent to Opus, then exit
     if cfg.dry_run:
         _log_dry_run(all_requests, cfg)
         cache.close()
         return
 
-    # ── Execute ──────────────────────────────────────────────────────────────
+    # Execute
     if cfg.mode == "sync":
         fresh_results = _run_sync(all_requests, cache, cfg)
     elif cfg.mode == "batch":
@@ -195,7 +195,7 @@ def run(cfg: RunConfig) -> None:
     else:
         raise ValueError(f"Unknown mode: {cfg.mode}")
 
-    # ── Parse + merge ─────────────────────────────────────────────────────────
+    # Parse + merge
     q1_rows = list(all_cached_rows["q1"])
     q2_rows = list(all_cached_rows["q2"])
     q3_rows = list(all_cached_rows["q3"])
@@ -212,7 +212,7 @@ def run(cfg: RunConfig) -> None:
         elif req.task == "q5_f1":
             q5_rows.append(row)
 
-    # ── Write outputs ─────────────────────────────────────────────────────────
+    # Write outputs
     _write_jsonl(q1_rows, cfg.results_dir / "q1_precision.jsonl")
     _write_jsonl(q2_rows, cfg.results_dir / "q2_relations.jsonl")
     _write_jsonl(q3_rows, cfg.results_dir / "q3_recall.jsonl")
@@ -230,7 +230,7 @@ def run(cfg: RunConfig) -> None:
     cache.close()
 
 
-# ── Result dispatcher ─────────────────────────────────────────────────────────
+# Result dispatcher
 
 def _parse_result(req: JudgeRequest, judgment: dict) -> dict:
     """Route a (request, raw_judgment) pair through the appropriate parse function.
@@ -250,7 +250,7 @@ def _parse_result(req: JudgeRequest, judgment: dict) -> dict:
         raise ValueError(f"Unknown task: {req.task}")
 
 
-# ── Sync execution ───────────────────────────────────────────────────────────
+# Sync execution
 
 def _run_sync(
     requests: list[JudgeRequest],
@@ -306,7 +306,7 @@ def _run_sync(
     return results
 
 
-# ── Batch execution ──────────────────────────────────────────────────────────
+# Batch execution
 
 def _run_batch(
     requests: list[JudgeRequest],
@@ -428,7 +428,7 @@ def _collect_batch_results(
     return results
 
 
-# ── Dry-run logger ───────────────────────────────────────────────────────────
+# Dry-run logger
 
 def _log_dry_run(requests: list[JudgeRequest], cfg: RunConfig) -> None:
     """Write every pending Opus request to a JSONL file without calling the API."""
@@ -457,7 +457,7 @@ def _log_dry_run(requests: list[JudgeRequest], cfg: RunConfig) -> None:
     print("Re-run without --dry-run to execute.")
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# Helpers
 
 def _write_jsonl(rows: list[dict], path: Path) -> None:
     if not rows:

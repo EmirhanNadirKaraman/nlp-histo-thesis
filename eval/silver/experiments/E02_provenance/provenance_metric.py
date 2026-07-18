@@ -58,7 +58,7 @@ def main() -> None:
         print(f"E02 provenance — corpus: {nd} documents, {nte} text elements, "
               f"{nfig} figures, {ntab} tables\n")
 
-        # ── TEXT provenance (one pass over the small unique_path/path_list cols) ──
+        # TEXT provenance (one pass over the small unique_path/path_list cols)
         print("TEXT provenance (section-hierarchy address per paragraph):")
         te = s.query(TextElement.unique_path, TextElement.path_list).all()
         has_up = sum(1 for up, _ in te if up)
@@ -72,7 +72,7 @@ def main() -> None:
         rec("text elements with path_list (section array)", has_pl, nte)
         rec("text elements with non-empty text", has_text, nte)
 
-        # ── TABLE provenance (caption + crop + page/bbox + cross-ref) ──
+        # TABLE provenance (caption + crop + page/bbox + cross-ref)
         # bbox is Docling coords (y=0 at page bottom, so y1>y2); validity = non-degenerate.
         print("\nTABLE provenance (caption + crop + page/bbox + cross-ref):")
         tab_page = s.query(func.count(Table.id)).filter(Table.page_number.isnot(None)).scalar()
@@ -94,7 +94,7 @@ def main() -> None:
         rec("tables linked to ≥1 referencing paragraph", tab_linked, ntab)
         rec("tables with extracted content [unpopulated — no source in crop path]", tab_content, ntab)
 
-        # ── FIGURE provenance (page/bbox added in migration 0014, B-075) ──
+        # FIGURE provenance (page/bbox added in migration 0014, B-075)
         print("\nFIGURE provenance (caption + crop + page/bbox + cross-ref):")
         fig_cap = s.query(func.count(Figure.id)).filter(
             Figure.caption_text.isnot(None), Figure.caption_text != "").scalar()
@@ -115,7 +115,7 @@ def main() -> None:
         rec("figures linked to ≥1 referencing paragraph", fig_linked, nfig)
         rec("figures with section_context [unpopulated — no source]", fig_sec, nfig)
 
-        # ── cross-reference resolution ──
+        # cross-reference resolution
         print("\nCROSS-REFERENCE resolution (in-text mentions → media rows):")
         n_figref = s.query(func.count(TextElementFigureReference.id)).scalar()
         n_tabref = s.query(func.count(TextElementTableReference.id)).scalar()
@@ -124,7 +124,7 @@ def main() -> None:
         rec("text elements citing ≥1 figure/table", len(te_fig | te_tab), nte)
         print(f"  total figure-refs={n_figref}  total table-refs={n_tabref}")
 
-        # ── qualitative example: paragraph → referenced table (caption + crop) ──
+        # qualitative example: paragraph → referenced table (caption + crop)
         print("\nQUALITATIVE example (provenance chain that the DB actually preserves):")
         link = (s.query(TextElementTableReference)
                 .join(Table, Table.id == TextElementTableReference.table_id)

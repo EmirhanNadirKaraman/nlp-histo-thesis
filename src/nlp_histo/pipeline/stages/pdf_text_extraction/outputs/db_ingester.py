@@ -36,7 +36,7 @@ class PostgresDatabaseIngester:
         self._db = db
         self._db_url = db_url
 
-    # ── Lazy DB connection ────────────────────────────────────────────────────
+    # Lazy DB connection
 
     def _get_db(self):
         if self._db is None:
@@ -44,7 +44,7 @@ class PostgresDatabaseIngester:
             self._db = get_db_connection(database_url=self._db_url)
         return self._db
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def write(
         self,
@@ -90,7 +90,7 @@ class PostgresDatabaseIngester:
             session.add(doc)
             session.flush()  # get doc.id
 
-            # ── Figures ───────────────────────────────────────────────────────
+            # Figures
             fig_objs = {}
             for i, fig in enumerate(figures, start=1):
                 obj = Figure(
@@ -110,7 +110,7 @@ class PostgresDatabaseIngester:
                 session.flush()
                 fig_objs[fig.number or i] = obj
 
-            # ── Tables ────────────────────────────────────────────────────────
+            # Tables
             tab_objs = {}
             for i, tbl in enumerate(tables, start=1):
                 obj = Table(
@@ -131,7 +131,7 @@ class PostgresDatabaseIngester:
                 session.flush()
                 tab_objs[tbl.number or i] = obj
 
-            # ── Text elements ─────────────────────────────────────────────────
+            # Text elements
             position_counter: dict = defaultdict(int)
             for row in rows:
                 pos = position_counter[row.path_string]

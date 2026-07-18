@@ -25,7 +25,7 @@ from nlp_histo.evaluation.schemas import (
 )
 
 
-# ── helpers (mirror test_matcher.py) ─────────────────────────────────────────
+# helpers (mirror test_matcher.py)
 
 def _silver(case_id="PMC1|1", claims=("s0", "s1")) -> SilverCaseResult:
     findings = [SilverFinding(category="IHC", claim=c, confidence="high") for c in claims]
@@ -47,7 +47,7 @@ def _pipeline(case_id="PMC1|1", claims=("p0", "p1")) -> PipelineCaseOutput:
     )
 
 
-# ── matcher strategies produce different matched sets ────────────────────────
+# matcher strategies produce different matched sets
 
 def test_greedy_and_optimal_matched_sets_differ():
     # greedy grabs the global max (0,0)=0.9 then is stuck (only 0.0 left < thr);
@@ -60,7 +60,7 @@ def test_greedy_and_optimal_matched_sets_differ():
     assert g != o
 
 
-# ── _evaluate_outputs reports both matcher metric sets ───────────────────────
+# _evaluate_outputs reports both matcher metric sets
 
 @patch("nlp_histo.evaluation.matching.matcher.get_embeddings")
 def test_evaluate_outputs_reports_both_matchers(mock_emb):
@@ -104,7 +104,7 @@ def test_evaluate_outputs_reports_both_matchers(mock_emb):
     assert out["n_matched"] == out["n_matched_greedy"]
 
 
-# ── harness selects on strict_f1_optimal, never greedy ───────────────────────
+# harness selects on strict_f1_optimal, never greedy
 
 def test_rank_selects_on_optimal_not_greedy():
     from eval.silver.analysis.run_new_summarization_sweeps import _rank

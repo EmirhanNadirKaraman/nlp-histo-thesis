@@ -174,7 +174,7 @@ def main():
     pct = 100 * n_flagged / max(n_findings, 1)
     hallucinated = by_class.get("cross_doc_external", 0)
 
-    # ── Markdown ──────────────────────────────────────────────────────────────
+    # Markdown
     lines = [
         f"# Citation-filter statistics — {label}",
         "",
@@ -238,7 +238,7 @@ def main():
         for r, n in by_reason.most_common():
             w.writerow([f"reason:{r}", n])
 
-    # ── Console summary ───────────────────────────────────────────────────────
+    # Console summary
     print(f"\nCitation-filter stats — {label}")
     print(f"  findings scanned: {n_findings}")
     print(f"  flagged:          {n_flagged} ({pct:.2f}%)")

@@ -50,7 +50,7 @@ logger = logging.getLogger("run_paper")
 DEFAULT_POLL_INTERVAL_SEC: int = 60
 
 
-# ── Sync runner ────────────────────────────────────────────────────────────────
+# Sync runner
 
 
 def _make_token_callback(model_id: str, store: dict, lock: threading.Lock):
@@ -260,7 +260,7 @@ def build_runner(
     return runner, token_usage
 
 
-# ── Batch runner ───────────────────────────────────────────────────────────────
+# Batch runner
 
 def build_batch_runner(
     profile_name: str | None = None,
@@ -312,7 +312,7 @@ def build_batch_runner(
     )
 
 
-# ── Entry point ────────────────────────────────────────────────────────────────
+# Entry point
 
 #: The frozen calibration selection. It is a thesis artifact, NOT application data, so
 #: it is not packaged: it lives in the repository and is supplied explicitly. The
@@ -894,12 +894,12 @@ def _save_escalation_report(stats: list[dict], output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
 
-    # ── JSON ─────────────────────────────────────────────────────────────────
+    # JSON
     json_path = output_dir / f"escalation_report_{ts}.json"
     json_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     logger.info("Escalation report (JSON) → %s", json_path)
 
-    # ── CSV ──────────────────────────────────────────────────────────────────
+    # CSV
     csv_path = output_dir / f"escalation_report_{ts}.csv"
     _csv_fields = [
         "pmcid", "mode", "total_chunks", "l1_kept", "l1_pct",
@@ -914,7 +914,7 @@ def _save_escalation_report(stats: list[dict], output_dir: Path) -> None:
         w.writerow(totals)
     logger.info("Escalation report (CSV)  → %s", csv_path)
 
-    # ── Console ───────────────────────────────────────────────────────────────
+    # Console
     def _fmt_money(v) -> str:
         return "    n/a " if v is None else f"{v:>8.5f}"
 
@@ -1066,7 +1066,7 @@ def _run_all_batch(
         config_path=config_path,
     )
 
-    # ── Phase 1: submit all papers in parallel ────────────────────────────────
+    # Phase 1: submit all papers in parallel
     def _submit(pmcid: str):
         try:
             file_data = KnowledgeExtractionRunner.load_paper_from_db(pmcid)
@@ -1092,7 +1092,7 @@ def _run_all_batch(
         logger.error("No papers submitted successfully.")
         return
 
-    # ── Phase 2: poll all handles until every one is COMPLETE ─────────────────
+    # Phase 2: poll all handles until every one is COMPLETE
     def _advance_one(pmcid: str) -> tuple[str, object]:
         return pmcid, runner.advance(handles[pmcid])
 
@@ -1114,7 +1114,7 @@ def _run_all_batch(
                     len(pending), len(handles), poll_interval)
         time.sleep(poll_interval)
 
-    # ── Phase 3: finalize all ─────────────────────────────────────────────────
+    # Phase 3: finalize all
     # Sequential — finalize() is CPU/MPS-bound (NLI on a single device, UMLS
     # lookups, DB writes); zero remote LLM calls.  Parallelising it serialises
     # at the MPS device anyway while paying N× the model-load cost (each thread

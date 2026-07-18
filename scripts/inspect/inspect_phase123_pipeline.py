@@ -144,7 +144,7 @@ def main() -> None:
     )
     cache = PipelineCache(pathlib.Path("out/inspect/map_cache.json"))
 
-    # ── Phase 1: MAP ───────────────────────────────────────────────────────────
+    # Phase 1: MAP
     t_map = time.perf_counter()
     sentences = load_sentences(pmcid)[:max_sentences]
     logger.info("Processing %d sentences (%d chunks)", len(sentences), args.chunks)
@@ -155,7 +155,7 @@ def main() -> None:
     raw_findings = [f for cs in chunk_summaries for f in cs.findings]
     logger.info("MAP: %d raw findings  [%.1fs]", len(raw_findings), time.perf_counter() - t_map)
 
-    # ── Phase 1b: NLI scoring (optional) ──────────────────────────────────────
+    # Phase 1b: NLI scoring (optional)
     if not args.skip_nli:
         t_nli = time.perf_counter()
         gf = GroundingFilter(threshold=0.3)
@@ -167,7 +167,7 @@ def main() -> None:
     else:
         logger.info("NLI scoring: skipped (--skip-nli)")
 
-    # ── Phase 2: NORMALIZE ─────────────────────────────────────────────────────
+    # Phase 2: NORMALIZE
     t_norm = time.perf_counter()
     normal_findings = NormalizeStage().normalize(raw_findings, pmcid)
     logger.info(
@@ -175,7 +175,7 @@ def main() -> None:
         len(raw_findings), len(normal_findings), time.perf_counter() - t_norm,
     )
 
-    # ── Phase 3: GROUP ─────────────────────────────────────────────────────────
+    # Phase 3: GROUP
     t_group = time.perf_counter()
     groupable = [nf for nf in normal_findings if is_groupable(nf)]
     non_groupable = [nf for nf in normal_findings if not is_groupable(nf)]
@@ -185,7 +185,7 @@ def main() -> None:
         len(groupable), len(non_groupable), len(groups), time.perf_counter() - t_group,
     )
 
-    # ── Metrics ────────────────────────────────────────────────────────────────
+    # Metrics
     groupability_ratio = (
         round(len(groupable) / len(normal_findings) * 100, 1)
         if normal_findings else 0.0
@@ -229,7 +229,7 @@ def main() -> None:
         for nf in non_groupable[:10]
     ]
 
-    # ── Console summary ────────────────────────────────────────────────────────
+    # Console summary
     print()
     print(f"  PMCID              : {pmcid}")
     print(f"  Chunks processed   : {len(chunk_summaries)}")
@@ -252,7 +252,7 @@ def main() -> None:
             print(f"    [{len(g.member_ids):>2}] {g.subject_entity:<20} → {g.outcome_entity:<20} [{g.relation_type.value}]  {dirs}")
     print()
 
-    # ── Write JSON ─────────────────────────────────────────────────────────────
+    # Write JSON
     out_dir = pathlib.Path("out/inspect")
     out_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")

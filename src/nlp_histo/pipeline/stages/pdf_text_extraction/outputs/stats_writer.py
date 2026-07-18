@@ -36,7 +36,7 @@ from typing import Any, Dict, Iterable, List, Optional
 logger = logging.getLogger(__name__)
 
 
-# ── Reason-code mapping ───────────────────────────────────────────────────────
+# Reason-code mapping
 #
 # NodeScorer emits human-readable rejection strings.  We map each canonical
 # prefix to a stable short code so histograms are comparable across runs even
@@ -67,7 +67,7 @@ def classify_reason(reason: str) -> str:
     return "OTHER"
 
 
-# ── Stats dataclass ───────────────────────────────────────────────────────────
+# Stats dataclass
 
 @dataclass
 class _StageTiming:
@@ -117,7 +117,7 @@ class DocStats:
     config_used: Dict[str, Any] = field(default_factory=dict)
 
 
-# ── Collector ─────────────────────────────────────────────────────────────────
+# Collector
 
 class DocStatsCollector:
     """
@@ -149,7 +149,7 @@ class DocStatsCollector:
         self._t0 = time.monotonic()
         self._written = False
 
-    # ── Recording ─────────────────────────────────────────────────────────────
+    # Recording
 
     @contextlib.contextmanager
     def stage(self, name: str):
@@ -226,7 +226,7 @@ class DocStatsCollector:
         if self._stats.status == "running":
             self._stats.status = "ok"
 
-    # ── Persistence ───────────────────────────────────────────────────────────
+    # Persistence
 
     def write(self) -> Optional[Path]:
         """Idempotent: writes at most once."""
@@ -249,7 +249,7 @@ class DocStatsCollector:
                              self._stats.pmcid)
             return None
 
-    # ── Internals ─────────────────────────────────────────────────────────────
+    # Internals
 
     @staticmethod
     def _safe(fn) -> None:
@@ -259,7 +259,7 @@ class DocStatsCollector:
             logger.exception("DocStatsCollector: record op failed (suppressed)")
 
 
-# ── Config digest helpers ─────────────────────────────────────────────────────
+# Config digest helpers
 
 _PATHCONFIG_FIELDS_TO_EXCLUDE = {
     "project_root", "output_root", "files_root",

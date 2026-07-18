@@ -96,7 +96,7 @@ class VoterClassification:
     mean_evidence_chain_length: float  # mean len(Finding.evidence) per finding
 
 
-# ── Pure helpers ────────────────────────────────────────────────────────────────
+# Pure helpers
 
 def _has_hard(validations: list[FindingValidation]) -> bool:
     return any(c in _HARD_CODES for v in validations for c in v.reason_codes)
@@ -139,7 +139,7 @@ def _mean_evidence_length(summary: AuditableSummary) -> float:
     return sum(len(f.evidence) for f in summary.findings) / len(summary.findings)
 
 
-# ── Router ──────────────────────────────────────────────────────────────────────
+# Router
 
 class MapOutputRouter:
     """
@@ -259,7 +259,7 @@ class MapOutputRouter:
         )
         return decision
 
-    # ── Voter classification ────────────────────────────────────────────────────
+    # Voter classification
 
     def _classify_voters(
         self,
@@ -311,7 +311,7 @@ class MapOutputRouter:
         )
         return classifications
 
-    # ── Chunk-level decision from N_eligible count ──────────────────────────────
+    # Chunk-level decision from N_eligible count
 
     def _chunk_decision_from_classifications(
         self,
@@ -331,7 +331,7 @@ class MapOutputRouter:
         if n_eligible >= 2:
             return None
 
-        # ── N_eligible == 0 ─────────────────────────────────────────────────────
+        # N_eligible == 0
         if n_eligible == 0:
             if unusable:
                 # At least one hard failure — REJECT.
@@ -385,7 +385,7 @@ class MapOutputRouter:
                 ),
             )
 
-        # ── N_eligible == 1 ─────────────────────────────────────────────────────
+        # N_eligible == 1
         only = eligible[0]
         if self._single_voter_policy == "keep":
             return RoutingDecision(
@@ -407,7 +407,7 @@ class MapOutputRouter:
             valid_voter_indices=[only.voter_index],
         )
 
-    # ── Agreement gate ──────────────────────────────────────────────────────────
+    # Agreement gate
 
     def _agreement_gate(
         self,

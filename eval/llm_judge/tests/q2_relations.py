@@ -4,7 +4,7 @@ Q2 — RELATE label accuracy.
 Judges whether the pipeline's RELATE label (SUPPORT / CONTRADICT /
 SCOPE_QUALIFY) is correct for persisted relation pairs.
 
-NOTE (Phase 1): This test measures **precision** of persisted relations,
+NOTE (Phase 1): This test measures precision of persisted relations,
 not relation recall.  The pipeline only persists non-UNRELATED pairs (those
 that pass the comparability gate AND score above NLI thresholds).  Candidate
 pairs that the pipeline labeled UNRELATED (or filtered before NLI) are not

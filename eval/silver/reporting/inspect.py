@@ -19,7 +19,7 @@ from nlp_histo.evaluation.schemas import MatchResult, PipelineCaseOutput, Silver
 logger = logging.getLogger(__name__)
 
 
-# ── Markdown ───────────────────────────────────────────────────────────────────
+# Markdown
 
 def _fmt_silver_finding(i: int, f) -> str:
     lines = [
@@ -104,7 +104,7 @@ def _md_case(
     return "\n".join(parts)
 
 
-# ── CSV helpers ────────────────────────────────────────────────────────────────
+# CSV helpers
 
 def _write_matched_pairs_csv(
     match_results: list[MatchResult],
@@ -218,7 +218,7 @@ def _write_field_mismatches_csv(
                     })
 
 
-# ── Main entry ─────────────────────────────────────────────────────────────────
+# Main entry
 
 def write_inspection_report(
     match_results: list[MatchResult],

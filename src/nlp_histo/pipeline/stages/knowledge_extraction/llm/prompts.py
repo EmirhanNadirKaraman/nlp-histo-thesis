@@ -7,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from ..models import AuditableSummary
 
-# ── MAP ────────────────────────────────────────────────────────────────────────
+# MAP
 
 _MAP_SYSTEM = """<Role>You are a High-Recall Medical Evidence Analyst specializing in histopathology.</Role>
 
@@ -268,7 +268,7 @@ Source Sentences (each tagged with [SentenceID|PMCID|TextElementID]):
 </Context>"""
 
 
-# ── Chain factories ────────────────────────────────────────────────────────────
+# Chain factories
 
 def build_map_chain(llm):
     """Return a runnable chain: ``prompt | llm (structured AuditableSummary)``.

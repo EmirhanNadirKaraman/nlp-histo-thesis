@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 _PROGRESS_EVERY = 50
 
 
-# ── Selection-YAML helper ────────────────────────────────────────────────────
+# Selection-YAML helper
 
 def load_pmcids_from_selection(path: str | Path) -> list[str]:
     """Flatten a ``related``/``diverse``/``hard`` selection YAML to its PMCID list.
@@ -65,7 +65,7 @@ class RawPaper:
     n_captions: int
 
 
-# ── DB loader ────────────────────────────────────────────────────────────────
+# DB loader
 
 class DBLoader:
     """Read papers + entities + figures/tables straight from Postgres.
@@ -181,7 +181,7 @@ class DBLoader:
                     n_yielded, n_missing, time.perf_counter() - t0)
 
 
-# ── JSONL loader ─────────────────────────────────────────────────────────────
+# JSONL loader
 
 class JSONLLoader:
     """Fallback loader for environments where the DB is not reachable.

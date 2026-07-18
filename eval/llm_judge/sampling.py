@@ -48,7 +48,7 @@ class ParagraphSample:
     section_path: str      # hierarchical path for context
 
 
-# ── Deterministic seeding ────────────────────────────────────────────────────
+# Deterministic seeding
 
 def stable_seed(global_seed: int, pmcid: str, run_id: str | int, task_name: str) -> int:
     """Per-task, per-paper deterministic seed.
@@ -59,7 +59,7 @@ def stable_seed(global_seed: int, pmcid: str, run_id: str | int, task_name: str)
     return int(hashlib.sha256(blob.encode()).hexdigest()[:8], 16)
 
 
-# ── Paper selection ──────────────────────────────────────────────────────────
+# Paper selection
 
 def select_papers(
     session: Any,
@@ -105,7 +105,7 @@ def select_papers(
     return chosen
 
 
-# ── Paragraph sampling ───────────────────────────────────────────────────────
+# Paragraph sampling
 
 def _parse_te_ids(evidence_refs: list[str] | None) -> set[int]:
     """Parse text_element_ids from evidence_refs format 'S1|PMC123456|789'."""
@@ -172,7 +172,7 @@ def sample_paragraphs(
     rng = random.Random(seed)
     results: list[ParagraphSample] = []
 
-    # ── With-extraction stratum ──────────────────────────────────────────
+    # With-extraction stratum
     with_ids = [
         te_id for te_id in te_claims
         if te_id in te_by_id
@@ -191,7 +191,7 @@ def sample_paragraphs(
             section_path=te.path_string or "",
         ))
 
-    # ── Zero-extraction stratum ──────────────────────────────────────────
+    # Zero-extraction stratum
     te_ids_with_findings = set(te_claims.keys())
     zero_ids = [
         te.id for te in all_tes

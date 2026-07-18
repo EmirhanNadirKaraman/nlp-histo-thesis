@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """E03 — combined grounding figure: (a) score distribution + (b) threshold effect.
 
-One 1x2 figure, both panels reconstructed from the E03 grounding **sweep CSV**
+One 1x2 figure, both panels reconstructed from the E03 grounding sweep CSV
 (no recompute):
 
   (a) distribution of grounding entailment scores -- bimodal: a large mode at
@@ -57,7 +57,7 @@ def main() -> int:
 
     fig, (axL, axR) = plt.subplots(1, 2, figsize=(10.8, 3.9))
 
-    # ── (a) score distribution (bimodal) ──────────────────────────────────────
+    # (a) score distribution (bimodal)
     counts, centers = [], []
     for i in range(10):
         t = round(0.1 * i, 1)
@@ -74,7 +74,7 @@ def main() -> int:
     axL.grid(True, axis="y", alpha=0.25)
     axL.legend(fontsize=8, loc="upper center")
 
-    # ── (b) precision / recall / strict-F1 vs threshold ───────────────────────
+    # (b) precision / recall / strict-F1 vs threshold
     axR.plot(th, rec, "-o", color="#4c78a8", lw=1.7, ms=4.5, label="recall (vs silver)")
     axR.plot(th, prec, "-s", color="#54a24b", lw=1.7, ms=4.0, label="precision (vs silver)")
     axR.plot(th, f1, "-^", color="#e45756", lw=1.7, ms=4.5, label="strict-F1 (vs silver)")

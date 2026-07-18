@@ -2,7 +2,7 @@
 """E03 — grounding entailment-score distribution (the bimodality figure).
 
 Reconstructs the per-bin score distribution directly from the E03 grounding
-**sweep CSV** -- no recompute. The sweep records ``n_kept`` (findings with
+sweep CSV -- no recompute. The sweep records ``n_kept`` (findings with
 entailment score >= threshold) at each threshold in {0.0, 0.1, ..., 0.9}, so the
 count in bin ``[t, t+0.1)`` is just ``n_kept(t) - n_kept(t+0.1)`` (the top bin
 ``[0.9, 1.0]`` is ``n_kept(0.9)``). The distribution is bimodal: a large mode at

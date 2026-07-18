@@ -51,7 +51,7 @@ def c(color: str, text: str) -> str:
     return f"{color}{text}{RESET}"
 
 
-# ── CSV helpers ────────────────────────────────────────────────────────────────
+# CSV helpers
 
 def load_csv() -> dict[str, dict]:
     if not CSV_PATH.exists():
@@ -68,7 +68,7 @@ def save_csv(records: dict[str, dict]) -> None:
             writer.writerow({k: row.get(k, "") for k in FIELDNAMES})
 
 
-# ── Image helpers ──────────────────────────────────────────────────────────────
+# Image helpers
 
 def images_for(pmcid: str, kind: str) -> list[Path]:
     """Return sorted image paths for this pmcid and kind."""
@@ -83,7 +83,7 @@ def open_images(paths: list[Path]) -> None:
         subprocess.Popen(["open"] + [str(p) for p in paths])
 
 
-# ── Display ────────────────────────────────────────────────────────────────────
+# Display
 
 _KIND_LABEL = {
     "missed_figures": "MISSED FIGURES",
@@ -139,7 +139,7 @@ def ask(prompt: str) -> str:
     return input().strip()
 
 
-# ── Single-pass loop ───────────────────────────────────────────────────────────
+# Single-pass loop
 
 def run_pass(kind: str, pdfs: list[str], records: dict) -> bool:
     """
@@ -190,7 +190,7 @@ def run_pass(kind: str, pdfs: list[str], records: dict) -> bool:
     return True
 
 
-# ── Entry point ────────────────────────────────────────────────────────────────
+# Entry point
 
 def main() -> None:
     pdfs    = sorted(p.stem for p in PDF_DIR.glob("*.pdf"))

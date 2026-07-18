@@ -78,7 +78,7 @@ def _load_map_context(
     ``cache_path`` / ``silver_path`` default to the related15 primer/silver but can
     point at another split (e.g. heldout15) for held-out evaluation.
 
-    ``embed_cache_path`` should be passed **explicitly** by callers that own their own
+    ``embed_cache_path`` should be passed explicitly by callers that own their own
     artifact tree (the chapter-9 replay resolves it from ``--artifact-root``). The
     ``_FROZEN_*`` fallbacks below are anchored to the *repository*, which is wrong for
     anyone running against a copied tree — see B-112.

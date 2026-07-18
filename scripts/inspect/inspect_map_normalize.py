@@ -137,7 +137,7 @@ def main() -> None:
     logger.info("Processing %d sentences (%d chunks) for %s",
                 len(sentences), max_chunks, pmcid)
 
-    # ── MAP ────────────────────────────────────────────────────────────────────
+    # MAP
     map_stage = MapStage(
         voter_llms=[llm],
         level2_voter_llms=[llm],
@@ -153,17 +153,17 @@ def main() -> None:
     logger.info("MAP produced %d raw findings across %d chunks",
                 len(raw_findings), len(chunk_summaries))
 
-    # ── SCORE (Phase 1 grounding) ──────────────────────────────────────────────
+    # SCORE (Phase 1 grounding)
     gf = GroundingFilter(threshold=0.3)
     score_findings(raw_findings, nli_pipe=gf._pipe)
     logger.info("Grounding scores written to %d findings", len(raw_findings))
 
-    # ── NORMALIZE (Phase 2) ────────────────────────────────────────────────────
+    # NORMALIZE (Phase 2)
     normal_findings = NormalizeStage().normalize(raw_findings, pmcid)
     logger.info("NORMALIZE: %d findings → %d NormalFindings",
                 len(raw_findings), len(normal_findings))
 
-    # ── Report ─────────────────────────────────────────────────────────────────
+    # Report
     print()
     print("RAW MAP FINDINGS")
     print("-" * 70)
@@ -185,7 +185,7 @@ def main() -> None:
         n_spans = len(nf.evidence)
         print(f"  [{score_str}] {dirn:<10} {subj:<20} → {outc:<20}  spans={n_spans}  {nf.predicate_text[:50]}")
 
-    # ── Write output ───────────────────────────────────────────────────────────
+    # Write output
     out_dir = pathlib.Path("out/inspect")
     out_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")

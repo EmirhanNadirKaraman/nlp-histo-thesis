@@ -168,7 +168,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 per_struct[label] = _replay_scores(ctx.voter_cache, checker)
 
-    # ── Per-structure table (L1 gate population) ──────────────────────────────
+    # Per-structure table (L1 gate population)
     print("\nPer-chunk L1 agreement score (`primary`) — gate population only")
     print(f"reject difference band = ({lo}, {hi}]\n")
     hdr = f"{'structure / variant':44} {'n_gate':>7} {'in band':>8} {'band %':>7} {'min':>6} {'med':>6} {'max':>6}"
@@ -183,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
         pct = 100 * nb / len(l1) if l1 else 0.0
         print(f"{label[:44]:44} {len(l1):>7} {nb:>8} {pct:>6.2f}% {mn:>6.3f} {md:>6.3f} {mx:>6.3f}")
 
-    # ── Bypassed-chunk accounting (pooled, from L1 pass) ──────────────────────
+    # Bypassed-chunk accounting (pooled, from L1 pass)
     tot = sum(r["n_chunks"] for r in per_struct.values())
     emp = sum(r["empty"] for r in per_struct.values())
     sng = sum(r["single"] for r in per_struct.values())
@@ -194,7 +194,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  bypass: empty (0 voters){emp:>8}   single (1 voter){sng:>8}   polarity-escalated{pol:>8}")
     print(f"  reached primary gate    {gate}  ({100*gate/tot if tot else 0:.1f}% of evals)")
 
-    # ── Headline + pooled histogram ───────────────────────────────────────────
+    # Headline + pooled histogram
     nb = _band_count(pooled, lo, hi)
     pct = 100 * nb / gate if gate else 0.0
     print(f"\n>>> HEADLINE: {nb}/{gate} = {pct:.3f}% of gate scores fall in ({lo}, {hi}]")

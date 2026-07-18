@@ -31,7 +31,7 @@ from ..entities.umls_utils import best_cui as _best_cui
 
 logger = logging.getLogger(__name__)
 
-# ── Synonym dictionary ─────────────────────────────────────────────────────────
+# Synonym dictionary
 # synonyms.yaml is the SINGLE source of truth — there is no hardcoded fallback.
 # It ships as package data inside the `entities` subpackage and is located through
 # importlib.resources, not through a filesystem-depth calculation: an installed
@@ -76,7 +76,7 @@ def _load_synonyms() -> dict[str, str]:
 _SYNONYMS: dict[str, str] = _load_synonyms()
 
 
-# ── UMLS entity resolver ───────────────────────────────────────────────────────
+# UMLS entity resolver
 # Module-level cache: entity surface text → (canonical_name, cui) pair.
 # Shared across all NormalizeStage instances in the same process.
 _UMLS_CACHE: dict[str, tuple[str | None, str | None]] = {}
@@ -167,7 +167,7 @@ def normalize_entity_with_cui(name: str | None) -> tuple[str | None, str | None]
     return _resolve_entity(name, _SYNONYMS)
 
 
-# ── Assertion status inference ─────────────────────────────────────────────────
+# Assertion status inference
 
 # Ordered: negative checked first so "not expressed" beats "expressed"
 _NEGATIVE_TRIGGERS = (
@@ -230,7 +230,7 @@ def infer_direction(claim: str) -> DirectionEnum:
 
 
 
-# ── Dedup key ──────────────────────────────────────────────────────────────────
+# Dedup key
 
 def _dedup_key(
     text_element_id: int | None,
@@ -272,7 +272,7 @@ def _dedup_key(
     return f"{text_element_id}|{subject}|{outcome}|{relation_type.value}|{dir_key}|{category}"
 
 
-# ── Source span extraction ─────────────────────────────────────────────────────
+# Source span extraction
 
 def _spans_from_finding(f: Finding) -> list[SourceSpan]:
     """
@@ -341,7 +341,7 @@ def _collect_source_ids(findings: list[Finding]) -> list[str]:
     return out
 
 
-# ── Public API ─────────────────────────────────────────────────────────────────
+# Public API
 
 class NormalizeStage:
     """
@@ -404,7 +404,7 @@ class NormalizeStage:
         )
         return results
 
-    # ── Internals ──────────────────────────────────────────────────────────────
+    # Internals
 
     def _normalize_entities(
         self, findings: list[Finding]

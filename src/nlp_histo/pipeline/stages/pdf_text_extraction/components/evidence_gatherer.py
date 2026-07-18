@@ -45,7 +45,7 @@ from nlp_histo.pipeline.stages.pdf_text_extraction.models.scored_node import Tex
 
 logger = logging.getLogger(__name__)
 
-# ── fitz word / block tuple field indices ────────────────────────────────────
+# fitz word / block tuple field indices
 # page.get_text("words") → (x0, y0, x1, y1, word, block_no, line_no, word_no)
 _W_X0, _W_Y0, _W_X1, _W_Y1, _W_TEXT = 0, 1, 2, 3, 4
 
@@ -97,7 +97,7 @@ class PyMuPDFEvidenceGatherer:
         self._block_cache: Dict[int, list] = {}  # page_no → list of block tuples
         self._dict_cache: Dict[int, dict] = {}   # page_no → get_text("dict") result
 
-    # ── Context manager ───────────────────────────────────────────────────────
+    # Context manager
 
     def __enter__(self) -> "PyMuPDFEvidenceGatherer":
         return self
@@ -114,7 +114,7 @@ class PyMuPDFEvidenceGatherer:
         self._block_cache.clear()
         self._dict_cache.clear()
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def gather(self, element: LayoutElement, page_height: float) -> TextNodeEvidence:
         """
@@ -160,7 +160,7 @@ class PyMuPDFEvidenceGatherer:
 
         return ev
 
-    # ── Internal: fitz document ───────────────────────────────────────────────
+    # Internal: fitz document
 
     def _open_doc(self) -> Optional[Any]:
         """Lazily open fitz.Document; return None on import / open failure."""
@@ -177,7 +177,7 @@ class PyMuPDFEvidenceGatherer:
             logger.error("Failed to open PDF with fitz (%s): %s", self._pdf_path.name, exc)
             return None
 
-    # ── Internal: word / block overlap ───────────────────────────────────────
+    # Internal: word / block overlap
 
     def _words_for_page(self, fitz_page: Any, page_no: int) -> list:
         if page_no not in self._word_cache:
@@ -212,7 +212,7 @@ class PyMuPDFEvidenceGatherer:
         try:
             fx0, fy0, fx1, fy1 = fitz_rect.x0, fitz_rect.y0, fitz_rect.x1, fitz_rect.y1
 
-            # ── Words ─────────────────────────────────────────────────────────
+            # Words
             words = self._words_for_page(fitz_page, page_no)
             word_count = 0
             total_chars = 0
@@ -233,7 +233,7 @@ class PyMuPDFEvidenceGatherer:
             if docling_text:
                 ev.char_coverage = min(total_chars / len(docling_text), 1.0)
 
-            # ── Blocks ────────────────────────────────────────────────────────
+            # Blocks
             blocks = self._blocks_for_page(fitz_page, page_no)
             for blk in blocks:
                 if blk[_B_TYPE] != _BLOCK_TYPE_TEXT:
@@ -249,7 +249,7 @@ class PyMuPDFEvidenceGatherer:
                 element.page, exc,
             )
 
-    # ── Internal: span color (white-text ghost layer) ─────────────────────────
+    # Internal: span color (white-text ghost layer)
 
     def _gather_span_colors(
         self,
@@ -306,7 +306,7 @@ class PyMuPDFEvidenceGatherer:
                 page_no, exc,
             )
 
-    # ── Internal: pixel brightness ────────────────────────────────────────────
+    # Internal: pixel brightness
 
     def _gather_pixel_brightness(
         self,

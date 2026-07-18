@@ -2,8 +2,8 @@
 
 Two names, deliberately distinct, because conflating them is what caused B-119:
 
-* **PMC accession** — the bare NLM value, ``PMC8395919``.
-* **document ID** — this project's established composite identifier,
+* PMC accession — the bare NLM value, ``PMC8395919``.
+* document ID — this project's established composite identifier,
   ``PMC8395919_dermatopathology-08-00036``: the accession plus the publisher's filename
   stem, produced by ``acquire organize`` and used as ``documents.pmcid``.
 
@@ -13,7 +13,7 @@ labels (``case_id: "PMC11649514_HIS-86-204|3562"``) — so it is load-bearing hi
 a style choice. Normalising it to bare accessions would orphan all of it and is filed as
 post-thesis migration debt, not a fix.
 
-What this module guards is narrower: an NLM **version suffix** must never reach the
+What this module guards is narrower: an NLM version suffix must never reach the
 database. AWS names its objects ``PMC8395919.1.pdf`` (``.1`` = article version), and a
 naive ``Path.stem`` would mint ``PMC8395919.1`` as a *new* document ID — a duplicate of a
 paper the corpus already has under its FTP-derived ID.
