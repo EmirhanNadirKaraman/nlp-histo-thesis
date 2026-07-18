@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Chapter-9 replay bundle for hosting, with checksums and consistency proof.
+"""Build the results-replay bundle for hosting, with checksums and consistency proof.
 
 A clean clone carries code, tests and the corpus definition — not the ~1.5 GB of frozen
 paid output the replay needs. This assembles exactly what HOW_TO_RUN §0 tells a supervisor
@@ -11,7 +11,7 @@ to ask for, so what they receive can be verified rather than trusted.
 Two bundles, deliberately separate:
 
 * replay (~1.5 GB) — reproduces the published tables. No database, no API key:
-  ``replay chapter9`` never connects to PostgreSQL.
+  ``replay results`` never connects to PostgreSQL.
 * database (~485 MB live) — only for querying the corpus or re-running NER/knowledge.
 
 The PDFs are deliberately not bundled: §6 re-acquires them from NLM's AWS dataset using
@@ -208,11 +208,16 @@ def build_replay_bundle(out_dir: Path, commit: str) -> tuple[Path, Path]:
 
     # 3. Manifest: machine-readable, per-file path + size + sha256.
     manifest = {
-        "bundle": "chapter9-replay-artifacts",
+        # The bundle currently hosted (pinned to ec11eec, REPRODUCE.md Step 3) was cut
+        # before the `chapter9` → `results` rename and its MANIFEST.json still names the
+        # old id and command. That archive keeps working: `replay chapter9` survives as
+        # a CLI alias precisely so the shipped instructions resolve. These values apply
+        # to the next bundle cut, not the one on LRZ/Drive today.
+        "bundle": "results-replay-artifacts",
         "source_commit": commit,
         "artifact_count": len(staged),
         "note": "Extract over a clean clone so paths match, then: "
-                "nlp-histo replay chapter9 --artifact-root .",
+                "nlp-histo replay results --artifact-root .",
         "files": [
             {"path": rel, "bytes": path.stat().st_size, "sha256": _sha256(path)}
             for rel, path in sorted(staged)

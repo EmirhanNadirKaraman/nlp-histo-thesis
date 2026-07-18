@@ -20,7 +20,7 @@ it may import *from* it. That direction is enforced by tests
 ```
 src/nlp_histo/
 ├── cli/            the `nlp-histo` console command (argparse; handlers import lazily)
-├── workflows/      knowledge.py (LLM extraction), replay.py (chapter-9 offline replay)
+├── workflows/      knowledge.py (LLM extraction), replay.py (offline results replay)
 ├── acquisition/    downloader.py, tarballs.py, organizer.py, selector.py
 ├── pipeline/
 │   ├── stages/pdf_text_extraction/    PDF → hierarchical text + figures + tables → DB

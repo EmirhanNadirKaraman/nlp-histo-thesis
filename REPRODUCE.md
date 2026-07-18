@@ -227,8 +227,25 @@ ls eval/data/embedding_cache_openai.sqlite eval/data/map_primer/voter_cache.json
 ls out/summaries/summaries | head -3
 ```
 
-All three must exist. The archive also contains `MANIFEST.json`, listing every file with
-its size and checksum, if you ever want to verify them individually.
+All three must exist. To check all 43 artifacts rather than three, the archive ships a
+`MANIFEST.json` listing every file with its size and SHA-256:
+
+```bash
+python scripts/verify_bundle.py
+```
+
+It prints one line per artifact and exits non-zero if anything is missing, truncated or
+altered. A full run hashes 1.5 GB and takes a minute or two; `--fast` checks presence and
+size only, which catches a partial unpack in seconds.
+
+Expect the two embedding caches to be reported as **larger than shipped** once you have run
+anything — they are append-only SQLite stores that gain rows as experiments cache new
+embeddings, so the script verifies them grow-only rather than byte-exact. Every other
+artifact is frozen and checked against its checksum.
+
+This is worth running before Step 7 rather than after a confusing failure: a truncated cache
+does not announce itself, it surfaces much later as a cache miss that looks like a result
+difference.
 
 ## Step 7 — Reproduce the thesis tables
 
@@ -236,7 +253,7 @@ This is the headline result, and it needs only the artifacts you just unpacked �
 database, no API key.**
 
 ```bash
-nlp-histo replay chapter9 --artifact-root . --output-dir out/replay-check
+nlp-histo replay results --artifact-root . --output-dir out/replay-check
 ```
 
 Takes about five minutes. On first run it downloads two models (~3 GB: the scispaCy UMLS
@@ -272,12 +289,12 @@ Nothing here fails silently: a non-zero exit always names the cause.
 > command stops with exit 3 rather than quietly producing different numbers.
 
 **Comparing against the published tables.** The repository ships the frozen thesis output at
-`out/thesis_results/chapter9_offline_replay/` (the CSVs are tracked in git — you already have
+`out/thesis_results/results_offline_replay/` (the CSVs are tracked in git — you already have
 them from Step 1). Your nine CSVs should be byte-identical to these. Diff all nine at once:
 
 ```bash
 for f in out/replay-check/*.csv; do
-  diff "$f" "out/thesis_results/chapter9_offline_replay/$(basename "$f")" \
+  diff "$f" "out/thesis_results/results_offline_replay/$(basename "$f")" \
     && echo "OK  $(basename "$f")"
 done
 ```
@@ -732,13 +749,13 @@ and print help without its dependencies and only fail when it tries to do real w
 **The wrong database** — run `nlp-histo db check` and read the `Target:` line. If it is not
 what you configured, `env | grep '^DB_'` will show why (Step 10, or Step 13 for Track B).
 
-**`replay chapter9` exits 2** — the artifacts are not in place. The error lists every
+**`replay results` exits 2** — the artifacts are not in place. The error lists every
 missing file. Re-do Step 6, extracting into the repository root.
 
-**`replay chapter9` exits 3** — no network, or S3 is unreachable. This command needs the
+**`replay results` exits 3** — no network, or S3 is unreachable. This command needs the
 network even though it is free and cached.
 
-**`replay chapter9` exits 4** — an embedding cache is incomplete. Your download or
+**`replay results` exits 4** — an embedding cache is incomplete. Your download or
 extraction was truncated: re-verify with Step 5.
 
 **Out of memory** — you are running two heavy commands at once. `ingest`, `ner`, `replay`

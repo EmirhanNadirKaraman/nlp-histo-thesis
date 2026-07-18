@@ -1,4 +1,4 @@
-"""The chapter-9 replay must validate its whole artifact set before it runs.
+"""The results replay must validate its whole artifact set before it runs.
 
 The failure this guards against is not a crash — it is a partial result. With an
 incomplete artifact root the replay used to run anyway and emit 4 CSVs instead of 9.

@@ -7,7 +7,7 @@ One command, subcommands per stage of the pipeline::
     nlp-histo ingest
     nlp-histo ner extract | merge | export
     nlp-histo knowledge          [may make PAID API calls]
-    nlp-histo replay chapter9    [offline, free]
+    nlp-histo replay results     [offline, free]
 
 Every handler imports its implementation lazily, inside the function that runs it.
 That is what keeps ``--help`` cheap and safe: printing help must never open a database
@@ -199,9 +199,18 @@ def build_parser() -> argparse.ArgumentParser:
     # replay ------------------------------------------------------------------
     replay = sub.add_parser("replay", help="Reproduce thesis results from frozen artifacts.")
     rep_sub = replay.add_subparsers(dest="replay_command", metavar="<subcommand>")
+    # `chapter9` is a deprecated alias kept for one reason: the published 1.2 GB
+    # reproduction bundle (REPRODUCE.md Step 3) embeds the literal command
+    # `nlp-histo replay chapter9 --artifact-root .` in its manifest.json, and
+    # re-cutting/re-uploading that archive to fix one string is not worth it.
+    # The name is stale — the thesis has six chapters and this replay feeds
+    # chapter 4 (Results). Do not document the alias; it exists to keep the
+    # already-shipped bundle's own instructions working.
     rep_sub.add_parser(
-        "chapter9",
-        help="Chapter-9 offline replay (offline, free; --artifact-root is required).",
+        "results",
+        aliases=["chapter9"],
+        help="Recompute the Results-chapter tables offline "
+             "(free; --artifact-root is required).",
     )
     replay.set_defaults(handler=_replay)
 
@@ -218,7 +227,7 @@ def _path(value: str):
 # number of tokens the CLI itself consumes ("ner extract" → 2, "knowledge" → 1).
 _FORWARDING = {("ingest",): 1, ("knowledge",): 1,
                ("ner", "extract"): 2, ("ner", "merge"): 2, ("ner", "export"): 2,
-               ("replay", "chapter9"): 2}
+               ("replay", "results"): 2, ("replay", "chapter9"): 2}
 
 
 def _split_forwarded(argv: list[str]) -> tuple[list[str], list[str]]:

@@ -56,7 +56,7 @@ GEMINI_EMBEDDING_MODEL = "gemini-embedding-001"
 #
 #   explicit argument  >  $NLP_HISTO_{OPENAI,GEMINI}_EMBEDDING_CACHE  >  user cache dir
 #
-# Repository-only experiment drivers and the chapter-9 replay pass their frozen
+# Repository-only experiment drivers and the results replay pass their frozen
 # SQLite paths explicitly, so their behaviour — and their avoidance of paid calls —
 # is unchanged. Resolving a path never creates anything.
 OPENAI_CACHE_ENV = "NLP_HISTO_OPENAI_EMBEDDING_CACHE"

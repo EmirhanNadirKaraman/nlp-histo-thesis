@@ -31,7 +31,8 @@ HELP_PATHS = [
     ["ner", "export"],
     ["knowledge"],
     ["replay"],
-    ["replay", "chapter9"],
+    ["replay", "results"],
+    ["replay", "chapter9"],   # deprecated alias
 ]
 
 
@@ -183,12 +184,22 @@ def test_ner_extract_forwards_entity_cache_flag(monkeypatch, tmp_path) -> None:
     assert seen == [["--entity-cache", str(cache)]]
 
 
-def test_replay_chapter9_dispatches_to_replay_workflow(monkeypatch) -> None:
+@pytest.mark.parametrize("subcommand", ["results", "chapter9"])
+def test_replay_dispatches_to_replay_workflow(subcommand, monkeypatch) -> None:
+    """Both spellings must reach the workflow with identical forwarded arguments.
+
+    ``chapter9`` is the deprecated alias the already-published reproduction bundle
+    names in its MANIFEST.json (see cli/main.py). It is load-bearing for anyone
+    following the shipped archive's own instructions, so it is tested, not merely
+    tolerated. Dispatch happens in ``_split_forwarded`` against *raw argv*, before
+    argparse resolves aliases — so an argparse alias alone would parse and then
+    misroute. This catches that.
+    """
     seen: list[list[str]] = []
     from nlp_histo.workflows import replay
 
     monkeypatch.setattr(replay, "main", lambda argv=None: seen.append(list(argv or [])) or 0)
-    assert main(["replay", "chapter9", "--artifact-root", "/somewhere"]) == 0
+    assert main(["replay", subcommand, "--artifact-root", "/somewhere"]) == 0
     assert seen == [["--artifact-root", "/somewhere"]]
 
 
@@ -257,7 +268,7 @@ def test_replay_refuses_and_exits_nonzero_when_umls_is_unavailable(tmp_path, cap
 
     def _unavailable() -> None:
         raise UmlsUnavailableError(
-            "The chapter-9 replay requires the UMLS entity linker, which is unavailable.\n"
+            "The results replay requires the UMLS entity linker, which is unavailable.\n"
             "  - 06_exp_f_test_split.csv / .json\n"
             "Nothing has been written."
         )

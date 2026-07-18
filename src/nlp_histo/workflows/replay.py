@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 """
-run_chapter9_offline_replay.py — close the offline gaps that block chapter 9.
+replay.py — regenerate the thesis results tables from frozen artifacts.
 
 Single-script driver that produces every analysis the claim/evidence map
-lists as ``zero-API replay``. All outputs go to a deterministic directory:
+lists as ``zero-API replay``. The outputs feed the Results chapter, and the
+grounding/polarity analyses are also cited in the Discussion chapter's
+"Grounding, polarity conflicts, and safety gates" section. (Section titles,
+not numbers — a hardcoded number is what went stale here before.) All
+outputs go to a deterministic directory:
 
-    out/thesis_results/chapter9_offline_replay/
+    out/thesis_results/results_offline_replay/
+
+Historical note: this driver was written against an earlier eleven-chapter
+markdown draft, in which the results chapter was numbered 9 — hence the
+``chapter9`` naming that survives in the CLI alias, in the published
+reproduction bundle's manifest, and in the B-102/106/107/109/112/123
+write-ups. The thesis has six chapters; nothing here is chapter 9.
 
 No external LLM API is called. All evidence comes from one of:
   * cached voter outputs in eval/data/map_primer/voter_cache.json
@@ -16,7 +26,7 @@ No external LLM API is called. All evidence comes from one of:
 
 Run from the repository root:
 
-    python3 scripts/thesis/run_chapter9_offline_replay.py
+    nlp-histo replay results --artifact-root .
 
 The script writes nine numbered CSV/JSON artefacts plus a manifest, a
 README, and a results summary. It is idempotent: re-running overwrites
@@ -49,9 +59,9 @@ OUT_DIR: Path = None  # type: ignore[assignment]
 LOG_DIR: Path = None  # type: ignore[assignment]
 LOG_PATH: Path = None  # type: ignore[assignment]
 
-DEFAULT_OUTPUT_SUBPATH = Path("out") / "thesis_results" / "chapter9_offline_replay"
+DEFAULT_OUTPUT_SUBPATH = Path("out") / "thesis_results" / "results_offline_replay"
 
-# The chapter-9 artifact contract
+# The replay artifact contract
 #
 # --artifact-root is not a flat bundle of results: it is a repository-shaped tree of
 # frozen artifacts. The replay reads pipeline outputs (out/summaries/…), frozen
@@ -284,7 +294,7 @@ def validate_embedding_cache_entries(root: Path) -> None:
         raise EmbeddingCacheIncompleteError(
             "Frozen embedding cache validation failed:\n\n"
             + "\n\n".join(problems)
-            + "\n\nThe chapter-9 replay is documented as API-free. Embedding these "
+            + "\n\nThe replay is documented as API-free. Embedding these "
               "entries at run time would issue PAID OpenAI/Gemini calls, so it refuses "
               "to start instead.\n"
               "Both caches must be supplied complete, under --artifact-root, at:\n"
@@ -329,7 +339,7 @@ def _require_umls_or_refuse() -> None:
     )
 
     require_umls(
-        context="The chapter-9 replay",
+        context="The results replay",
         affected_outputs=UMLS_DEPENDENT_OUTPUTS,
     )
 
@@ -355,7 +365,7 @@ def configure(artifact_root: Path, output_dir: Path | None = None) -> None:
     problems = validate_artifacts(root)
     if problems:
         raise FileNotFoundError(
-            "Chapter-9 replay artifact validation failed:\n\n"
+            "Replay artifact validation failed:\n\n"
             + "\n\n".join(problems)
             + "\n\n--artifact-root must point at a repository-shaped frozen artifact "
               f"tree (given: {root}). The source code comes from the installed package; "
@@ -1360,7 +1370,8 @@ def analyse_exp_f_test_split() -> AnalysisResult:
             "state file produced by the orchestrator. If the orchestrator "
             "is run end-to-end (EXP 1–7) the state file will pin a (possibly "
             "different) winning config; re-run this analysis under that "
-            "config before drafting chapter 9.6.",
+            "config before drafting the \"Generalization to held-out papers\" "
+            "section of the Results chapter.",
         ],
     )
 
@@ -1900,7 +1911,8 @@ def _bootstrap_interpretation(boot) -> str:
     if lo > 0:
         return ("Gap CI is entirely positive — cascade > Sonnet at the "
                 "95 % bootstrap level on dev. Best-on-dev-split only; "
-                "see chapter 9.6 for held-out confirmation.")
+                "see \"Generalization to held-out papers\" for held-out "
+                "confirmation.")
     if hi < 0:
         return ("Gap CI is entirely negative — Sonnet > cascade at the "
                 "95 % bootstrap level on dev. Reconsider the cascade "
@@ -2407,7 +2419,7 @@ ANALYSES: list[tuple[str, Callable[[], AnalysisResult]]] = [
 
 def _run_replay() -> None:
     LOG_PATH.write_text("")  # truncate
-    _log(f"chapter9 offline replay — commit={_git_commit()}")
+    _log(f"results offline replay — commit={_git_commit()}")
     _log(f"output_dir={OUT_DIR}")
 
     for label, fn in ANALYSES:
@@ -2464,9 +2476,9 @@ def _run_replay() -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="nlp-histo replay chapter9",
+        prog="nlp-histo replay results",
         description=(
-            "Chapter-9 replay: recompute the thesis tables from frozen artifacts.\n"
+            "Recompute the Results-chapter tables from frozen artifacts.\n"
             "No API key, no database, no paid call of any kind.\n"
             "\n"
             "API-free does not mean offline: this requires network access even when the\n"
@@ -2499,7 +2511,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir", type=Path, default=None,
         help="Where to write the replay tables "
-             "(default: <artifact-root>/out/thesis_results/chapter9_offline_replay).",
+             "(default: <artifact-root>/out/thesis_results/results_offline_replay).",
     )
     return parser
 

@@ -2,7 +2,7 @@
 
 PRIMER_PATH and CACHE_PATH are default argument values on eight functions and
 bind at import time, so a bare relative default made every one of them resolve
-against whatever directory the caller happened to be in. Running the chapter-9
+against whatever directory the caller happened to be in. Running the results
 replay from outside the repository failed with a confusing missing-cache error
 rather than a path error.
 

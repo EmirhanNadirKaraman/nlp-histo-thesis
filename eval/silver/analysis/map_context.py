@@ -4,7 +4,7 @@ Loads the primed voter cache + silver labels + the agreement embedder and
 pre-warms the agreement embedding cache — with NO LLM calls. This is the
 load-bearing helper for every offline replay/calibration tool:
 ``run_new_summarization_sweeps`` (E05–E08 cascade calibration), ``voter_loo``,
-``grounding_sweep_related15`` (E03), the chapter-9 offline replay, and the
+``grounding_sweep_related15`` (E03), the offline results replay, and the
 experiments harness.
 
 Extracted from the now-legacy ``old_files/run_summarization_sweeps.py`` so the
@@ -46,7 +46,7 @@ __all__ = ["_MapContext", "_load_map_context", "CACHE_PATH", "SILVER_PATH",
 
 
 # The cache-only guard lives in packaged code (nlp_histo.evaluation.matching.embedders)
-# so the chapter-9 replay can use it without importing this repository-only module, and
+# so the results replay can use it without importing this repository-only module, and
 # so there is exactly one definition of "must not reach a provider" (B-109, B-112).
 # Re-exported here under the original names for existing callers.
 from nlp_histo.evaluation.matching.embedders import (  # noqa: E402
@@ -79,7 +79,7 @@ def _load_map_context(
     point at another split (e.g. heldout15) for held-out evaluation.
 
     ``embed_cache_path`` should be passed explicitly by callers that own their own
-    artifact tree (the chapter-9 replay resolves it from ``--artifact-root``). The
+    artifact tree (the results replay resolves it from ``--artifact-root``). The
     ``_FROZEN_*`` fallbacks below are anchored to the repository, which is wrong for
     anyone running against a copied tree — see B-112.
 

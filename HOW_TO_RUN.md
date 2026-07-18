@@ -32,7 +32,7 @@ Follow these in order. Every command is run **from the repository root**.
 | 7 | `nlp-histo ingest` | text + figures + tables in the database, `out/` | `ok=N fail=0` | ~30 s/paper |
 | 8 | `nlp-histo ner extract` → `merge` → `export` | `entities` rows; `umls_entities_lg/`, `disease_entities_lg/` | `Summary: N Processed … 0 Errors`, then `✓ Saved N files` | slow on a cold cache |
 | 9 | `nlp-histo knowledge` | `sum_*` tables, `out/summaries/` | per-paper JSON written | **⚠ costs money** |
-| 10 | `nlp-histo replay chapter9` | 9 CSVs in `out/thesis_results/…` | exit 0, nine files | ~5 min |
+| 10 | `nlp-histo replay results` | 9 CSVs in `out/thesis_results/…` | exit 0, nine files | ~5 min |
 | 11 | `pytest` · `ruff check .` | — | `1697 passed`, `All checks passed!` | 3–4 min |
 
 **Exit codes are meaningful, not decorative.** Non-zero always means *stop and read*, never
@@ -74,7 +74,7 @@ before you start:
 
 | Works from a clean clone alone | Needs the artifact bundle |
 |---|---|
-| §2 install · §3 `--help` · §4 env vars | §10 `replay chapter9` → exits **2**, naming every missing artifact |
+| §2 install · §3 `--help` · §4 env vars | §10 `replay results` → exits **2**, naming every missing artifact |
 | §5 `db init` / `db check` (your own PostgreSQL) | §12 experiments → no primer / caches |
 | **§11 `pytest` → 1697 passed** | §7 `ingest` · §8 `ner` → no PDFs, no ingested documents |
 
@@ -85,7 +85,7 @@ is not a result, so pick your path:
 
 You need **the replay bundle** — a 1.2 GB download that unpacks to ~1.5 GB, so budget both.
 It is the frozen output of the paid pipeline, so no API key and **no database** are
-required — `replay chapter9` never connects to PostgreSQL.
+required — `replay results` never connects to PostgreSQL.
 
 ```
 eval/data/embedding_cache_openai.sqlite       467 MB
@@ -160,7 +160,7 @@ tar -xzf nlp-histo-replay-artifacts-ec11eec.tar.gz -C /path/to/nlp-histo
 
 # ── artifact preflight (fails loudly and itemised if anything is missing) ────
 cd /path/to/nlp-histo
-nlp-histo replay chapter9 --artifact-root . --output-dir /tmp/replay-out
+nlp-histo replay results --artifact-root . --output-dir /tmp/replay-out
 #   exit 0 → 9 CSVs;  exit 2 → artifact tree unusable;  exit 3 → UMLS unreachable;
 #   exit 4 → an embedding cache is incomplete
 ```
@@ -251,7 +251,7 @@ nlp-histo acquire download | unpack | organize   build the corpus from PMC
 nlp-histo ingest                            PDF → text + figures + tables → DB
 nlp-histo ner extract | merge | export      scispaCy/UMLS entities
 nlp-histo knowledge                         LLM knowledge extraction   ⚠ COSTS MONEY
-nlp-histo replay chapter9                   thesis replay from frozen artifacts (free)
+nlp-histo replay results                    thesis replay from frozen artifacts (free)
 ```
 
 `--help` works for every command and subcommand without a database, an API key, a
@@ -577,11 +577,18 @@ Both commands in this section were previously wrong — they used a non-existent
 flag and omitted required arguments, so neither could run (BUGS.md B-105). They are now
 checked by `--dry-run` rather than by inspection.
 
-## 10. Chapter-9 replay — free (no paid API calls)
+## 10. Results replay — free (no paid API calls)
 
 ```bash
-nlp-histo replay chapter9 --artifact-root . --output-dir /tmp/replay-out
+nlp-histo replay results --artifact-root . --output-dir /tmp/replay-out
 ```
+
+> **If you are following the downloaded bundle's `MANIFEST.json`, it says `replay
+> chapter9`.** That still works — it is a deprecated alias. The archive currently
+> hosted was cut before this subcommand was renamed, and the alias exists so its
+> instructions keep resolving rather than forcing a 1.2 GB re-upload. `chapter9` dates
+> from an earlier eleven-chapter draft; the thesis has six chapters and this replay
+> regenerates the chapter-4 tables. Prefer `replay results` in anything new.
 
 No API key, no database, **no cost** — no paid provider is ever called (verified
 2026-07-16: the only hosts contacted are `huggingface.co` and
@@ -704,7 +711,7 @@ do not regenerate, for reasons that predate this packaging work:
   returns 5 values and the replay unpacks 4. Verified to be a pre-existing mismatch at
   the branch point, untouched by the packaging migration, and not fixed here.
 
-Outputs default to `<artifact-root>/out/thesis_results/chapter9_offline_replay/`.
+Outputs default to `<artifact-root>/out/thesis_results/results_offline_replay/`.
 
 ## 11. Tests
 
@@ -765,10 +772,10 @@ time** — concurrent runs will exhaust memory on a 16–32 GB machine.
   `PRIMER_DIR = Path("eval/data/map_primer")`, a working-directory-relative path. Any
   experiment driver that reads the primer must be run from the repository root. This is
   an experiment-side path bug, tracked separately; it does not affect the installed
-  package or `nlp-histo replay chapter9`, which takes an explicit `--artifact-root`.
+  package or `nlp-histo replay results`, which takes an explicit `--artifact-root`.
 * `scripts/run_paper.py` and `scripts/thesis/run_chapter9_offline_replay.py` remain as
   thin compatibility wrappers around the installed commands. Prefer
-  `nlp-histo knowledge` and `nlp-histo replay chapter9`.
+  `nlp-histo knowledge` and `nlp-histo replay results`.
 
 ---
 
@@ -798,7 +805,7 @@ assurance is worth less than an honest inventory, so here is the inventory.
 | 7 | `ingest` | **verified end-to-end** on one 8-page PDF into an isolated database — exit 0, 33 s, 14 text elements + 10 figures, matching the established corpus exactly |
 | 8 | `ner extract` / `merge` / `export` | **verified end-to-end** on that document — 865 entities (749 with UMLS CUIs) → 762 merged files → 89 disease CUIs. `merge`/`export` produced nothing before the B-115 fix |
 | 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
-| 10 | `replay chapter9` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable |
+| 10 | `replay results` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable |
 | 11 | `pytest`, `ruff check .` | verified — 1697 passed, 0 failed; ruff clean |
 | 12 | E04, `sweeps/grounding.py`, E14 (incl. `--theta-frontier`), `map_theta_sweep --help` | verified free (0 cache misses, no paid host). `E14 --theta-frontier` reproduces **byte-identically** to the 2026-06-25 baseline |
 

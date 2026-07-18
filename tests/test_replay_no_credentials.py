@@ -1,7 +1,7 @@
 """B-109 — the replay must not need a credential it never uses.
 
 Found by the clean-clone test, not by reasoning: a fresh clone has no `.env`, and
-`replay chapter9` produced **8 of 9** tables. Analysis 05 failed with "OPENAI_API_KEY not
+`replay results` produced **8 of 9** tables. Analysis 05 failed with "OPENAI_API_KEY not
 set… matcher embedder constructor requires a non-empty key even though the cache is warm".
 Every earlier run had `.env` present, so it never surfaced — and §10 claimed "no API key"
 the whole time.

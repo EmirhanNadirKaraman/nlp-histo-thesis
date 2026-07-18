@@ -1,7 +1,7 @@
 """B-107 — a UMLS failure must stop the run, not shade the numbers.
 
 The bug: with no network, scispaCy's linker load fails, ``get_nlp()`` swallows it and
-returns ``None``, ``normalize_stage`` caches an empty CUI, and the chapter-9 replay
+returns ``None``, ``normalize_stage`` caches an empty CUI, and the results replay
 exits 0 having written plausible-but-wrong 06/12 tables. The only signal was one
 WARNING line.
 
@@ -115,7 +115,7 @@ def test_get_nlp_still_returns_none_on_failure(monkeypatch) -> None:
 def test_require_umls_raises_on_real_offline_failure(monkeypatch) -> None:
     _fail_load_offline(monkeypatch)
     with pytest.raises(UmlsUnavailableError) as exc:
-        require_umls(context="The chapter-9 replay", affected_outputs=("06_x.csv",))
+        require_umls(context="The results replay", affected_outputs=("06_x.csv",))
     assert "unavailable" in str(exc.value).lower()
 
 
@@ -125,7 +125,7 @@ def test_require_umls_error_is_actionable(monkeypatch) -> None:
     _fail_load_offline(monkeypatch)
     with pytest.raises(UmlsUnavailableError) as exc:
         require_umls(
-            context="The chapter-9 replay",
+            context="The results replay",
             affected_outputs=("06_exp_f_test_split.csv", "12_real_profile_grounding_polarity.csv"),
         )
     msg = str(exc.value)
@@ -142,14 +142,14 @@ def test_require_umls_is_quiet_when_available(monkeypatch) -> None:
     """The success path must not raise — a working install is unaffected."""
     monkeypatch.setattr(umls_resources, "_AVAILABLE", True)
     monkeypatch.setattr(umls_resources, "_NLP", object())
-    require_umls(context="The chapter-9 replay", affected_outputs=("06_x.csv",))
+    require_umls(context="The results replay", affected_outputs=("06_x.csv",))
 
 
 def test_disabled_killswitch_reports_itself_distinctly(monkeypatch) -> None:
     """An explicit opt-out must not be reported as a mysterious network failure."""
     monkeypatch.setenv("NLP_HISTO_DISABLE_UMLS", "1")
     with pytest.raises(UmlsUnavailableError) as exc:
-        require_umls(context="The chapter-9 replay")
+        require_umls(context="The results replay")
     msg = str(exc.value)
     assert "NLP_HISTO_DISABLE_UMLS" in msg
     assert "etag" not in msg.lower(), "kill-switch is not a caching problem; don't say it is"

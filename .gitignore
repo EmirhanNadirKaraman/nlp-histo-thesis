@@ -254,16 +254,16 @@ files/*
 # `out/*` not `out/`: a bare `out/` makes git refuse to descend, so the negations below
 # would never be reconsidered. Ignoring the *contents* lets the re-includes take effect.
 out/*
-# …except the frozen chapter-9 reference CSVs — the golden output that `replay chapter9`
-# is diffed against (REPRODUCE.md Step 7). Only the CSVs are reproducible byte-for-byte;
+# …except the frozen reference CSVs — the golden output that `replay results` is diffed
+# against (REPRODUCE.md Step 7). Only the CSVs are reproducible byte-for-byte;
 # the JSONs/manifest carry run metadata, and the .BACKUP_ sibling is a local copy, so both
 # stay ignored. Re-include the path one level at a time (git will not descend into an
 # ignored directory otherwise), then narrow to *.csv.
 !out/thesis_results/
 out/thesis_results/*
-!out/thesis_results/chapter9_offline_replay/
-out/thesis_results/chapter9_offline_replay/*
-!out/thesis_results/chapter9_offline_replay/*.csv
+!out/thesis_results/results_offline_replay/
+out/thesis_results/results_offline_replay/*
+!out/thesis_results/results_offline_replay/*.csv
 # …and the held-out summary JSONs that E02c reads (REPRODUCE.md Step 11, B-125). Only the
 # per-paper summaries — not batch_handles / corpus_relations, and NOT the bundle's own
 # out/summaries/summaries (which stays ignored, shipped in the archive instead).

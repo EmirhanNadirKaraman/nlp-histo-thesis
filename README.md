@@ -163,7 +163,7 @@ nlp-histo --help                # db · acquire · ingest · ner · knowledge ·
 nlp-histo db init               # create + verify the schema
 nlp-histo ingest --pdf-dir files/organized_pdfs
 nlp-histo knowledge PMC1448691 --profile cheap --sync --health-check no   # ⚠ costs money
-nlp-histo replay chapter9 --artifact-root .                     # offline, free
+nlp-histo replay results --artifact-root .                      # offline, free
 ```
 
 The commands work from **any** directory — the package no longer needs the repository

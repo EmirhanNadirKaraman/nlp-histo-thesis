@@ -114,7 +114,7 @@ class CacheOnlyViolation(RuntimeError):
     """A cache-only context tried to embed text that was not in the frozen cache.
 
     Raised instead of calling a provider. Workflows that advertise themselves as API-free
-    — the chapter-9 replay, the frozen eval experiments — use :class:`NoLiveEmbedding` so
+    — the results replay, the frozen eval experiments — use :class:`NoLiveEmbedding` so
     an unexpected miss (a race, a malformed row, an incomplete preflight) fails loudly
     rather than silently spending money (B-112, B-109).
     """
