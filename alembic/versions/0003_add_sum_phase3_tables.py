@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # ── sum_finding_groups ────────────────────────────────────────────────────
+    # sum_finding_groups
     op.create_table(
         "sum_finding_groups",
         sa.Column("id",                  sa.Integer,     primary_key=True, autoincrement=True),
@@ -46,7 +46,7 @@ def upgrade() -> None:
         ["pipeline_run_id", "group_id"],
     )
 
-    # ── sum_group_members ─────────────────────────────────────────────────────
+    # sum_group_members
     op.create_table(
         "sum_group_members",
         sa.Column("id",               sa.Integer,     primary_key=True, autoincrement=True),

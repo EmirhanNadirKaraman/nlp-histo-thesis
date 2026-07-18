@@ -22,7 +22,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # ── sum_map_findings ──────────────────────────────────────────────────────
+    # sum_map_findings
     op.create_table(
         "sum_map_findings",
         sa.Column("id",                     sa.Integer,     primary_key=True, autoincrement=True),
@@ -60,7 +60,7 @@ def upgrade() -> None:
         ["pipeline_run_id", "chunk_id", "position_in_chunk"],
     )
 
-    # ── sum_normal_findings ───────────────────────────────────────────────────
+    # sum_normal_findings
     op.create_table(
         "sum_normal_findings",
         sa.Column("id",                     sa.Integer,     primary_key=True, autoincrement=True),
@@ -96,7 +96,7 @@ def upgrade() -> None:
         ["pipeline_run_id", "normal_id"],
     )
 
-    # ── sum_normal_finding_spans ──────────────────────────────────────────────
+    # sum_normal_finding_spans
     op.create_table(
         "sum_normal_finding_spans",
         sa.Column("id",               sa.Integer,     primary_key=True, autoincrement=True),

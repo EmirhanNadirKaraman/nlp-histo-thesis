@@ -30,7 +30,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # ── sum_canonical_rules ───────────────────────────────────────────────────
+    # sum_canonical_rules
     op.add_column("sum_canonical_rules",
         sa.Column("is_conflicted", sa.Boolean(), nullable=True))
     op.add_column("sum_canonical_rules",
@@ -51,7 +51,7 @@ def upgrade() -> None:
     op.alter_column("sum_canonical_rules", "study_coverage", nullable=False)
     op.drop_column("sum_canonical_rules", "canonical_scope")
 
-    # ── sum_corpus_relations ──────────────────────────────────────────────────
+    # sum_corpus_relations
     op.add_column("sum_corpus_relations",
         sa.Column("is_conflicted_a", sa.Boolean(), nullable=True))
     op.add_column("sum_corpus_relations",
@@ -87,7 +87,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # ── sum_canonical_rules ───────────────────────────────────────────────────
+    # sum_canonical_rules
     op.add_column("sum_canonical_rules",
         sa.Column("canonical_scope", sa.String(20), nullable=True))
 
@@ -105,7 +105,7 @@ def downgrade() -> None:
     op.drop_column("sum_canonical_rules", "is_conflicted")
     op.drop_column("sum_canonical_rules", "study_coverage")
 
-    # ── sum_corpus_relations ──────────────────────────────────────────────────
+    # sum_corpus_relations
     op.add_column("sum_corpus_relations",
         sa.Column("canonical_scope_a", sa.String(30), nullable=True))
     op.add_column("sum_corpus_relations",

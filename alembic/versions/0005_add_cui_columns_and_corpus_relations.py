@@ -19,13 +19,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # ── sum_canonical_rules: add UMLS CUI columns ─────────────────────────────
+    # sum_canonical_rules: add UMLS CUI columns
     op.add_column("sum_canonical_rules", sa.Column("subject_cui", sa.String(20), nullable=True))
     op.add_column("sum_canonical_rules", sa.Column("outcome_cui", sa.String(20), nullable=True))
     op.create_index("ix_scr_subject_cui", "sum_canonical_rules", ["subject_cui"])
     op.create_index("ix_scr_outcome_cui", "sum_canonical_rules", ["outcome_cui"])
 
-    # ── sum_corpus_relations: corpus-level cross-paper NLI relations ───────────
+    # sum_corpus_relations: corpus-level cross-paper NLI relations
     op.create_table(
         "sum_corpus_relations",
         sa.Column("id",                       sa.Integer,     primary_key=True, autoincrement=True),

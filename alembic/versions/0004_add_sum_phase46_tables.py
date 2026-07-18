@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # ── sum_canonical_rules ───────────────────────────────────────────────────
+    # sum_canonical_rules
     op.create_table(
         "sum_canonical_rules",
         sa.Column("id",                   sa.Integer,     primary_key=True, autoincrement=True),
@@ -53,7 +53,7 @@ def upgrade() -> None:
         ["pipeline_run_id", "canonical_id"],
     )
 
-    # ── sum_relations ─────────────────────────────────────────────────────────
+    # sum_relations
     op.create_table(
         "sum_relations",
         sa.Column("id",                  sa.Integer,     primary_key=True, autoincrement=True),
@@ -73,7 +73,7 @@ def upgrade() -> None:
     op.create_index("ix_sr_rule_a", "sum_relations", ["rule_id_a"])
     op.create_index("ix_sr_rule_b", "sum_relations", ["rule_id_b"])
 
-    # ── sum_final_rules ───────────────────────────────────────────────────────
+    # sum_final_rules
     op.create_table(
         "sum_final_rules",
         sa.Column("id",                  sa.Integer,     primary_key=True, autoincrement=True),
