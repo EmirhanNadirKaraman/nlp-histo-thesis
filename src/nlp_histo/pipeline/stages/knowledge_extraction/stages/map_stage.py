@@ -5,7 +5,7 @@ For each chunk of sentences:
   Level 1  — run each voter LLM in parallel (one call per voter).
              Voters should be distinct models / providers so disagreement
              reflects architectural differences rather than sampling
-             noise (e.g. gemini-flash + deepseek + mistral).  When using
+             noise (e.g. gemini-flash-lite + gpt-4o-mini + gpt-4.1-nano).  When using
              same-provider voters, use temperature diversity and lower theta.
              If pairwise claim-embedding alignment >= theta, accept the
              best result.
@@ -141,7 +141,8 @@ class MapStage:
         Must have at least one entry.
     escalation_llm:
         LLM for Level-2 escalation.  Only called when voters disagree below
-        theta.  Typically a larger / more capable model (e.g. gpt-4o).
+        theta.  Typically a larger / more capable model (the shipped
+        escalation is Claude-Sonnet).
     theta:
         Agreement threshold in [0, 1].  Higher = more escalations.
     chunk_size:

@@ -4,27 +4,30 @@ KnowledgeExtractionRunner — orchestrates MAP → GROUNDING → NORMALIZE → G
 
 Usage example
 -------------
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from nlp_histo.pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
+from pathlib import Path
 
-from dataclasses import replace
+from nlp_histo.pipeline.stages.knowledge_extraction import KnowledgeExtractionRunner
 from nlp_histo.pipeline.stages.knowledge_extraction.config import KnowledgeExtractionConfig, MapConfig
+from nlp_histo.pipeline.stages.knowledge_extraction.llm.llm_providers import (
+    anthropic_direct_chat,
+    gemini_direct_chat,
+    openai_direct_chat,
+)
 
 cfg = KnowledgeExtractionConfig(map=MapConfig(theta=0.65))   # override just what you need
 
 runner = KnowledgeExtractionRunner(
     voter_llms=[                                                   # Level 1: cheapest
-        AzureChatOpenAI(model="DeepSeek-V3.2-Speciale",          temperature=0.0),
-        VertexAI(model="gemini-2.5-flash-lite-preview-06-17",     temperature=0.0),
-        AzureChatOpenAI(model="mistral-large-3",                  temperature=0.0),
+        gemini_direct_chat("gemini-2.5-flash-lite",        temperature=0.0),
+        openai_direct_chat("gpt-4o-mini",                  temperature=0.0),
+        openai_direct_chat("gpt-4.1-nano",                 temperature=0.0),
     ],
     level2_voter_llms=[                                            # Level 2: mid-tier
-        VertexAI(model="gemini-2.5-flash",                        temperature=0.0),
-        AzureChatOpenAI(model="kimi-k2.5",                        temperature=0.0),
-        ChatAnthropic(model="claude-haiku-4-5-20251001",          temperature=0.0),
+        gemini_direct_chat("gemini-2.5-flash",             temperature=0.0),
+        openai_direct_chat("gpt-4.1-mini",                 temperature=0.0),
+        anthropic_direct_chat("claude-haiku-4-5-20251001", temperature=0.0),
     ],
-    escalation_llm=ChatAnthropic(model="claude-sonnet-4-6", temperature=0),  # Level 3
+    escalation_llm=anthropic_direct_chat("claude-sonnet-4-6", temperature=0.0),  # Level 3
     config=cfg,
     output_dir=Path("out/summaries"),
     trace_enabled=True,   # ← enable structured JSONL traces
@@ -113,11 +116,11 @@ class KnowledgeExtractionRunner:
     voter_llms:
         List of LangChain chat models used as Level-1 voters in the MAP stage.
         Use cheap models from different providers for independence
-        (e.g. [DeepSeek, Gemini-Flash-Lite, Mistral-Large]).
+        (the shipped set is [Gemini-Flash-Lite, GPT-4o-mini, GPT-4.1-nano]).
     level2_voter_llms:
         List of LangChain chat models used as Level-2 voters.  Called only when
         Level-1 voters disagree.  Use mid-tier models from different providers
-        (e.g. [Gemini-Flash, kimi-k2.5, Haiku]).
+        (the shipped set is [Gemini-Flash, GPT-4.1-mini, Claude-Haiku]).
     escalation_llm:
         LLM for MAP Level-3 (final) escalations.
         Typically the most capable model (e.g. Sonnet 4.6).
