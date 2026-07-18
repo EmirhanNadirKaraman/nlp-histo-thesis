@@ -275,6 +275,10 @@ out/summaries/heldout15/*
 out/summaries/heldout15/summaries/*
 !out/summaries/heldout15/summaries/*.json
 profile.prof
+
+# Local advisory report (comment-style audit) — not shipped
+comment_style_report.md
+comment_todo.txt
 umls_entities/
 umls_entities_lg/
 umls_texts/
