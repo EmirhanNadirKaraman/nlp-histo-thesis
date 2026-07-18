@@ -10,7 +10,7 @@ table (each voter drop vs its ``voter_subset="all"`` baseline).
 WHY A DEDICATED COSTER (not ``eval.silver.analysis.escalation_breakdown``)
 -----------------------------------------------------------------
 ``escalation_breakdown.py``'s ``cost_frac`` drops the L1 term as "constant" and
-charges the FULL-ensemble per-tier prices (L2=9.6, L3=18). That is valid ONLY
+charges the FULL-ensemble per-tier prices (L2=9.6, L3=18). That is valid only
 for ``voter_subset="all"``. Dropping a voter changes the tier's voter set, so:
 
   * dropping an L1 voter LOWERS the L1 price paid on *every* chunk — a real
@@ -45,7 +45,7 @@ DERIVED COLUMNS appended to the sidecar (idempotent — re-running overwrites th
 
 Domination is judged WITHIN a (variant, theta, reject_theta) group so the drop
 and its 'all' baseline are at the same operating point. NB: on the fixed-θ E06b
-screen this is single-θ — a drop that dominates here need NOT dominate the full
+screen this is single-θ — a drop that dominates here need not dominate the full
 θ frontier (that is what E06c voter_subset_refine tests).
 
 Usage:

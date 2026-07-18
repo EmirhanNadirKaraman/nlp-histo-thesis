@@ -30,7 +30,7 @@ from nlp_histo.pipeline.stages.pdf_text_extraction.models.dto import (
 )
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 
 
 def _bb(x1: float, y1: float, x2: float, y2: float, page: int = 1) -> BoundingBox:
@@ -60,7 +60,7 @@ def _detection(regions: List[DetectedRegion]) -> TableDetectionResult:
     )
 
 
-# ── _bbox_intersect_area ──────────────────────────────────────────────────────
+# _bbox_intersect_area
 
 
 def test_intersect_full_containment() -> None:
@@ -100,7 +100,7 @@ def test_intersect_handles_fitz_orientation() -> None:
     assert inter == pytest.approx(100)
 
 
-# ── _drop_tables_inside_figures ──────────────────────────────────────────────
+# _drop_tables_inside_figures
 
 
 def test_drop_keeps_when_no_figures_present() -> None:
@@ -158,7 +158,7 @@ def test_drop_uses_custom_threshold() -> None:
 
 
 def test_drop_respects_page_boundary() -> None:
-    """A figure on page 2 must NOT drop a table on page 1."""
+    """A figure on page 2 must not drop a table on page 1."""
     table_bbox = _bb(0, 100, 100, 0, page=1)
     fig_bbox = _bb(0, 100, 100, 0, page=2)
     det = _detection([_table_region(table_bbox)])
@@ -203,7 +203,7 @@ def test_drop_returns_new_detection_does_not_mutate_input() -> None:
     assert dropped == 1
 
 
-# ── CLI flag wiring ──────────────────────────────────────────────────────────
+# CLI flag wiring
 
 
 def test_parse_args_default_is_none() -> None:
@@ -221,7 +221,7 @@ def test_parse_args_negative_flag() -> None:
     assert args.drop_tables_inside_figures is False
 
 
-# ── main() honors the flag ───────────────────────────────────────────────────
+# main() honors the flag
 
 
 class _CapturedConfig:

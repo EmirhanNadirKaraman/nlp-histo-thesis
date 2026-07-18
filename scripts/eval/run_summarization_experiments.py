@@ -1796,7 +1796,7 @@ def main(argv: Optional[list] = None) -> int:
     # Test-split protection: refuse --split test unless explicitly authorised.
     # EXP F overrides to 'test' internally regardless of this.
     if args.split == "test" and not args.allow_test_tuning:
-        # Allow when the user explicitly asks for ONLY EXP F.
+        # Allow when the user explicitly asks for only EXP F.
         only_exp_f = args.exp == "exp_f_test_confirmation"
         if not only_exp_f:
             print(

@@ -1,4 +1,4 @@
-# ── ProvenanceValidator unit tests ─────────────────────────────────────────────
+# ProvenanceValidator unit tests
 from nlp_histo.pipeline.stages.knowledge_extraction.provenance.validator import ProvenanceValidator, SourceIndex
 from tests.knowledge_extraction.routing.test_routing import (
     _make_chunk, _make_summary, _make_finding, PMCID

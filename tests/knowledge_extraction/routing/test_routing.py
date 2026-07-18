@@ -23,7 +23,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.routing.router import MapOut
 from nlp_histo.pipeline.stages.knowledge_extraction.routing.schema_validator import SchemaValidator
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# Helpers
 
 PMCID = "PMC10047158"
 
@@ -85,7 +85,7 @@ def _make_router(
     )
 
 
-# ── SchemaValidator unit tests ─────────────────────────────────────────────────
+# SchemaValidator unit tests
 
 class TestSchemaValidator:
     def setup_method(self):
@@ -158,7 +158,7 @@ class TestSchemaValidator:
         assert results[0].passed
         assert not results[1].passed
 
-# ── MapOutputRouter integration tests ─────────────────────────────────────────
+# MapOutputRouter integration tests
 
 class TestMapOutputRouter:
     """

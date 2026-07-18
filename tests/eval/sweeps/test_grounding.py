@@ -237,7 +237,7 @@ def test_csv_columns_include_missing_score_pct(tmp_path: Path, grounding_module)
     assert "missing_score_pct" in header
     assert "kept_pct_of_scored" in header
     assert "rejected_pct_of_scored" in header
-    # And the "naked" kept_pct that would obscure the denominator is NOT here.
+    # And the "naked" kept_pct that would obscure the denominator is not here.
     assert ",kept_pct," not in "," + header + ","
 
 

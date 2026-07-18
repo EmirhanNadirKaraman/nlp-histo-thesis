@@ -20,24 +20,24 @@ labels; NO LLM calls, gemini embeddings only and cached):
   with escalation rate reported and optionally constrained (--max-escalate).
 
 ────────────────────────────────────────────────────────────────────────────
-SCAFFOLD ONLY — defined but NOT executable. The eval backend / a
+SCAFFOLD ONLY — defined but not executable. The eval backend / a
 silver-comparable selection metric does not exist for these yet; running one
 errors out. They are here so the staged structure is complete and the knobs
 are catalogued.
 
   Stage 4  grounding       grounding.threshold
-                           metric (today): retention / rejection curve — NOT silver F1
+                           metric (today): retention / rejection curve — not silver F1
   Stage 5  relate          entailment_threshold × contradiction_threshold
-                           metric (today): relation-count / pair stats — NOT finding-level F1
+                           metric (today): relation-count / pair stats — not finding-level F1
   Stage 6  resolve         RESOLVE weights
                            metric (today): TBD — RESOLVE output is FinalRule-level,
                                            no silver eval exists
   Stage 7  contradiction   contradiction_similarity_threshold
-                           metric (today): candidate-pair count — NOT silver F1
+                           metric (today): candidate-pair count — not silver F1
 
   *** THE METRIC MISMATCH IS DELIBERATE. *** Only the MAP stages are scored
   against silver per-finding F1. Grounding / relate / resolve / contradiction
-  are NOT comparable to MAP silver F1 — do not rank them on the same axis.
+  are not comparable to MAP silver F1 — do not rank them on the same axis.
   See docs/readmes/other_readmes/CALIBRATION_INVENTORY.md and docs/readmes/other_readmes/CALIBRATION_EVAL.md.
 
 ────────────────────────────────────────────────────────────────────────────

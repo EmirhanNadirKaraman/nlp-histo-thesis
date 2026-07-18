@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 transfer_offtheshelf_labels.py — seed the off-the-shelf Docling variant's rubric
-labels from an already-annotated source variant, but ONLY for crops that are
+labels from an already-annotated source variant, but only for crops that are
 genuinely identical.
 
 A label is copied to an off-the-shelf crop only when a source-variant crop exists

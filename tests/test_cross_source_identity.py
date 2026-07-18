@@ -108,7 +108,7 @@ def _corpus_via_ftp(tmp_path, monkeypatch):
     return corpus
 
 
-# ── the claim ─────────────────────────────────────────────────────────────────
+# the claim
 
 def test_both_sources_produce_the_same_document_id(tmp_path, monkeypatch) -> None:
     aws_corpus = _corpus_via_aws(tmp_path, monkeypatch)

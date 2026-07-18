@@ -61,7 +61,7 @@ def test_polarity_only_pair_passes_non_polarity_gate():
     a = _rule("CR_a", DirectionEnum.positive)
     b = _rule("CR_b", DirectionEnum.negative)
     ok, reason = _should_compare_cross_paper(a, b)
-    # Should NOT be rejected with non_polarity_direction. If rejected at all,
+    # Should not be rejected with non_polarity_direction. If rejected at all,
     # it would be by category / subject / outcome — none of which differ here.
     assert reason != "non_polarity_direction"
     assert ok is True

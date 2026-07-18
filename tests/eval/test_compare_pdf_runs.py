@@ -38,7 +38,7 @@ def cmp_mod():
         sys.modules.pop(spec.name, None)
 
 
-# ── Fixtures ──────────────────────────────────────────────────────────────────
+# Fixtures
 
 
 def _manifest(
@@ -125,7 +125,7 @@ def _variant() -> Dict[str, Any]:
     )
 
 
-# ── Pure diff helpers ─────────────────────────────────────────────────────────
+# Pure diff helpers
 
 
 def test_summary_diff_shape_and_values(cmp_mod) -> None:
@@ -200,7 +200,7 @@ def test_identical_inputs_produce_zero_diffs(cmp_mod) -> None:
     assert cmp_mod.compute_per_doc_count_diffs(base, base) == []
 
 
-# ── Rendering ─────────────────────────────────────────────────────────────────
+# Rendering
 
 
 def test_render_markdown_contains_key_sections(cmp_mod) -> None:
@@ -248,7 +248,7 @@ def test_render_json_diff_structure(cmp_mod) -> None:
     json.dumps(out)
 
 
-# ── load_manifest ─────────────────────────────────────────────────────────────
+# load_manifest
 
 
 def test_load_manifest_missing_file_raises(cmp_mod, tmp_path: Path) -> None:
@@ -263,7 +263,7 @@ def test_load_manifest_invalid_json_raises(cmp_mod, tmp_path: Path) -> None:
         cmp_mod.load_manifest(bad)
 
 
-# ── CLI entry-point ───────────────────────────────────────────────────────────
+# CLI entry-point
 
 
 def _write(path: Path, payload: Dict[str, Any]) -> None:

@@ -31,7 +31,7 @@ def _write_env(tmp_path, **values):
     return p
 
 
-# ── disagreement ──────────────────────────────────────────────────────────────
+# disagreement
 
 def test_disagreement_on_db_name_is_a_conflict(tmp_path) -> None:
     """The exact near-miss: file says scratch, environment says production."""
@@ -75,7 +75,7 @@ def test_multiple_conflicts_are_all_reported(tmp_path) -> None:
     assert conflicts == ["DB_HOST", "DB_NAME"]  # DB_PORT agrees, so not flagged
 
 
-# ── agreement ─────────────────────────────────────────────────────────────────
+# agreement
 
 def test_agreement_is_not_a_conflict(tmp_path) -> None:
     """Same value from both sources — nothing is being overridden."""
@@ -86,7 +86,7 @@ def test_agreement_is_not_a_conflict(tmp_path) -> None:
     raise_on_routing_conflict(env_file, {"DB_NAME": "same_db"})  # must not raise
 
 
-# ── no explicit env file: documented env-wins behaviour is untouched ───────────
+# no explicit env file: documented env-wins behaviour is untouched
 
 def test_automatic_discovery_is_never_a_conflict() -> None:
     """Ordinary `.env` discovery keeps the documented precedence (ENV_LOADING.md).
@@ -101,7 +101,7 @@ def test_missing_env_file_is_not_a_conflict(tmp_path) -> None:
     assert detect_routing_conflict(tmp_path / "nope.env", {"DB_NAME": "x"}) == []
 
 
-# ── partial files ─────────────────────────────────────────────────────────────
+# partial files
 
 def test_variables_absent_from_the_file_are_not_conflicts(tmp_path) -> None:
     """A file that declares only DB_NAME says nothing about DB_HOST — inheriting the
@@ -124,7 +124,7 @@ def test_empty_file_is_not_a_conflict(tmp_path) -> None:
     assert detect_routing_conflict(p, {"DB_NAME": "x"}) == []
 
 
-# ── secrets are not routing ───────────────────────────────────────────────────
+# secrets are not routing
 
 def test_password_override_is_legitimate_not_a_conflict(tmp_path) -> None:
     """Injecting a secret from the environment while routing comes from the file is the
@@ -137,7 +137,7 @@ def test_password_override_is_legitimate_not_a_conflict(tmp_path) -> None:
     raise_on_routing_conflict(env_file, {"DB_PASSWORD": "from-environment"})
 
 
-# ── no connection is attempted after a failure ────────────────────────────────
+# no connection is attempted after a failure
 
 def test_conflict_is_raised_before_any_connection(tmp_path, monkeypatch) -> None:
     """The check must fire before an engine is ever created, not after connecting."""
@@ -152,7 +152,7 @@ def test_conflict_is_raised_before_any_connection(tmp_path, monkeypatch) -> None
         raise_on_routing_conflict(env_file, {"DB_NAME": "production"})
 
 
-# ── target rendering: never leak the password ─────────────────────────────────
+# target rendering: never leak the password
 
 class _FakeURL:
     username, host, port, database = "u", "h", 5432, "d"

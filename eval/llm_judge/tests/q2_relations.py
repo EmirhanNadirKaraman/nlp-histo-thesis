@@ -12,7 +12,7 @@ in sum_relations, so this test cannot detect false-negative UNRELATED
 labels.  Relation recall requires re-running NLI on all candidate pairs
 with the judge — deferred to a future phase.
 
-Blind judging by default: the pipeline label is NOT shown to Opus unless
+Blind judging by default: the pipeline label is not shown to Opus unless
 --show-pipeline-label is set.
 """
 from __future__ import annotations

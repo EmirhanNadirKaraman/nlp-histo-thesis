@@ -27,7 +27,7 @@ from pathlib import Path
 # writes, which is the whole point of the check.
 ROUTING_VARS: tuple[str, ...] = ("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_SCHEMA")
 
-# Deliberately NOT routing: injecting a secret from the environment while reading the rest
+# Deliberately not routing: injecting a secret from the environment while reading the rest
 # from a file is a legitimate, common pattern (CI, containers). Treating it as a conflict
 # would punish good practice — and a wrong password fails loudly on its own anyway.
 SECRET_VARS: tuple[str, ...] = ("DB_PASSWORD",)

@@ -297,7 +297,7 @@ def submit_level(
     )
     if not all_requests:
         return []
-    # Group by (provider, model) — NOT just provider. OpenAI's Batch API
+    # Group by (provider, model) — not just provider. OpenAI's Batch API
     # rejects any batch that mixes models ("mismatched_model"); the entire
     # batch then completes with output_file_id=None and every request is
     # discarded silently. Other providers don't share this constraint today,

@@ -35,7 +35,7 @@ def _rest(name: str) -> str:
 def test_refine_embedding_one_to_one_sweeps_tau_only(align):
     specs = _refine_specs("gemini", "embedding", align)
     rests = [_rest(s.name) for s in specs]
-    # only base + tau variants; the three soft-align knobs are NOT swept
+    # only base + tau variants; the three soft-align knobs are not swept
     assert all(r == "base" or r.startswith("tau_") for r in rests)
     assert any(r.startswith("tau_") for r in rests)
     # and they stay at defaults on every spec, with the one-to-one alignment set
@@ -82,10 +82,10 @@ def test_refine_specs_namespaced_by_embedder():
 def _cells(*specs):
     """specs: (emb, scorer_kind, align, theta, strict_f1, cost). Multi-θ cells —
     the cost axis is ``_cost_frac`` (price-weighted L2+L3 escalation, θ-driven), so the
-    fixtures MUST have >1 cell/structure. ``cost`` is the intended ``_cost_frac`` in [0,1];
+    fixtures must have >1 cell/structure. ``cost`` is the intended ``_cost_frac`` in [0,1];
     we synthesise n_chunks/n_l2_invoked/n_l3_invoked so ``_cost_frac(row) == cost`` exactly
     (l2 == l3 == cost·n_chunks makes the price weights cancel). ``escalate_rate`` is kept as
-    a reported column but is NOT the cost axis (see ``_cost_frac`` docstring)."""
+    a reported column but is not the cost axis (see ``_cost_frac`` docstring)."""
     n = 100
     return [{"embedder": e, "scorer_kind": s, "alignment_strategy": a, "theta": t,
              "reject_theta": 0.1, "strict_f1_optimal": f1, "f1_optimal": f1,
@@ -115,7 +115,7 @@ def _fin(cells=SCREEN, **kw):
 def test_economy_structure_survives_even_though_its_maxf1_cell_is_dominated():
     # REGRESSION GUARD: gemini/embedding's max-F1 cell (θ0.9, 0.69/0.92) is dominated by
     # hybrid θ0.9 — collapsing to per-structure-best would drop it. Its cheap cells are on
-    # the cell-level frontier, so it MUST stay a finalist. Fails on the collapsed design.
+    # the cell-level frontier, so it must stay a finalist. Fails on the collapsed design.
     fin = _fin()
     s = ("gemini", "embedding", "soft_max")
     assert s in fin
@@ -181,7 +181,7 @@ def test_stamp_row_soft_max_keeps_soft_align():
     _stamp_row(r, "gemini", {name: "embedding"}, {name: "soft_max"})
     assert r["scorer_kind"] == "embedding"
     assert r["count_alpha"] == 0.25 and r["reuse_weight"] == 0.15
-    assert r["contradiction_weight"] == 0.20       # NOT blanked under soft_max
+    assert r["contradiction_weight"] == 0.20       # Not blanked under soft_max
 
 
 # _deviation: the "simpler config" tie-break

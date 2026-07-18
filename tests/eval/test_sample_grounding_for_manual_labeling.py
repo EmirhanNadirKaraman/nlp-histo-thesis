@@ -307,7 +307,7 @@ def test_kept_at_threshold_flag(tmp_path: Path, sampler) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 8) --threshold does NOT reposition buckets
+# 8) --threshold does not reposition buckets
 # ---------------------------------------------------------------------------
 
 

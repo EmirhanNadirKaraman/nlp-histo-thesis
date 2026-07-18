@@ -38,7 +38,7 @@ def bsm():
         sys.modules.pop(spec.name, None)
 
 
-# ── Fixture helpers ───────────────────────────────────────────────────────────
+# Fixture helpers
 
 
 def _write_media(
@@ -70,7 +70,7 @@ def _build_sweep(sweeps_root: Path, name: str, *, pmcid: str, **kwargs) -> Path:
     return sweep
 
 
-# ── quantize_bbox ─────────────────────────────────────────────────────────────
+# quantize_bbox
 
 
 def test_quantize_bbox_rounds_to_tol(bsm) -> None:
@@ -94,7 +94,7 @@ def test_quantize_bbox_larger_tolerance_collapses(bsm) -> None:
     assert bsm.quantize_bbox(bb_a, 5.0) == bsm.quantize_bbox(bb_b, 5.0)
 
 
-# ── _collect_with_bbox ────────────────────────────────────────────────────────
+# _collect_with_bbox
 
 
 def test_collect_with_bbox_returns_pairs(tmp_path, bsm) -> None:
@@ -146,7 +146,7 @@ def test_collect_with_bbox_tolerates_malformed_media_json(tmp_path, bsm) -> None
     assert [n for n, _ in out] == ["PMC_G_Table_1_p1.png"]
 
 
-# ── build ─────────────────────────────────────────────────────────────────────
+# build
 
 
 def test_build_groups_by_bbox(tmp_path, bsm) -> None:
@@ -227,7 +227,7 @@ def test_build_raises_when_root_empty(tmp_path, bsm) -> None:
         bsm.build(empty)
 
 
-# ── write ─────────────────────────────────────────────────────────────────────
+# write
 
 
 def test_write_creates_parent_dir(tmp_path, bsm) -> None:
@@ -250,7 +250,7 @@ def test_write_is_atomic_no_partial_on_failure(tmp_path, bsm, monkeypatch) -> No
     assert json.loads(out.read_text()) == original
 
 
-# ── CLI main() ────────────────────────────────────────────────────────────────
+# CLI main()
 
 
 def test_main_writes_share_map(tmp_path, bsm, capsys) -> None:

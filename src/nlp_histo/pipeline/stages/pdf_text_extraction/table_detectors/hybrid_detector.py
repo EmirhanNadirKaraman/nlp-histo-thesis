@@ -4,7 +4,7 @@ HybridTableDetector
 Combines results from multiple TableDetector implementations — by default
 DoclingTableDetector and TATRTableDetector — and merges overlapping bounding
 boxes using iterative boolean-overlap union (parsers/layout_utils.merge_rects).
-The merge is by any non-zero rectangle intersection (``Rect.intersects``), NOT
+The merge is by any non-zero rectangle intersection (``Rect.intersects``), not
 an IoU threshold — see ``merge_rects`` for the exact rule (B-087).
 
 The merged regions come from the union of all source detectors, deduplicated by

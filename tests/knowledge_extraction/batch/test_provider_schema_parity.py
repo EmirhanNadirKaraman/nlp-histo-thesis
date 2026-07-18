@@ -83,7 +83,7 @@ def test_vertex_gemini_submit_uses_function_declarations():
 
 
 def test_direct_gemini_submit_documents_schema_gap():
-    """ISSUE D — direct Gemini batch does NOT pass openai_tool to the API.
+    """ISSUE D — direct Gemini batch does not pass openai_tool to the API.
 
     The body must:
       (a) accept openai_tool to keep the cross-provider signature stable,

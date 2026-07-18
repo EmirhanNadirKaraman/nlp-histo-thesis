@@ -42,7 +42,7 @@ render_diff = _inspector.render_diff
 
 
 
-# ── Minimal fixture builders ───────────────────────────────────────────────────
+# Minimal fixture builders
 
 def _minimal_rule(**overrides) -> dict:
     base = {
@@ -149,7 +149,7 @@ def _minimal_data(pmcid: str = "PMC1234567", run_id: str = "run-1") -> dict:
     }
 
 
-# ── 1. PMCID validation ────────────────────────────────────────────────────────
+# 1. PMCID validation
 
 class TestPmcidValidation:
     def test_matching_pmcid_does_not_raise(self, tmp_path):
@@ -181,7 +181,7 @@ class TestPmcidValidation:
         assert exc_info.value.code != 0
 
 
-# ── 2. Diff summary generation ────────────────────────────────────────────────
+# 2. Diff summary generation
 
 class TestDiffItems:
     def _make_rule(self, subj: str, score: float = 0.8) -> dict:
@@ -239,7 +239,7 @@ class TestDiffItems:
         assert ds["final_removed"] == 0
 
 
-# ── 3. Sentence hover lookup ──────────────────────────────────────────────────
+# 3. Sentence hover lookup
 
 class TestSentenceLookup:
     def test_basic_map_finding_verbatim(self):
@@ -270,7 +270,7 @@ class TestSentenceLookup:
         # Clear evidence_chain verbatim
         data["audit_trail"]["rules_provenance"]["rules"][0]["evidence_chain"][0]["verbatim"] = ""
         lookup = _build_sentence_lookup(data)
-        # Token should NOT be in lookup if no text is available
+        # Token should not be in lookup if no text is available
         assert "S2|PMC1234567|5" not in lookup
 
     def test_empty_audit_trail_gives_empty_lookup(self):
@@ -288,7 +288,7 @@ class TestSentenceLookup:
         assert "S2|PMC1234567|5" in parsed
 
 
-# ── 4. Flagged CSV export ─────────────────────────────────────────────────────
+# 4. Flagged CSV export
 
 class TestFlaggedCsvExport:
     def _build_flagged_context(self):
@@ -352,7 +352,7 @@ class TestFlaggedCsvExport:
             assert row["run_id"] == "run-1"
 
 
-# ── 5. Batch inspector ────────────────────────────────────────────────────────
+# 5. Batch inspector
 
 class TestBatchInspector:
     def test_index_created_with_one_row_per_paper(self, tmp_path):
@@ -426,12 +426,12 @@ class TestBatchInspector:
         assert "SENTENCE_LOOKUP" in html
 
 
-# ── 6. Entity flag unit tests ─────────────────────────────────────────────────
+# 6. Entity flag unit tests
 
 class TestEntityFlags:
     """Direct regression tests for _entity_flags() and the polarity branch of _compute_flags()."""
 
-    # ── _entity_flags ──────────────────────────────────────────────────────────
+    # _entity_flags
 
     def test_none_entity_returns_empty_entity_flag(self):
         assert _entity_flags(None) == ["empty-entity"]
@@ -489,7 +489,7 @@ class TestEntityFlags:
         assert "taxonomy-leak" in flags
         assert "procedure-as-entity" in flags
 
-    # ── polarity/assertion mismatch in _compute_flags ──────────────────────────
+    # polarity/assertion mismatch in _compute_flags
 
     def test_polarity_mismatch_uncertain_with_negation(self):
         obj = {
@@ -534,7 +534,7 @@ class TestEntityFlags:
         assert "polarity-mismatch" not in flags
 
 
-# ── 7. CSV deduplication ──────────────────────────────────────────────────────
+# 7. CSV deduplication
 
 class TestCsvDeduplication:
     """A flagged rule present in both final_rules and canonical_rules must appear
@@ -590,7 +590,7 @@ class TestCsvDeduplication:
         assert "CANONICAL" not in stages
 
     def test_non_overlapping_canonical_rule_is_included(self, tmp_path):
-        """A canonical rule whose stable_key does NOT appear in final_rules is kept."""
+        """A canonical rule whose stable_key does not appear in final_rules is kept."""
         data = _minimal_data()
         # Flag the final rule
         data["final_rules"][0]["subject_entity"] = "patient"
@@ -628,7 +628,7 @@ class TestCsvDeduplication:
         assert "CANONICAL" in stages
 
 
-# ── 8. render_diff HTML marker assertions ────────────────────────────────────
+# 8. render_diff HTML marker assertions
 
 class TestRenderDiffHtmlMarkers:
     """Verify that + ADDED / - REMOVED / ~ CHANGED markers appear in the
@@ -694,7 +694,7 @@ class TestRenderDiffHtmlMarkers:
         assert "~ CHANGED" not in html
 
 
-# ── 9. Low-grounding threshold sensitivity ────────────────────────────────────
+# 9. Low-grounding threshold sensitivity
 
 class TestLowGsThreshold:
     """flagged_count must respond to changes in low_gs_threshold."""
@@ -721,7 +721,7 @@ class TestLowGsThreshold:
         assert ctx["low_grounding_count"] == 0
 
     def test_threshold_exactly_at_gs_is_not_flagged(self):
-        # gs < threshold required; equal should NOT trigger the flag
+        # gs < threshold required; equal should not trigger the flag
         data = self._build_low_gs_data(gs=0.4)
         ctx = build_context(data, low_gs_threshold=0.4)
         assert ctx["flagged_count"] == 0

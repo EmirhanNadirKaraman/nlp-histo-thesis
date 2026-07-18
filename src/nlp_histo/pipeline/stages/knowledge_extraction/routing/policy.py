@@ -29,7 +29,7 @@ class RoutingPolicySpec:
     """
     Pure configuration snapshot for one MAP-stage routing setup.
 
-    Does NOT hold LLM objects (those are instantiated at runtime); captures only
+    Does not hold LLM objects (those are instantiated at runtime); captures only
     the parameters needed to reproduce and compare runs.
 
     All fields are plain scalars / lists so conversion to Pydantic (for
@@ -86,7 +86,7 @@ class PolicyEvaluationResult(BaseModel):
 
         selection_objective = alpha * escalation_rate + (1 - alpha) * false_accept_rate
 
-    This is NOT a principled cost model — it combines two rates with a
+    This is not a principled cost model — it combines two rates with a
     user-specified alpha.  The alpha used is echoed in the record for
     traceability.
     """

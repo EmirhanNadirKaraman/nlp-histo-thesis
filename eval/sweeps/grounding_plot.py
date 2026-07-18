@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# Force headless matplotlib BEFORE pyplot import so the script works without
+# Force headless matplotlib before pyplot import so the script works without
 # a display server. Must come before any seaborn / plotnine etc.
 import matplotlib
 matplotlib.use("Agg")

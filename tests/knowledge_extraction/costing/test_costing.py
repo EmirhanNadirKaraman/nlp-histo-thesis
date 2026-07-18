@@ -15,7 +15,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.costing.pricing import Model
 
 
 
-# ── Token normalization ─────────────────────────────────────────────────────
+# Token normalization
 
 
 def test_normalize_openai_shape():
@@ -55,7 +55,7 @@ def test_normalize_handles_none():
     }
 
 
-# ── Pricing ──────────────────────────────────────────────────────────────────
+# Pricing
 
 
 def _book() -> PriceBook:
@@ -120,7 +120,7 @@ def test_pricebook_load_real_file(tmp_path):
     assert book.batch_discount_multiplier == 0.4
 
 
-# ── Collector + cache hits ──────────────────────────────────────────────────
+# Collector + cache hits
 
 
 def test_cache_hit_is_zero_paid_cost():
@@ -165,7 +165,7 @@ def test_jsonl_roundtrip(tmp_path):
     assert loaded[0].output_tokens == 2
 
 
-# ── Report scenarios ─────────────────────────────────────────────────────────
+# Report scenarios
 
 
 def _sample_records() -> list[LLMUsageRecord]:
@@ -280,7 +280,7 @@ def test_empty_records_returns_empty_report():
     assert report["empty"] is True
 
 
-# ── Runner integration: disabled mode ───────────────────────────────────────
+# Runner integration: disabled mode
 
 
 def test_config_default_enables_cost_report():
@@ -395,7 +395,7 @@ def test_total_savings_marked_unavailable_when_any_missing(tmp_path):
     assert data["totals"]["est_saved_usd"] is None
 
 
-# ── Shared UMLS resource ─────────────────────────────────────────────────────
+# Shared UMLS resource
 
 
 def test_umls_disabled_env_skips_load(monkeypatch):

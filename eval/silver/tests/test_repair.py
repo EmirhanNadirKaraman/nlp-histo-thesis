@@ -73,7 +73,7 @@ def test_silver_finding_demographic_valid():
 
 
 def test_silver_finding_demographics_category_rejected():
-    """'demographics' (trailing s) is NOT a valid category — repair layer must be applied first."""
+    """'demographics' (trailing s) is not a valid category — repair layer must be applied first."""
     with pytest.raises(ValidationError):
         SilverFinding(category="demographics", claim="x", confidence="medium")
 
@@ -96,7 +96,7 @@ def test_tool_schema_includes_demographic():
 
 
 def test_tool_schema_excludes_demographics_plural():
-    """The tool schema must NOT expose the plural alias 'demographics' as a valid category."""
+    """The tool schema must not expose the plural alias 'demographics' as a valid category."""
     category_enum = (
         EXTRACT_FINDINGS_TOOL["input_schema"]["properties"]["findings"]
         ["items"]["properties"]["category"]["enum"]

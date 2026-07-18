@@ -25,7 +25,7 @@ from estimate_selection_cost import (  # noqa: E402  (sys.path manipulation abov
 )
 
 
-# ── Worked example matches MapStage._make_chunks ─────────────────────────────
+# Worked example matches MapStage._make_chunks
 
 def test_per_chunk_input_tokens_matches_make_chunks_semantics():
     """100 sentences at default chunking → 13 chunks, total 124 occurrences."""

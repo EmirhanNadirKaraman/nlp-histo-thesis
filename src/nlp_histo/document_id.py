@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import re
 
-# Strips a numeric version ONLY where NLM puts one: immediately after PMC<digits>, and
+# Strips a numeric version only where NLM puts one: immediately after PMC<digits>, and
 # only when the whole token ends there or a publisher component follows.
 #
 #   PMC8395919.1                          → PMC8395919

@@ -25,7 +25,7 @@ from nlp_histo.pipeline.stages.pdf_text_extraction.outputs.manifest_writer impor
 )
 
 
-# ── make_run_id ───────────────────────────────────────────────────────────────
+# make_run_id
 
 
 def test_make_run_id_shape() -> None:
@@ -39,7 +39,7 @@ def test_make_run_id_unique() -> None:
     assert len(ids) == 50  # 8-hex uuid suffix collision-free in practice
 
 
-# ── _git_info ─────────────────────────────────────────────────────────────────
+# _git_info
 
 
 def test_git_info_returns_dict_with_expected_keys() -> None:
@@ -49,7 +49,7 @@ def test_git_info_returns_dict_with_expected_keys() -> None:
     # (subprocess failures fall through).  Both shapes are acceptable.
 
 
-# ── RunManifestWriter helpers ─────────────────────────────────────────────────
+# RunManifestWriter helpers
 
 
 def _write_doc_stats(
@@ -81,7 +81,7 @@ def _write_doc_stats(
     return path
 
 
-# ── RunManifestWriter ─────────────────────────────────────────────────────────
+# RunManifestWriter
 
 
 def test_manifest_writes_with_no_attempted(tmp_path: Path) -> None:

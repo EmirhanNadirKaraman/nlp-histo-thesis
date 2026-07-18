@@ -11,7 +11,7 @@ Covers the load-bearing contracts of the manual, no-API pipeline:
     expected label, and the synthetic shims (direction=None) keep the
     contradiction path open while a same-polarity guard still blocks it.
 
-Importing the evaluator does NOT load transformers (the NLI pipe is lazy), so
+Importing the evaluator does not load transformers (the NLI pipe is lazy), so
 these run fast and offline.
 """
 from __future__ import annotations

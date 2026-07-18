@@ -46,7 +46,7 @@ def _nf(
     )
 
 
-# ── is_groupable ──────────────────────────────────────────────────────────────
+# is_groupable
 
 def test_groupable_all_fields_present():
     assert is_groupable(_nf()) is True
@@ -69,11 +69,11 @@ def test_not_groupable_all_none():
 
 
 def test_groupable_with_none_direction():
-    """direction is NOT part of the groupability invariant — None direction is fine."""
+    """direction is not part of the groupability invariant — None direction is fine."""
     assert is_groupable(_nf(direction=None)) is True
 
 
-# ── GroupStage.group — basic ──────────────────────────────────────────────────
+# GroupStage.group — basic
 
 def test_empty_input_returns_empty():
     assert GroupStage().group([], PMCID) == []
@@ -97,7 +97,7 @@ def test_ungroupable_unclear_relation_type_raises():
         GroupStage().group([_nf(relation_type=RelationTypeEnum.unclear)], PMCID)
 
 
-# ── Grouping key ──────────────────────────────────────────────────────────────
+# Grouping key
 
 def test_same_entity_pair_same_group():
     nfs = [_nf(normal_id="NF_1"), _nf(normal_id="NF_2")]
@@ -143,7 +143,7 @@ def test_different_relation_type_different_group():
     assert len(groups) == 2
 
 
-# ── Direction is NOT a grouping key ───────────────────────────────────────────
+# Direction is not a grouping key
 
 def test_opposing_directions_same_group():
     nfs = [
@@ -174,7 +174,7 @@ def test_direction_counts_keys_are_strings():
     assert key == "positive"
 
 
-# ── scope_heterogeneity ───────────────────────────────────────────────────────
+# scope_heterogeneity
 
 def test_heterogeneity_zero_single_member():
     groups = GroupStage().group([_nf()], PMCID)
@@ -214,7 +214,7 @@ def test_direction_counts_none_direction_stored_as_unclear():
     assert groups[0].direction_counts == {"unclear": 1}
 
 
-# ── group_id stability ────────────────────────────────────────────────────────
+# group_id stability
 
 def test_group_id_stable():
     assert _group_id("CD30", "OS", "prognostic", pmcid=PMCID) == _group_id(
@@ -241,7 +241,7 @@ def test_group_id_differs_across_pmcids():
     )
 
 
-# ── B-022 regression: CUI population must not split otherwise-identical buckets ─
+# B-022 regression: CUI population must not split otherwise-identical buckets
 
 
 def _nf_with_cui(normal_id: str, subject_cui: str | None) -> NormalFinding:
@@ -272,7 +272,7 @@ def test_b022_group_id_independent_of_cui():
     assert _group_id("CD30", "OS", "prognostic", pmcid=PMCID) == base
 
 
-# ── FindingGroup model ────────────────────────────────────────────────────────
+# FindingGroup model
 
 def test_finding_group_subject_outcome_are_str():
     """FindingGroup.subject_entity and outcome_entity must be str, not Optional."""

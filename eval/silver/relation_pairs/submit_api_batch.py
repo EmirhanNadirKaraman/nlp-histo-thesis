@@ -3,13 +3,13 @@
 
 Reads the request file written by ``prepare_api_batch_jsonl`` and submits it as one
 Message Batch. Appends the batch metadata (batch_id + custom_ids + timestamp) to
-``batch_states.json``. Does NOT do synchronous per-request generation.
+``batch_states.json``. Does not do synchronous per-request generation.
 
   python -m eval.silver.relation_pairs.submit_api_batch            # submit all 10
   python -m eval.silver.relation_pairs.submit_api_batch --retry    # only failed custom_ids
 
 ``--retry`` reads ``failed_custom_ids.json`` (written by collect) and submits a new
-batch containing ONLY those requests — retries are scoped per failed custom_id.
+batch containing only those requests — retries are scoped per failed custom_id.
 """
 from __future__ import annotations
 

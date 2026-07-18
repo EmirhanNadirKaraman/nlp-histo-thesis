@@ -22,7 +22,7 @@ check (verbatim quote unrecognisable in the cited sentence) is opt-in via
 ``check_verbatim`` — off by default because it is a SequenceMatcher ratio, not an
 exact match, and the grounding NLI filter already covers claim↔support quality.
 
-ORDERING CONTRACT — must run BEFORE ``replace_verbatim_from_db``. The fabrication
+ORDERING CONTRACT — must run before ``replace_verbatim_from_db``. The fabrication
 check fuzzy-matches ``verbatim_support`` against the cited single *source
 sentence*; after DB replacement ``verbatim_support`` is the full cited
 *paragraph* and a sentence-vs-paragraph ratio would mis-fire. Both call sites

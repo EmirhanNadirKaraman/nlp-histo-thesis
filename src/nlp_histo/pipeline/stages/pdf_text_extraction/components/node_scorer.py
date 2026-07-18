@@ -235,7 +235,7 @@ class NodeScorer:
 
         # R2: fitz word-count fallback — only used when rendering was unavailable.
         # (R3 dense-text check runs above; R4 location hint is applied inside R1/R2/R3 messages)
-        #     We do NOT apply this when render_skipped=False because fitz also
+        #     We do not apply this when render_skipped=False because fitz also
         #     reads invisible-layer words; absence of fitz words with pixel data
         #     available would be contradictory and likely a bbox mismatch.
         if (

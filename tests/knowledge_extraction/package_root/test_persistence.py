@@ -40,7 +40,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.persistence import (
 PMCID = "PMC9000001"
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# Helpers
 
 def _finding(claim="CD30 predicts worse OS", *,
              subject="CD30", outcome="OS",
@@ -139,7 +139,7 @@ def _read_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
 
 
-# ── _to_jsonable round-trips ─────────────────────────────────────────────────
+# _to_jsonable round-trips
 
 def test_to_jsonable_handles_pydantic_dataclass_enum_path_datetime():
     @dataclasses.dataclass
@@ -188,7 +188,7 @@ def test_jsonl_roundtrip(tmp_path: Path):
     assert out[2]["normal_id"] == "NF_a1"
 
 
-# ── RunArtifactWriter — directory layout, manifest, disabled-by-default ─────
+# RunArtifactWriter — directory layout, manifest, disabled-by-default
 
 def test_writer_creates_run_directory_and_writes_manifest(tmp_path: Path):
     RunArtifactWriter(run_id="test_run", root_dir=tmp_path)
@@ -263,7 +263,7 @@ def test_writer_optional_artifact_tolerates_serialization_failure(tmp_path: Path
         )
 
 
-# ── Whole-pipeline synthetic write ───────────────────────────────────────────
+# Whole-pipeline synthetic write
 
 def test_writer_persists_full_synthetic_pipeline(tmp_path: Path):
     writer = RunArtifactWriter(run_id="full_run", root_dir=tmp_path)
@@ -394,7 +394,7 @@ def test_writer_persists_full_synthetic_pipeline(tmp_path: Path):
     assert raw_rows[0]["classified_label"] == "SUPPORT"
 
 
-# ── Imports & disabled-by-default integration ────────────────────────────────
+# Imports & disabled-by-default integration
 
 def test_existing_summarization_imports_still_work():
     mod = importlib.import_module("nlp_histo.pipeline.stages.knowledge_extraction")
@@ -413,7 +413,7 @@ def test_writer_merges_with_existing_manifest_for_shared_run_id(tmp_path: Path):
     w1.add_paper("PMC0001")
     w1.mark_stage_completed("map")
     w1.mark_stage_completed("normalize")
-    # Crucially do NOT finalize — simulate process() ending mid-run-dir lifecycle.
+    # Crucially do not finalize — simulate process() ending mid-run-dir lifecycle.
 
     # Second paper, fresh writer (matches what _make_artifact_writer does).
     w2 = RunArtifactWriter(
@@ -453,7 +453,7 @@ def test_runner_exposes_artifact_root_and_does_not_create_dirs_when_none(tmp_pat
     assert not (tmp_path / "runs").exists()
 
 
-# ── B-055: persist_map_findings must NOT swallow DB errors ────────────────────
+# B-055: persist_map_findings must not swallow DB errors
 
 def test_persist_map_findings_reraises_on_db_error():
     """Regression for B-055: a failed bulk insert must propagate, not be

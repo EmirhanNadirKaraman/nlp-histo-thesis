@@ -107,7 +107,7 @@ def build(
     Variants whose crop bbox quantizes to the same key share an entry —
     propagation between them is safe.  Variants whose bbox quantizes
     differently end up in separate entries — propagation between them is
-    explicitly NOT supported by this map.
+    explicitly not supported by this map.
     """
     if not sweeps_root.exists():
         raise FileNotFoundError(f"sweeps root not found: {sweeps_root}")

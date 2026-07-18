@@ -47,7 +47,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditMetadata,
 PMCID = "PMC00000001"
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────────
+# Helpers
 
 def _finding(claim: str = "CD31 -> Positive", category: str = "IHC") -> Finding:
     return Finding(
@@ -102,7 +102,7 @@ def _make_embed(mapping: dict[str, list[float]]):
     return fn
 
 
-# ── 1. Identical claim sets ───────────────────────────────────────────────────────
+# 1. Identical claim sets
 
 class TestIdenticalClaims:
     def test_identical_single_claim_scores_one(self):
@@ -127,7 +127,7 @@ class TestIdenticalClaims:
         assert bundle.embedding_agreement == pytest.approx(1.0)
 
 
-# ── 2. Subset case ───────────────────────────────────────────────────────────────
+# 2. Subset case
 
 class TestSubset:
     def test_subset_produces_partial_score(self):
@@ -154,7 +154,7 @@ class TestSubset:
         assert score_ab == pytest.approx(score_ba, abs=1e-6)
 
 
-# ── 3. Split vs merged claims ─────────────────────────────────────────────────────
+# 3. Split vs merged claims
 
 class TestSplitVsMerged:
     def test_mild_count_penalty_is_lenient(self):
@@ -186,7 +186,7 @@ class TestSplitVsMerged:
         assert count_factor > 0.70
 
 
-# ── 4. Large count mismatch ───────────────────────────────────────────────────────
+# 4. Large count mismatch
 
 class TestLargeCountMismatch:
     def test_8_to_2_count_mismatch_mild_penalty(self):
@@ -209,7 +209,7 @@ class TestLargeCountMismatch:
         assert expected > 0.5
 
 
-# ── 5. Broad-claim reuse penalty ─────────────────────────────────────────────────
+# 5. Broad-claim reuse penalty
 
 class TestReusePenalty:
     def test_reuse_lowers_score_vs_no_reuse(self):
@@ -248,7 +248,7 @@ class TestReusePenalty:
         assert factor == pytest.approx(1.0)
 
 
-# ── 6. Weak-match threshold ───────────────────────────────────────────────────────
+# 6. Weak-match threshold
 
 class TestWeakMatchThreshold:
     def test_sim_below_tau_counts_as_zero(self):
@@ -288,7 +288,7 @@ class TestWeakMatchThreshold:
         assert _align(embed, [], ["CD31 positive"]) == pytest.approx(0.0)
 
 
-# ── 7. Contradiction penalty ──────────────────────────────────────────────────────
+# 7. Contradiction penalty
 
 class TestContradictionPenalty:
     def test_opposing_polarity_lowers_score(self):
@@ -349,7 +349,7 @@ class TestContradictionPenalty:
         assert score == pytest.approx(0.80, abs=1e-6)
 
 
-# ── 8. Grounding penalty ──────────────────────────────────────────────────────────
+# 8. Grounding penalty
 
 class TestGroundingPenalty:
     def test_low_grounding_discounts_score(self):
@@ -390,7 +390,7 @@ class TestGroundingPenalty:
         assert bundle.embedding_agreement == pytest.approx(1.0)
 
 
-# ── 9. _polarity helper ───────────────────────────────────────────────────────────
+# 9. _polarity helper
 
 class TestPolarity:
     def test_positive_keywords(self):
@@ -426,7 +426,7 @@ class TestPolarity:
         assert _polarity("neither positive nor negative") == 0
 
 
-# ── 10. _reuse_factor helper ──────────────────────────────────────────────────────
+# 10. _reuse_factor helper
 
 class TestReuseFactor:
     def test_single_target_returns_one(self):
@@ -452,7 +452,7 @@ class TestReuseFactor:
         assert f_low >= f_high
 
 
-# ── 11. _contradiction_ratio helper ──────────────────────────────────────────────
+# 11. _contradiction_ratio helper
 
 class TestContradictionRatio:
     def test_empty_sim_returns_zero(self):
@@ -484,7 +484,7 @@ class TestContradictionRatio:
         assert ratio == pytest.approx(0.5)
 
 
-# ── _align_precomputed edge cases ─────────────────────────────────────────────────
+# _align_precomputed edge cases
 
 class TestAlignPrecomputed:
     def test_empty_a_returns_zero(self):
@@ -503,7 +503,7 @@ class TestAlignPrecomputed:
         assert score == pytest.approx(1.0)
 
 
-# ── Fix 2: per-pair grounding in EmbeddingScorer ─────────────────────────────────
+# Fix 2: per-pair grounding in EmbeddingScorer
 
 class TestPerPairGrounding:
     def test_mixed_grounding_lower_than_both_high(self):
@@ -540,7 +540,7 @@ class TestPerPairGrounding:
         assert bundle.embedding_agreement == pytest.approx(2.0 / 3.0, abs=1e-6)
 
 
-# ── Fix 3: numeric contradiction detection ────────────────────────────────────────
+# Fix 3: numeric contradiction detection
 
 class TestNumericContradiction:
     def test_numeric_contradiction_ratio_detects_large_diff(self):
@@ -600,7 +600,7 @@ class TestNumericContradiction:
         assert ratio == pytest.approx(1.0)
 
 
-# ── Fix 4: grounding forwarded to EmbeddingSimilarityStrategy.compute_matrix ─────
+# Fix 4: grounding forwarded to EmbeddingSimilarityStrategy.compute_matrix
 
 class TestComputeMatrixGrounding:
     def test_low_grounding_reduces_off_diagonal(self):
@@ -649,7 +649,7 @@ class TestComputeMatrixGrounding:
             assert mat[i, i] == pytest.approx(1.0)
 
 
-# ── Part A: _align_precomputed_with_breakdown ─────────────────────────────────────
+# Part A: _align_precomputed_with_breakdown
 
 class TestAlignPrecomputedWithBreakdown:
     _BREAKDOWN_KEYS = {
@@ -722,7 +722,7 @@ class TestAlignPrecomputedWithBreakdown:
         assert bd["claim_count_b"] == 1
 
 
-# ── Part A: compute_matrix_with_breakdown ─────────────────────────────────────────
+# Part A: compute_matrix_with_breakdown
 
 class TestComputeMatrixWithBreakdown:
     _BREAKDOWN_KEYS = {
@@ -809,7 +809,7 @@ class TestComputeMatrixWithBreakdown:
         assert len(bds) == 1  # still one entry for the pair, with trivial values
 
 
-# ── Part A: PairwiseScore breakdown fields ────────────────────────────────────────
+# Part A: PairwiseScore breakdown fields
 
 class TestPairwiseScoreBreakdownFields:
     def test_default_breakdown_fields_are_none(self):
@@ -836,7 +836,7 @@ class TestPairwiseScoreBreakdownFields:
         assert ps.grounding_factor == pytest.approx(0.89)
 
 
-# ── Part B: VoterTrace grounding_source field ─────────────────────────────────────
+# Part B: VoterTrace grounding_source field
 
 class TestVoterTraceGroundingSource:
     def test_default_grounding_source_is_fallback(self):
@@ -851,7 +851,7 @@ class TestVoterTraceGroundingSource:
         assert vt.grounding_source == "validated"
 
 
-# ── Part B: RoutingDecision voter_grounding_contexts ─────────────────────────────
+# Part B: RoutingDecision voter_grounding_contexts
 
 class TestRoutingDecisionGroundingContexts:
     def test_field_exists_and_defaults_none(self):

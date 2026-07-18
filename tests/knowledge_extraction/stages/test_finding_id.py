@@ -42,7 +42,7 @@ def _stub_umls(monkeypatch):
     monkeypatch.setattr(_ns, "_resolve_entity", _identity)
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# Helpers
 
 def _finding(
     claim: str = "MYC overexpression predicts worse OS",
@@ -70,7 +70,7 @@ def _finding(
     )
 
 
-# ── compute_finding_id determinism ───────────────────────────────────────────
+# compute_finding_id determinism
 
 def test_compute_finding_id_is_deterministic():
     a = compute_finding_id(PMCID, "C1", 0, "MYC predicts worse OS")
@@ -93,7 +93,7 @@ def test_compute_finding_id_changes_with_claim_chunk_position_pmcid():
     assert compute_finding_id("PMC9999999", "C1", 0, "MYC predicts worse OS") != base
 
 
-# ── Finding PrivateAttr behaviour ────────────────────────────────────────────
+# Finding PrivateAttr behaviour
 
 def test_finding_id_defaults_to_none_and_is_not_in_model_dump():
     f = _finding()
@@ -182,7 +182,7 @@ def test_auditable_summary_construction_preserves_finding_id():
     assert cs.findings[0].finding_id is not None
 
 
-# ── NormalizeStage propagation ───────────────────────────────────────────────
+# NormalizeStage propagation
 
 def test_normalize_merge_populates_source_finding_ids():
     stage = NormalizeStage()

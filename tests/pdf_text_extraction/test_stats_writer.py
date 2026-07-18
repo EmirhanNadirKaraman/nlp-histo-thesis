@@ -28,7 +28,7 @@ from nlp_histo.pipeline.stages.pdf_text_extraction.outputs.stats_writer import (
 )
 
 
-# ── Reason-code classifier ────────────────────────────────────────────────────
+# Reason-code classifier
 
 
 @pytest.mark.parametrize(
@@ -65,7 +65,7 @@ def test_classify_reason(raw: str, expected: str) -> None:
     assert classify_reason(raw) == expected
 
 
-# ── config_digest ─────────────────────────────────────────────────────────────
+# config_digest
 
 
 def test_config_digest_stable_across_instances() -> None:
@@ -91,7 +91,7 @@ def test_config_digest_changes_with_knob() -> None:
 
 
 def test_config_digest_ignores_paths() -> None:
-    """Two configs that differ ONLY in PathConfig values must hash identically."""
+    """Two configs that differ only in PathConfig values must hash identically."""
     a = PipelineConfig()
     b = PipelineConfig()
     b.paths.output_root = Path("out/sweeps/foo")
@@ -128,7 +128,7 @@ def test_config_digest_returns_unknown_on_internal_failure(monkeypatch) -> None:
     assert config_digest(PipelineConfig()) == "unknown"
 
 
-# ── config_snapshot ───────────────────────────────────────────────────────────
+# config_snapshot
 
 
 def test_config_snapshot_includes_all_subconfigs() -> None:
@@ -154,7 +154,7 @@ def test_config_snapshot_enum_serialised_as_value() -> None:
                                        "DOCLING", "docling", "VLM", "vlm"}
 
 
-# ── DocStatsCollector ─────────────────────────────────────────────────────────
+# DocStatsCollector
 
 
 def _make_collector(tmp_path: Path) -> DocStatsCollector:
@@ -285,7 +285,7 @@ def test_collector_mark_ok_after_failed_is_noop(tmp_path: Path) -> None:
     c.mark_failed(ValueError("oops"))
     c.mark_ok()
     data = json.loads(c.write().read_text())
-    assert data["status"] == "failed"  # mark_ok must NOT override
+    assert data["status"] == "failed"  # mark_ok must not override
 
 
 def test_collector_write_is_idempotent(tmp_path: Path) -> None:
@@ -321,7 +321,7 @@ def test_collector_record_op_is_failure_safe(tmp_path: Path) -> None:
         @property
         def keep(self):
             raise RuntimeError("explode")
-    # Should NOT raise:
+    # Should not raise:
     c.record_scored_nodes([Boom()])
     c.mark_ok()
     # write must still succeed:

@@ -7,7 +7,7 @@ before calling group(); this module does not silently drop or convert
 ungroupable findings.
 
 Groups by (subject_entity, outcome_entity, relation_type, category).
-Direction is NOT part of the grouping key — a group may contain findings
+Direction is not part of the grouping key — a group may contain findings
 with different directions.
 Opposing directions on the same entity pair surface as CONTRADICT relations
 in Phase 5 RELATE, not as separate groups.
@@ -40,7 +40,7 @@ def is_groupable(nf: NormalFinding) -> bool:
     """
     A NormalFinding is groupable iff subject_entity and outcome_entity are
     non-None, and relation_type is a known type (not unclear).
-    Direction is NOT part of the groupability invariant — a group may contain
+    Direction is not part of the groupability invariant — a group may contain
     findings with different or absent directions.
     """
     return (

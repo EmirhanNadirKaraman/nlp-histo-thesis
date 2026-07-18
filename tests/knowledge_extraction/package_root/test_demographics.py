@@ -28,7 +28,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.routing.schema_validator imp
 PMCID = "PMC99999"
 
 
-# ── Schema acceptance ─────────────────────────────────────────────────────────
+# Schema acceptance
 
 def test_finding_demographic_valid():
     """category='demographic' passes Pydantic validation on Finding."""
@@ -74,7 +74,7 @@ def test_normal_finding_demographic_valid():
     assert nf.category == "demographic"
 
 
-# ── SchemaValidator ───────────────────────────────────────────────────────────
+# SchemaValidator
 
 def test_valid_categories_includes_demographic():
     """Regression guard: _VALID_CATEGORIES must contain 'demographic'."""
@@ -110,7 +110,7 @@ def test_schema_validator_accepts_demographic():
     assert ReasonCode.INVALID_CATEGORY not in results[0].reason_codes
 
 
-# ── Grouping ──────────────────────────────────────────────────────────────────
+# Grouping
 
 def test_two_demographic_findings_same_group_id():
     """Same subject/outcome/relation_type/category='demographic' → same group_id."""
@@ -133,7 +133,7 @@ def test_demographic_prognosis_different_group_id():
     assert id_demo != id_prog
 
 
-# ── Alias repair (field_validator) ────────────────────────────────────────────
+# Alias repair (field_validator)
 
 def test_finding_alias_repaired_via_constructor(caplog):
     """Legacy 'demographics' alias is repaired to 'demographic' when constructing Finding directly."""

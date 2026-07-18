@@ -26,7 +26,7 @@ from nlp_histo.workflows import replay
 from nlp_histo.workflows.replay import EmbeddingCacheIncompleteError
 
 
-# ── fixture: a minimal but *real* artifact tree ───────────────────────────────
+# fixture: a minimal but *real* artifact tree
 
 def _write_voter_cache(root, claims: list[str]) -> None:
     """A voter cache whose findings carry exactly ``claims``.
@@ -106,7 +106,7 @@ def tree(tmp_path, monkeypatch):
     return root, claims
 
 
-# ── preflight ─────────────────────────────────────────────────────────────────
+# preflight
 
 def test_complete_caches_pass(tree) -> None:
     root, _ = tree
@@ -201,7 +201,7 @@ def test_error_reports_counts_and_paths_but_not_claim_texts(tree) -> None:
         assert claim not in msg, "claim text must not be echoed into the error"
 
 
-# ── the artifact root is authoritative ────────────────────────────────────────
+# the artifact root is authoritative
 
 def test_caches_resolve_from_artifact_root_not_the_repository(tree, monkeypatch) -> None:
     """--artifact-root governs. A non-default root is what these tests use throughout;
@@ -218,7 +218,7 @@ def test_unknown_embedder_kind_is_a_loud_error(tree) -> None:
         replay.frozen_embedding_cache("not-an-embedder")
 
 
-# ── main() exit code + nothing written ────────────────────────────────────────
+# main() exit code + nothing written
 
 def test_incomplete_cache_exits_4_and_writes_nothing(tmp_path, capsys, monkeypatch) -> None:
     monkeypatch.setattr(replay, "validate_artifacts", lambda root: [])
@@ -252,7 +252,7 @@ def test_cache_gate_runs_before_any_output_exists(tmp_path, monkeypatch) -> None
     assert seen["existed"] is False
 
 
-# ── cache-only: no provider can be reached at runtime ─────────────────────────
+# cache-only: no provider can be reached at runtime
 
 def test_strict_cache_only_never_constructs_a_provider(tree, monkeypatch) -> None:
     """Proof that no paid client is built and no key is consulted in cache-only mode."""

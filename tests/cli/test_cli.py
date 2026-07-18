@@ -59,7 +59,7 @@ def test_command_group_without_subcommand_shows_group_help(capsys) -> None:
         main(["db"])  # group help path exits via argparse
 
 
-# ── help must not touch the world ─────────────────────────────────────────────
+# help must not touch the world
 
 HEAVY = (
     "sqlalchemy.engine.base",  # a live Engine implies a DB connect attempt
@@ -127,7 +127,7 @@ def test_plain_help_after_command_is_the_clis_own(monkeypatch) -> None:
         main(["ingest", "--help"])
 
 
-# ── dispatch reaches the intended workflow ────────────────────────────────────
+# dispatch reaches the intended workflow
 
 def test_db_init_dispatches_to_init_db(monkeypatch) -> None:
     calls: list[list[str]] = []
@@ -201,7 +201,7 @@ def test_knowledge_dispatches_to_knowledge_workflow(monkeypatch) -> None:
     assert seen == [["--profile", "cheap"]]
 
 
-# ── acquisition import safety ─────────────────────────────────────────────────
+# acquisition import safety
 
 def test_acquisition_modules_are_import_safe(tmp_path, monkeypatch) -> None:
     """Importing must perform no network access and create no directories.
@@ -243,7 +243,7 @@ def test_replay_missing_artifacts_is_a_clear_error(tmp_path, capsys) -> None:
 # test below only checks that the CLI forwards its arguments.
 
 
-# ── B-107: a UMLS failure must stop the replay, not shade its numbers ──────────
+# B-107: a UMLS failure must stop the replay, not shade its numbers
 
 def test_replay_refuses_and_exits_nonzero_when_umls_is_unavailable(tmp_path, capsys, monkeypatch) -> None:
     """Previously: one WARNING, exit 0, and wrong 06/12 tables on disk."""

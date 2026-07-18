@@ -13,7 +13,7 @@ Reads:
 Writes:
   eval/reports/E14_heldout/theta_strict_f1_heldout.{pdf,png}   (NEW file)
 
-Does NOT touch the related15 figure (E07_map_theta/theta_strict_f1.*).
+Does not touch the related15 figure (E07_map_theta/theta_strict_f1.*).
 Offline -- CSV reports only, no API/DB.
 
     python -m eval.silver.experiments.E14_heldout.plot_theta_curve_heldout

@@ -1,11 +1,11 @@
 """B-081: Gemini-only voter-cache regeneration (splice).
 
-Regenerates ONLY the two contaminated Gemini voter slots in the related15
+Regenerates only the two contaminated Gemini voter slots in the related15
 voter_cache — L1 `gemini-2.5-flash-lite` (vi=0) and L2 `gemini-2.5-flash` (vi=0)
 — with the FIXED batch mapper, and splices the fresh results back in, leaving the
 cached OpenAI/Claude/Sonnet voters untouched.
 
-Safe because the cache holds L1/L2/L3 for EVERY chunk (no escalation-dependent
+Safe because the cache holds L1/L2/L3 for every chunk (no escalation-dependent
 cache miss), so a clean-Gemini re-replay can't drop a chunk. Isolates the Gemini
 fix exactly: only the 2 Gemini slots change, so the sweep delta vs 0.7135 is the
 pure contamination-fix effect (no OpenAI/Claude re-run noise).
@@ -152,7 +152,7 @@ def main() -> None:
         waited += POLL_SECS
         print(f"  …{waited}s, {len(pending)} job(s) pending")
 
-    # Parse + splice ONLY the Gemini slots (vi=0, l1/l2)
+    # Parse + splice only the Gemini slots (vi=0, l1/l2)
     n_ok = n_fail = 0
     for custom_id, content in state["raw"].items():
         parts = custom_id.split("__")

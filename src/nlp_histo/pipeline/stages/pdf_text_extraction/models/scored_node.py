@@ -157,8 +157,8 @@ class TwoPassResult:
     - ``text_elements``   : TEXT, LIST_ITEM, SECTION_HEADER, CAPTION, FOOTNOTE, …
                             These flow into hierarchical text assembly.
     - ``figure_elements`` : PICTURE / FIGURE only.  Inner text (axis labels, etc.)
-                            must NOT be merged into body text.
-    - ``table_elements``  : TABLE / RECONSTRUCTED_TABLE.  Cell text must NOT be
+                            must not be merged into body text.
+    - ``table_elements``  : TABLE / RECONSTRUCTED_TABLE.  Cell text must not be
                             flattened into paragraph text.
     """
 

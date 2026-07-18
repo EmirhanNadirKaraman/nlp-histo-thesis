@@ -31,7 +31,7 @@ import sqlalchemy as sa
 from .models import Base
 
 # Same .env resolution as db_connection.py — one config source. Searched upward from
-# the working directory (NOT relative to this file: the package is installed), and
+# the working directory (not relative to this file: the package is installed), and
 # overridable with NLP_HISTO_ENV_FILE.
 def _env_path() -> Path:
     from dotenv import find_dotenv
@@ -210,7 +210,7 @@ def verify_schema(inspector, present: Iterable[str]) -> list[Problem]:
             + verify_unique_constraints(inspector, present))
 
 
-# State classification (must run BEFORE any create_tables() call)
+# State classification (must run before any create_tables() call)
 
 def _inspector(engine):
     """Indirection so tests can substitute an Inspector without patching SQLAlchemy."""

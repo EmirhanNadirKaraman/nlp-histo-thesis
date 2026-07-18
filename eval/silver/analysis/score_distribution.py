@@ -18,7 +18,7 @@ from the gate population, else they inflate the band with phantom counts:
 WHY IT IS θ-INDEPENDENT (and why that matters)
 theta/reject_theta only CLASSIFY ``primary``; they never compute it. So the L1
 score distribution is fixed across the whole θ grid. A chunk with primary in
-(0.1, 0.2] is the ONLY thing that can make reject_theta=0.1 differ from 0.2 — so
+(0.1, 0.2] is the only thing that can make reject_theta=0.1 differ from 0.2 — so
 the share of gate scores in that band is exactly the sensitivity of the reject
 prune. The structure_screen sweep showed reject 0.1≡0.2 byte-identical only for
 θ≥0.7; this histogram is θ-independent, so it closes that gap for θ=0.30–0.60 too.

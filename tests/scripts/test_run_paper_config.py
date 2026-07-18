@@ -115,7 +115,7 @@ def test_load_summarization_config_empty_path_falls_back(run_paper_module) -> No
 def test_grounding_threshold_changes_pipeline_config_hash(
     tmp_path: Path, run_paper_module
 ) -> None:
-    """Run A vs Run B parity: the per-paper pipeline_config_hash MUST diverge
+    """Run A vs Run B parity: the per-paper pipeline_config_hash must diverge
     when grounding.threshold flips. Otherwise the cached result short-circuit
     would silently serve Run-A summaries to a Run-B invocation."""
     from nlp_histo.pipeline.stages.knowledge_extraction.persistence import (

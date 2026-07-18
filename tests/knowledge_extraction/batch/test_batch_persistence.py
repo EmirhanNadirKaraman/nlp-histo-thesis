@@ -71,7 +71,7 @@ PMCID = "PMC9000099"
 FAKE_MODEL = "fake-model-batch-persistence-test"
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# Helpers
 
 def _finding() -> Finding:
     return Finding(
@@ -152,7 +152,7 @@ def _read_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
 
 
-# ── Tests ────────────────────────────────────────────────────────────────────
+# Tests
 
 def test_batch_finalize_writes_full_artifact_layout(tmp_path: Path):
     _trace("building runner...")

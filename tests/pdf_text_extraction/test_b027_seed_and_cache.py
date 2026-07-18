@@ -42,7 +42,7 @@ from nlp_histo.pipeline.stages.pdf_text_extraction.stage_cache import (
 )
 
 
-# ── _StageCache primitive ─────────────────────────────────────────────────────
+# _StageCache primitive
 
 def _trivial_dump(payload):
     return payload
@@ -276,7 +276,7 @@ def test_artifact_without_sidecar_logs_specific_message(tmp_path, caplog):
     assert "artifact present but sidecar missing" in caplog.text
 
 
-# ── Per-stage round-trips with runtime-type assertions ────────────────────────
+# Per-stage round-trips with runtime-type assertions
 
 def test_table_detection_round_trip(tmp_path):
     original = TableDetectionResult(
@@ -383,7 +383,7 @@ def test_hierarchical_row_list_round_trip(tmp_path):
         assert all(isinstance(c, str) for c in got.source_chunks)
 
 
-# ── Seed initialisation ──────────────────────────────────────────────────────
+# Seed initialisation
 
 def _make_runner(tmp_path: Path, seed: int | None = 42, **runtime_kw) -> PipelineRunner:
     cfg = PipelineConfig()
@@ -419,7 +419,7 @@ def test_seed_pipeline_none_skips_all_seeding(tmp_path, monkeypatch):
 # Restore the nulled module INSIDE the test (try/finally) rather than via
 # ``monkeypatch.setitem``: pytest-randomly's per-test teardown reseed calls the
 # numpy/torch RNG seeders (``thinc.fix_random_seed`` → ``torch.manual_seed``,
-# ``numpy.random.seed``) and runs BEFORE monkeypatch's undo. With the sentinel
+# ``numpy.random.seed``) and runs before monkeypatch's undo. With the sentinel
 # ``None`` still in ``sys.modules`` that reseed raises ``ModuleNotFoundError:
 # import of <mod> halted; None in sys.modules``, which aborts teardown so the undo
 # never runs — leaking ``None`` into every later test's reseed (a 350+ error
@@ -460,7 +460,7 @@ def test_seed_pipeline_handles_missing_numpy(tmp_path, monkeypatch):
     assert seeds == [11]
 
 
-# ── Runner wiring (mocks the three expensive stages) ──────────────────────────
+# Runner wiring (mocks the three expensive stages)
 
 def _fake_layout(pdf_path: Path) -> LayoutResult:
     return LayoutResult(

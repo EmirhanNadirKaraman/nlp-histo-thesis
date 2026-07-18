@@ -168,7 +168,7 @@ class ContextAwareStitcher:
             else None
         )
 
-        # B-042: abbreviation check must run BEFORE the period early-return below;
+        # B-042: abbreviation check must run before the period early-return below;
         # every entry here ends with a period in the wild ("fig.", "et al.",
         # "e.g."), so a period-terminal early-return shadowed this rule.
         _MID_SENTENCE_ABBREVS = frozenset({
@@ -293,7 +293,7 @@ def remove_citations(text: str) -> str:
     - "text. 1-3 More" → "text. More"
     - "text. 4,5" → "text."
 
-    Does NOT remove reference list numbers at start of lines like:
+    Does not remove reference list numbers at start of lines like:
     - "14. Author name..." (preserved)
 
     Args:

@@ -156,7 +156,7 @@ class DirectionEnum(str, Enum):
 # `partial` is included in POLARITY_BEARING_DIRS for the group-level
 # is_conflicted flag — meaning `positive + partial → is_conflicted=True`. The
 # question of whether `partial` should really count as a contradicting
-# polarity (vs. a qualifier on `positive`) is owned by B-025 and is NOT a
+# polarity (vs. a qualifier on `positive`) is owned by B-025 and is not a
 # final decision in B-049.
 POLARITY_BEARING_DIRS: frozenset[str] = frozenset({"positive", "negative", "absent", "partial"})
 NON_POLARITY_DIRS:     frozenset[str] = frozenset({"unclear", "no_direction"})
@@ -287,7 +287,7 @@ _CATEGORY_ALIASES: dict[str, str] = {
 # Keys are lowercase; case-folded raw values match via the case-folded branch
 # of `_coerce_invalid_relation_type`.
 #
-# "staging" is intentionally NOT aliased: descriptive (has_feature) vs
+# "staging" is intentionally not aliased: descriptive (has_feature) vs
 # outcome-driven (prognostic) split needs claim context. Falls through to
 # "unclear" with reason="cross_field_bleed" so loss stays observable.
 _RELATION_TYPE_ALIASES: dict[str, str] = {
@@ -763,7 +763,7 @@ class CanonicalRule(BaseModel):
     predicate_text:      str                   # highest mean_grounding_score predicate in the bin
     # Group-level signal (B-049): True iff the *parent canonicalization group*
     # produced ≥2 polarity-bearing direction bins. Every per-direction rule
-    # from a conflicted group carries the same flag. Does NOT mean this
+    # from a conflicted group carries the same flag. Does not mean this
     # individual rule contains contradictory members — by construction each
     # rule contains exactly one direction's worth of members. `partial`
     # counts as polarity-bearing here; whether that's the right call is the

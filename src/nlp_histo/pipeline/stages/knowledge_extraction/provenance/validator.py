@@ -31,7 +31,7 @@ _CITATION_RE = re.compile(r"^S(\d+)\|(PMC[\w\-]+)\|(\d+)$")
 # B-082: the corpus uses suffixed document ids (e.g. `PMC4329418_his0066-0409`),
 # but models frequently cite the bare canonical accession (`PMC4329418`) — the
 # SAME paper. The cross-document check below compares the base `PMC<digits>`
-# accession so bare-vs-suffixed is NOT a false cross-document error. A genuinely
+# accession so bare-vs-suffixed is not a false cross-document error. A genuinely
 # different paper still has a different base accession and is still caught.
 _PMC_BASE_RE = re.compile(r"(PMC\d+)")
 

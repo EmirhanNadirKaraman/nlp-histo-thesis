@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LLM/API pre-flight — tiny sync calls across every model the pipeline uses.
 
-Run this BEFORE generating silver labels or re-priming the MAP cascade, so a
+Run this before generating silver labels or re-priming the MAP cascade, so a
 missing key, a revoked model, or a renamed model ID surfaces in seconds instead
 of after an expensive batch submit. It hits the same provider SDKs + the same
 model IDs production uses:

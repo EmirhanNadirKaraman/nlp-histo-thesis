@@ -33,7 +33,7 @@ from eval.paper_selection.selectors import SelectionConfig, select_calibration_s
 from tests.paths import REPO_ROOT
 
 
-# ── Fixture builders ─────────────────────────────────────────────────────────
+# Fixture builders
 
 def _ent(text, *, label="ENTITY", cui=None, semtypes=None, score=0.95):
     return RawEntity(
@@ -152,7 +152,7 @@ def _loose_cfg() -> SelectionConfig:
     )
 
 
-# ── Tests ────────────────────────────────────────────────────────────────────
+# Tests
 
 def test_related_ilp_chooses_lymphoma_cluster():
     fps = build_fingerprints(_make_corpus())
@@ -332,7 +332,7 @@ def test_cli_strategy_ilp_on_jsonl_fixture(tmp_path: Path):
     assert any(r.startswith("ILP ") for r in reasons), reasons
 
 
-# ── New tests — sparsification, caps, index-based names, fallbacks ───────────
+# New tests — sparsification, caps, index-based names, fallbacks
 
 def test_ilp_config_resolved_limit_prefers_override():
     ilp = ILPConfig()

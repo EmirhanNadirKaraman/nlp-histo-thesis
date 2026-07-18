@@ -74,7 +74,7 @@ def _scope(**overrides) -> FindingScope:
     return FindingScope(**defaults)
 
 
-# ── Legacy / opt-out path ────────────────────────────────────────────────────
+# Legacy / opt-out path
 
 
 def test_scope_aware_false_returns_bare_predicate():
@@ -103,7 +103,7 @@ def test_empty_scope_fields_skip_prefix():
     assert "[scope:" not in text
 
 
-# ── Enriched path ────────────────────────────────────────────────────────────
+# Enriched path
 
 
 def test_scope_aware_prepends_disease_subtype_tag():
@@ -178,7 +178,7 @@ def test_scope_aware_flag_toggles_off_at_runtime():
     assert s_off._scope_aware_nli is False
 
 
-# ── Verbatim path (use_verbatim_for_nli) ─────────────────────────────────────
+# Verbatim path (use_verbatim_for_nli)
 
 
 def test_use_verbatim_substitutes_predicate_when_verbatim_present():

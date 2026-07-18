@@ -200,7 +200,7 @@ def _aggregate_funnel(per_run):
         fracs = [r[key] / r["map_pre"] for r in per_run if r["map_pre"]]
         frac_mean[key] = statistics.mean(fracs) if fracs else None
 
-    # Pooled fraction of pre-grounding MAP = ratio of corpus sums (NOT mean of
+    # Pooled fraction of pre-grounding MAP = ratio of corpus sums (not mean of
     # per-paper ratios). This is what the thesis funnel reports (E04 / §02 / §05 /
     # §06) — e.g. grounding retention 1923/2294 = 83.8 %. The report shows pooled
     # (so it agrees with the thesis headline); the per-paper mean stays in

@@ -10,7 +10,7 @@ fed one case at chunk_size=10 / chunk_overlap=0:
   2. CACHE HIT  — when the MAP cache is populated from the validated θ0.9 replay,
                   MapStage.process hits every chunk (cache._hits == n_chunks, 0 misses).
   3. CHUNK ID   — MapStage._make_chunks(case, size=10, overlap=0) == the primer's
-                  chunk_map exactly; overlap=2 does NOT (proves we're off the old path).
+                  chunk_map exactly; overlap=2 does not (proves we're off the old path).
   4. OUTPUT     — the cache-hit MapStage findings == the sweep's validated θ0.9
                   output for that case (`_replay`, the exact code E06–E12 calibrated on).
 

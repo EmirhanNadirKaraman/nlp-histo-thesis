@@ -20,7 +20,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.models import (
 )
 
 
-# ── Fixtures ───────────────────────────────────────────────────────────────────
+# Fixtures
 
 def _make_finding(**kwargs) -> Finding:
     defaults = dict(
@@ -80,7 +80,7 @@ def _fake_pipe(scores: list[float]) -> _FakeNliPipe:
     return _FakeNliPipe(scores)
 
 
-# ── Schema construction ────────────────────────────────────────────────────────
+# Schema construction
 
 def test_finding_new_fields_construct():
     f = _make_finding(
@@ -106,7 +106,7 @@ def test_finding_new_fields_default_none():
     assert f.grounding_score is None
 
 
-# ── Roundtrip (simulates PipelineCache serialize/deserialize) ──────────────────
+# Roundtrip (simulates PipelineCache serialize/deserialize)
 
 def test_finding_roundtrip():
     f = _make_finding(
@@ -168,7 +168,7 @@ def test_pre_phase1_cache_entry_loads():
     assert s.findings[0].scope is None
 
 
-# ── DirectionEnum ──────────────────────────────────────────────────────────────
+# DirectionEnum
 
 @pytest.mark.parametrize("value", ["positive", "negative", "absent", "partial", "unclear"])
 def test_direction_enum_values(value):
@@ -179,7 +179,7 @@ def test_direction_enum_values(value):
     assert f2.direction == DirectionEnum(value)
 
 
-# ── AtomicFinding defined but not wired ───────────────────────────────────────
+# AtomicFinding defined but not wired
 
 def test_atomic_finding_importable():
     """AtomicFinding must be importable and constructable (Phase 2 forward-compat)."""
@@ -199,7 +199,7 @@ def test_atomic_finding_importable():
     assert af.scope.disease_subtype == "DLBCL"
 
 
-# ── score_findings ─────────────────────────────────────────────────────────────
+# score_findings
 
 def test_score_findings_writes_scores_in_place():
     findings = [_make_finding(), _make_finding(verbatim_support="")]
@@ -231,7 +231,7 @@ def test_score_findings_empty_verbatim_scores_zero_without_calling_pipe():
     assert calls == []  # empty verbatim short-circuits before hitting pipe
 
 
-# ── filter_atomic_findings ────────────────────────────────────────────────────
+# filter_atomic_findings
 
 def test_filter_atomic_findings_keeps_above_threshold():
     findings = [_make_finding(), _make_finding(claim="BCL2 claim", verbatim_support="BCL2 x")]

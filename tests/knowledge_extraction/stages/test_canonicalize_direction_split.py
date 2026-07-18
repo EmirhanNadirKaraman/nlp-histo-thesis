@@ -79,7 +79,7 @@ def _canonicalize(nfs: list[NormalFinding]):
     )
 
 
-# ── _split_by_direction ───────────────────────────────────────────────────────
+# _split_by_direction
 
 def test_split_one_bin_per_observed_direction():
     nfs = [_nf("a", DirectionEnum.positive), _nf("b", DirectionEnum.negative)]
@@ -131,7 +131,7 @@ def test_split_returns_sorted_order():
     assert keys == sorted(keys)
 
 
-# ── _study_coverage ───────────────────────────────────────────────────────────
+# _study_coverage
 
 def test_study_coverage_single():
     nfs = [_nf("a", DirectionEnum.positive, "PMC1"), _nf("b", DirectionEnum.positive, "PMC1")]
@@ -143,7 +143,7 @@ def test_study_coverage_multi():
     assert _study_coverage(nfs) == "multi_study"
 
 
-# ── Group-level is_conflicted (B-049 repurposing) ─────────────────────────────
+# Group-level is_conflicted (B-049 repurposing)
 
 def test_is_conflicted_false_for_single_polarity_group():
     nfs = [_nf("a", DirectionEnum.positive), _nf("b", DirectionEnum.positive)]
@@ -193,7 +193,7 @@ def test_is_conflicted_true_applies_to_every_rule_from_a_conflicted_group():
     assert all(r.is_conflicted is True for r in rules)
 
 
-# ── S5 core invariant — protects the B-049 honesty fix ────────────────────────
+# S5 core invariant — protects the B-049 honesty fix
 
 def test_no_unclear_leakage_into_polarity_bins():
     """B-049 honesty invariant: no polarity-bearing CanonicalRule may contain

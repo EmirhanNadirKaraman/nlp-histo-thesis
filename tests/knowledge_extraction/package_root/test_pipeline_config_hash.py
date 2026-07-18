@@ -16,7 +16,7 @@ from enum import Enum
 from nlp_histo.pipeline.stages.knowledge_extraction.persistence import compute_pipeline_config_hash
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# Helpers
 
 def _base_kwargs() -> dict:
     return dict(
@@ -40,7 +40,7 @@ def _base_kwargs() -> dict:
     )
 
 
-# ── Determinism ──────────────────────────────────────────────────────────────
+# Determinism
 
 def test_identical_inputs_yield_identical_hash():
     h1 = compute_pipeline_config_hash(**_base_kwargs())
@@ -57,7 +57,7 @@ def test_hash_is_dict_key_order_independent():
     assert compute_pipeline_config_hash(**a) == compute_pipeline_config_hash(**b)
 
 
-# ── Sensitivity ──────────────────────────────────────────────────────────────
+# Sensitivity
 
 def test_changing_threshold_changes_hash():
     base = _base_kwargs()
@@ -108,7 +108,7 @@ def test_adding_threshold_key_changes_hash():
     assert compute_pipeline_config_hash(**base) != compute_pipeline_config_hash(**extended)
 
 
-# ── Coercion: dataclasses + enums survive through _to_jsonable ───────────────
+# Coercion: dataclasses + enums survive through _to_jsonable
 
 class _Mode(Enum):
     A = "a"
@@ -132,7 +132,7 @@ def test_dataclass_and_enum_inputs_are_coerced_deterministically():
     assert h_a != h_b
 
 
-# ── Empty / None inputs still hash deterministically ─────────────────────────
+# Empty / None inputs still hash deterministically
 
 def test_all_none_inputs_hash_deterministically():
     h1 = compute_pipeline_config_hash()
@@ -142,7 +142,7 @@ def test_all_none_inputs_hash_deterministically():
     assert h1 != compute_pipeline_config_hash(schema_version="x")
 
 
-# ── B-049: CANONICALIZE_DIRECTION_POLICY_VERSION participates in the hash ──────
+# B-049: CANONICALIZE_DIRECTION_POLICY_VERSION participates in the hash
 
 def test_canonicalize_direction_policy_version_changes_hash():
     """The B-049 stamp must invalidate the cached summary hash when bumped.

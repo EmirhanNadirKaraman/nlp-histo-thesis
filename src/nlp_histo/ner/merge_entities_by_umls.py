@@ -65,7 +65,7 @@ def merge_entities_by_umls(pmcid=None, min_occurrences=1, output_dir=None, limit
         limit: Optional limit to process only first N documents
         model_name: Optional model name to filter entities. This is spaCy's
                     ``nlp.meta["name"]`` as stored in entities.model_name —
-                    'core_sci_lg', NOT the package name 'en_core_sci_lg' (B-115).
+                    'core_sci_lg', not the package name 'en_core_sci_lg' (B-115).
 
     Returns:
         dict: Merged entity data grouped by UMLS CUI

@@ -1326,7 +1326,7 @@ def render_batch(
             ctx = build_context(data, low_gs_threshold, corpus_connections=corpus_index)
 
             # Snapshot the audit-relevant fields per canonical rule for the
-            # cross-paper lookup. We do this BEFORE writing HTML so any
+            # cross-paper lookup. We do this before writing HTML so any
             # later paper's index render can reference earlier papers'
             # rules (index render happens once at the end, after all
             # papers have streamed through).

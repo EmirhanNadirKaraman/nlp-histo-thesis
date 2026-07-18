@@ -458,7 +458,7 @@ class KnowledgeExtractionRunner:
             # Track total MAP findings for rejection summary (before any filtering)
             map_findings_total = sum(len(cs.findings) for cs in chunk_summaries)
 
-            # Assign stable finding_id BEFORE grounding so downstream stages
+            # Assign stable finding_id before grounding so downstream stages
             # (and rejected-finding artifacts) share the same lineage key. The
             # id is deterministic over (pmcid, chunk_id, position, claim), so
             # grounding-induced drops do not shift surviving ids.
@@ -809,8 +809,8 @@ class KnowledgeExtractionRunner:
         "intra_paper" or "cross_paper" based on whether both rules came from the
         same paper.
 
-        This is a post-hoc analytical step.  It does NOT modify any per-paper
-        output and does NOT currently affect ResolveStage scoring, which only
+        This is a post-hoc analytical step.  It does not modify any per-paper
+        output and does not currently affect ResolveStage scoring, which only
         receives per-paper relations (see DES-1a in KNOWN_ISSUES.md).
 
         Parameters

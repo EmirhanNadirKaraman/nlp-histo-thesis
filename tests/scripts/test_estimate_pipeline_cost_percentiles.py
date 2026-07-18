@@ -31,7 +31,7 @@ from estimate_pipeline_cost_percentiles import (  # noqa: E402
 from nlp_histo.pipeline.stages.knowledge_extraction.config import MapConfig  # noqa: E402
 
 
-# ── CHUNK_SIZE / CHUNK_OVERLAP sourced from MapConfig ────────────────────────
+# CHUNK_SIZE / CHUNK_OVERLAP sourced from MapConfig
 
 def test_reported_profiles_are_cheap_and_real_only():
     """`default` profile retired 2026-05-16. Allowlist guards against regressions
@@ -49,7 +49,7 @@ def test_chunk_constants_track_map_config_defaults():
     assert STRIDE == defaults.chunk_size - defaults.chunk_overlap
 
 
-# ── est_chunks mirrors MapStage._make_chunks counting ───────────────────────
+# est_chunks mirrors MapStage._make_chunks counting
 
 def _make_paper(n_words: int) -> PaperMeta:
     return PaperMeta(
@@ -78,7 +78,7 @@ def test_est_chunks_matches_make_chunks_count(n_sentences, expected_chunks, monk
     assert paper.est_chunks == expected_chunks
 
 
-# ── pick_percentile ─────────────────────────────────────────────────────────
+# pick_percentile
 
 def _papers(n: int) -> list[PaperMeta]:
     return [
@@ -116,7 +116,7 @@ def test_pick_percentile_out_of_range_raises(bad_p):
         pick_percentile(_papers(5), bad_p)
 
 
-# ── cumulative_cost_by_cut ──────────────────────────────────────────────────
+# cumulative_cost_by_cut
 
 class _FakeBook:
     """Stand-in PriceBook: flat $1 input + $0 output per MTok for every model.
@@ -194,7 +194,7 @@ def test_cumulative_cost_by_cut_rejects_out_of_range(bad_cut):
         )
 
 
-# ── load_observed_escalation_rates ──────────────────────────────────────────
+# load_observed_escalation_rates
 
 def _write_report(dir_: Path, name: str, *, n: int, l2: int, l3: int,
                   use_totals: bool = True) -> Path:

@@ -32,7 +32,7 @@ from nlp_histo.acquisition.downloader import (
 from nlp_histo.cli.main import main
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+# helpers
 
 def _pmcid_file(tmp_path, *ids):
     p = tmp_path / "ids.txt"
@@ -90,7 +90,7 @@ def _serve(monkeypatch, body: bytes, status: int = 200):
     )
 
 
-# ── archive validation ────────────────────────────────────────────────────────
+# archive validation
 
 def test_a_real_targz_is_valid(tmp_path) -> None:
     p = tmp_path / "ok.tar.gz"
@@ -118,7 +118,7 @@ def test_truncated_gzip_is_not_valid(tmp_path) -> None:
     assert not is_valid_archive(p)
 
 
-# ── per-file download outcomes ────────────────────────────────────────────────
+# per-file download outcomes
 
 def test_zero_byte_response_counts_as_failure_and_is_removed(tmp_path, monkeypatch) -> None:
     _serve(monkeypatch, b"")
@@ -148,7 +148,7 @@ def test_valid_archive_is_kept(tmp_path, monkeypatch) -> None:
     assert target.is_file() and target.stat().st_size > 0
 
 
-# ── B-118: NCBI moved the packages; the API still advertises the old path ─────
+# B-118: NCBI moved the packages; the API still advertises the old path
 
 _ADVERTISED = "ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_package/e5/a1/PMC8395919.tar.gz"
 _RELOCATED = "https://ftp.ncbi.nlm.nih.gov/pub/pmc/deprecated/oa_package/e5/a1/PMC8395919.tar.gz"
@@ -214,7 +214,7 @@ def test_download_package_fails_when_both_candidates_fail(tmp_path, monkeypatch,
     assert "Failed to download" in capsys.readouterr().out
 
 
-# ── AWS backend (B-118's durable successor) ───────────────────────────────────
+# AWS backend (B-118's durable successor)
 
 def _s3_listing(*keys: str) -> bytes:
     body = "".join(f"<Contents><Key>{k}</Key><Size>1</Size></Contents>" for k in keys)
@@ -273,7 +273,7 @@ _JATS = (
 def test_aws_writes_the_layout_organize_expects(tmp_path, monkeypatch) -> None:
     """corpus/<PMCID>/ with a publisher-named PDF and <PMCID>.nxml — exactly what unpack
     produces, so organize consumes it unchanged and both sources reach the same document
-    ID. The AWS object name (PMC1.1.pdf) must NOT survive: it would mint PMC1.1 (B-119).
+    ID. The AWS object name (PMC1.1.pdf) must not survive: it would mint PMC1.1 (B-119).
     """
     listing = _s3_listing("PMC1.1/PMC1.1.pdf", "PMC1.1/PMC1.1.xml", "PMC1.1/fig1.jpg")
 
@@ -319,7 +319,7 @@ def test_unknown_source_is_rejected(tmp_path) -> None:
         downloader.download_papers(_pmcid_file(tmp_path, "PMC1"), tmp_path / "o", source="carrier-pigeon")
 
 
-# ── run-level reports (FTP backend; the AWS equivalents are above) ────────────
+# run-level reports (FTP backend; the AWS equivalents are above)
 
 def test_total_success(tmp_path, monkeypatch) -> None:
     _serve(monkeypatch, _real_targz_bytes())
@@ -383,7 +383,7 @@ def test_report_summary_states_all_three_counts() -> None:
     assert "2 succeeded" in s and "1 failed" in s and "2 skipped" in s and "5 requested" in s
 
 
-# ── CLI exit codes ────────────────────────────────────────────────────────────
+# CLI exit codes
 
 def _cli(tmp_path, ids):
     return main(["acquire", "download", "--pmcid-file", str(ids), "--output-dir", str(tmp_path / "o")])

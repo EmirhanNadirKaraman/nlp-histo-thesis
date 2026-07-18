@@ -39,7 +39,7 @@ def _ids(experiments) -> list[str]:
     return [e.exp_id for e in experiments]
 
 
-# ── 1-3, 5, 6. Phase → experiment resolution ────────────────────────────────
+# 1-3, 5, 6. Phase → experiment resolution
 
 
 def test_phase_gemini_branch_selects_only_exp_1_2_3(orch):
@@ -69,7 +69,7 @@ def test_phase_branches_includes_exp_1_through_6_only(orch):
 
 
 def test_phase_compare_does_not_auto_include_branches_without_include_deps(orch):
-    """`--phase compare` resolves EXACTLY EXP_7 — deps NOT auto-pulled."""
+    """`--phase compare` resolves EXACTLY EXP_7 — deps not auto-pulled."""
     exps = orch._resolve_experiments(
         phase="compare", exp=None, only=None, include_deps=False,
     )
@@ -115,7 +115,7 @@ def test_phase_all_orders_branches_before_compare_before_confirm(orch):
         )
 
 
-# ── 4, 5. Hard-fail when required state is missing ──────────────────────────
+# 4, 5. Hard-fail when required state is missing
 
 
 def test_missing_compare_state_hard_fails(orch, tmp_path):
@@ -146,14 +146,14 @@ def test_missing_confirm_state_hard_fails(orch, tmp_path):
         orch._run_exp_f(ctx)
 
 
-# ── 7. EXP 7 writes PROVISIONAL_FINAL_* (not FINAL_*) ──────────────────────
+# 7. EXP 7 writes PROVISIONAL_FINAL_* (not FINAL_*)
 
 
 def test_exp_7_writes_provisional_not_final(orch, tmp_path):
     """Selection by EXP 7 is PROVISIONAL until EXP A bootstrap CI promotes it.
 
     Asserts ``state_updates`` carries ``PROVISIONAL_FINAL_MAP_CONFIG`` and
-    does NOT carry ``FINAL_MAP_CONFIG`` — that key is reserved for the
+    does not carry ``FINAL_MAP_CONFIG`` — that key is reserved for the
     post-bootstrap final pick.
     """
     g = {"embedder": "gemini", "scorer": "embedding_default", "theta": 0.8,
@@ -178,7 +178,7 @@ def test_exp_7_writes_provisional_not_final(orch, tmp_path):
     assert result.state_updates["PROVISIONAL_FINAL_MAP_CONFIG"]["embedder"] == "gemini"
 
 
-# ── 8. --split test rejected for EXP 1-7 without --allow-test-tuning ────────
+# 8. --split test rejected for EXP 1-7 without --allow-test-tuning
 
 
 def test_split_test_rejected_for_exp_1_without_allow_test_tuning(orch, capsys):
@@ -221,7 +221,7 @@ def test_split_test_allowed_for_exp_f_without_flag(orch, tmp_path):
     assert rc == 0
 
 
-# ── 9. _per_scorer_best picks correctly ─────────────────────────────────────
+# 9. _per_scorer_best picks correctly
 
 
 def test_per_scorer_best_picks_max_strict_f1_per_scorer(orch):
@@ -258,7 +258,7 @@ def test_per_scorer_best_empty_input(orch):
     assert orch._per_scorer_best([], metric="strict_f1") == []
 
 
-# ── --fail-fast behaviour ───────────────────────────────────────────────────
+# --fail-fast behaviour
 # Tests build a 3-experiment list with fake run callables (pass, fail, pass)
 # and call ``_orchestrate`` directly. No real sweeps; no caches touched.
 
@@ -307,7 +307,7 @@ def _orchestrate_with_fakes(orch, experiments, tmp_path, *, fail_fast: bool):
 
 
 def test_without_fail_fast_orchestration_continues_after_hard_fail(orch, tmp_path):
-    """Default behaviour: hard-fail in EXP B does NOT stop EXP C from running.
+    """Default behaviour: hard-fail in EXP B does not stop EXP C from running.
     Exit code is non-zero because failed > 0; manifest records all 3 EXPs."""
     exps = [
         _fake_spec(orch, "FAKE_A", "fake_a", _success_runner("RESULT_A", "alpha")),
@@ -329,7 +329,7 @@ def test_without_fail_fast_orchestration_continues_after_hard_fail(orch, tmp_pat
 
 def test_with_fail_fast_orchestration_stops_after_first_hard_fail(orch, tmp_path):
     """``fail_fast=True``: orchestration breaks after EXP B's SystemExit.
-    EXP C is NOT attempted. Exit code is non-zero. Manifest has 2 entries."""
+    EXP C is not attempted. Exit code is non-zero. Manifest has 2 entries."""
     exps = [
         _fake_spec(orch, "FAKE_A", "fake_a", _success_runner("RESULT_A", "alpha")),
         _fake_spec(orch, "FAKE_B", "fake_b", _hard_fail_runner("missing X")),
@@ -349,7 +349,7 @@ def test_with_fail_fast_orchestration_stops_after_first_hard_fail(orch, tmp_path
 
 
 def test_fail_fast_persists_state_from_prior_successful_experiments(orch, tmp_path):
-    """State from EXPs that succeeded BEFORE the failure is durably persisted
+    """State from EXPs that succeeded before the failure is durably persisted
     to the state file — even when fail-fast aborts the run."""
     exps = [
         _fake_spec(orch, "FAKE_A", "fake_a", _success_runner("BEST_FOO", 42)),
@@ -415,7 +415,7 @@ def test_stubs_do_not_trigger_fail_fast(orch, tmp_path):
     assert ctx.state["STATE_C"] == "ok", "stub must not block downstream EXPs"
 
 
-# ── EXP B.2 (baselines phase) ────────────────────────────────────────────────
+# EXP B.2 (baselines phase)
 #
 # Five tests cover the contract enumerated in the task spec:
 #   1. Phase routing — `--phase baselines` resolves to EXP_B.2 only.
@@ -544,7 +544,7 @@ def test_exp_b2_does_no_state_promotion(orch, tmp_path, monkeypatch):
     """EXP B.2 returns an ExperimentResult with empty ``state_updates``.
 
     Spec contract: this is a diagnostic phase. PROVISIONAL_FINAL_MAP_CONFIG
-    is NOT overwritten. No BEST_*/FINAL_* keys are written.
+    is not overwritten. No BEST_*/FINAL_* keys are written.
     """
     # 1. Stage a synthetic cache + silver alongside the real ones in tmp_path,
     # then point the module constants at them.
@@ -587,7 +587,7 @@ def test_exp_b2_does_no_state_promotion(orch, tmp_path, monkeypatch):
     monkeypatch.setattr(orch, "_b2_l1_best_oracle",
                         lambda *_args, **_kw: [])
 
-    # 3. Pre-populate state with a sentinel that EXP B.2 must NOT touch.
+    # 3. Pre-populate state with a sentinel that EXP B.2 must not touch.
     # Skip the cascade row to avoid the heavy _load_map_context path in tests
     # — drop PROVISIONAL_FINAL_MAP_CONFIG so EXP B.2 takes the "skipped" branch.
     ctx_state = {"DO_NOT_TOUCH": "sentinel"}

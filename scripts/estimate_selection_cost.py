@@ -79,7 +79,7 @@ PROMPT_OVERHEAD_TOKENS = 1500
 OUTPUT_TOKENS_PER_CHUNK = 1500
 
 # Calibration (silver) defaults
-# The map_theta_sweep PRIME runs EVERY voter on EVERY chunk (no escalation) so
+# The map_theta_sweep PRIME runs every voter on every chunk (no escalation) so
 # the sweep can replay any theta — priced as project_map_cost at l2_rate=
 # l3_rate=1.0. The Opus SILVER step (eval.silver.generation.generate) is one judge call
 # per source case.

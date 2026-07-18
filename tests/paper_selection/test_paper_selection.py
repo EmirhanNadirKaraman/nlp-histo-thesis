@@ -26,7 +26,7 @@ from eval.paper_selection.models import PaperFingerprint
 from eval.paper_selection.selectors import SelectionConfig, select_calibration_set
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# Helpers
 
 def _ent(text, *, label="ENTITY", cui=None, semtypes=None, score=0.95):
     return RawEntity(
@@ -129,7 +129,7 @@ def _make_corpus() -> list[RawPaper]:
     return papers
 
 
-# ── Tests ────────────────────────────────────────────────────────────────────
+# Tests
 
 def test_fingerprint_creation_from_synthetic_paper():
     raw = _make_lymphoma_paper("PMC1")

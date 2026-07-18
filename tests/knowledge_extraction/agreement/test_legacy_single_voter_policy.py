@@ -37,7 +37,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.models import (
 )
 
 
-# ── Fixtures ──────────────────────────────────────────────────────────────────
+# Fixtures
 
 
 def _finding(
@@ -110,7 +110,7 @@ class _RaisingScorerStub:
         )
 
 
-# ── N=1 ────────────────────────────────────────────────────────────────────────
+# N=1
 
 
 def test_n1_keep_policy_returns_keep_confidence_one():
@@ -137,7 +137,7 @@ def test_n1_escalate_policy_returns_escalate_confidence_zero():
     assert bundle.confidence == pytest.approx(0.0)
 
 
-# ── N=0 ────────────────────────────────────────────────────────────────────────
+# N=0
 
 
 @pytest.mark.parametrize("policy", ["keep", "escalate"])
@@ -149,7 +149,7 @@ def test_n0_always_escalates_regardless_of_policy(policy):
     assert bundle.confidence == pytest.approx(0.0)
 
 
-# ── N>=2 — policy must NOT intercept normal agreement logic ───────────────────
+# N>=2 — policy must NOT intercept normal agreement logic
 
 
 @pytest.mark.parametrize("policy", ["keep", "escalate"])
@@ -174,7 +174,7 @@ def test_n3_uses_normal_agreement_logic():
     assert bundle.decision == ChunkDecision.KEEP
 
 
-# ── Independence from MapOutputRouter.single_voter_policy ─────────────────────
+# Independence from MapOutputRouter.single_voter_policy
 
 
 def test_legacy_and_router_policies_are_independent_fields():

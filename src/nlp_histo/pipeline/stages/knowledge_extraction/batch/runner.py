@@ -520,7 +520,7 @@ class BatchKnowledgeExtractionRunner:
             # rejection_summary later.
             map_findings_total = sum(len(cs.findings) for cs in chunk_summaries)
 
-            # Assign stable finding_id BEFORE grounding so downstream stages
+            # Assign stable finding_id before grounding so downstream stages
             # (and rejected-finding artifacts) share the same lineage key. The
             # id is deterministic over (pmcid, chunk_id, position, claim).
             for cs in chunk_summaries:

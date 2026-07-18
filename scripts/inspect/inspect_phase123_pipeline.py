@@ -2,7 +2,7 @@
 Diagnostic report for Phase 1–3 pipeline on a real paper.
 
 Runs MAP → post-MAP scoring → NORMALIZE → GROUP and writes a structured
-JSON report. Does NOT run RELATE or RESOLVE.
+JSON report. Does not run RELATE or RESOLVE.
 
 Usage:
     python scripts/inspect/inspect_phase123_pipeline.py PMC10047158

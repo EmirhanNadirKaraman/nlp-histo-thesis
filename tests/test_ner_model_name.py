@@ -69,7 +69,7 @@ def test_ner_writes_and_filters_the_same_model_name() -> None:
     )
 
 
-# ── the whole documented path must agree on one identifier ────────────────────
+# the whole documented path must agree on one identifier
 
 def test_extract_merge_export_share_one_stored_identifier() -> None:
     """extract writes it, merge and export filter on it — one constant, no literals.
@@ -91,7 +91,7 @@ def test_extract_merge_export_share_one_stored_identifier() -> None:
         )
 
 
-# ── an empty result must not be reported as success when it is a mismatch ─────
+# an empty result must not be reported as success when it is a mismatch
 
 class _FakeQuery:
     def __init__(self, rows):

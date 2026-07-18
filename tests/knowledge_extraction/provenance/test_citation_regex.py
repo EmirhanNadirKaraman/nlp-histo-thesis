@@ -34,7 +34,7 @@ def test_valid_suffixed_pmcid_passes_both_regexes(cite):
     "S1|PMC|456",          # empty pmcid token
     "S1|PMC123|",          # missing te_id
     "|PMC123|456",         # missing sentence id
-    "[S1|PMC123|456]",     # bracketed (Markdown form, must NOT match — Finding.evidence is bracket-stripped)
+    "[S1|PMC123|456]",     # bracketed (Markdown form, must not match — Finding.evidence is bracket-stripped)
     "S1|123|456",          # PMC prefix missing
     "S1|PMC123|abc",       # non-numeric te_id
 ])

@@ -24,7 +24,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.models import (
 from nlp_histo.pipeline.stages.knowledge_extraction.models import Relation
 
 
-# ── Minimal fixture builders ───────────────────────────────────────────────────
+# Minimal fixture builders
 
 def _minimal_canonical_rule(**overrides) -> dict:
     base = {
@@ -74,7 +74,7 @@ def _make_raw_relation(
     )
 
 
-# ── 1. CorpusRelation model ────────────────────────────────────────────────────
+# 1. CorpusRelation model
 
 class TestCorpusRelationModel:
     def test_required_fields_present(self):
@@ -121,7 +121,7 @@ class TestCorpusRelationModel:
         assert cr.scope_note == ""
 
 
-# ── 2. _enrich(): comparison_scope and same_paper labeling ────────────────────
+# 2. _enrich(): comparison_scope and same_paper labeling
 
 class TestEnrich:
     def _make_stage(self) -> CorpusRelateStage:
@@ -230,7 +230,7 @@ class TestEnrich:
         assert rel.nli_score_b_to_a == pytest.approx(0.85)
 
 
-# ── 3. relate_from_dir() integration (NLI mocked) ────────────────────────────
+# 3. relate_from_dir() integration (NLI mocked)
 
 class TestRelateFromDir:
     """
@@ -371,7 +371,7 @@ class TestRelateFromDir:
             stage.relate_from_dir(src, out)  # must not raise
 
 
-# ── 4. Run-selection ───────────────────────────────────────────────────────────
+# 4. Run-selection
 
 class TestRunSelection:
     """

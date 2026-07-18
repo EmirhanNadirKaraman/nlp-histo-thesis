@@ -144,7 +144,7 @@ def _build_handle_from_cached_json(
     from the cached JSON's ``audit_trail.map_chunks``.
 
     ``pipeline_run_db_id`` is the row id of an INSERT into ``pipeline_runs``
-    created via ``runner._create_pipeline_run`` BEFORE calling this. Per-stage
+    created via ``runner._create_pipeline_run`` before calling this. Per-stage
     persisters (``persist_map_findings``, ``persist_normal_findings``, …) all
     no-op when this id is None — without it the DB tables stay empty even
     when ``finalize()`` finishes cleanly and writes the JSON.

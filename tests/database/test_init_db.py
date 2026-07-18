@@ -28,7 +28,7 @@ from nlp_histo.database.init_db import (
 )
 
 
-# ── Fakes ────────────────────────────────────────────────────────────────────
+# Fakes
 
 class FakeInspector:
     """Minimal stand-in for sqlalchemy.Inspector, built from the real ORM metadata."""
@@ -96,7 +96,7 @@ def wire(monkeypatch):
     return setup
 
 
-# ── 1-4. Configuration validation ────────────────────────────────────────────
+# 1-4. Configuration validation
 
 def test_explicit_configuration_is_accepted():
     cfg = validate_config({"DB_HOST": "h", "DB_PORT": "5432", "DB_NAME": "d",
@@ -132,7 +132,7 @@ def test_password_never_appears_in_the_target_description():
     assert "super-secret" not in init_db.target_description(cfg)
 
 
-# ── 5-12. State classification ───────────────────────────────────────────────
+# 5-12. State classification
 
 def test_empty_database_is_classified_empty():
     assert classify(FakeInspector(tables=[])).state == EMPTY
@@ -195,7 +195,7 @@ def test_verify_schema_is_clean_on_a_valid_database():
     assert verify_schema(FakeInspector(), expected_tables()) == []
 
 
-# ── 13-19. main() behaviour ──────────────────────────────────────────────────
+# 13-19. main() behaviour
 
 def test_check_only_never_calls_create_tables(wire, capsys):
     db = wire([FakeInspector()])
@@ -272,14 +272,14 @@ def test_missing_config_exits_two_without_connecting(monkeypatch, capsys):
     assert "missing database configuration" in capsys.readouterr().err
 
 
-# ── 20. Flag combination ─────────────────────────────────────────────────────
+# 20. Flag combination
 
 def test_check_only_with_smoke_is_rejected(capsys):
     assert init_db.main(["--check-only", "--smoke"]) == 2
     assert "read-only" in capsys.readouterr().err
 
 
-# ── --smoke transaction control (fakes; no database) ──────────────────────────
+# --smoke transaction control (fakes; no database)
 
 class FakeSession:
     def __init__(self, *_a, **_k):
@@ -382,7 +382,7 @@ def test_smoke_rolls_back_and_cleans_up_on_failure(monkeypatch):
     assert session.closed is True and conn.closed is True
 
 
-# ── Import safety ────────────────────────────────────────────────────────────
+# Import safety
 
 def test_importing_init_db_prints_nothing_and_exits_cleanly():
     """A real, isolated import in a subprocess: no output, no crash, no connection.

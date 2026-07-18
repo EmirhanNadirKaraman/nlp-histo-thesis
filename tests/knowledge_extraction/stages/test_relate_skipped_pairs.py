@@ -45,7 +45,7 @@ def _no_nli_load(monkeypatch):
     monkeypatch.setattr(_rs, "_get_nli_pipe", lambda *a, **kw: None)
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# Helpers
 
 def _rule(
     canonical_id: str,
@@ -78,7 +78,7 @@ def _stage() -> RelateStage:
     return RelateStage(entailment_threshold=0.5, contradiction_threshold=0.5)
 
 
-# ── Signature returns the trace list ─────────────────────────────────────────
+# Signature returns the trace list
 
 def test_relate_returns_three_tuple_even_with_one_rule():
     # Fewer than 2 rules: early-return path. Still 3-tuple, all empty.
@@ -93,7 +93,7 @@ def test_relate_returns_three_tuple_with_zero_rules():
     assert out == ([], [], [])
 
 
-# ── Each rejection reason produces a SkippedPair ─────────────────────────────
+# Each rejection reason produces a SkippedPair
 
 def test_category_mismatch_is_recorded():
     a = _rule("CR_a", category="IHC")
@@ -155,7 +155,7 @@ def test_multiple_skips_across_three_rules():
     assert all(s.reason == "category_mismatch" for s in skipped)
 
 
-# ── End-to-end through persist_relate_artifacts ──────────────────────────────
+# End-to-end through persist_relate_artifacts
 
 def _writer(tmp_path: Path) -> RunArtifactWriter:
     return RunArtifactWriter(run_id="r1", root_dir=tmp_path)
@@ -208,7 +208,7 @@ def test_persist_empty_skipped_list_writes_empty_file(tmp_path):
     assert path.read_text().strip() == ""
 
 
-# ── B-049: non-polarity direction skip ───────────────────────────────────────
+# B-049: non-polarity direction skip
 
 def _rule_with_direction(
     canonical_id: str,

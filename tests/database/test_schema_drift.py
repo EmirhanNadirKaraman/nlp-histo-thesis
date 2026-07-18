@@ -42,7 +42,7 @@ class UnsupportedMigration(AssertionError):
     """Raised when the chain uses something this parser does not model."""
 
 
-# ── Type normalization (fail-closed) ─────────────────────────────────────────
+# Type normalization (fail-closed)
 # Both sides are normalized by compiling a real SQLAlchemy type with the
 # PostgreSQL dialect, so the two inventories are directly comparable.
 
@@ -103,7 +103,7 @@ def _type_from_ast(node: ast.expr, where: str) -> str:
     raise UnsupportedMigration(f"{where}: unsupported type expression {ast.unparse(node)!r}")
 
 
-# ── Approved raw SQL (each op.execute must match exactly) ────────────────────
+# Approved raw SQL (each op.execute must match exactly)
 
 def _norm_sql(sql: str) -> str:
     return re.sub(r"\s+", " ", sql).strip().rstrip(";").lower()
@@ -150,7 +150,7 @@ _RAW_SQL_DATA_ONLY = {
 def _orm_server_default(col: sa.Column) -> str | None:
     """DDL server default (``server_default=``) only — this *is* schema.
 
-    ``Column(default=...)`` is client-side and is deliberately NOT returned here;
+    ``Column(default=...)`` is client-side and is deliberately not returned here;
     see :func:`_orm_client_default`. The two must never compare equal.
     """
     if col.server_default is None:
@@ -180,7 +180,7 @@ def _orm_client_default(col: sa.Column) -> str | None:
         f"{col.table.name}.{col.name}: unsupported client default {arg!r}")
 
 
-# ── Revision graph ───────────────────────────────────────────────────────────
+# Revision graph
 
 def _parse_revisions() -> dict[str, dict]:
     revs: dict[str, dict] = {}
@@ -233,7 +233,7 @@ def _ordered_chain(revs: dict[str, dict]) -> list[str]:
     return order
 
 
-# ── Replay the chain (AST only — nothing is imported or executed) ────────────
+# Replay the chain (AST only — nothing is imported or executed)
 
 _SUPPORTED_OPS = {
     "create_table", "add_column", "drop_column", "alter_column",
@@ -437,7 +437,7 @@ def _replay() -> dict:
     }
 
 
-# ── ORM normalization ────────────────────────────────────────────────────────
+# ORM normalization
 
 def _orm() -> dict:
     tables, indexes, uniques = {}, {}, {}
@@ -473,7 +473,7 @@ def _orm() -> dict:
     return {"tables": tables, "indexes": indexes, "uniques": uniques}
 
 
-# ── The approved divergence set (B-097 / B-098) ──────────────────────────────
+# The approved divergence set (B-097 / B-098)
 
 APPROVED_ORM_ONLY_COLUMNS = {("pipeline_runs", "narrative_summary")}
 
@@ -493,7 +493,7 @@ SERVER_DEFAULT_MISMATCH = "server_default_mismatch"
 CLIENT_VS_SERVER_DEFAULT = "client_default_vs_server_default"
 
 # The exact column-level divergences that currently exist (B-097 / B-098).
-# Characterization only — NOT an endorsement. Each remains a pending defect:
+# Characterization only — not an endorsement. Each remains a pending defect:
 #   * scope_note's nullability difference is substantive (an ORM-created table accepts
 #     NULL; a migrated one rejects it);
 #   * the three client-vs-server default rows mean a migrated table carries real DDL
@@ -530,7 +530,7 @@ APPROVED_ORM_ONLY_INDEXES = {
 }
 
 
-# ── Tests ────────────────────────────────────────────────────────────────────
+# Tests
 
 def test_revision_graph_is_a_single_continuous_chain():
     revs = _parse_revisions()
@@ -571,7 +571,7 @@ def _column_divergences() -> set[tuple]:
             if a["nullable"] != o["nullable"]:
                 found.add((NULLABILITY_MISMATCH, tname, cname, a["nullable"], o["nullable"]))
 
-            # Defaults. A client-side ORM default is NEVER equivalent to a server default:
+            # Defaults. A client-side ORM default is never equivalent to a server default:
             # when the values coincide we record the *ownership* mismatch; otherwise it is a
             # plain server-default mismatch.
             if a["server_default"] != o["server_default"]:
@@ -694,7 +694,7 @@ def test_unique_constraints_match_except_the_approved_rename():
     assert not problems, "unapproved unique-constraint drift:\n  " + "\n  ".join(problems)
 
 
-# ── Parser self-tests: it must fail closed ───────────────────────────────────
+# Parser self-tests: it must fail closed
 
 def _upgrade_module(body: str) -> ast.Module:
     return ast.parse(f"def upgrade() -> None:\n{body}\n")

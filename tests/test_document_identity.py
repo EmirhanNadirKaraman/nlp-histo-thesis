@@ -25,7 +25,7 @@ from nlp_histo.acquisition.downloader import (
 from nlp_histo.document_id import canonical_document_id, pmc_accession
 
 
-# ── the shared normalisation safety net ───────────────────────────────────────
+# the shared normalisation safety net
 
 @pytest.mark.parametrize("raw,expected", [
     # the AWS shape: a version suffix must go
@@ -62,7 +62,7 @@ def test_pmc_accession_extracts_the_bare_value() -> None:
     assert pmc_accession("not-a-pmcid") is None
 
 
-# ── self-uri: authoritative, and untrusted ────────────────────────────────────
+# self-uri: authoritative, and untrusted
 
 def _jats(href: str | None, *, extra: str = "", content_type: str = "pmc-pdf") -> bytes:
     uri = (
@@ -130,7 +130,7 @@ def test_unparsable_xml_is_rejected() -> None:
         publisher_pdf_filename(b"<article>truncated")
 
 
-# ── version selection is numeric ──────────────────────────────────────────────
+# version selection is numeric
 
 def _listing(*keys: str, truncated: bool = False, token: str = "") -> bytes:
     body = "".join(f"<Contents><Key>{k}</Key></Contents>" for k in keys)
@@ -166,7 +166,7 @@ def test_version_2_beats_version_1(monkeypatch) -> None:
     assert downloader.aws_object_keys("PMC1") == ["PMC1.2/PMC1.2.pdf", "PMC1.2/PMC1.2.xml"]
 
 
-# ── pagination cannot silently omit objects ───────────────────────────────────
+# pagination cannot silently omit objects
 
 def test_listing_follows_pagination(monkeypatch) -> None:
     """S3 caps a page at 1000 keys; a figure-heavy article can exceed it, and the missing

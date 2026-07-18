@@ -51,7 +51,7 @@ def _complete_artifact_root(root: Path) -> Path:
     return root
 
 
-# ── the contract itself ───────────────────────────────────────────────────────
+# the contract itself
 
 def test_complete_fixture_passes_validation(tmp_path: Path) -> None:
     assert replay.validate_artifacts(_complete_artifact_root(tmp_path)) == []
@@ -77,7 +77,7 @@ def test_the_orchestrator_and_rubric_report_are_required(tmp_path: Path) -> None
     assert Path("eval/data/silver_findings_related15.jsonl") in required
 
 
-# ── failure modes ─────────────────────────────────────────────────────────────
+# failure modes
 
 @pytest.mark.parametrize(
     "victim",
@@ -178,7 +178,7 @@ def test_empty_required_directory_is_rejected(tmp_path: Path) -> None:
     assert any("empty" in p for p in problems)
 
 
-# ── nothing may be produced when validation fails ─────────────────────────────
+# nothing may be produced when validation fails
 
 def test_failed_validation_creates_no_output_and_runs_nothing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -214,7 +214,7 @@ def test_incomplete_root_cannot_produce_a_partial_run(
     assert not entered
 
 
-# ── paths come from --artifact-root, not the cwd ──────────────────────────────
+# paths come from --artifact-root, not the cwd
 
 def test_inputs_resolve_from_the_artifact_root_not_cwd(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch

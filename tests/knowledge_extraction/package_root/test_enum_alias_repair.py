@@ -44,7 +44,7 @@ def _make(**overrides) -> dict:
     return payload
 
 
-# ── relation_type alias repair ────────────────────────────────────────────────
+# relation_type alias repair
 
 @pytest.mark.parametrize("raw, expected", [
     ("prognosis",          RelationTypeEnum.prognostic),
@@ -62,7 +62,7 @@ def test_relation_type_alias_repair(raw, expected):
 
 
 def test_relation_type_staging_not_aliased_falls_to_unclear():
-    """`staging` is intentionally NOT aliased — descriptive vs prognostic
+    """`staging` is intentionally not aliased — descriptive vs prognostic
     crossover needs claim context. Falls through to unclear with
     `cross_field_bleed` observability so loss stays measurable."""
     f = Finding.model_validate(_make(relation_type="staging"))
@@ -96,7 +96,7 @@ def test_unknown_relation_type_coerced_to_unclear():
     assert f.relation_type is RelationTypeEnum.unclear
 
 
-# ── cross-field bleed observability ───────────────────────────────────────────
+# cross-field bleed observability
 
 @pytest.mark.parametrize("raw, recovered_value", [
     # Recovered via alias: log records the valid relation_type as coerced_value.
@@ -145,7 +145,7 @@ def test_non_bleed_unknown_still_tagged_unknown_value(monkeypatch):
     assert rt_records[0]["reason"] == "unknown_value"
 
 
-# ── category alias + case repair ──────────────────────────────────────────────
+# category alias + case repair
 
 def test_category_alias_demographics_to_demographic():
     f = Finding.model_validate(_make(category="demographics"))
@@ -172,7 +172,7 @@ def test_category_alias_with_case_fold():
     assert f.category == "demographic"
 
 
-# ── direction repair ──────────────────────────────────────────────────────────
+# direction repair
 
 @pytest.mark.parametrize("raw, expected", [
     ("POSITIVE",   DirectionEnum.positive),
@@ -192,7 +192,7 @@ def test_direction_null_becomes_no_direction():
     assert f.direction is DirectionEnum.no_direction
 
 
-# ── confidence alias + case repair (this session) ─────────────────────────────
+# confidence alias + case repair (this session)
 
 @pytest.mark.parametrize("raw, expected", [
     ("HIGH",     "high"),
@@ -226,7 +226,7 @@ def test_confidence_unknown_value_still_drops_finding():
         Finding.model_validate(_make(confidence="definitely_high"))
 
 
-# ── direction alias repair (Issue 8, MAP_PROMPT_AUDIT) ───────────────────────
+# direction alias repair (Issue 8, MAP_PROMPT_AUDIT)
 
 @pytest.mark.parametrize("raw, expected", [
     ("maybe",    DirectionEnum.unclear),

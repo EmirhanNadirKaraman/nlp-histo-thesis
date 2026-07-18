@@ -101,7 +101,7 @@ def test_advance_does_not_crash_when_lone_l1_voter_returns_none(
     # The actual regression assertion: no AttributeError.
     advanced = runner.advance(handle)
 
-    # Chunk did NOT finalise (no valid voter output to keep) and was routed
+    # Chunk did not finalise (no valid voter output to keep) and was routed
     # to L2 escalation by Pass 3's `if not voters: escalated.append(...)` path.
     assert "C0" not in advanced.finalized, (
         f"Expected C0 to escalate (no valid L1 voter to KEEP), but it was "

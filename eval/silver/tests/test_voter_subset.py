@@ -142,5 +142,5 @@ def test_map_theta_and_gates_use_best_voter_subset(monkeypatch):
 
 def test_grid_stages_stay_all(monkeypatch):
     # structure_screen / family_refine must keep voter_subset="all" (signature safety)
-    monkeypatch.setattr(m, "BEST_VOTER_SUBSET", "drop_l1_1")   # must NOT leak to these
+    monkeypatch.setattr(m, "BEST_VOTER_SUBSET", "drop_l1_1")   # must not leak to these
     assert all(c["voter_subset"] == "all" for c in m._iter_cells("structure_screen"))

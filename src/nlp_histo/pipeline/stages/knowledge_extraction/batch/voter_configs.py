@@ -163,7 +163,7 @@ def _make_real5_profile() -> CascadeProfile:
 
     PRODUCTION ONLY. The thesis EVAL keeps the 6-voter `real` profile + a `drop_l2_2`
     SELECTION over the 6-voter primer (the primer was gathered with 6 voters; E12's LOO and
-    the eval's voter-subset machinery require `real` = 6 voters — do NOT point the eval here).
+    the eval's voter-subset machinery require `real` = 6 voters — do not point the eval here).
     Pair with run.yaml `routing.legacy_single_voter_policy: escalate` + `map.reject_theta: 0.2`.
     """
     from .models import VoterBatchConfig

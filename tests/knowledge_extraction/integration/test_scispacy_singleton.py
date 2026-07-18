@@ -107,7 +107,7 @@ def _strip_comments_and_docstrings(src: str) -> str:
 
 
 def test_pipeline_runner_pdf_routes_through_singleton():
-    """B-029 regression guard: `PipelineRunner._get_nlp` must NOT call
+    """B-029 regression guard: `PipelineRunner._get_nlp` must not call
     `spacy.load` directly. Routes through `get_small_nlp` instead."""
     import inspect
 
@@ -117,7 +117,7 @@ def test_pipeline_runner_pdf_routes_through_singleton():
         "PipelineRunner._get_nlp must route through umls_resources.get_small_nlp — "
         "B-029 regressed?"
     )
-    # The legacy direct-load pattern must NOT reappear as an actual call.
+    # The legacy direct-load pattern must not reappear as an actual call.
     code = _strip_comments_and_docstrings(src)
     assert "spacy.load(" not in code, (
         "PipelineRunner._get_nlp must not call spacy.load directly — B-029 regressed?"
@@ -126,7 +126,7 @@ def test_pipeline_runner_pdf_routes_through_singleton():
 
 def test_load_paper_from_db_routes_through_singleton():
     """B-038 regression guard: `KnowledgeExtractionRunner.load_paper_from_db`
-    must NOT call `spacy.load` directly."""
+    must not call `spacy.load` directly."""
     import inspect
 
     from nlp_histo.pipeline.stages.knowledge_extraction.runner import KnowledgeExtractionRunner
@@ -143,7 +143,7 @@ def test_load_paper_from_db_routes_through_singleton():
 
 def test_ner_module_routes_through_singleton():
     """B-054 regression guard: `src/nlp_histo/ner/ner.py`'s
-    `load_ner_model()` and `load_linker_model()` must NOT call
+    `load_ner_model()` and `load_linker_model()` must not call
     `spacy.load` directly — both used to issue a fresh `spacy.load(
     "en_core_sci_lg")` per call, reloading ~2.6 GB once per paper from
     `runner.py:run_ner_on_db(pmcid)`."""

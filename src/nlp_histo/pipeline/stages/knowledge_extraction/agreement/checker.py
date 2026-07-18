@@ -97,8 +97,8 @@ class AgreementChecker:
         bundle = self._scorer.compute(outputs, source_text, context)
 
         # B-051: hard-fail policy for comparable opposite-polarity findings.
-        # Runs AFTER the scorer so pairwise_upper / embedding_agreement remain
-        # available for trace inspection, and BEFORE the theta fallback so a
+        # Runs after the scorer so pairwise_upper / embedding_agreement remain
+        # available for trace inspection, and before the theta fallback so a
         # True override cannot revert to KEEP regardless of similarity.
         #
         # The conflict marker is always stamped into score_details when a

@@ -18,7 +18,7 @@ def _sents(n: int) -> list[dict]:
     return [{"sentence": f"s{i}", "text_element_id": i} for i in range(n)]
 
 
-# ── constructor validation ─────────────────────────────────────────────────────
+# constructor validation
 
 def _real_stage(chunk_size: int, chunk_overlap: int) -> MapStage:
     """Instantiate MapStage with minimal stubs to exercise __init__ validation."""
@@ -47,7 +47,7 @@ class TestMapStageInit:
             _real_stage(chunk_size=10, chunk_overlap=11)
 
 
-# ── _make_chunks behaviour ─────────────────────────────────────────────────────
+# _make_chunks behaviour
 
 class TestMakeChunks:
     def test_empty_input_returns_empty(self):

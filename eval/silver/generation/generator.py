@@ -24,7 +24,7 @@ _CATEGORY_ALIASES: dict[str, str] = {
     "demographics": "demographic",  # canonical is singular (matches pipeline models.py:279, B-016)
 }
 
-# relation_type="demographic" is intentionally NOT repaired: RelationTypeEnum.demographic
+# relation_type="demographic" is intentionally not repaired: RelationTypeEnum.demographic
 # is used throughout the pipeline (group_stage, relate_stage, resolve_stage). Req 2's
 # "unless the codebase strongly depends on it" clause applies here.
 

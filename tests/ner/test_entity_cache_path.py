@@ -32,7 +32,7 @@ def _no_ambient_cache_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv(ENV_VAR, raising=False)
 
 
-# ── precedence ────────────────────────────────────────────────────────────────
+# precedence
 
 def test_explicit_path_wins_over_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(ENV_VAR, str(tmp_path / "from_env.json"))
@@ -69,7 +69,7 @@ def test_user_paths_are_expanded(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "~" not in str(resolve_entity_cache_path())
 
 
-# ── no filesystem side effects from importing or resolving ────────────────────
+# no filesystem side effects from importing or resolving
 
 def test_resolving_creates_nothing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
@@ -85,7 +85,7 @@ def test_reading_an_absent_cache_creates_nothing_and_returns_empty(tmp_path: Pat
     assert not missing.parent.exists(), "a read must not create the cache directory"
 
 
-# ── writes ────────────────────────────────────────────────────────────────────
+# writes
 
 def test_write_creates_the_parent_directory_only_when_needed(tmp_path: Path) -> None:
     target = tmp_path / "made" / "on" / "demand" / CACHE_FILENAME

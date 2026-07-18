@@ -15,7 +15,7 @@ Deciding metric per stage:
   * detector stages  → table crop F1 (which detector/threshold crops best);
   * every later stage → table strict F1 (the headline rubric metric).
 
-By default it scores `out/sweeps/` fresh and analyses ONLY the variants present
+By default it scores `out/sweeps/` fresh and analyses only the variants present
 there — i.e. only the freshly re-run variants, never the old baseline. Stages
 not yet re-run print "not scored yet". Pass a positional JSON to analyse a saved
 report instead (e.g. the old full baseline).
@@ -92,7 +92,7 @@ def _variant_groups() -> dict[str, list[str]]:
 
 
 def _score_sweeps(sweeps_root: Path) -> Path:
-    """Score a sweeps root fresh → temp JSON, covering ONLY the variant dirs
+    """Score a sweeps root fresh → temp JSON, covering only the variant dirs
     present there (i.e. only the freshly re-extracted variants). Reuses
     score_pdf_variants.py verbatim so the metrics are identical."""
     if not sweeps_root.exists() or not any(p.is_dir() for p in sweeps_root.iterdir()):

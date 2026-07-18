@@ -54,7 +54,7 @@ def _empty_handle(escalated: list[str]) -> BatchHandle:
     return h
 
 
-# ── _voter_sig ──────────────────────────────────────────────────────────────
+# _voter_sig
 
 def test_voter_sig_treats_close_temps_as_equal():
     a = VoterBatchConfig(CLAUDE_HAIKU, provider="claude", temperature=0.1)
@@ -72,7 +72,7 @@ def test_voter_sig_separates_different_models_or_providers_or_temps():
     assert len(sigs) == 4
 
 
-# ── _compute_voter_dedup ────────────────────────────────────────────────────
+# _compute_voter_dedup
 
 def test_l2_haiku_at_same_temp_is_deduped_against_l1_haiku():
     """The `real` profile shape: Haiku at L1 (T=0.1) and L2 (T=0.1)."""
@@ -170,7 +170,7 @@ def test_l3_dedup_checks_both_l1_and_l2():
     assert synthetic[0]["custom_id"] == f"{PMCID}__C0__l3__0"
 
 
-# ── build_requests with skip_voters ─────────────────────────────────────────
+# build_requests with skip_voters
 
 def test_build_requests_skips_specified_voter_indices():
     voters = [
@@ -197,7 +197,7 @@ def test_build_requests_skip_all_returns_empty_list():
     assert reqs == []
 
 
-# ── BatchHandle serialisation round-trip with synthetic_results ─────────────
+# BatchHandle serialisation round-trip with synthetic_results
 
 def test_handle_serialises_synthetic_results_field(tmp_path: Path):
     h = BatchHandle(pmcid=PMCID, phase=BatchPhase.L2_SUBMITTED)
@@ -213,7 +213,7 @@ def test_handle_serialises_synthetic_results_field(tmp_path: Path):
     assert h2.synthetic_results["l2"] == h.synthetic_results["l2"]
 
 
-# ── End-to-end advance() → synthetic merge → finalized ────────────────────
+# End-to-end advance() → synthetic merge → finalized
 
 def test_advance_merges_synthetic_l2_into_finalized(tmp_path):
     """Full merge path: pre-populated synthetic L2 results survive advance()

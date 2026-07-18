@@ -64,7 +64,7 @@ def _finding(
     )
 
 
-# ── normalize_entity ───────────────────────────────────────────────────────────
+# normalize_entity
 
 def test_normalize_entity_known_synonym():
     assert normalize_entity("overall survival") == "OS"
@@ -91,7 +91,7 @@ def test_normalize_entity_strips_whitespace():
     assert normalize_entity("  CD30  ") == "CD30"
 
 
-# ── NormalizeStage: no dedup needed ───────────────────────────────────────────
+# NormalizeStage: no dedup needed
 
 def test_single_finding_passes_through():
     stage = NormalizeStage()
@@ -118,7 +118,7 @@ def test_extra_synonyms_respected():
     assert result[0].subject_entity == "CUSTOM"
 
 
-# ── Conditional dedup ─────────────────────────────────────────────────────────
+# Conditional dedup
 
 def test_same_claim_same_te_merged():
     """Three voters extracting the same claim from the same TE → one NormalFinding."""
@@ -172,7 +172,7 @@ def test_merged_mean_grounding_score():
     assert result[0].mean_grounding_score == pytest.approx(0.7)
 
 
-# ── Ungroupable findings (None fields) ────────────────────────────────────────
+# Ungroupable findings (None fields)
 
 def test_none_subject_kept_ungrouped():
     stage = NormalizeStage()
@@ -200,7 +200,7 @@ def test_none_fields_not_merged_with_each_other():
     assert len(result) == 2
 
 
-# ── Source span parsing ───────────────────────────────────────────────────────
+# Source span parsing
 
 def test_source_spans_parsed_correctly():
     stage = NormalizeStage()
@@ -229,7 +229,7 @@ def test_no_evidence_produces_no_spans():
     assert result[0].evidence == []
 
 
-# ── Scope and pmcids ──────────────────────────────────────────────────────────
+# Scope and pmcids
 
 def test_scope_from_best_grounded_finding():
     stage = NormalizeStage()
@@ -253,7 +253,7 @@ def test_empty_input_returns_empty():
     assert stage.normalize([], PMCID) == []
 
 
-# ── NormalFinding model ───────────────────────────────────────────────────────
+# NormalFinding model
 
 def test_normal_finding_roundtrip():
     stage = NormalizeStage()
@@ -265,7 +265,7 @@ def test_normal_finding_roundtrip():
     assert nf2.direction == DirectionEnum.negative
 
 
-# ── B-023 regression: dedup must not collapse opposing directions ─────────────
+# B-023 regression: dedup must not collapse opposing directions
 
 
 def test_b023_opposing_directions_same_sentence_kept_separate():

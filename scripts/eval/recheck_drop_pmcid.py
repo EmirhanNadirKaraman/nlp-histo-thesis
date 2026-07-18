@@ -16,7 +16,7 @@ Two assumptions are baked in:
                                 (reports/*_PR.md show unlabelled=0).
   (2) detector mode from name — docling-named variants only.
 Both are validated by the --gate check: the full (all-PDFs) reconstruction
-must reproduce reports/stage7_PR.md. If it doesn't, do NOT trust the dropped
+must reproduce reports/stage7_PR.md. If it doesn't, do not trust the dropped
 numbers.
 
 Reuses score_pdf_variants' scoring functions verbatim so the metric math is

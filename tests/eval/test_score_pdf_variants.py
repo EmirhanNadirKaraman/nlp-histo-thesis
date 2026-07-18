@@ -38,7 +38,7 @@ def scr():
         sys.modules.pop(spec.name, None)
 
 
-# ── Classifiers ───────────────────────────────────────────────────────────────
+# Classifiers
 
 
 @pytest.mark.parametrize("label,expected", [
@@ -75,7 +75,7 @@ def test_classify_table(scr, label, expected) -> None:
     assert scr.classify_table(label) == expected
 
 
-# ── metrics ───────────────────────────────────────────────────────────────────
+# metrics
 
 
 def test_metrics_normal(scr) -> None:
@@ -99,7 +99,7 @@ def test_metrics_no_predictions(scr) -> None:
     assert m["f1"] is None
 
 
-# ── score_kind ────────────────────────────────────────────────────────────────
+# score_kind
 
 
 def test_score_kind_counts_tp_fp_unlabelled(scr) -> None:
@@ -169,7 +169,7 @@ def test_score_kind_total_actual_clipped_at_zero(scr) -> None:
     assert m["recall"] == 1.0  # 3 / (3 + 0)
 
 
-# ── load_emitted_crops ────────────────────────────────────────────────────────
+# load_emitted_crops
 
 
 def _write_sweep_with_crops(sweep_dir: Path, pmcid: str, *,
@@ -202,7 +202,7 @@ def test_load_emitted_crops_empty(tmp_path, scr) -> None:
     assert figs == set() and tabs == set()
 
 
-# ── load_labels ───────────────────────────────────────────────────────────────
+# load_labels
 
 
 def test_load_labels_prefers_per_variant(tmp_path, scr, monkeypatch) -> None:
@@ -211,7 +211,7 @@ def test_load_labels_prefers_per_variant(tmp_path, scr, monkeypatch) -> None:
     (tmp_path / "E1" / "json_tables_full.json").write_text(json.dumps(
         {"x.png": "correct"}
     ))
-    # Legacy file with a different value — must NOT be used
+    # Legacy file with a different value — must not be used
     (tmp_path / "annotations_json_tables_full.json").write_text(json.dumps(
         {"x.png": "incorrect", "y.png": "correct"}
     ))
@@ -249,7 +249,7 @@ def test_load_labels_malformed_per_variant_falls_back(tmp_path, scr, monkeypatch
     assert labels == {"y.png": "correct"}
 
 
-# ── detector_modes ───────────────────────────────────────────────────────────
+# detector_modes
 
 
 def _write_manifest(sweep: Path, detector: str) -> None:
@@ -284,7 +284,7 @@ def test_detector_modes_default_hybrid_when_no_manifest(tmp_path, scr) -> None:
     assert fig == "json_figures"
 
 
-# ── main() CLI ────────────────────────────────────────────────────────────────
+# main() CLI
 
 
 def _build_eval_scenario(tmp_path, scr, monkeypatch) -> dict:
@@ -385,7 +385,7 @@ def test_main_to_stdout_when_no_md_out(tmp_path, scr, monkeypatch, capsys) -> No
     assert "\t" in out
 
 
-# ── Rubric: load_rubric ───────────────────────────────────────────────────────
+# Rubric: load_rubric
 
 
 def test_load_rubric_falls_back_when_path_missing(tmp_path, scr) -> None:
@@ -415,7 +415,7 @@ def test_load_rubric_handles_malformed_yaml(tmp_path, scr) -> None:
     assert "correct" in rubric
 
 
-# ── Rubric: parse_label_to_rubric ────────────────────────────────────────────
+# Rubric: parse_label_to_rubric
 
 
 def test_parse_label_direct_match(scr) -> None:
@@ -434,7 +434,7 @@ def test_parse_label_no_prefix_match(scr) -> None:
 
 
 def test_parse_label_compound_not_auto_combined(scr) -> None:
-    """Compound semantics are NOT auto-derived AND no longer prefix-match.
+    """Compound semantics are not auto-derived AND no longer prefix-match.
     A '+'-joined string with no explicit rubric entry returns None."""
     rubric = scr.load_rubric(None)
     out = scr.parse_label_to_rubric("wrong caption + missing footnotes", rubric)
@@ -474,7 +474,7 @@ def test_parse_label_case_insensitive(scr) -> None:
     assert out["crop"] == 1.0
 
 
-# ── score_kind_rubric ─────────────────────────────────────────────────────────
+# score_kind_rubric
 
 
 def test_score_kind_rubric_all_correct(scr) -> None:
@@ -593,7 +593,7 @@ def test_score_kind_rubric_unlabelled_counted(scr) -> None:
     assert out["counts"]["unlabelled"] == 1
 
 
-# ── Mask dimension ────────────────────────────────────────────────────────────
+# Mask dimension
 
 
 def test_mask_dim_correct_label_scores_tp(scr) -> None:
@@ -709,7 +709,7 @@ def test_main_no_legacy_fallback_drops_to_zero_when_no_per_variant(
     assert cells[5] == "0", f"expected TP=0, got {cells[5]!r} in row: {cells}"
 
 
-# ── Review-unknown helpers ────────────────────────────────────────────────────
+# Review-unknown helpers
 
 
 def test_collect_unknown_labels(scr) -> None:

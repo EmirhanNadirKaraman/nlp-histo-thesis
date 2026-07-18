@@ -17,7 +17,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.routing.routing_dataset impo
 )
 
 
-# ── Fixtures ───────────────────────────────────────────────────────────────────
+# Fixtures
 
 PMCID = "PMC9999999"
 
@@ -69,7 +69,7 @@ def _make_record(**overrides) -> RoutingRecord:
     return RoutingRecord(**defaults)
 
 
-# ── RoutingRecord serialization ────────────────────────────────────────────────
+# RoutingRecord serialization
 
 class TestRoutingRecord:
     def test_round_trip_json(self):
@@ -106,7 +106,7 @@ class TestRoutingRecord:
         assert restored.strong_judge_preferred == "output"
 
 
-# ── RoutingDataset I/O ─────────────────────────────────────────────────────────
+# RoutingDataset I/O
 
 class TestRoutingDataset:
     def test_save_and_load(self, tmp_path):
@@ -156,7 +156,7 @@ class TestRoutingDataset:
         assert path.exists()
 
 
-# ── MapStage routing collector integration ─────────────────────────────────────
+# MapStage routing collector integration
 
 class TestMapStageRoutingCollector:
     """Verify that _cascade() writes RoutingRecord to collector on the router path."""

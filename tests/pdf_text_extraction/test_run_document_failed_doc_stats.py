@@ -3,7 +3,7 @@ PipelineRunner.run_document must produce a per-document stats file even
 when ``_process`` raises — including failures that happen before any
 ``DocStatsCollector.stage(...)`` context is entered.
 
-This is the user-imposed Stage-1 guardrail: collectors are built BEFORE the
+This is the user-imposed Stage-1 guardrail: collectors are built before the
 first fail-prone step so failed documents are still diffable in a sweep.
 """
 from __future__ import annotations
@@ -92,7 +92,7 @@ def test_mid_pipeline_failure_writes_status_failed(tmp_path, monkeypatch) -> Non
 
 
 def test_failure_before_any_stage_still_writes_stats(tmp_path, monkeypatch) -> None:
-    """The user's "init BEFORE the first fail-prone step" requirement —
+    """The user's "init before the first fail-prone step" requirement —
     a document that crashes before any stage context opens must still get
     a stats file with status=failed."""
     runner = _build_runner(tmp_path)

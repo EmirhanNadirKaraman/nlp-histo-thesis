@@ -1,7 +1,7 @@
 """
 LexicalSimilarityStrategy — trivial word-overlap similarity.
 
-IMPORTANT: This is a debugging baseline ONLY.
+IMPORTANT: This is a debugging baseline only.
 Not suitable for thesis evaluation or production use.
 Use EmbeddingSimilarityStrategy or HybridStructuredSimilarity for real workloads.
 """

@@ -37,7 +37,7 @@ pool = [p.pmcid for p in eligible if p.pmcid.split("_")[0] not in (ilp | doc)]
 
 chosen = sorted(random.Random(SEED).sample(pool, N))
 out = _REPO_ROOT / "configs/paper_selection/heldout15.yaml"
-# These papers are a RANDOM sample, NOT relatedness-selected. They are placed
+# These papers are a RANDOM sample, not relatedness-selected. They are placed
 # under `diverse:` purely because load_pmcids_from_selection only reads the
 # related/diverse/hard buckets (it flattens all three) — the bucket name carries
 # no selection meaning here. `related:` is left empty so the file does not imply

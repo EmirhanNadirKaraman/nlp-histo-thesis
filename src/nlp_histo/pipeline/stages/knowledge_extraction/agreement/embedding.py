@@ -314,7 +314,7 @@ def _align_one_to_one(
 
     so over-production (extra A) lowers precision and under-production (extra B)
     lowers recall. Operates on pre-normalised embeddings; returns a value in
-    ``[0, 1]``. Does NOT use count_alpha / reuse_weight / contradiction_weight
+    ``[0, 1]``. Does not use count_alpha / reuse_weight / contradiction_weight
     (those are soft_max-only).
     """
     na, nb = emb_a.shape[0], emb_b.shape[0]

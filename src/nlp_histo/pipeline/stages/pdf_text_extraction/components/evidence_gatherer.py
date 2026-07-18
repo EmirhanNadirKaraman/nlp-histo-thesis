@@ -267,7 +267,7 @@ class PyMuPDFEvidenceGatherer:
         ghost layers — a common publisher technique for embedding accessible /
         searchable text that is not meant to be visible.
 
-        Note: rendering-mode-3 (PDF Tr=3) text is NOT detectable through
+        Note: rendering-mode-3 (PDF Tr=3) text is not detectable through
         PyMuPDF's ``get_text`` API regardless of color; it requires content-stream
         parsing.  This check covers only the color-based variant.
         """

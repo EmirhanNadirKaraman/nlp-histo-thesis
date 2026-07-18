@@ -58,7 +58,7 @@ def export_disease_entities(
         pmcid: Filter to specific PMCID
         model_name: Optional model name to filter entities. This is spaCy's
                     ``nlp.meta["name"]`` as stored in entities.model_name —
-                    'core_sci_lg', NOT the package name 'en_core_sci_lg' (B-115).
+                    'core_sci_lg', not the package name 'en_core_sci_lg' (B-115).
 
     Returns:
         dict: Exported entity data grouped by UMLS CUI

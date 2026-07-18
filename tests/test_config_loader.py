@@ -144,7 +144,7 @@ def test_legacy_map_routing_paths_rejected(tmp_path: Path):
             load_config(p)
 
 
-# ── AgreementConfig — soft-alignment weights (H-EMB-01) ──────────────────────
+# AgreementConfig — soft-alignment weights (H-EMB-01)
 # Centralisation check (2026-05-26): the four weights flow from
 # config.py → run.yaml → KnowledgeExtractionRunner → EmbeddingSimilarityStrategy
 # without hardcoded overrides anywhere on the path. These tests pin every link.
@@ -226,7 +226,7 @@ def test_agreement_strategy_consumes_all_four_fields():
     assert strategy._contradiction_weight == 0.99
 
 
-# ── AgreementConfig.scorer_kind — similarity-strategy selector ───────────────
+# AgreementConfig.scorer_kind — similarity-strategy selector
 # Promoted 2026-05-26. The previous default (hardcoded
 # `EmbeddingSimilarityStrategy` in `runner.py:213`) is preserved as the
 # config default; this knob just lets Stage 1's winner be pinned in YAML.
@@ -310,7 +310,7 @@ def test_agreement_scorer_kind_dispatches_to_correct_strategy():
     assert hyb._strategy._w_embedding == 0.40
 
 
-# ── AgreementConfig.hybrid — HybridStructuredSimilarity blend weights ────────
+# AgreementConfig.hybrid — HybridStructuredSimilarity blend weights
 # Promoted 2026-05-26 as a nested ``HybridConfig`` sub-config. Only active
 # when scorer_kind="hybrid"; the embedding scorer ignores the block entirely.
 # Convention: weights should sum to 1.0 (not enforced in code).
@@ -425,7 +425,7 @@ def test_embedding_strategy_ignores_hybrid_config():
     assert not hasattr(s_default, "_w_category")
 
 
-# ── AgreementConfig.force_escalate_on_polarity_conflict ─────────────────────
+# AgreementConfig.force_escalate_on_polarity_conflict
 # Promoted 2026-05-26. B-051 hard-fail policy. Default True preserves the
 # safety guard verbatim; False is the ablation setting (still records the
 # marker, just doesn't override the scorer decision). Behavioural tests for
@@ -487,7 +487,7 @@ def test_tatr_render_dpi_overridable(tmp_path: Path):
     assert pdf.tatr.render_dpi == 300
 
 
-# ── B-028: deleted DatabaseConfig sub-fields fail loudly ──────────────────────
+# B-028: deleted DatabaseConfig sub-fields fail loudly
 # `schema`, `create_tables_if_missing`, `batch_size`, `connect_timeout_sec`
 # never had consumers (`PostgresDatabaseIngester` only accepts `db_url`). They
 # were removed in the 2026-05-15 Tier 1 config audit rather than wired. Any
@@ -511,7 +511,7 @@ def test_deleted_database_keys_rejected(tmp_path: Path, dead_field: str, value: 
         load_config(p)
 
 
-# ── RuntimeConfig kill-switch fields still load (sanity) ──────────────────────
+# RuntimeConfig kill-switch fields still load (sanity)
 # Phase-1 audit incorrectly flagged these as dead. They are kill-switch
 # features consumed at runner.py:375-378 (blacklist_if_rows_exceed) and
 # runner.py:603+ (multi_source_crops). Defaults are None/False, so the
@@ -528,9 +528,9 @@ def test_runtime_kill_switch_fields_still_load(tmp_path: Path):
     assert pdf.runtime.multi_source_crops is True
 
 
-# ── Seed wiring: configured seed reaches PipelineRunner._seed_pipeline ────────
+# Seed wiring: configured seed reaches PipelineRunner._seed_pipeline
 def test_seed_reaches_seed_pipeline(tmp_path: Path, monkeypatch):
-    """Mock-based wiring test — does NOT touch global RNG state.
+    """Mock-based wiring test — does not touch global RNG state.
 
     Asserts the seed value loaded from YAML is the value the runner passes
     to its internal seeding helper. Implementation detail of how the helper

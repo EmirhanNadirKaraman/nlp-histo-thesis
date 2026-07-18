@@ -119,7 +119,7 @@ def test_rank_selects_on_optimal_not_greedy():
 
 def test_rank_tiebreaks_cost_then_f1_optimal():
     # Cost axis is _cost_frac (price-weighted L2+L3 escalation, from n_chunks/
-    # n_l2_invoked/n_l3_invoked), NOT bare escalate_rate — see _cost_frac docstring.
+    # n_l2_invoked/n_l3_invoked), not bare escalate_rate — see _cost_frac docstring.
     from eval.silver.analysis.run_new_summarization_sweeps import _rank
     # Primary ties → LOWER cost_frac wins (even with worse f1_optimal).
     lo_cost = {"strict_f1_optimal": 0.70, "f1_optimal": 0.60,

@@ -22,7 +22,7 @@ import pytest
 from eval import annotate as ann_mod
 
 
-# ── ann_path ──────────────────────────────────────────────────────────────────
+# ann_path
 
 
 def test_ann_path_legacy(tmp_path, monkeypatch) -> None:
@@ -37,7 +37,7 @@ def test_ann_path_with_variant(tmp_path, monkeypatch) -> None:
     assert p == tmp_path / "annotations" / "baseline_evalcfg" / "json_tables_full.json"
 
 
-# ── load / save round-trip ────────────────────────────────────────────────────
+# load / save round-trip
 
 
 def test_save_then_load_round_trip(tmp_path, monkeypatch) -> None:
@@ -58,7 +58,7 @@ def test_load_returns_empty_dict_when_file_absent(tmp_path, monkeypatch) -> None
     assert ann_mod.load_annotations("json_tables_full", variant="ghost") == {}
 
 
-# ── load_share_map ────────────────────────────────────────────────────────────
+# load_share_map
 
 
 def test_load_share_map_missing_returns_empty(tmp_path, monkeypatch) -> None:
@@ -81,7 +81,7 @@ def test_load_share_map_valid(tmp_path, monkeypatch) -> None:
     assert ann_mod.load_share_map() == sm
 
 
-# ── propagate_label ───────────────────────────────────────────────────────────
+# propagate_label
 
 
 def test_propagate_label_writes_to_peers_but_not_source(tmp_path, monkeypatch) -> None:
@@ -99,7 +99,7 @@ def test_propagate_label_writes_to_peers_but_not_source(tmp_path, monkeypatch) -
     for v in peers:
         data = json.loads((tmp_path / v / "json_tables_full.json").read_text())
         assert data["k.png"] == "correct"
-    # Source variant must NOT have been written
+    # Source variant must not have been written
     assert not (tmp_path / "E1" / "json_tables_full.json").exists()
 
 
@@ -156,7 +156,7 @@ def test_propagate_label_per_peer_write_failure_suppressed(
     assert "propagation to E2 failed" in out
 
 
-# ── _loader_for_mode ──────────────────────────────────────────────────────────
+# _loader_for_mode
 
 
 def test_loader_legacy_layout_uses_subdirs() -> None:
@@ -182,7 +182,7 @@ def test_loader_text_modes_route_correctly(tmp_path) -> None:
     assert ann_mod._loader_for_mode("docling_full", sweep)[0] == sweep / "docling_full"
 
 
-# ── _parse_cli ────────────────────────────────────────────────────────────────
+# _parse_cli
 
 
 def test_parse_cli_minimal() -> None:
@@ -211,7 +211,7 @@ def test_parse_cli_invalid_mode_exits() -> None:
         ann_mod._parse_cli(["bogus_mode"])
 
 
-# ── resolve_pdf_dir / resolve_pdf_path ────────────────────────────────────────
+# resolve_pdf_dir / resolve_pdf_path
 
 
 def _make_manifest(sweep_dir: Path, pdf_dir: str) -> None:
@@ -260,7 +260,7 @@ def test_resolve_pdf_path(tmp_path) -> None:
     assert ann_mod.resolve_pdf_path("PMC_X", None) is None
 
 
-# ── resolve_visualization_path ────────────────────────────────────────────────
+# resolve_visualization_path
 
 
 def test_resolve_visualization_path_returns_existing_file(tmp_path) -> None:
@@ -290,7 +290,7 @@ def test_resolve_visualization_path_none_when_dir_missing(tmp_path) -> None:
     assert ann_mod.resolve_visualization_path(sweep, "PMC_X") is None
 
 
-# ── open_pdf ──────────────────────────────────────────────────────────────────
+# open_pdf
 
 
 def test_open_pdf_no_op_on_missing_path(tmp_path, monkeypatch) -> None:
@@ -364,7 +364,7 @@ def test_open_pdf_skips_osascript_on_non_darwin(tmp_path, monkeypatch) -> None:
     assert "osascript -e" not in calls[0]
 
 
-# ── UX helpers: recent labels + next-unlabelled cursor + cancel ──────────────
+# UX helpers: recent labels + next-unlabelled cursor + cancel
 
 
 def test_collect_recent_labels_returns_only_custom() -> None:
@@ -501,7 +501,7 @@ def test_read_label_no_recent_menu_pass_through(monkeypatch) -> None:
     assert ann_mod.read_label() == "2"  # literal — no menu to look up
 
 
-# ── Rubric-backed label menu ─────────────────────────────────────────────────
+# Rubric-backed label menu
 
 
 def test_load_rubric_labels_reads_file(tmp_path, monkeypatch) -> None:
@@ -543,7 +543,7 @@ def test_collect_label_menu_no_rubric_falls_back_to_recent(tmp_path, monkeypatch
     assert ann_mod._collect_label_menu(ann) == ["fresh label"]
 
 
-# ── Kind-aware menu filtering (block-based, 2026-05-19) ──────────────────────
+# Kind-aware menu filtering (block-based, 2026-05-19)
 
 
 _NEW_FORMAT_RUBRIC = (
@@ -636,7 +636,7 @@ def test_collect_label_menu_filters_for_table(tmp_path, monkeypatch) -> None:
     assert "crop too big minor" in menu
 
 
-# ── Bbox-aware propagation (new share-map format) ─────────────────────────────
+# Bbox-aware propagation (new share-map format)
 
 
 def test_propagate_label_bbox_aware_only_writes_matching_group(tmp_path, monkeypatch) -> None:

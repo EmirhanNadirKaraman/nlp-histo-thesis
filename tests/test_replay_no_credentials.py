@@ -52,7 +52,7 @@ def providers_explode(monkeypatch):
         )
 
 
-# ── the guard itself ──────────────────────────────────────────────────────────
+# the guard itself
 
 def test_guard_needs_no_key_and_builds_no_client(no_credentials) -> None:
     """Constructing it must not read the environment or reach a provider."""
@@ -69,7 +69,7 @@ def test_guard_raises_rather_than_falling_through(no_credentials) -> None:
     assert "a text that was never embedded" not in msg, "must not echo the text"
 
 
-# ── the replay's own matcher sites (05 and 10) ────────────────────────────────
+# the replay's own matcher sites (05 and 10)
 
 def test_replay_reads_no_credential_and_constructs_no_provider() -> None:
     """The regression, pinned at the source: analyses 05 and 10 previously read
@@ -132,7 +132,7 @@ def test_an_unexpected_miss_fails_without_constructing_a_provider(
         get_embeddings(["never-seen"], NoLiveEmbedding("openai", "matcher"), _EmptyCache())
 
 
-# ── the paid path is untouched ────────────────────────────────────────────────
+# the paid path is untouched
 
 def test_non_replay_path_still_constructs_a_real_provider(monkeypatch) -> None:
     """map_context without strict_cache_only must still demand a key and build a client —

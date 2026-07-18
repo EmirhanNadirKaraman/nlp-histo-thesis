@@ -164,7 +164,7 @@ class GeminiBatchProvider:
         results: list[BatchResult] = []
         for i, inline_response in enumerate(inline_responses):
             # Prefer the round-tripped metadata key; fall back to positional
-            # ONLY when metadata is unavailable, and count it so the fallback is
+            # Only when metadata is unavailable, and count it so the fallback is
             # never silent (the original B-081 failure mode).
             custom_id = self._custom_id_from_metadata(inline_response)
             if custom_id is None:

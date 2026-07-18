@@ -26,8 +26,8 @@ def test_finding_to_pipeline_unwraps_enum_fields():
          "relation_type": RelationTypeEnum.demographic, "direction": DirectionEnum.positive,
          "confidence": "high", "verbatim_support": "v"}
     pf = _finding_to_pipeline(f, "PMC1", "C1", 0.9)
-    assert pf.relation_type == "demographic"      # NOT "RelationTypeEnum.demographic"
-    assert pf.direction == "positive"             # NOT "DirectionEnum.positive"
+    assert pf.relation_type == "demographic"      # Not "RelationTypeEnum.demographic"
+    assert pf.direction == "positive"             # Not "DirectionEnum.positive"
     assert pf.category == "demographic"
 
 

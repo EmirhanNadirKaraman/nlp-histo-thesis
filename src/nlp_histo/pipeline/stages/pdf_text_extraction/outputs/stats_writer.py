@@ -14,7 +14,7 @@ Writes one JSON file per processed document to
 * a deterministic ``config_digest`` and a compact ``config_used`` block so
   two runs can be diffed knob-by-knob
 
-Design contract (do NOT break)
+Design contract (do not break)
 ------------------------------
 This module is observability-only.  It must never influence extraction
 behavior.  The collector exposes ``record_*`` methods that accumulate state
@@ -121,7 +121,7 @@ class DocStats:
 
 class DocStatsCollector:
     """
-    Mutable accumulator. Construct ONE per document, BEFORE the first
+    Mutable accumulator. Construct ONE per document, before the first
     fail-prone extraction step.  Call ``write()`` from a ``finally`` block so
     failed documents still produce stats.
     """
@@ -158,7 +158,7 @@ class DocStatsCollector:
         try:
             yield
         except Exception as exc:
-            # Bind the type name to a local BEFORE the lambda so a future
+            # Bind the type name to a local before the lambda so a future
             # `ruff --fix` can't strip `as exc` as "unused" (it doesn't see the
             # lambda's use) and silently re-break this — see B-088.
             err_name = type(exc).__name__

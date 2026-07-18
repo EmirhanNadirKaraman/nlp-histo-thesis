@@ -38,7 +38,7 @@ def _import_select_with_pulp():
     return mod.select_with_pulp
 
 
-# ── Fixtures ───────────────────────────────────────────────────────────────────
+# Fixtures
 
 def _make_spec(**overrides) -> RoutingPolicySpec:
     defaults = dict(
@@ -62,7 +62,7 @@ def _make_result(**overrides) -> PolicyEvaluationResult:
     return PolicyEvaluationResult(**defaults)
 
 
-# ── RoutingPolicySpec ──────────────────────────────────────────────────────────
+# RoutingPolicySpec
 
 class TestRoutingPolicySpec:
     def test_defaults(self):
@@ -93,7 +93,7 @@ class TestRoutingPolicySpec:
         assert spec.fabricated_threshold == 0.30
 
 
-# ── PolicyEvaluationResult ────────────────────────────────────────────────────
+# PolicyEvaluationResult
 
 class TestPolicyEvaluationResult:
     def test_defaults_are_none(self):
@@ -136,7 +136,7 @@ class TestPolicyEvaluationResult:
         assert r.policy_id == "emb_theta07"
 
 
-# ── PolicySelectionResult ─────────────────────────────────────────────────────
+# PolicySelectionResult
 
 class TestPolicySelectionResult:
     def test_round_trip_json(self):
@@ -178,7 +178,7 @@ class TestPolicySelectionResult:
         assert "No candidates" in restored.infeasibility_reason
 
 
-# ── PolicyEvaluationStore ─────────────────────────────────────────────────────
+# PolicyEvaluationStore
 
 class TestPolicyEvaluationStore:
     def test_save_and_load(self, tmp_path):
@@ -223,7 +223,7 @@ class TestPolicyEvaluationStore:
             assert "policy_id" in obj
 
 
-# ── select_with_pulp ───────────────────────────────────────────────────────────
+# select_with_pulp
 
 class TestSelectWithPulp:
     """Smoke tests for the PuLP ILP selector."""

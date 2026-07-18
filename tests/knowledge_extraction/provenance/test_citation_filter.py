@@ -48,7 +48,7 @@ def _chunk() -> list[dict]:
     return [{"pmcid": PMCID, "text_element_id": TE_ID, "sentence": "CD31 was positive in all cases."}]
 
 
-# ── Valid citation is kept ──────────────────────────────────────────────────────
+# Valid citation is kept
 
 def test_valid_citation_kept():
     s = _summary([_finding("CD31 -> Positive", [f"S1|{PMCID}|{TE_ID}"])])
@@ -57,7 +57,7 @@ def test_valid_citation_kept():
     assert len(s.findings) == 1
 
 
-# ── Each hard structural failure drops the finding ──────────────────────────────
+# Each hard structural failure drops the finding
 
 def test_nonexistent_sentence_position_dropped():
     # S99 is out of range for a 1-sentence chunk.
@@ -89,7 +89,7 @@ def test_unparseable_citation_dropped():
     assert s.findings == []
 
 
-# ── Mixed batch: only the bad finding is removed ────────────────────────────────
+# Mixed batch: only the bad finding is removed
 
 def test_mixed_drops_only_invalid():
     good = _finding("good", [f"S1|{PMCID}|{TE_ID}"])
@@ -102,7 +102,7 @@ def test_mixed_drops_only_invalid():
     assert [f.claim for f in dropped] == ["bad"]
 
 
-# ── Verbatim fabrication is opt-in ──────────────────────────────────────────────
+# Verbatim fabrication is opt-in
 
 def test_fabricated_verbatim_kept_by_default():
     # Verbatim quote is unrecognisable in the cited sentence, but the citation
@@ -122,11 +122,11 @@ def test_fabricated_verbatim_dropped_when_enabled():
     assert s.findings == []
 
 
-# ── B-082: bare-vs-suffixed PMC accession is the same paper ─────────────────────
+# B-082: bare-vs-suffixed PMC accession is the same paper
 
 def test_bare_accession_matches_suffixed_document():
     # Corpus document id is suffixed; the finding cites the bare canonical
-    # accession (PMC10047158) — same paper, must NOT be flagged cross-document.
+    # accession (PMC10047158) — same paper, must not be flagged cross-document.
     doc = "PMC10047158_HIS-1-1"
     chunk = [{"pmcid": doc, "text_element_id": TE_ID, "sentence": "CD31 was positive in all cases."}]
     s = _summary([_finding("bare cite", [f"S1|PMC10047158|{TE_ID}"])])
@@ -145,7 +145,7 @@ def test_different_base_accession_still_dropped():
     assert s.findings == []
 
 
-# ── Defensive: empty chunk never nukes the summary ──────────────────────────────
+# Defensive: empty chunk never nukes the summary
 
 def test_empty_chunk_keeps_everything():
     s = _summary([_finding("a", [f"S1|{PMCID}|{TE_ID}"]), _finding("b", [f"S2|{PMCID}|{TE_ID}"])])

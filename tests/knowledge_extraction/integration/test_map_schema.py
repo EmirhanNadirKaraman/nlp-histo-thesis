@@ -38,7 +38,7 @@ def check(name: str, fn) -> bool:
     return True
 
 
-# ── Tests ─────────────────────────────────────────────────────────────────────
+# Tests
 
 def test_direction_enum_has_no_direction():
     from nlp_histo.pipeline.stages.knowledge_extraction.models import DirectionEnum
@@ -426,7 +426,7 @@ def test_batch_handle_persists_versions():
         assert h2.cascade_signature == "cafebabecafebabe"
 
 
-# ── Runner ────────────────────────────────────────────────────────────────────
+# Runner
 
 ALL_TESTS = [
     ("DirectionEnum has no_direction",           test_direction_enum_has_no_direction),

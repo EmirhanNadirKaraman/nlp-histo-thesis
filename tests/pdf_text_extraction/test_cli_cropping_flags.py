@@ -26,7 +26,7 @@ import pytest
 from nlp_histo.pipeline.stages.pdf_text_extraction import runner as runner_mod
 
 
-# ── _parse_args defaults ──────────────────────────────────────────────────────
+# _parse_args defaults
 
 
 def test_parse_args_defaults_all_three_to_none() -> None:
@@ -36,7 +36,7 @@ def test_parse_args_defaults_all_three_to_none() -> None:
     assert args.expand_tables_with_footnotes is None
 
 
-# ── Positive flag forms ───────────────────────────────────────────────────────
+# Positive flag forms
 
 
 @pytest.mark.parametrize("flag,attr", [
@@ -70,7 +70,7 @@ def test_all_three_flags_together() -> None:
     assert args.expand_tables_with_footnotes is True
 
 
-# ── Config threading via main() ───────────────────────────────────────────────
+# Config threading via main()
 
 
 class _CapturedConfig:

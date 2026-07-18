@@ -4,7 +4,7 @@
 full tau/count_alpha/reuse_weight/contradiction_weight penalty set). ``greedy`` and
 ``hungarian`` are one-to-one matching modes scored by a precision/recall F1 over the
 matched similarities, so over/under-production is penalised. ``tau`` is reused as the
-minimum valid-pair similarity; the other penalty weights do NOT apply to one-to-one.
+minimum valid-pair similarity; the other penalty weights do not apply to one-to-one.
 """
 import types
 
@@ -22,7 +22,7 @@ def _emb_from_sim(mat):
     return mat, np.eye(mat.shape[1])
 
 
-# ── one-to-one reducer math ──────────────────────────────────────────────────
+# one-to-one reducer math
 
 def test_one_to_one_exact_match_is_one():
     a = b = np.eye(3)
@@ -66,7 +66,7 @@ def test_bad_strategy_raises():
         _align_one_to_one(np.eye(2), np.eye(2), 0.15, "nope")
 
 
-# ── soft_max backward-compat + the config thread reaches the scorer ──────────
+# soft_max backward-compat + the config thread reaches the scorer
 
 def _embed_factory():
     cache: dict[str, np.ndarray] = {}

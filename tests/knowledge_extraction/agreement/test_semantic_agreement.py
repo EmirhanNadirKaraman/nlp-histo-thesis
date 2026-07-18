@@ -49,7 +49,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.routing.models import GateOr
 from nlp_histo.pipeline.stages.knowledge_extraction.routing.router import MapOutputRouter
 
 
-# ── Shared helpers ──────────────────────────────────────────────────────────────
+# Shared helpers
 
 PMCID = "PMC10047158"
 
@@ -99,7 +99,7 @@ def _chunk(sentence: str = "CD31 was positive in all cases.") -> list[dict]:
     return [{"pmcid": PMCID, "text_element_id": 42, "sentence": sentence}]
 
 
-# ── 1. LexicalSimilarityStrategy ────────────────────────────────────────────────
+# 1. LexicalSimilarityStrategy
 
 class TestLexicalSimilarityStrategy:
     def setup_method(self):
@@ -131,7 +131,7 @@ class TestLexicalSimilarityStrategy:
         assert self.strat.similarity(a, b) == pytest.approx(0.0)
 
 
-# ── 2 & 5. SemanticAgreementScorer — N=1 and empty voter ────────────────────────
+# 2 & 5. SemanticAgreementScorer — N=1 and empty voter
 
 class TestSemanticAgreementScorerBaseCases:
     def setup_method(self):
@@ -185,7 +185,7 @@ class TestSemanticAgreementScorerBaseCases:
         assert bundle.best_index in {0, 1}
 
 
-# ── 3. SemanticAgreementScorer — N=2 ────────────────────────────────────────────
+# 3. SemanticAgreementScorer — N=2
 
 class TestSemanticAgreementScorerN2:
     def setup_method(self):
@@ -218,7 +218,7 @@ class TestSemanticAgreementScorerN2:
         assert bundle.best_index == 1
 
 
-# ── 4. SemanticAgreementScorer — N=3, consensus winner ──────────────────────────
+# 4. SemanticAgreementScorer — N=3, consensus winner
 
 class TestSemanticAgreementScorerN3:
     def setup_method(self):
@@ -249,7 +249,7 @@ class TestSemanticAgreementScorerN3:
         assert bundle.confidence > 0.0
 
 
-# ── 6. Tie-break by grounding quality ───────────────────────────────────────────
+# 6. Tie-break by grounding quality
 
 class TestTieBreaking:
     def setup_method(self):
@@ -291,7 +291,7 @@ class TestTieBreaking:
             self.scorer.compute([s0, s1], context=ctx)
 
 
-# ── 7 & 8. Router single eligible voter policy ──────────────────────────────────
+# 7 & 8. Router single eligible voter policy
 
 class TestRouterSingleVoterPolicy:
     def _make_router(self, policy: str = "escalate") -> MapOutputRouter:
@@ -324,7 +324,7 @@ class TestRouterSingleVoterPolicy:
         assert decision.valid_voter_indices == [0]
 
 
-# ── 9 & 10. AgreementChecker.best() ────────────────────────────────────────────
+# 9 & 10. AgreementChecker.best()
 
 class TestAgreementCheckerBest:
     def setup_method(self):
@@ -362,7 +362,7 @@ class TestAgreementCheckerBest:
         assert result is s1  # same mean_ev=1.0, s1 wins on finding count
 
 
-# ── 11. _cascade() REJECT path → escalation model ───────────────────────────────
+# 11. _cascade() REJECT path → escalation model
 
 class TestCascadeRejectPath:
     def test_reject_calls_escalation_not_none(self):
@@ -420,12 +420,12 @@ class TestCascadeRejectPath:
         chunk = [{"pmcid": PMCID, "text_element_id": 42, "sentence": "Test."}]
         result = stage._cascade(chunk, PMCID, "C1")
 
-        # Must NOT be None — escalation was called
+        # Must not be None — escalation was called
         assert result is not None
         mock_escalation_llm_chain.invoke.assert_called_once()
 
 
-# ── 12. EmbeddingSimilarityStrategy.compute_matrix() ────────────────────────────
+# 12. EmbeddingSimilarityStrategy.compute_matrix()
 
 class TestEmbeddingSimilarityStrategyMatrix:
     def test_single_api_call_for_all_voters(self):
@@ -472,7 +472,7 @@ class TestEmbeddingSimilarityStrategyMatrix:
         embed_fn.assert_not_called()
 
 
-# ── 13. HybridStructuredSimilarity signal decomposition ─────────────────────────
+# 13. HybridStructuredSimilarity signal decomposition
 
 class TestHybridStructuredSimilarity:
     def _strat(self, w_cat=0.0, w_emb=0.0, w_ent=0.0, w_ev=1.0, embed_fn=None):
@@ -532,7 +532,7 @@ class TestHybridStructuredSimilarity:
         assert _evidence_jaccard(s0, s1) == pytest.approx(1 / 3)
 
 
-# ── 14. Legacy scorer Protocol compliance (context param) ───────────────────────
+# 14. Legacy scorer Protocol compliance (context param)
 
 class TestLegacyScorerProtocolCompliance:
     """
@@ -566,7 +566,7 @@ class TestLegacyScorerProtocolCompliance:
         assert bundle.decision is not None
 
 
-# ── 15. SemanticAgreementScorer theta param ──────────────────────────────────────
+# 15. SemanticAgreementScorer theta param
 
 class TestSemanticScorerTheta:
     def setup_method(self):
@@ -588,14 +588,14 @@ class TestSemanticScorerTheta:
         assert bundle.decision == ChunkDecision.ESCALATE
 
     def test_theta_none_does_not_set_decision(self):
-        # theta=None (default) — scorer must NOT set bundle.decision
+        # theta=None (default) — scorer must not set bundle.decision
         scorer = SemanticAgreementScorer(self.strat, theta=None)
         s = _summary([_finding(claim="alpha beta")])
         bundle = scorer.compute([s, s], context=_ctx(s, s))
         assert bundle.decision is None
 
 
-# ── 16. AgreementChecker.best() bounds check ─────────────────────────────────────
+# 16. AgreementChecker.best() bounds check
 
 class TestCheckerBestBoundsCheck:
     def setup_method(self):

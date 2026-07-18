@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 
 
-# ── A. immutable packaged resources ───────────────────────────────────────────
+# A. immutable packaged resources
 
 def test_env_file_is_not_searched_inside_the_package() -> None:
     """`.env` must be found from the working directory, never relative to __file__."""

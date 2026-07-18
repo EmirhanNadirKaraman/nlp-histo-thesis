@@ -82,7 +82,7 @@ class DoclingLayoutExtractor:
         self._cache_dir = cache_dir
         self._converter = None
         # When > 0, TEXT elements that match CAPTION_PATTERN but are denser
-        # than this threshold (chars / bbox_height in pts) are NOT reclassified.
+        # than this threshold (chars / bbox_height in pts) are not reclassified.
         # Hidden text layers often start with "Figure N." but span a full
         # paragraph squeezed into a ~10pt bbox — catching them here keeps them
         # as TEXT so NodeScorer R3 can reject and mask them.

@@ -130,7 +130,7 @@ def test_partial_failure_emits_per_job_warning(monkeypatch, tmp_path, caplog):
 
 
 def test_completed_jobs_only_emits_no_warnings(monkeypatch, tmp_path, caplog):
-    """Sanity: a fully-successful set of jobs must NOT emit the failure
+    """Sanity: a fully-successful set of jobs must not emit the failure
     warnings — guards against false positives that would normalize noise."""
     _patch_providers(monkeypatch)
     monkeypatch.setattr(

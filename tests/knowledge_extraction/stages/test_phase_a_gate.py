@@ -22,7 +22,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.stages.relate_stage import (
 )
 
 
-# ── infer_direction ────────────────────────────────────────────────────────────
+# infer_direction
 
 @pytest.mark.parametrize("claim,expected", [
     # negative triggers
@@ -46,7 +46,7 @@ def test_infer_direction(claim, expected):
     assert infer_direction(claim) == expected
 
 
-# ── _norm_outcome_expression ───────────────────────────────────────────────────
+# _norm_outcome_expression
 
 @pytest.mark.parametrize("entity,expected", [
     ("CD31 expression",        "cd31"),
@@ -60,7 +60,7 @@ def test_norm_outcome_expression(entity, expected):
     assert _norm_outcome_expression(entity) == expected
 
 
-# ── _should_compare ────────────────────────────────────────────────────────────
+# _should_compare
 
 def _make_rule(
     subject: str,
@@ -138,14 +138,14 @@ def test_should_compare_rejects_relation_type_mismatch():
     assert reason == "relation_type_mismatch"
 
 
-# ── _classify_pair: CONTRADICT prerequisite ───────────────────────────────────
+# _classify_pair: CONTRADICT prerequisite
 
 def _high_scores() -> dict[str, float]:
     return {"entailment": 0.05, "contradiction": 0.95, "neutral": 0.0}
 
 
 def test_classify_pair_no_contradict_both_positive():
-    """Two positive rules must NOT emit CONTRADICT even with high NLI contradiction score."""
+    """Two positive rules must not emit CONTRADICT even with high NLI contradiction score."""
     a = _make_rule("tumour cells", "CD30 expression",
                    predicate_text="CD30 was positive")
     b = _make_rule("tumour cells", "CD30 expression",
@@ -156,7 +156,7 @@ def test_classify_pair_no_contradict_both_positive():
 
 
 def test_classify_pair_no_contradict_both_uncertain():
-    """Two uncertain rules must NOT emit CONTRADICT."""
+    """Two uncertain rules must not emit CONTRADICT."""
     a = _make_rule("tumour cells", "CD30 expression",
                    predicate_text="CD30 index 80%")
     b = _make_rule("tumour cells", "CD30 expression",
@@ -184,7 +184,7 @@ def test_classify_pair_contradict_positive_vs_negative():
     assert label == RelationTypeLabel.CONTRADICT
 
 
-# ── Entity normalization ───────────────────────────────────────────────────────
+# Entity normalization
 
 @pytest.mark.parametrize("surface,expected", [
     ("Cutaneous epithelioid angiomatous nodule", "CEAN"),

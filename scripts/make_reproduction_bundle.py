@@ -14,7 +14,7 @@ Two bundles, deliberately separate:
   ``replay chapter9`` never connects to PostgreSQL.
 * database (~485 MB live) — only for querying the corpus or re-running NER/knowledge.
 
-The PDFs are deliberately NOT bundled: §6 re-acquires them from NLM's AWS dataset using
+The PDFs are deliberately not bundled: §6 re-acquires them from NLM's AWS dataset using
 ``files/target_pmc_ids.txt``, which is in the clone. That saves 5.2 GB of upload and avoids
 redistributing papers whose licences forbid it (322 of 1093 carry no CC licence).
 
@@ -44,7 +44,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Exactly replay.REQUIRED_ARTIFACTS, minus what a clone already carries
 # (scripts/eval/run_summarization_experiments.py and reports/stage6_PR.md are tracked).
-# E14's heldout15 primer + silver are NOT here on purpose: they are committed to git
+# E14's heldout15 primer + silver are not here on purpose: they are committed to git
 # (like source_cases_related15.jsonl), so a clone already carries them — see B-123.
 REPLAY_MEMBERS = (
     "eval/data/embedding_cache_openai.sqlite",

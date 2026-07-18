@@ -11,8 +11,8 @@ per-paper RELATE stage.  Intra-paper pairs are included so the corpus graph is
 complete — a rule's full neighborhood (both within-paper support and cross-paper
 contradictions) is visible in one artifact.
 
-This stage is entirely post-hoc.  It does NOT modify any per-paper output, does
-NOT affect ResolveStage scoring, and does NOT alter per-paper `relations` keys.
+This stage is entirely post-hoc.  It does not modify any per-paper output, does
+Not affect ResolveStage scoring, and does not alter per-paper `relations` keys.
 Per-paper `relations` remain the authoritative input for ResolveStage.
 
 Run-selection policy

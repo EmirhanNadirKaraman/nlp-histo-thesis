@@ -25,7 +25,7 @@ reads ``json/*_media.json`` for emitted crops, infers the DOCLING table-label mo
 from the "docling" name, and reads labels from
 ``eval/annotations/00_docling_offtheshelf/<mode>.json``.
 
-What this script does NOT do
+What this script does not do
 ----------------------------
 It does not assign rubric labels — those are human judgements
 (``eval/annotate.py``). After running this, transfer any exact-match labels from

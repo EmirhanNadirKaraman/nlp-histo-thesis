@@ -43,7 +43,7 @@ from nlp_histo.pipeline.stages.knowledge_extraction.models import (
 from nlp_histo.pipeline.stages.knowledge_extraction.routing.models import GateOrigin, ReasonCode
 
 
-# ── Fixtures ──────────────────────────────────────────────────────────────────
+# Fixtures
 
 
 def _finding(
@@ -100,11 +100,11 @@ class _HighAgreementScorerStub:
         )
 
 
-# ── Test 1: comparable positive vs negative → ESCALATE ────────────────────────
+# Test 1: comparable positive vs negative → ESCALATE
 
 
 def test_b051_comparable_positive_vs_negative_escalates():
-    """High mocked embedding score must NOT override the polarity hard-fail."""
+    """High mocked embedding score must not override the polarity hard-fail."""
     pos = _voter(_finding(direction=DirectionEnum.positive))
     neg = _voter(_finding(direction=DirectionEnum.negative))
     checker = AgreementChecker(_HighAgreementScorerStub(), theta=0.7, reject_theta=0.2)
@@ -116,7 +116,7 @@ def test_b051_comparable_positive_vs_negative_escalates():
     assert bundle.embedding_agreement == pytest.approx(0.95)
 
 
-# ── Test 2: same polarity, high score → KEEP (no regression) ──────────────────
+# Test 2: same polarity, high score → KEEP (no regression)
 
 
 def test_b051_comparable_positive_vs_positive_keeps():
@@ -128,7 +128,7 @@ def test_b051_comparable_positive_vs_positive_keeps():
     assert (bundle.score_details or {}).get("hard_fail_reason") is None
 
 
-# ── Test 3: non-comparable opposite polarity → no hard-fail ───────────────────
+# Test 3: non-comparable opposite polarity → no hard-fail
 
 
 def test_b051_non_comparable_opposite_polarity_no_hard_fail():
@@ -141,7 +141,7 @@ def test_b051_non_comparable_opposite_polarity_no_hard_fail():
     assert (bundle.score_details or {}).get("hard_fail_reason") is None
 
 
-# ── Test 4: unclear ↔ negative → no hard-fail ─────────────────────────────────
+# Test 4: unclear ↔ negative → no hard-fail
 
 
 def test_b051_unclear_vs_negative_no_hard_fail():
@@ -153,7 +153,7 @@ def test_b051_unclear_vs_negative_no_hard_fail():
     assert (bundle.score_details or {}).get("hard_fail_reason") is None
 
 
-# ── Test 5: no_direction ↔ positive → no hard-fail ────────────────────────────
+# Test 5: no_direction ↔ positive → no hard-fail
 
 
 def test_b051_no_direction_vs_positive_no_hard_fail():
@@ -165,7 +165,7 @@ def test_b051_no_direction_vs_positive_no_hard_fail():
     assert (bundle.score_details or {}).get("hard_fail_reason") is None
 
 
-# ── Test 6: absent ↔ positive (intentionally excluded from v1) ────────────────
+# Test 6: absent ↔ positive (intentionally excluded from v1)
 
 
 def test_b051_absent_vs_positive_no_hard_fail():
@@ -181,7 +181,7 @@ def test_b051_absent_vs_positive_no_hard_fail():
     assert (bundle.score_details or {}).get("hard_fail_reason") is None
 
 
-# ── Test 7: partial ↔ negative (intentionally excluded from v1) ───────────────
+# Test 7: partial ↔ negative (intentionally excluded from v1)
 
 
 def test_b051_partial_vs_negative_no_hard_fail():
@@ -196,7 +196,7 @@ def test_b051_partial_vs_negative_no_hard_fail():
     assert (bundle.score_details or {}).get("hard_fail_reason") is None
 
 
-# ── Test 8: partial ↔ positive → same RELATE class → no hard-fail ─────────────
+# Test 8: partial ↔ positive → same RELATE class → no hard-fail
 
 
 def test_b051_partial_vs_positive_no_hard_fail():
@@ -208,7 +208,7 @@ def test_b051_partial_vs_positive_no_hard_fail():
     assert (bundle.score_details or {}).get("hard_fail_reason") is None
 
 
-# ── Test 9: None subject_entity → comparability disqualified ──────────────────
+# Test 9: None subject_entity → comparability disqualified
 
 
 def test_b051_none_subject_no_hard_fail():
@@ -222,7 +222,7 @@ def test_b051_none_subject_no_hard_fail():
     assert bundle.decision == ChunkDecision.KEEP
 
 
-# ── Test 10: trace metadata structure ─────────────────────────────────────────
+# Test 10: trace metadata structure
 
 
 def test_b051_trace_metadata_carries_polarity_conflict():
@@ -242,12 +242,12 @@ def test_b051_trace_metadata_carries_polarity_conflict():
     assert "pairwise_upper" in bundle.score_details
 
 
-# ── Test 11: router path emits POLARITY_CONFLICT only ─────────────────────────
+# Test 11: router path emits POLARITY_CONFLICT only
 
 
 def test_b051_router_path_polarity_conflict_reason_code():
     """`MapOutputRouter._agreement_gate` must translate the AgreementChecker
-    hard-fail signal into a RoutingDecision with ONLY ReasonCode.POLARITY_CONFLICT.
+    hard-fail signal into a RoutingDecision with only ReasonCode.POLARITY_CONFLICT.
 
     Co-emitting INSUFFICIENT_AGREEMENT or ESCALATED_DUE_TO_LOW_AGREEMENT would
     lie about the cause (the score was high; only the structural check failed).
@@ -284,11 +284,11 @@ def test_b051_router_path_polarity_conflict_reason_code():
     assert "low agreement" not in decision.explanation.lower()
 
 
-# ── Tests 12–14: `force_escalate_on_polarity_conflict` flag (promoted 2026-05-26) ─
+# Tests 12–14: `force_escalate_on_polarity_conflict` flag (promoted 2026-05-26)
 #
 # The flag preserves B-051 behaviour at its default (True). Setting False keeps
 # the conflict marker in score_details (so sweep harnesses can count it) but
-# does NOT override the scorer's natural decision. The tests below use the
+# does not override the scorer's natural decision. The tests below use the
 # same `_HighAgreementScorerStub` as the canonical B-051 tests so the scorer's
 # baseline decision is KEEP at the default theta — that's the only way to
 # observe the override having (or not having) an effect: if the scorer itself
@@ -313,7 +313,7 @@ def test_polarity_flag_true_preserves_b051_escalation():
 
 def test_polarity_flag_false_records_marker_but_does_not_override():
     """``force_escalate_on_polarity_conflict=False`` still records the conflict
-    in score_details (sweep harnesses count via this marker) but does NOT
+    in score_details (sweep harnesses count via this marker) but does not
     override the scorer's KEEP decision.
 
     The assertion is **"decision is what the scorer / theta would produce"**,
@@ -333,7 +333,7 @@ def test_polarity_flag_false_records_marker_but_does_not_override():
     # Marker recorded for observability — sweep counter relies on this.
     assert bundle.score_details["hard_fail_reason"] == "polarity_conflict"
     assert bundle.score_details["polarity_conflict_details"]["count"] >= 1
-    # Decision NOT overridden — the scorer's high-confidence KEEP survives.
+    # Decision not overridden — the scorer's high-confidence KEEP survives.
     assert bundle.decision == ChunkDecision.KEEP
     # Embedding agreement preserved verbatim (no scorer state was mutated).
     assert bundle.embedding_agreement == pytest.approx(0.95)

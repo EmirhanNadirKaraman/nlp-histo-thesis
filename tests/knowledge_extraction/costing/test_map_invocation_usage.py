@@ -16,9 +16,7 @@ from unittest.mock import patch
 import pytest
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Unit tests: extract_usage_from_message
-# ─────────────────────────────────────────────────────────────────────────────
 
 def test_extract_usage_metadata_standard_shape():
     """LangChain ≥0.3 standardised AIMessage.usage_metadata field."""
@@ -79,9 +77,7 @@ def test_unwrap_handles_dict_and_bare_schema():
     assert err is None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Smoke test: MapStage._invoke_l3 records non-zero usage from a fake chain
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 @pytest.fixture
