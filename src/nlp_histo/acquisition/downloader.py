@@ -1,14 +1,12 @@
 """Download PMC Open-Access article packages (``.tar.gz``) for a list of PMCIDs.
 
-Previously this module ran its download loop at *module scope*: importing it read
-``target_pmc_ids.txt`` from the working directory, created ``histopathology_papers/``,
-and started hitting the NCBI API. That cannot live in an installed package — an
-import must never perform network I/O. The loop is now :func:`download_papers`, and
-both paths are explicit arguments.
+The download loop is :func:`download_papers` and both paths are explicit
+arguments: importing this module must never read the working directory, create
+an output tree, or perform network I/O.
 
-Network behaviour: same NCBI OA endpoint, same ``tgz`` link selection, same
-``ftp://`` → ``https://`` scheme fix, same 0.5 s politeness delay, same skip-and-continue
-handling for papers outside the OA subset.
+Network behaviour: the NCBI OA endpoint, ``tgz`` link selection, an
+``ftp://`` → ``https://`` scheme fix, a 0.5 s politeness delay, and
+skip-and-continue handling for papers outside the OA subset.
 
 NCBI's OA API currently advertises paths it does not serve. Every legacy FTP tree
 was moved under ``/pub/pmc/deprecated/`` (NCBI readme, updated 2026-04-10) while
@@ -57,7 +55,7 @@ class DownloadReport:
 
     @property
     def ok(self) -> bool:
-        """True when nothing we asked for was denied. Partial failure is NOT ok."""
+        """True when nothing we asked for was denied. Partial failure is not ok."""
         return self.failed == 0
 
     def summary(self) -> str:
@@ -452,7 +450,7 @@ def download_papers(
     ``overwrite=False`` (the default) skips PMCIDs whose tarball already exists, so a
     re-run resumes rather than re-downloading.
 
-    Outcomes are counted in three buckets, and the distinction is the point (B-117):
+    Outcomes are counted in three buckets that must not be conflated (B-117):
 
     * succeeded — a valid archive is on disk;
     * skipped — already present, or the paper is not in the OA subset. Both are

@@ -14,9 +14,9 @@ def load_ner_model():
 
     Routes through `umls_resources.get_nlp()` — the same singleton every other
     stage uses, so this call costs nothing after the first paper in a process.
-    Previously this issued a fresh `spacy.load("en_core_sci_lg")` per call,
-    which under `runner.py`'s default invocation reloaded ~2.6 GB scispaCy +
-    UMLS twice per paper (B-054). The singleton has the `scispacy_linker` pipe
+    Calling `spacy.load("en_core_sci_lg")` directly instead would reload
+    ~2.6 GB of scispaCy + UMLS twice per paper under `runner.py`'s default
+    invocation (B-054). The singleton has the `scispacy_linker` pipe
     attached, but for the fast NER pass `run_ner_on_db` disables it with a
     `nlp.select_pipes(...)` context manager so span extraction stays cheap.
 
@@ -171,10 +171,10 @@ def run_ner_on_db(pmcid: str, min_chars: int = 50, save_to_db: bool = False, for
 
     db = get_db_connection()
 
-    # Cheap skip-check BEFORE loading any model. Previously the loaders fired
-    # first and a paper that already had entities still paid ~75 s for two
-    # scispaCy loads before bailing — concretely visible in the runner log as
-    # "NER done [136.4s]" on a paper that did zero inference (B-054).
+    # Cheap skip-check before loading any model. Loading first would make a
+    # paper that already has entities pay ~75 s for two scispaCy loads before
+    # bailing — visible in the runner log as "NER done [136.4s]" on a paper
+    # that did zero inference (B-054).
     # The model name used to key existing entities matches what the singleton
     # exposes via `nlp.meta["name"]` ("core_sci_lg" for en_core_sci_lg) — the same
     # value `ner merge` / `ner export` must filter on (DEFAULT_MODEL_NAME, B-115).
