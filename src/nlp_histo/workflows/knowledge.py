@@ -149,9 +149,8 @@ def _load_summarization_config(config_path: str | Path | None):
 def _make_embed_fn(embedder_name: str):
     """Build the agreement-scorer embedder from config: 'gemini' | 'openai'.
 
-    Production historically hardcoded GeminiEmbedder; this routes the choice
-    through cfg.agreement.embedder so the map_theta_sweep --embedder winner can
-    be pinned in configs/run.yaml.
+    Routes the choice through cfg.agreement.embedder so the map_theta_sweep
+    --embedder winner can be pinned in configs/run.yaml.
     """
     from nlp_histo.pipeline.stages.knowledge_extraction.agreement.providers import (
         GeminiEmbedder,
@@ -314,9 +313,9 @@ def build_batch_runner(
 
 # Entry point
 
-#: The frozen calibration selection. It is a thesis artifact, NOT application data, so
+#: The frozen calibration selection. It is a thesis artifact, not application data, so
 #: it is not packaged: it lives in the repository and is supplied explicitly. The
-#: default is relative to the CALLER's working directory (i.e. the repository root),
+#: default is relative to the caller's working directory (i.e. the repository root),
 #: and --source-cases overrides it.
 DEFAULT_SOURCE_CASES = Path("eval/data/source_cases_related15.jsonl")
 
@@ -324,7 +323,7 @@ DEFAULT_SOURCE_CASES = Path("eval/data/source_cases_related15.jsonl")
 def _all_pmcids(source: Path | None = None) -> list[str]:
     """Return all unique PMCIDs from the source-cases file, in file order.
 
-    Fails BEFORE any paid API call when the file is absent, naming the path and the
+    Fails before any paid API call when the file is absent, naming the path and the
     option that supplies it.
     """
     import json
@@ -524,7 +523,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.info("UMLS enrichment (post-CANONICALIZE) skipped via --skip-umls-enrichment")
 
     if args.health_check == "yes":
-        # Run BEFORE any LLM call so operators see component-level health
+        # Run before any LLM call so operators see component-level health
         # before paying for a cascade. Default-on for safety; pass
         # `--health-check no` for fast single-paper dev iteration.
         from nlp_histo.pipeline.stages.knowledge_extraction.observability.health_checks import run_health_checks
@@ -972,10 +971,10 @@ def _run_corpus_relate(
     ``runner._sum_cfg.relate`` from the active batch/sync runner). When
     provided, its ``scope_aware_nli`` and ``use_verbatim_for_nli`` knobs
     are forwarded to ``CorpusRelateStage``; without it the stage falls
-    back to its own dataclass defaults. The forwarding closes a previously
-    silent gap where ``configs/run.yaml`` flipped these flags for the
-    within-paper RELATE stage but NOT for the post-batch corpus_relate
-    pass — see the A/B-test trace 2026-05-27.
+    back to its own dataclass defaults. Without the forwarding,
+    ``configs/run.yaml`` would flip these flags for the within-paper RELATE
+    stage but not for the post-batch corpus_relate pass — see the A/B-test
+    trace 2026-05-27.
 
     Writes ``corpus_relations.json`` at ``output_path``. The inspector
     (`scripts/inspect/inspect_pipeline_output.py`) auto-detects this filename in the

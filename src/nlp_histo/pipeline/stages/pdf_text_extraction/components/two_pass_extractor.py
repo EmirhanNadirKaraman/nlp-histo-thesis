@@ -4,7 +4,7 @@ TwoPassTextExtractor
 Orchestrates the full two-pass PDF text-cleanup pipeline.
 
 Pass 1 — extract, score, mask
-──────────────────────────────
+------------------------------
   Step 1. Run DoclingLayoutExtractor on the original PDF.
   Step 2. Open PDF with PyMuPDF; gather word-overlap + pixel-brightness
           evidence for every Docling element.
@@ -17,13 +17,13 @@ Pass 1 — extract, score, mask
           PyMuPDF, writing a masked PDF to disk.
 
 Pass 2 — re-extract, separate
-──────────────────────────────
+------------------------------
   Step 7. Run DoclingLayoutExtractor on the masked PDF.
   Step 8. Separate elements by role: TEXT family / FIGURE / TABLE.
   Step 9. Return TwoPassResult.
 
 Canonical vs. support role
-───────────────────────────
+---------------------------
   Docling is the *canonical* layout layer.  Every LayoutElement in the
   final output comes from Docling — never from fitz.
   PyMuPDF is used only for:
@@ -32,7 +32,7 @@ Canonical vs. support role
   No fitz-derived text nodes are ever merged into Docling's element list.
 
 FIGURE and TABLE separation
-────────────────────────────
+----------------------------
   PICTURE/FIGURE elements are kept as ``figure_elements`` — the inner text
   they contain (axis labels, callouts) is intentionally excluded from body
   text assembly.

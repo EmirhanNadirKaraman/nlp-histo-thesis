@@ -217,7 +217,7 @@ class MaskingConfig:
     # to reproduce the historical behaviour.
     drop_tables_inside_figures: bool = True
 
-    # Experimental: white out PICTURE/FIGURE bboxes BEFORE running Step 2
+    # Experimental: white out PICTURE/FIGURE bboxes before running Step 2
     # table detection so the detector never sees table-grid pixels embedded
     # in figures (printed-table screenshots, spreadsheet images).
     # Independent of ``drop_tables_inside_figures`` — the two can be

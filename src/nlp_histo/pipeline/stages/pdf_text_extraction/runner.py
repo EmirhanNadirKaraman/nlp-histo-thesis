@@ -167,7 +167,7 @@ def _drop_tables_inside_figures(
         # Sum of intersection-with-figures.  Conservative: if any single
         # figure contains ≥threshold of the table, drop.  We don't OR the
         # overlaps across figures — usually a "table inside figure" sits
-        # inside ONE figure entirely.
+        # inside one figure entirely.
         max_frac = 0.0
         for fb in figure_bboxes:
             if fb.page != region.bbox.page:
@@ -276,13 +276,13 @@ class PipelineRunner:
         Seeds `random`, `numpy`, and (when installed) `torch` /
         `torch.cuda` with `cfg.runtime.seed`. Setting `seed=None` opts out.
 
-        NOTE: this does NOT guarantee deterministic output from external
+        This does not guarantee deterministic output from external
         document/layout libraries (Docling, TATR weights, OCR engines,
         scispaCy). Cached stage outputs are content-keyed by
         `cfg.runtime.skip_existing_outputs`, not by seed.
 
-        `PYTHONHASHSEED` is set best-effort; it only fully governs hash
-        randomisation when set BEFORE Python interpreter startup. Future
+        `PYTHONHASHSEED` is set here, but it only fully governs hash
+        randomisation when set before Python interpreter startup. Future
         child processes (none today in the PDF pipeline) inherit it.
         """
         seed = self._cfg.runtime.seed
@@ -305,9 +305,9 @@ class PipelineRunner:
             torch.manual_seed(seed)
             if torch.cuda.is_available():
                 torch.cuda.manual_seed_all(seed)
-            # Intentionally NOT setting torch.use_deterministic_algorithms
-            # or cuDNN deterministic flags — those carry perf and op-coverage
-            # costs and are out of scope for this patch.
+            # Deliberately not setting torch.use_deterministic_algorithms or
+            # the cuDNN deterministic flags: they carry perf and op-coverage
+            # costs the pipeline does not need.
         except ImportError:
             pass
         logger.info(
@@ -549,9 +549,9 @@ class PipelineRunner:
                 logger.info("⚡ %s — skipped (media JSON exists)", pmcid)
                 return True
 
-        # Observability collector — created BEFORE the first fail-prone step
-        # so failed documents still get a stats file.  Best-effort: if init
-        # fails, we proceed without stats rather than break extraction.
+        # Observability collector — created before the first fail-prone step
+        # so failed documents still get a stats file. If init fails,
+        # extraction proceeds without stats.
         stats: Optional[DocStatsCollector] = None
         try:
             stats = DocStatsCollector(
@@ -781,7 +781,7 @@ class PipelineRunner:
         """
         Two-pass Steps 1, 3, 4: ghost-text scoring → header masking → re-extract.
 
-        Table detection does NOT run here — it runs in _process() (Step 2) after
+        Table detection does not run here — it runs in _process() (Step 2) after
         this returns, using pass1_layout as the canonical layout.
 
         Returns (layout, layout_pre_recon, masked_layout, detection=None).
@@ -997,7 +997,7 @@ class PipelineRunner:
             pdfs = pdfs[:max_docs]
         logger.info("Batch: processing %d PDFs in %s", len(pdfs), pdf_dir)
 
-        # Observability manifest — best-effort.
+        # Observability manifest; init failure logs and continues without one.
         manifest: Optional[RunManifestWriter] = None
         try:
             run_id = make_run_id()

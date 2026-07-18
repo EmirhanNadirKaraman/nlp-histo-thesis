@@ -53,16 +53,16 @@ DEFAULT_OUTPUT_SUBPATH = Path("out") / "thesis_results" / "chapter9_offline_repl
 
 # The chapter-9 artifact contract
 #
-# --artifact-root is not a flat bundle of results: it is a REPOSITORY-SHAPED tree of
+# --artifact-root is not a flat bundle of results: it is a repository-shaped tree of
 # frozen artifacts. The replay reads pipeline outputs (out/summaries/…), frozen
 # evaluation data (eval/data/…) and one repository experiment module
 # (scripts/eval/run_summarization_experiments.py) which it loads by path. The source
 # code itself comes from the installed wheel; only the artifacts are supplied here.
 #
 # The whole required set is declared once, below, and validated in a single pass
-# BEFORE any output directory is created and before any analysis runs. Previously only
-# three inputs were checked, so an incomplete root produced a partial run — 4 CSVs
-# instead of 9 — which reads like a result and is not one.
+# before any output directory is created and before any analysis runs. Validating
+# the whole set is the point: an incomplete root otherwise yields a partial run —
+# 4 CSVs instead of 9 — which reads like a result and is not one.
 
 
 @dataclass(frozen=True)
@@ -162,8 +162,8 @@ REQUIRED_ARTIFACTS: tuple[RequiredArtifact, ...] = (
     ),
 )
 
-# Deliberately NOT required — their analyses degrade to status="missing" and simply emit
-# no CSV, which is the historical behaviour:
+# Deliberately not required — their analyses degrade to status="missing" and emit
+# no CSV:
 #   eval/reports/exp_{1,4}_*_scorer_full_*.csv → 04_theta_heatmap
 OPTIONAL_INPUTS = (Path("eval") / "reports",)
 
@@ -1156,9 +1156,9 @@ def analyse_bootstrap_ci() -> AnalysisResult:
         # Cache-only: no API key, no client. The matcher consults the cache first and
         # only calls the embedder for misses (matcher.embed_texts), so with the validated
         # cache this is never invoked — and if it ever were, it raises instead of billing.
-        # This previously demanded OPENAI_API_KEY and constructed a real OpenAIEmbedder
-        # that a warm cache never called, so a clean clone without .env produced 8 of 9
-        # tables and an error about a key it did not need (B-109).
+        # Demanding OPENAI_API_KEY here would construct a real OpenAIEmbedder that a
+        # warm cache never calls, so a clean clone without .env would produce 8 of 9
+        # tables and an error about a key it does not need (B-109).
         embedder = NoLiveEmbedding("openai", "matcher")
     except Exception as exc:
         return AnalysisResult(
