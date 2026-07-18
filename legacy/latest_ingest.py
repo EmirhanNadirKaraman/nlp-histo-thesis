@@ -913,7 +913,7 @@ class CompletePipelineProcessor:
             db_text_elements = self.prepare_db_elements(stitched_by_path, db_elements_raw)
 
             # Step 7: Extract table/figure captions from ORIGINAL PDF
-            # Only extract from TEXT/CAPTION elements (ignore TABLE/PICTURE elements)
+            # ONLY extract from TEXT/CAPTION elements (ignore TABLE/PICTURE elements)
             logger.info("Extracting table/figure captions from original PDF...")
             table_data = []
             figure_data = []

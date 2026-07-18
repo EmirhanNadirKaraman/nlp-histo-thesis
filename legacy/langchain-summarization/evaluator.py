@@ -49,7 +49,7 @@ class CitationResult:
 
     @property
     def is_valid(self) -> bool:
-        # Strict medical threshold: Numbers must match, Concepts must be 70%+
+        # Strict medical threshold: Numbers MUST match, Concepts must be 70%+
         return self.exists and self.numeric_ok and self.concept_score >= 0.7
 
 @dataclass
@@ -79,7 +79,7 @@ def get_clinical_concepts(text: str, threshold: float = 0.65) -> List[List[str]]
     doc = nlp(text)
     concepts = []
     for ent in doc.ents:
-        # Only count entities that are not negated in the text
+        # Only count entities that are NOT negated in the text
         if ent._.kb_ents and not ent._.negex:
             # Get all candidates above threshold
             candidates = [cui for cui, score in ent._.kb_ents if score >= threshold]

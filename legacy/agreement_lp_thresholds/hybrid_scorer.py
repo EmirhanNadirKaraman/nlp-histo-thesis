@@ -16,7 +16,7 @@ class HybridScorer:
     Computes both embedding soft-alignment and entity Jaccard overlap.
 
     Populates ScoreBundle.embedding_agreement (from EmbeddingScorer) and
-    ScoreBundle.entity_overlap (from NERScorer).  Does not set a decision —
+    ScoreBundle.entity_overlap (from NERScorer).  Does NOT set a decision —
     the caller (e.g. CascadedCompositeScorer) applies threshold logic.
 
     Parameters
