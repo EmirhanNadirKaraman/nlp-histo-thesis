@@ -115,17 +115,22 @@ extraction. **§9 costs money.** You do not need the PDFs shipped to you: §6 fe
 
 | | |
 |---|---|
-| **File** | `nlp-histo-replay-artifacts-ec11eec.tar.gz` |
+| **File** | `nlp-histo-replay-artifacts-181545a.tar.gz` |
 | **Size** | 1,244,628,904 bytes (1.2 GB) |
-| **Source commit** | `ec11eec` |
-| **SHA-256** | `cded4299ac1a47cf8b857f5796731a27d3b66eac234a1acf306771e73d3e45d3` |
+| **Source commit** | `181545a` |
+| **SHA-256** | `d71e53637306b625ccca0c3dd2fb92e87d6c02abbcdf478acadca180b4f418ef` |
 
 * **Primary — LRZ Sync+Share:** <https://syncandshare.lrz.de/getlink/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles>
 * **Mirror — Google Drive:** <https://drive.google.com/drive/folders/1uo-iGOb3df11LqjQRbCwoyRsiVDMJkpY?usp=sharing>
 
-**Both locations hold the identical archive** — verified 2026-07-16 by downloading from
-each and comparing SHA-256 against the build machine: all three match
-(`cded4299…`), as do the `.sha256` and `.manifest.json` sidecars.
+**Verify whichever copy you download.** The archive ships a `.sha256` sidecar, and
+`shasum -a 256 -c` against it is the check that matters — it catches a truncated or
+tampered download regardless of which mirror served it.
+
+The 2026-07-16 archive (`cded4299…`) was verified byte-identical across both locations by
+downloading from each and comparing against the build machine. The current archive
+(`d71e5363…`, source commit `181545a`) replaced it on 2026-07-18 and that cross-mirror
+comparison has **not** been repeated, so treat the two locations as independent until it is.
 
 **No account is needed.** Both are read-only links that serve anonymously — you do not
 sign in, and you cannot write through either. Note what that means: **anyone holding a URL
@@ -145,18 +150,18 @@ unzip lrz-bundle.zip
 # Google Drive mirror: a 1.2 GB file triggers Drive's virus-scan interstitial, so a plain
 # curl silently saves an HTML page named like the archive. Use the confirm parameter:
 FILE_ID=1SOWdAhhy0ZFqwlMjG3X3EFvgNQyKhIxW
-curl -L -o nlp-histo-replay-artifacts-ec11eec.tar.gz \
+curl -L -o nlp-histo-replay-artifacts-181545a.tar.gz \
   "https://drive.usercontent.google.com/download?id=${FILE_ID}&export=download&confirm=t"
 # or just download it from the browser link above.
 
 # ── validate BEFORE trusting it ─────────────────────────────────────────────
-shasum -a 256 -c nlp-histo-replay-artifacts-ec11eec.tar.gz.sha256
-#   → nlp-histo-replay-artifacts-ec11eec.tar.gz: OK
-file nlp-histo-replay-artifacts-ec11eec.tar.gz    # must say "gzip compressed data",
+shasum -a 256 -c nlp-histo-replay-artifacts-181545a.tar.gz.sha256
+#   → nlp-histo-replay-artifacts-181545a.tar.gz: OK
+file nlp-histo-replay-artifacts-181545a.tar.gz    # must say "gzip compressed data",
                                                   # not "HTML document" (see Drive, above)
 
 # ── extract over a clean clone so the paths line up ──────────────────────────
-tar -xzf nlp-histo-replay-artifacts-ec11eec.tar.gz -C /path/to/nlp-histo
+tar -xzf nlp-histo-replay-artifacts-181545a.tar.gz -C /path/to/nlp-histo
 
 # ── artifact preflight (fails loudly and itemised if anything is missing) ────
 cd /path/to/nlp-histo

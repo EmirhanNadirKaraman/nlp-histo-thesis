@@ -199,13 +199,13 @@ def build_parser() -> argparse.ArgumentParser:
     # replay ------------------------------------------------------------------
     replay = sub.add_parser("replay", help="Reproduce thesis results from frozen artifacts.")
     rep_sub = replay.add_subparsers(dest="replay_command", metavar="<subcommand>")
-    # `chapter9` is a deprecated alias kept for one reason: the published 1.2 GB
-    # reproduction bundle (REPRODUCE.md Step 3) embeds the literal command
-    # `nlp-histo replay chapter9 --artifact-root .` in its manifest.json, and
-    # re-cutting/re-uploading that archive to fix one string is not worth it.
+    # `chapter9` is a deprecated alias. The archive published since 2026-07-18
+    # names `replay results`, so the alias no longer serves the current download;
+    # it stays for anyone still holding the earlier ec11eec bundle, whose
+    # manifest.json embeds `nlp-histo replay chapter9 --artifact-root .`.
     # The name is stale — the thesis has six chapters and this replay feeds
-    # chapter 4 (Results). Do not document the alias; it exists to keep the
-    # already-shipped bundle's own instructions working.
+    # chapter 4 (Results). Do not document the alias. It can be removed once the
+    # old archive is no longer in circulation.
     rep_sub.add_parser(
         "results",
         aliases=["chapter9"],

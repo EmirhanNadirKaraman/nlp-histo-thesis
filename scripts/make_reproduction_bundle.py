@@ -208,11 +208,10 @@ def build_replay_bundle(out_dir: Path, commit: str) -> tuple[Path, Path]:
 
     # 3. Manifest: machine-readable, per-file path + size + sha256.
     manifest = {
-        # The bundle currently hosted (pinned to ec11eec, REPRODUCE.md Step 3) was cut
-        # before the `chapter9` → `results` rename and its MANIFEST.json still names the
-        # old id and command. That archive keeps working: `replay chapter9` survives as
-        # a CLI alias precisely so the shipped instructions resolve. These values apply
-        # to the next bundle cut, not the one on LRZ/Drive today.
+        # These values match the archive hosted on LRZ/Drive since 2026-07-18
+        # (source commit 181545a), whose MANIFEST.json names `replay results`.
+        # The earlier ec11eec archive it replaced embedded `replay chapter9`; the
+        # CLI alias stays for anyone still holding that download.
         "bundle": "results-replay-artifacts",
         "source_commit": commit,
         "artifact_count": len(staged),

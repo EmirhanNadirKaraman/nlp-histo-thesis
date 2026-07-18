@@ -111,8 +111,8 @@ and their `.sha256` sidecars):
 
 | File | Size | What it is |
 |---|---|---|
-| `nlp-histo-replay-artifacts-ec11eec.tar.gz` | 1.2 GB | Frozen outputs of the paid LLM pipeline + the embedding caches |
-| `nlp-histo-replay-artifacts-ec11eec.tar.gz.sha256` | tiny | Checksum for the archive |
+| `nlp-histo-replay-artifacts-181545a.tar.gz` | 1.2 GB | Frozen outputs of the paid LLM pipeline + the embedding caches |
+| `nlp-histo-replay-artifacts-181545a.tar.gz.sha256` | tiny | Checksum for the archive |
 | `nlp-histo-corpus.sql.gz` | 49 MB | The PostgreSQL corpus: 977 papers, 35,896 text elements, 1.79M entities |
 | `nlp-histo-corpus.sql.gz.sha256` | tiny | Checksum for the corpus dump |
 
@@ -141,7 +141,7 @@ interstitial — a plain `curl` silently saves that HTML warning page under the 
 name. If you use Drive from the command line, pass the confirm token:
 
 ```bash
-curl -L -o nlp-histo-replay-artifacts-ec11eec.tar.gz \
+curl -L -o nlp-histo-replay-artifacts-181545a.tar.gz \
   "https://drive.usercontent.google.com/download?id=1SOWdAhhy0ZFqwlMjG3X3EFvgNQyKhIxW&export=download&confirm=t"
 ```
 
@@ -150,7 +150,7 @@ Either way, Step 5 verifies what you got before anything trusts it.
 If a line like this appears:
 
 ```bash
-replace nlp-histo-replay-artifacts-ec11eec.tar.gz.sha256? [y]es, [n]o, [A]ll, [N]one, [r]ename:
+replace nlp-histo-replay-artifacts-181545a.tar.gz.sha256? [y]es, [n]o, [A]ll, [N]one, [r]ename:
 ```
 
 Just type A.
@@ -188,14 +188,14 @@ later and much more confusingly.
 
 ```bash
 cd ~/nlp-histo-bundles
-shasum -a 256 -c nlp-histo-replay-artifacts-ec11eec.tar.gz.sha256
+shasum -a 256 -c nlp-histo-replay-artifacts-181545a.tar.gz.sha256
 shasum -a 256 -c nlp-histo-corpus.sql.gz.sha256
 ```
 
 Both must print `OK`.
 
 ```bash
-file nlp-histo-replay-artifacts-ec11eec.tar.gz
+file nlp-histo-replay-artifacts-181545a.tar.gz
 ```
 
 Must say **gzip compressed data**. If it says *HTML document*, your download was
@@ -204,7 +204,7 @@ tools save that page instead of the file. Re-download through a browser, or use 
 `confirm=t` command in the download block above (Track A introduction).
 
 > The expected checksums, for reference:
-> `cded4299ac1a47cf8b857f5796731a27d3b66eac234a1acf306771e73d3e45d3` (archive)
+> `d71e53637306b625ccca0c3dd2fb92e87d6c02abbcdf478acadca180b4f418ef` (archive)
 > `af80657dc8b512668b2fc1a120610290816797db18d1eb384140f2688b3a4f59` (corpus dump)
 
 ## Step 6 — Unpack the artifacts into the repository
@@ -214,7 +214,7 @@ Step 5 left you in `~/nlp-histo-bundles`. Go back to the `nlp-histo` clone from 
 
 ```bash
 cd /path/to/nlp-histo        # the clone from Step 1
-tar -xzf ~/nlp-histo-bundles/nlp-histo-replay-artifacts-ec11eec.tar.gz -C .
+tar -xzf ~/nlp-histo-bundles/nlp-histo-replay-artifacts-181545a.tar.gz -C .
 ```
 
 The archive carries its own directory structure (`eval/data/…`, `out/summaries/…`), so it
