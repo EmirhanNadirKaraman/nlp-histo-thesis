@@ -98,12 +98,20 @@ from nlp_histo.evaluation.split import filter_by_split
 
 # Paths
 
-PRIMER_DIR   = Path("eval/data/map_primer")
+# Repository-owned frozen inputs are anchored to REPO_ROOT, like the embedding
+# caches above: PRIMER_PATH / CACHE_PATH are default argument values on eight
+# functions and bind at import time, so a bare relative path made every default
+# depend on the caller's cwd and failed with a missing-cache error rather than a
+# path error (B-102).
+PRIMER_DIR   = REPO_ROOT / "eval" / "data" / "map_primer"
 PRIMER_PATH  = PRIMER_DIR / "primer.json"
 CACHE_PATH   = PRIMER_DIR / "voter_cache.json"
+SOURCE_PATH  = REPO_ROOT / "eval" / "data" / "source_cases_related15.jsonl"
+SILVER_PATH  = REPO_ROOT / "eval" / "data" / "silver_findings_related15.jsonl"
+# Generated output stays caller-relative: --reports defaults to this string, and
+# writing results next to wherever the user ran the command is the intended
+# behaviour. Deliberately not anchored (B-102).
 REPORTS_DIR  = Path("eval/reports")
-SOURCE_PATH  = Path("eval/data/source_cases_related15.jsonl")
-SILVER_PATH  = Path("eval/data/silver_findings_related15.jsonl")
 
 # Voter configs (production setup)
 
