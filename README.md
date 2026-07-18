@@ -125,8 +125,9 @@ nlp-histo/
 │
 ├── configs/                            # user-editable run config: run.yaml, paper_selection/*.yaml
 ├── scripts/                            # developer utilities, inspectors, eval helpers (not a package)
-├── tests/                              # pytest suite (97 test files, 1697 tests; knowledge-extraction-heavy)
-├── docs/                               # project docs — REPRODUCE, HOW_TO_RUN, STRUCTURE, BUGS, THESIS, EXPERIMENTS
+├── tests/                              # pytest suite (99 test files, 1720 tests; knowledge-extraction-heavy)
+├── BUGS.md REPRODUCE.md HOW_TO_RUN.md STRUCTURE.md   # the guides a reader receives
+├── docs/                               # THESIS.md (decisions + TODOs); the LaTeX thesis under histo_thesis/
 ├── reports/                            # frozen document-extraction rubric reports (stage6/stage7)
 │
 ├── legacy/                             # Quarantined superseded code (monolithic ingest, research parsers)
@@ -248,15 +249,17 @@ combined (`--check-only` is strictly read-only).
 ### 3. Run Data Pipeline
 
 ```bash
-# Download papers (requires target_pmc_ids.txt)
-cd file-selector && python file_downloader.py
+# Download papers (reads files/target_pmc_ids.txt; defaults to --source aws)
+nlp-histo acquire download --pmcid-file files/target_pmc_ids.txt --output-dir files/corpus
 
-# Extract and organize
-python tarball_extractor.py
-python pdf_organizer.py
+# Organize into the PDF/XML trees the pipeline expects.
+# The AWS route writes files/corpus/<PMCID>/ directly, so `unpack` is only
+# needed on the legacy --source ftp route, which ships tarballs.
+nlp-histo acquire organize --input-dir files/corpus \
+    --pdf-dir files/organized_pdfs --xml-dir files/organized_xmls
 
 # Process and ingest to database (production pipeline; see HOW_TO_RUN.md §2 for flags)
-cd .. && nlp-histo ingest
+nlp-histo ingest --pdf-dir files/organized_pdfs
 ```
 
 ### 4. (Historical) standalone NER utilities — gen-1
