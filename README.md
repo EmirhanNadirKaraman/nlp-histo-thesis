@@ -86,7 +86,7 @@ Citation format: `[S1|PMC123456|789]` where:
 
 ## Project Structure
 
-> The detailed architectural map lives in `docs/STRUCTURE.md`. This tree is the
+> The detailed architectural map lives in `STRUCTURE.md`. This tree is the
 > orientation summary.
 
 ```
@@ -169,10 +169,10 @@ nlp-histo replay results --artifact-root .                      # offline, free
 The commands work from **any** directory — the package no longer needs the repository
 as its working directory in order to import.
 
-**Reproducing the thesis from scratch:** [`docs/REPRODUCE.md`](REPRODUCE.md) — one
+**Reproducing the thesis from scratch:** [`REPRODUCE.md`](REPRODUCE.md) — one
 linear sequence, read top to bottom, no prior knowledge of the project assumed. Full command
-reference: [`docs/HOW_TO_RUN.md`](HOW_TO_RUN.md); layout and the ships/doesn't-ship
-boundary: [`docs/STRUCTURE.md`](STRUCTURE.md).
+reference: [`HOW_TO_RUN.md`](HOW_TO_RUN.md); layout and the ships/doesn't-ship
+boundary: [`STRUCTURE.md`](STRUCTURE.md).
 
 `eval/` (the thesis experiments and frozen artifacts) and `scripts/` are
 **repository-only** — they are not installed and never enter the wheel. They import
@@ -304,7 +304,7 @@ cd ..
 
 The production summariser is `src/nlp_histo/pipeline/stages/knowledge_extraction/`,
 driven via `nlp-histo knowledge` (sync or async batch). See
-[`docs/HOW_TO_RUN.md`](HOW_TO_RUN.md) §9 for the full recipe.
+[`HOW_TO_RUN.md`](HOW_TO_RUN.md) §9 for the full recipe.
 
 Which direct-API keys `.env` needs **depends on the profile** — `real`/`real_5` use all
 three (`OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`), `cheap` needs only
@@ -458,7 +458,7 @@ already exist, and it does **not** currently reproduce the ORM schema exactly. T
 
 ### Named Entity Recognition
 - **UMLS Linking**: Maps extracted entities to UMLS concepts (CUI)
-- **Persistent Cache**: on-disk entity-linking cache (`~/.cache/nlp-histo/entity_linking_cache.json`, ~30 MB; see docs/HOW_TO_RUN.md §8 to reuse the old one) avoids redundant UMLS lookups
+- **Persistent Cache**: on-disk entity-linking cache (`~/.cache/nlp-histo/entity_linking_cache.json`, ~30 MB; see HOW_TO_RUN.md §8 to reuse the old one) avoids redundant UMLS lookups
 - **Semantic Types**: Filters entities by UMLS semantic types (diseases, chemicals, etc.)
 - **Token Counting (historical)**: `legacy/langchain-summarization/count_tokens.py` estimates costs for the archived LangChain map-reduce-rules prototype, not the current pipeline
 

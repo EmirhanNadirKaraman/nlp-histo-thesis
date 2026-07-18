@@ -20,9 +20,9 @@ both against the same database.
 **Nothing costs money except the final step of Track B, which is clearly marked.**
 
 **This file is self-contained** — every command and value you need to complete either track
-is here; you do not need to open another document to finish. `docs/HOW_TO_RUN.md` is the
+is here; you do not need to open another document to finish. `HOW_TO_RUN.md` is the
 deeper reference (every flag, every option, the per-command verification history) for when
-you want more than the path, and `docs/BUGS.md` records known defects with their reasoning.
+you want more than the path, and `BUGS.md` records known defects with their reasoning.
 If this file and `HOW_TO_RUN.md` ever disagree on a fact, `HOW_TO_RUN.md` is authoritative
 and this file has a bug worth reporting.
 
@@ -57,7 +57,7 @@ without it and you may land on a branch that predates the current layout — no
 Check you got the right thing:
 
 ```bash
-ls src/nlp_histo/cli/main.py docs/REPRODUCE.md    # both must exist
+ls src/nlp_histo/cli/main.py REPRODUCE.md    # both must exist
 ```
 
 Everything from here runs **from this directory**. If a command misbehaves, the first
@@ -761,7 +761,7 @@ extraction was truncated: re-verify with Step 5.
 **Out of memory** — you are running two heavy commands at once. `ingest`, `ner`, `replay`
 and `pytest` each load scispaCy plus the UMLS knowledge base. Run them one at a time.
 
-**Anything else** — `docs/HOW_TO_RUN.md` documents every command in detail, and
-`docs/BUGS.md` records the known defects with their reasoning. If a command in *this* file
+**Anything else** — `HOW_TO_RUN.md` documents every command in detail, and
+`BUGS.md` records the known defects with their reasoning. If a command in *this* file
 does not behave as described, that is a bug in this file: please report the exact command
 and its output.

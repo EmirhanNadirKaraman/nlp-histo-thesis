@@ -1,6 +1,6 @@
 # How to run
 
-> **Never run this project before?** Read **`docs/REPRODUCE.md`** instead. It is the same
+> **Never run this project before?** Read **`REPRODUCE.md`** instead. It is the same
 > material as one linear sequence — clone, install, restore, replay — written to be followed
 > top to bottom without jumping between sections. Come back here when you want the detail on
 > a specific command: this file is the reference, and it is authoritative if the two ever
@@ -54,7 +54,7 @@ partial result.
 A note on the tone below: sections cite bug IDs like `B-112` and say when a command was
 last verified. That is provenance for the maintainer — you can ignore it. If a command
 surprises you, the citation tells you where the reasoning is written down
-(`docs/BUGS.md`).
+(`BUGS.md`).
 
 The full audit — what was executed, what was only inspected — is in the
 **appendix at the end**.
