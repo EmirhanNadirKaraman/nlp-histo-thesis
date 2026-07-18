@@ -112,20 +112,16 @@ detail section in [`BUGS.md`](BUGS.md) if it closes a bug.
   byte-identical on 2026-07-16. Cross-source identity is already solved without it
   (B-119), so this buys tidiness, not correctness.
 
-- [ ] **§6 acquisition is blocked upstream — find where NCBI's OA packages moved.**
-  Measured 2026-07-16: **0/5** stratified PMCIDs (2010→2025) return an archive; all 404
-  with `text/html`, and one FTP probe of the *original* advertised URL answers `550 … No
-  such file or directory`. Both protocols fail identically, so `downloader.py:107`'s
-  `ftp://`→`https://` rewrite is **exonerated** — the paths match NCBI's own committed
-  index (`files/oa_file_list.csv`) byte-for-byte, and NCBI simply does not serve what its
-  API advertises. **Deliberately not "fixed"**: guessing a replacement URL would be
-  speculation dressed as a fix. Someone must establish the current layout (list
-  `/pub/pmc/` on the FTP server, or read current NCBI OA documentation) and then update
-  `downloader.py`. Until then `acquire download` fails loudly and honestly ([[B-117]]),
-  which is correct for a dependency that has moved. **Impact is limited to a from-scratch
-  corpus rebuild** — the existing 1132-PDF / 977-paper corpus is on disk and every
-  downstream command is verified against it. See [`BUGS.md`](BUGS.md)
-  *"Topic — NCBI OA packages are unreachable"*.
+- [x] **§6 acquisition — resolved 2026-07-16.** NCBI relocated its OA packages under
+  `/pub/pmc/deprecated/` while `oa.fcgi` kept advertising the pre-move paths, so
+  `acquire download` returned 0/5 archives. Closed by three commits: `27ed0f8` follows
+  the relocated tree (advertised URL first, relocated second, so it self-heals if NCBI
+  repairs the API), `489e42e` makes NLM's AWS Open-Access dataset the default source,
+  and `163cf91` keeps both routes on one document ID. **AWS is now the supported
+  default** (`--source aws`); FTP is fallback-only and its files are **deleted in
+  August 2026**, after which that route fails loudly ([[B-117]]). Full evidence in
+  [`BUGS.md`](BUGS.md) B-118 and B-119; the commands are in
+  [`HOW_TO_RUN.md`](HOW_TO_RUN.md) §6.
 
 - [ ] **B-114 — decide the fate of the never-populated `documents` bibliographic columns.**
   `title`, `journal`, `publication_year` are 0/977 across the corpus and on a fresh
@@ -419,3 +415,4 @@ Permanent design calls — keep terse, link to the discussion in the detail sect
 | 2026-07-14 | **E13's `scope_aware` arm is reported as a format check, not as evidence about scope-awareness — corrected in prose, not by re-running.** The arm feeds the synthetic set's *pair-level* `disease_or_entity` to both claims, so the prefix is identical on both sides and the mechanism is disabled by construction. Rather than regenerate the dataset ~10 h before submission (new numbers ⇒ new table, new registry rows, and the risk of a negative result discovered mid-read), §4.5/§5.6 were reworded: the arm establishes that the bracketed prefix does **not degrade** the classifier (0.927 → 0.923 is dilution), and scope-awareness is **untested rather than disconfirmed**. No numbers changed; the §4.5 table stands. §3.4.7 and §3.2.6 were also stripped of two promises the thesis never delivered (per-mode relation counts, cross-mode label stability). Follow-ups (minimal-pair regeneration; exhaustive gate-passing-pair audit) recorded in ##TODOs. | [B-103](BUGS.md#bug-103--e13-scope_aware-arm-cannot-measure-scope-awareness) |
 | 2026-07-13 | **The SQLAlchemy ORM is the sole supported way to initialise a database; Alembic manages incremental change only.** New databases are built with `createdb -U <admin-role> -O <db-user> <db>` + `python -m database.init_db` (create → verify; `--check-only`, `--smoke`). `alembic upgrade head` **cannot** build an empty schema, and `alembic stamp head` is **unsafe** (no ORM/head parity). Ownership via `-O <db-user>` is required: the app role needs no `CREATEDB`, but must own the DB (or hold schema-creation rights) or table creation fails on PG15+. Verified end-to-end in a disposable clean-room DB (PG 14.8). Historical-database migration work is **deferred**, not a reproduction blocker. | [B-097](BUGS.md#bug-97--semantic_types-column-type-diverges-between-orm-and-alembic), [B-098](BUGS.md#bug-98--alembic-head-does-not-reproduce-the-orm-schema-stamping-is-unsafe), [B-099](BUGS.md#bug-99--fresh-database-setup-omitted-the-ownership-requirement) |
 | 2026-07-17 | **`docs/` is the single canonical documentation tree; the gitignored `docs/readmes/` copies are retired.** `BUGS.md` and `THESIS.md` moved to `docs/` alongside the already-tracked `HOW_TO_RUN.md` and `STRUCTURE.md`; the pre-packaging `docs/readmes/HOW_TO_RUN.md` and `docs/readmes/other_readmes/STRUCTURE.md` were deleted. | The two trees had silently diverged and the guidance contradicted itself — `.claude/CLAUDE.md` named `docs/readmes/` canonical while its own migration banner named `docs/`. The `docs/readmes/` copies were provably pre-migration (zero mentions of `src/nlp_histo` or the `nlp-histo` CLI, against 50 in the tracked twin), so the four load-bearing docs were unreachable for anyone cloning the repo. Deleting the legacy `HOW_TO_RUN.md` cost the only surviving copy of the evidence quoted in [Bug 105](BUGS.md#bug-105--neither-documented-knowledge-command-could-run) — that quote is preserved inline there. | [`STRUCTURE.md`](STRUCTURE.md), [Bug 105](BUGS.md#bug-105--neither-documented-knowledge-command-could-run) |
+| 2026-07-16 | **Acquisition default source is NLM's AWS Open-Access dataset; the legacy NCBI FTP tarball route is retained as an opt-in fallback.** | NCBI relocated its OA packages under `/pub/pmc/deprecated/` and states those files are deleted in August 2026, while `oa.fcgi` still advertises the pre-move paths. AWS serves the same corpus with no announced retirement date, needs no `unpack` step, and is free without login. Keeping FTP behind `--source ftp` lets a corpus started that way be resumed until the deletion. | [`BUGS.md`](BUGS.md) B-118 (relocation + expiry) and B-119 (cross-source document identity); [`HOW_TO_RUN.md`](HOW_TO_RUN.md) §6 |
