@@ -821,7 +821,7 @@ def _escalation_stats_sync(pmcid: str, token_usage: dict, runner) -> dict:
 
     # Records-first: read directly from MapStage. Callback-derived
     # token_usage is kept only as a fallback so older runners that don't
-    # populate records still produce *something*.
+    # populate records still produce something.
     records = []
     try:
         records = runner.last_map_invocation_usage_records
@@ -1144,7 +1144,7 @@ def _run_all_batch(
     _save_escalation_report(escalation_stats, Path("out/summaries/reports"))
 
     # Post-batch cross-paper RelateStage over the freshly-finalised JSONs.
-    # Runs *after* every paper has reached finalize() so the source dir holds
+    # Runs after every paper has reached finalize() so the source dir holds
     # the full set. Replay-only (local NLI), zero API calls. Forwards the
     # active relate config so the corpus_relate NLI input matches the
     # within-paper one (scope_aware_nli / use_verbatim_for_nli).

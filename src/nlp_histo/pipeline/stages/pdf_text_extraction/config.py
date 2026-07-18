@@ -192,7 +192,7 @@ class MaskingConfig:
       * `drop_tables_inside_figures` — post-filter that drops table-detector
         regions whose bbox is ≥80% inside any FIGURE/PICTURE element.
       * `mask_figures_before_table_detection` — pre-mask helper that paints
-        figure bboxes white *before* the detector runs, so the pixel-based
+        figure bboxes white before the detector runs, so the pixel-based
         detectors (TATR / Hybrid) never see table-grid pixels embedded in
         figures.  Independent of `drop_tables_inside_figures`; the two
         knobs can be combined.
@@ -213,7 +213,7 @@ class MaskingConfig:
     # Flipped from False → True on 2026-05-18 after empirical observation
     # of table-in-figure FPs during labelling.  Pre-flip sweeps live in
     # out/sweeps/ (baseline, baseline_evalcfg, …) and represent the
-    # *disabled* state; re-run them with --no-drop-tables-inside-figures
+    # disabled state; re-run them with --no-drop-tables-inside-figures
     # to reproduce the historical behaviour.
     drop_tables_inside_figures: bool = True
 

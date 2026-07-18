@@ -24,7 +24,7 @@ DEFAULT_MAX_TOKENS: int = 16384
 """Default max_tokens for all voter / escalation LLM calls in the MAP stage."""
 
 CONFIG_LAYOUT_VERSION: int = 2
-"""Schema version for the KnowledgeExtractionConfig dataclass *layout*.
+"""Schema version for the KnowledgeExtractionConfig dataclass layout.
 
 Bumped when fields move between sub-dataclasses (vs. value changes, which are
 captured by the per-field defaults + the pipeline_config_hash payload). Stamped
@@ -109,7 +109,7 @@ class RoutingConfig:
     low-evidence, escalating to the next cascade level (L1→L2, L2→L3). Mirror
     of ``router_single_voter_policy`` for the legacy path; the two are
     independent. Note the cause differs: the router's N=1 case follows
-    schema/provenance gating (the survivor is *vetted*); the legacy N=1 case
+    schema/provenance gating (the survivor is vetted); the legacy N=1 case
     follows API survival (the survivor was not compared to anything). Default
     ``"keep"`` is the silent pre-existing behaviour in ``AgreementChecker``.
     Sweepable for the experiment: does the legacy path's silent ``"keep"``
@@ -322,7 +322,7 @@ class AgreementConfig:
       ``configs/run.yaml`` 2026-05-26).
     * ``"hybrid"`` — ``HybridStructuredSimilarity`` (category + embedding +
       entity + evidence blend; defaults `0.25 / 0.40 / 0.25 / 0.10` baked into
-      the constructor — *not* sweepable from YAML until ``AgreementConfig.hybrid``
+      the constructor — not sweepable from YAML until ``AgreementConfig.hybrid``
       is promoted in a follow-up diff).
 
     The MAP-stage Stage 1 sweep (``run_summarization_sweeps --stage map_scorer``)

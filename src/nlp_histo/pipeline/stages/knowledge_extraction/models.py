@@ -110,7 +110,7 @@ class MapRunMetadata(BaseModel):
     ``custom``); ``cascade_signature`` is the deterministic content hash that
     actually drives cache invalidation.
 
-    ``provider`` and ``model`` identify the producer of the *stored* result —
+    ``provider`` and ``model`` identify the producer of the stored result —
     in the cascade this is the voter or escalation model whose output was
     selected, not the cascade as a whole.
 
@@ -370,7 +370,7 @@ class Finding(BaseModel):
     # `finding_id` property.
     _finding_id: str | None = PrivateAttr(default=None)
 
-    # Raw LLM-emitted values, captured *before* any enum coercion or alias
+    # Raw LLM-emitted values, captured before any enum coercion or alias
     # repair. PrivateAttrs so they never appear in the OpenAI strict schema.
     # Populated by the wrap-validator below; persistence reads them via the
     # raw_* properties and writes them to sum_map_findings.raw_*.
@@ -761,7 +761,7 @@ class CanonicalRule(BaseModel):
     relation_type:       RelationTypeEnum
     direction:           DirectionEnum | None  # the single direction this rule represents
     predicate_text:      str                   # highest mean_grounding_score predicate in the bin
-    # Group-level signal (B-049): True iff the *parent canonicalization group*
+    # Group-level signal (B-049): True iff the parent canonicalization group
     # produced ≥2 polarity-bearing direction bins. Every per-direction rule
     # from a conflicted group carries the same flag. Does not mean this
     # individual rule contains contradictory members — by construction each
@@ -785,7 +785,7 @@ class CanonicalRule(BaseModel):
     scope:               FindingScope | None = None
     # Representative verbatim source sentence (from the best-grounded
     # NormalFinding's first SourceSpan). Lets the RELATE stage feed the NLI
-    # with the *exact source text* instead of (or alongside) the abstracted
+    # with the exact source text instead of (or alongside) the abstracted
     # predicate_text.  See ``RelateConfig.use_verbatim_for_nli``.  Optional
     # for backward compatibility.
     representative_verbatim:         str | None = None

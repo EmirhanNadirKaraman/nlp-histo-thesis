@@ -3,7 +3,7 @@ logic only.
 
 No real sweeps run; no caches touched; no API calls. Each test exercises
 either pure resolution logic (phase → experiments, topological ordering,
-``_per_scorer_best``) or hard-fail paths that short-circuit *before* any
+``_per_scorer_best``) or hard-fail paths that short-circuit before any
 ``run_sweep`` invocation. The orchestrator's expensive paths (calling into
 ``eval.silver.analysis.map_theta_sweep.run_sweep``) are reached only via ``--run``
 on executable EXPs, and none of these tests do that.
@@ -554,7 +554,7 @@ def test_exp_b2_does_no_state_promotion(orch, tmp_path, monkeypatch):
 
     # Minimal silver_findings.jsonl — one record per fake case_id, no findings
     # (matcher then has zero matches; metrics will be all zeros, but that's
-    # fine for testing the *structural* contract: no state writes).
+    # fine for testing the structural contract: no state writes).
     silver_path = tmp_path / "silver_findings.jsonl"
     silver_lines = []
     for case_id, entry in cache.items():

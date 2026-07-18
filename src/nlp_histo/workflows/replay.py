@@ -206,7 +206,7 @@ def _required_claim_texts(root: Path) -> list[str]:
     """Every text the agreement pre-warm will embed, derived from the voter cache.
 
     Mirrors ``map_theta_sweep._prewarm_agreement_cache``'s extraction exactly — same
-    levels, same shapes (l1/l2 map to *lists* of outputs, l3 to a single output),
+    levels, same shapes (l1/l2 map to lists of outputs, l3 to a single output),
     same silent skip of unparseable rows. If the two ever diverge, the preflight would
     validate a different set than the run embeds, which is worse than not checking.
 
@@ -1088,7 +1088,7 @@ def analyse_bootstrap_ci() -> AnalysisResult:
     #   embedder=gemini, scorer=hybrid_entity_heavy, theta=0.9, reject=0.2
     # (these are the production-pinned values in the working tree).
     # Use the embedding-only scorer kind because the hybrid blend
-    # weights are sweep-specific; this gives a cascade *baseline* whose
+    # weights are sweep-specific; this gives a cascade baseline whose
     # numbers should be cross-checked against EXP B.2's row.
     cascade_cfg = {
         "embedder": "openai",                # use cached openai-matcher

@@ -1,7 +1,7 @@
 """
 Anthropic Messages Batches API client.
 
-Uses the direct Anthropic API (api.anthropic.com) — *not* Vertex AI.
+Uses the direct Anthropic API (api.anthropic.com) — not Vertex AI.
 Requires ANTHROPIC_API_KEY in the environment.
 
 The Claude models running on Vertex AI use Vertex-specific version strings

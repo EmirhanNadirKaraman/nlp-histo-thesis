@@ -9,8 +9,8 @@ not installed; see :func:`pulp_available`.
 
 Design notes
 ------------
-The two main scaling levers are *candidate pruning* (how many papers reach the
-solver per bucket) and *edge sparsification* (how many pair variables are
+The two main scaling levers are candidate pruning (how many papers reach the
+solver per bucket) and edge sparsification (how many pair variables are
 materialised). For the related bucket, dense O(n²) pair variables were the
 historical bottleneck; this module keeps only top-M neighbour edges above a
 threshold. For the diverse bucket, pair variables are restricted to
@@ -873,7 +873,7 @@ def select_hard_papers_ilp(
         Σ_{i ∈ TopAbs}     x_i ≥ effective_hard_high_absolute
         Σ_{i ∈ MediumBand} x_i ≥ effective_hard_medium_control
 
-    The *effective* values are clamped to each sub-pool's available size and
+    The effective values are clamped to each sub-pool's available size and
     surfaced in the rationale so a too-small sub-pool is auditable.
 
     Objective: maximise Σ absolute_hardness(i) · x_i. Empty / near-empty

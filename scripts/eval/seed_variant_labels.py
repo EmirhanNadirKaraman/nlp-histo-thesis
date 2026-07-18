@@ -2,7 +2,7 @@
 """
 seed_variant_labels.py — pre-populate per-variant annotation files from the
 legacy shared label files, so the `eval/annotate.py` --variant flow starts
-with the existing labels already applied (and only prompts for *new* crops).
+with the existing labels already applied (and only prompts for new crops).
 
 Logic per variant:
 

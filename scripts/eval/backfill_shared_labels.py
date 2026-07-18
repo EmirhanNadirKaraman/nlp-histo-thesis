@@ -3,7 +3,7 @@
 When a new sweep variant is added after some of its bbox-peers have already been
 labelled, the per-variant label files for the new variant start empty.  The
 ``annotate.py`` propagation only writes forward (label → peers) at the moment a
-label is added, so peer labels added *before* the new variant existed do not
+label is added, so peer labels added before the new variant existed do not
 backfill automatically.
 
 This script reads ``eval/annotations/share_map.json`` plus every per-variant

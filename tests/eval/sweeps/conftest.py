@@ -1,7 +1,7 @@
 """Shared hermeticity guard for the Layer-A grounding-sweep tests.
 
 These tests exercise CLIs (``eval/sweeps/grounding.py`` /
-``eval/sweeps/grounding_plot.py``) whose *production defaults* read and write
+``eval/sweeps/grounding_plot.py``) whose production defaults read and write
 the tracked report ``eval/results/grounding_sweep.md``. A test that forgets to
 redirect ``--sweep-md`` / ``--out-*`` to ``tmp_path`` would silently mutate that
 committed file (embedding machine-specific temp paths) and leave the working

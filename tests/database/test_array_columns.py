@@ -1,6 +1,6 @@
 """B-121 — the array columns must carry PostgreSQL's operators, not the generic stubs.
 
-`path_list` was declared with SQLAlchemy's *generic* `ARRAY`, whose `.contains()` raises
+`path_list` was declared with SQLAlchemy's generic `ARRAY`, whose `.contains()` raises
 `NotImplementedError` by design: without a dialect it cannot know the containment syntax.
 So the query CLAUDE.md documents as a Critical Pattern — every paragraph under a "Methods"
 heading — could not run at all.
@@ -10,7 +10,7 @@ by ingest and read back whole, so the array operators only matter to a human exp
 corpus. That is the one surface with no automated coverage, and it is exactly what the
 corpus is handed to a reader to do.
 
-These tests need no database. They assert what the *type* compiles to, which is where the
+These tests need no database. They assert what the type compiles to, which is where the
 bug lived — a live query would also have caught it, but only where PostgreSQL is running.
 """
 from __future__ import annotations

@@ -14,7 +14,7 @@ Reads a directory of per-paper pipeline JSONs (default the cached out/summaries)
 NOTE on config: the aggregate reflects whatever MAP config produced those JSONs —
 it reports the `cascade_profile` it finds and warns if it is not the frozen
 6-voter cascade. For frozen-config absolute counts, regenerate the downstream over
-the frozen MAP first; the per-stage *rates* (dedup %, groupable %, rules/finding)
+the frozen MAP first; the per-stage rates (dedup %, groupable %, rules/finding)
 are far more config-robust than the absolute counts.
 
 Usage:

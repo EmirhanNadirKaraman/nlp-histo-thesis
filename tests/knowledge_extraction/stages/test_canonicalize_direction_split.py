@@ -11,7 +11,7 @@ Tested invariants:
 * `_study_coverage` returns the right label by PMCID count.
 * Group-level `is_conflicted` (set on every rule from the group) is True iff
   the group emits ≥2 polarity-bearing direction bins.
-* **S5 core invariant (B-049 honesty fix):** no polarity-bearing rule's
+* S5 core invariant (B-049 honesty fix): no polarity-bearing rule's
   `member_normal_ids` contains a NormalFinding whose source direction was
   `unclear` or `no_direction`.
 * 2 positive + 2 negative + 1 unclear (the B-026 reproducibility case) ships

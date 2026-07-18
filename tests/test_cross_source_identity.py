@@ -5,7 +5,7 @@ with AWS is a normal thing to do. If the two routes disagree about identity, the
 silently grows a second copy of a paper it already has — as a duplicate row, not an
 error.
 
-Both routes are driven end-to-end through the public commands, offline, with the *same*
+Both routes are driven end-to-end through the public commands, offline, with the same
 PDF bytes served by each, and the resulting document IDs compared.
 """
 from __future__ import annotations

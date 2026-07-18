@@ -9,7 +9,7 @@ Alembic is not used for fresh initialization: revision 0001 references
 ``documents``, which no revision creates, so ``alembic upgrade head`` cannot build
 an empty database. See the README's "Schema ownership" section.
 
-Safety: this command only ever *creates* missing tables. It never drops, truncates,
+Safety: this command only ever creates missing tables. It never drops, truncates,
 alters, or deletes anything, and it has no destructive flag.
 
 Importing this module has no side effects — it opens no connection, builds no
@@ -40,7 +40,7 @@ def _env_path() -> Path:
     return Path(explicit or find_dotenv(usecwd=True) or ".env")
 
 #: Variables that must be set explicitly. ``DB_CONFIG`` in db_connection.py silently
-#: defaults every one of these, so we check the *environment*, not the resolved config.
+#: defaults every one of these, so we check the environment, not the resolved config.
 REQUIRED_VARS: tuple[str, ...] = ("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER")
 #: Must be present, but may be explicitly empty (local peer/trust auth).
 PASSWORD_VAR = "DB_PASSWORD"

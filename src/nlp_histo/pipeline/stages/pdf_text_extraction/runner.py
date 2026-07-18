@@ -678,7 +678,7 @@ class PipelineRunner:
     def _run_table_detection(self, layout: LayoutResult, pdf_path: Path):
         """Run the configured table detector and return a TableDetectionResult.
 
-        ``pdf_path`` here is the *detection input* — may be a figure-masked
+        ``pdf_path`` here is the detection input — may be a figure-masked
         copy when ``MaskingConfig.mask_figures_before_table_detection`` is
         on.  Callers must pass the original PDF to downstream cropping.
 

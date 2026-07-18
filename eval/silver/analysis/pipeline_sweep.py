@@ -220,7 +220,7 @@ def _evaluate_outputs(
     second embedding pass.
 
     NAMING: ``*_optimal`` is the globally optimal one-to-one assignment **by
-    embedding similarity**. It does not mean a globally optimal *strict-F1*
+    embedding similarity**. It does not mean a globally optimal strict-F1
     assignment — both matchers match on similarity, and the three categorical
     fields (category / relation_type / direction) are scored afterward.
 

@@ -2,7 +2,7 @@
 
 Captures the pre-coercion / pre-alias-repair LLM-emitted strings for
 relation_type, direction, and category. Lets us audit what models
-*actually said* versus the enum value we coerced to.
+actually said versus the enum value we coerced to.
 
 Revision ID: 0011
 Revises: 0010

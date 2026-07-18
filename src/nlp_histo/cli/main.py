@@ -9,7 +9,7 @@ One command, subcommands per stage of the pipeline::
     nlp-histo knowledge          [may make PAID API calls]
     nlp-histo replay chapter9    [offline, free]
 
-Every handler imports its implementation *lazily*, inside the function that runs it.
+Every handler imports its implementation lazily, inside the function that runs it.
 That is what keeps ``--help`` cheap and safe: printing help must never open a database
 connection, load scispaCy, initialise UMLS, construct a provider SDK client, or create
 a cache or output directory. Importing this module does none of those things either.
@@ -78,7 +78,7 @@ def _echo_db_target() -> None:
     `db init` / `db check` always did; `ingest` and `ner` did not, so a run silently
     redirected by an inherited DB_* variable gave no sign of where it was writing —
     which is how a test ingest nearly landed in the production corpus (B-113).
-    Best-effort: never let the announcement itself break the command.
+    Never let the announcement itself break the command.
     """
     try:
         from nlp_histo.database import get_db_connection
@@ -224,7 +224,7 @@ _FORWARDING = {("ingest",): 1, ("knowledge",): 1,
 def _split_forwarded(argv: list[str]) -> tuple[list[str], list[str]]:
     """Return (args_for_this_cli, args_forwarded_to_the_workflow).
 
-    argparse's REMAINDER cannot be used here: it does not capture a *leading* option,
+    argparse's REMAINDER cannot be used here: it does not capture a leading option,
     so `nlp-histo ner extract --entity-cache X` would be rejected as an unknown option
     of the parent parser. Slicing the raw argv after the command path is unambiguous.
 

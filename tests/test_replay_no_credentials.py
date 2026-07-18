@@ -36,7 +36,7 @@ def no_credentials(monkeypatch):
 def providers_explode(monkeypatch):
     """Any provider construction is an immediate, loud failure.
 
-    Stronger than asserting no network: a constructor that merely *exists* is what B-109
+    Stronger than asserting no network: a constructor that merely exists is what B-109
     was — it demanded a key and built a client the warm cache never called.
     """
     import nlp_histo.evaluation.matching.embedders as embedders

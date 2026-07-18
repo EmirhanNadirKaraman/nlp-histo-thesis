@@ -5,8 +5,8 @@ Two sinks:
   logs/enum_observations.jsonl   — one record per coerced/repaired enum value.
   logs/bad_findings.jsonl        — one record per Finding that failed validation.
 
-Records are best-effort; logging failures are swallowed so the pipeline never
-breaks because of telemetry I/O.
+Logging failures are swallowed, so the pipeline never breaks because of
+telemetry I/O.
 """
 from __future__ import annotations
 

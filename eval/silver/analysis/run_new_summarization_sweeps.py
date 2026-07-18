@@ -8,7 +8,7 @@ reimplemented here, and the old ``run_summarization_sweeps.py`` is untouched.
 
 DESIGN — screen→refine (dependency-aware)
 -----------------------------------------
-``alignment_strategy`` is a *structural* knob: under one-to-one alignments
+``alignment_strategy`` is a structural knob: under one-to-one alignments
 (``greedy``/``hungarian``) three of the four soft-align weights go inert (only
 ``tau`` survives), and the best embedder/scorer can differ by alignment. So the
 structure block ``{embedder, scorer, alignment}`` is decided jointly first — at
@@ -62,7 +62,7 @@ matching (max embedding-similarity assignment) as the primary matcher: metric
 ``strict_f1_optimal``, tie-break lower ``escalate_rate``, then ``f1_optimal``,
 then simpler/closer-to-default config. ``greedy`` matching is reported (``*_greedy``
 columns) as a sensitivity diagnostic only — it never selects. NOTE: "optimal" is
-optimal *by embedding similarity*, not a globally optimal strict-F1 assignment.
+optimal by embedding similarity, not a globally optimal strict-F1 assignment.
 
 CALIBRATION SPLIT — runs on ``--split all`` by default because the silver
 calibration set is small and a stable point estimate is wanted. ``--split

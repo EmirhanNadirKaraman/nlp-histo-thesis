@@ -125,7 +125,7 @@ def compute_metrics(
     Compute per-threshold metrics.
 
     Precision/recall/FAR are computed over *labeled* records only (keep_ok filled).
-    escalation_rate is computed over *all* ag_records (realistic production cost proxy).
+    escalation_rate is computed over all ag_records (realistic production cost proxy).
     keep_rate is n_kept / n_labeled (coverage of the cheap path within labeled set).
     """
     n_labeled = len(labeled)

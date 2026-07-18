@@ -458,7 +458,7 @@ def _collect_recent_labels(ann: dict[str, str]) -> list[str]:
 
 
 def _next_unlabelled_index(items: list, ann: dict[str, str], start: int) -> int:
-    """First index ``>= start`` whose ``ann_key(item)`` is NOT in ``ann``.
+    """First index ``>= start`` whose ``ann_key(item)`` is not in ``ann``.
 
     Returns ``len(items)`` if no such item exists — the caller treats that
     as "we're done with this pass".

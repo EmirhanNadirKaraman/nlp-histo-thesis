@@ -225,7 +225,7 @@ _CACHE_IS_NOT_ENOUGH = (
 def require_umls(*, context: str, affected_outputs: tuple[str, ...] = ()) -> None:
     """Probe the linker; raise ``UmlsUnavailableError`` unless it is usable.
 
-    For workflows whose published numbers depend on CUI enrichment. Call it *before*
+    For workflows whose published numbers depend on CUI enrichment. Call it before
     writing anything, so a run that cannot be correct cannot leave output behind.
 
     ``context`` names the workflow in the error; ``affected_outputs`` names the

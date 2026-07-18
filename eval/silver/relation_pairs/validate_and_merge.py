@@ -189,7 +189,7 @@ def split_records(records: list[dict], calib_frac: float, seed: int) -> tuple[li
     Within each gold_label, sort by id then shuffle with a fixed seed and take the
     first ``calib_frac`` for calibration, the rest for evaluation — so the two
     splits are reproducible and each is balanced across labels. The split exists so
-    the threshold-sweep *sensitivity analysis* can be inspected on calibration
+    the threshold-sweep sensitivity analysis can be inspected on calibration
     while the primary report stays on evaluation; per the thesis, NO threshold is
     tuned on this set.
     """

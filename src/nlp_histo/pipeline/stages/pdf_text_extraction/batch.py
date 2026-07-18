@@ -9,7 +9,7 @@ Why a separate file?
   handling) live here instead, keeping runner.py clean.
 
 Thread safety model (same as legacy/latest_ingest.py):
-  - Each worker thread gets its *own* PipelineRunner via threading.local().
+  - Each worker thread gets its own PipelineRunner via threading.local().
     This gives every thread an independent Docling converter, since Docling is
     not safe to share across threads.
   - The BlacklistManager is already thread-safe (internal lock).
@@ -205,7 +205,7 @@ class ParallelBatchRunner:
             for pdf in paths
         ]
 
-        # Observability manifest — best-effort; failure must not affect extraction.
+        # Observability manifest; failure must not affect extraction.
         manifest: Optional[RunManifestWriter] = None
         try:
             self._run_id = make_run_id()

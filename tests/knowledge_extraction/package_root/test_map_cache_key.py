@@ -89,7 +89,7 @@ def test_old_format_cache_entry_is_miss_after_schema_bump(tmp_path):
     cache = PipelineCache(cache_path)
     sentences = [{"text_element_id": 1}]
 
-    # Hand-write an old-format entry (no new fields) under what *would* have
+    # Hand-write an old-format entry (no new fields) under what would have
     # been the old key. We use the new key construction but with empty
     # backwards-compat fields to mimic what a pre-patch run would have written.
     old_meta = _meta(voter_config_hash="", nli_model_id="")

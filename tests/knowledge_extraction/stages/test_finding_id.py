@@ -133,7 +133,7 @@ def test_legacy_finding_payload_without_finding_id_parses_cleanly():
 def test_legacy_cached_payload_with_extra_finding_id_key_is_ignored():
     # Older callers may have added a finding_id key by hand; Pydantic ignores
     # unknown public keys unless the model is configured otherwise. The
-    # PrivateAttr is only writable via set_finding_id, so the value is *not*
+    # PrivateAttr is only writable via set_finding_id, so the value is not
     # silently adopted from input.
     raw = {
         "category": "IHC",

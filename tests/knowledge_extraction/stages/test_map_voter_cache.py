@@ -82,7 +82,7 @@ def test_run_voters_caches_l1_result_and_l2_haiku_reuses_it():
     """L1 and L2 each have one Haiku voter at the same temp.
 
     After L1 runs, L2's _run_voters call must hit the cache for that voter and
-    NOT invoke its chain. Verifies the within-run dedup for the real profile.
+    Not invoke its chain. Verifies the within-run dedup for the real profile.
     """
     stub_llm = MagicMock()
     stub_llm.temperature = 0.1
@@ -122,7 +122,7 @@ def test_run_voters_caches_l1_result_and_l2_haiku_reuses_it():
     assert out_l1 == [l1_result]
     assert l1_chain.invoke.call_count == 1
 
-    # Second call: L2 with same (provider, model, temp). Must NOT invoke L2 chain.
+    # Second call: L2 with same (provider, model, temp). Must not invoke L2 chain.
     out_l2, _t2 = stage._run_voters(inp, chains=stage._level2_voter_chains, level="L2")
     assert out_l2 == [l1_result], "L2 must reuse the cached L1 Haiku result"
     assert l2_chain.invoke.call_count == 0, (

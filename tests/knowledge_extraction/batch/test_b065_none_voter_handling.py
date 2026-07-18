@@ -41,7 +41,7 @@ def _haiku_only_runner(tmp_path: Path) -> BatchKnowledgeExtractionRunner:
 
     Real construction skips API clients (we mock submit_level instead so no
     provider calls fire). The embed_fn returns a stable non-zero vector so
-    the agreement path (Pass 3) would resolve cleanly *if* a voter did
+    the agreement path (Pass 3) would resolve cleanly if a voter did
     parse — this test exercises the None branch, not the keep branch.
     """
     haiku = VoterBatchConfig(CLAUDE_HAIKU, provider="claude", temperature=0.1)

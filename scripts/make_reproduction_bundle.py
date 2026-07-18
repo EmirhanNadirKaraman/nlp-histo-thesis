@@ -3,7 +3,7 @@
 
 A clean clone carries code, tests and the corpus definition — not the ~1.5 GB of frozen
 paid output the replay needs. This assembles exactly what HOW_TO_RUN §0 tells a supervisor
-to ask for, so what they receive can be *verified* rather than trusted.
+to ask for, so what they receive can be verified rather than trusted.
 
     python scripts/make_reproduction_bundle.py --out-dir ~/bundles            # replay
     python scripts/make_reproduction_bundle.py --out-dir ~/bundles --with-db  # + pg dump
@@ -113,13 +113,13 @@ def snapshot_sqlite(src: Path, dest: Path) -> tuple[int, int]:
 
     Sidecars are reported, not feared, and the distinction matters:
 
-    * ``-wal`` — the write-ahead log. It *does* carry committed data, so **copying the
+    * ``-wal`` — the write-ahead log. It does carry committed data, so **copying the
       ``.sqlite`` file alone (tar, cp) would ship a truncated cache that still opens
       cleanly** — the worst kind of corruption, because it looks fine. ``VACUUM INTO``
-      does not have that problem: it reads the database *through* SQLite, so the WAL's
+      does not have that problem: it reads the database through SQLite, so the WAL's
       contents are included by construction.
     * ``-shm`` — a derived shared-memory index. It carries no durable data and is created
-      by merely *opening* a WAL-mode database, even read-only. Refusing on its presence
+      by merely opening a WAL-mode database, even read-only. Refusing on its presence
       would refuse every healthy database we have.
 
     ``VACUUM INTO`` holds a read transaction for its duration, so the snapshot is a
@@ -249,7 +249,7 @@ def build_db_dump(out_dir: Path) -> Path:
     Plain SQL, not ``-Fc``: a custom-format dump can only be read by a ``pg_restore`` of
     the dumping version or newer, and the recipient's toolchain is unknown — this machine
     dumps with pg_dump 16 against a PostgreSQL 14 server, so a ``-Fc`` file would refuse
-    to load for anyone on 14. Plain SQL restores with *any* psql:
+    to load for anyone on 14. Plain SQL restores with any psql:
 
         createdb nlp_histo
         gunzip -c nlp-histo-corpus.sql.gz | psql -d nlp_histo

@@ -4,7 +4,7 @@
 the database has never seen, every query returns empty and the command previously printed
 "No entities found" and exited 0 — indistinguishable from "the corpus really is empty".
 
-That is exactly how B-115 hid: the consumers defaulted to the *package* name
+That is exactly how B-115 hid: the consumers defaulted to the package name
 `en_core_sci_lg` while `ner.py` stores spaCy's ``meta["name"]`` (`core_sci_lg`), so the
 documented commands produced nothing against a corpus of 1.79M entities, silently, for
 the corpus's entire lifetime.

@@ -22,7 +22,7 @@ member (the exact "identifier of the paragraph it came from" that
 Headline = fraction of final rules reaching a real source paragraph (A-C).
 ``carried & same-paper`` (A-D) is reported alongside.
 
-This resolves via the canonical rule's *representative* paragraph rather than the
+This resolves via the canonical rule's representative paragraph rather than the
 full member-span set E02b walked (per-finding spans were not persisted for
 held-out); both establish "final rule -> >=1 real source paragraph". ``related15``
 is re-measured here by the same JSON path as a cross-check against E02b's

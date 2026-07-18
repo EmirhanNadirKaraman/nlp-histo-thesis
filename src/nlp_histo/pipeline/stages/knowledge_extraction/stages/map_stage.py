@@ -230,7 +230,7 @@ class MapStage:
         self._chunk_workers = chunk_workers
 
         # Cascade provenance for cache keys / run artifacts
-        # Best-effort fallback: when callers don't pass voter_specs we still
+        # Fallback: when callers don't pass voter_specs we still
         # produce a cascade_signature, but it's based on type+id rather than
         # provider/model so it won't be cross-process stable.
         self._voter_specs = list(voter_specs)        if voter_specs        else _llm_fallback_specs(voter_llms)
@@ -305,9 +305,9 @@ class MapStage:
         )
 
     def cascade_lookup_metadata(self) -> MapRunMetadata:
-        """Metadata used for *cache lookups* — provider/model are placeholders.
+        """Metadata used for cache lookups — provider/model are placeholders.
 
-        Cache keys do NOT include provider/model (they include cascade_signature
+        Cache keys do not include provider/model (they include cascade_signature
         instead) so any (provider, model) pair works for lookups.
         """
         provider, model = self._voter_specs[0] if self._voter_specs else ("unknown", "unknown")
@@ -393,7 +393,7 @@ class MapStage:
         self._cascade_run_id = run_id or "unknown"
 
         # Per-paper voter cache: dedups identical (provider, model, temp, text)
-        # voter calls *within one paper* so e.g. Haiku at L1 and Haiku at L2 on
+        # voter calls within one paper so e.g. Haiku at L1 and Haiku at L2 on
         # the same chunk only hit the API once. Reset per-paper because a stale
         # entry from a different paper would never key-match anyway (text hash
         # differs), but freeing the dict keeps memory bounded. The chunk-level

@@ -18,8 +18,8 @@ Design contract (do not break)
 ------------------------------
 This module is observability-only.  It must never influence extraction
 behavior.  The collector exposes ``record_*`` methods that accumulate state
-and a single ``write()`` that emits JSON.  All recording operations are
-best-effort: a failure to record a stat must not raise into the runner.
+and a single ``write()`` that emits JSON.  No recording operation raises:
+a failure to record a stat must not propagate into the runner.
 """
 from __future__ import annotations
 

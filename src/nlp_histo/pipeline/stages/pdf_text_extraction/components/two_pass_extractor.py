@@ -9,7 +9,7 @@ Pass 1 — extract, score, mask
   Step 2. Open PDF with PyMuPDF; gather word-overlap + pixel-brightness
           evidence for every Docling element.
   Step 3. Score each element: KEEP real text, REJECT invisible/ghost text.
-  Step 4. For each page, find the top-most *accepted* TEXT/LIST_ITEM/PARAGRAPH
+  Step 4. For each page, find the top-most accepted TEXT/LIST_ITEM/PARAGRAPH
           element — the "body anchor" where real body text begins.
   Step 5. Compute per-page header mask regions (from page top to just above
           the body anchor).
@@ -24,7 +24,7 @@ Pass 2 — re-extract, separate
 
 Canonical vs. support role
 ---------------------------
-  Docling is the *canonical* layout layer.  Every LayoutElement in the
+  Docling is the canonical layout layer.  Every LayoutElement in the
   final output comes from Docling — never from fitz.
   PyMuPDF is used only for:
     • evidence gathering in Pass 1 (word lists, rendered pixmaps)
@@ -275,7 +275,7 @@ class TwoPassTextExtractor:
         page_dims: Dict[int, Dict[str, float]],
     ) -> Dict[int, dict]:
         """
-        For each page, find the bounding extent of all *accepted* body-text
+        For each page, find the bounding extent of all accepted body-text
         elements in fitz screen coordinates.
 
         The returned dict maps page_no to:

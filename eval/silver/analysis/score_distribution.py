@@ -27,7 +27,7 @@ This script is MECHANISM ILLUSTRATION, not new validation: the 60-cell
 byte-identical sweep result already forces the (0.1,0.2] share to ~0 (any gate
 chunk in that band would have flipped 0.1→0.2). The genuinely new information is
 the distribution SHAPE — expect bimodal (clusters near 0 and near 1, sparse
-middle), which is *why* reject_theta is insensitive in the band.
+middle), which is why reject_theta is insensitive in the band.
 
 Usage:
   python -m eval.silver.analysis.score_distribution                      # all finalists, band (0.1,0.2]

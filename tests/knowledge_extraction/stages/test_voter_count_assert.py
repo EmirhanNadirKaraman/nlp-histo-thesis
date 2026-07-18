@@ -25,7 +25,7 @@ def _make_stub_stage(l1_voter_count: int, l2_voter_count: int) -> MapStage:
     stage._voter_specs = [("gemini", "g")] * l1_voter_count
     stage._l2_specs = [("openai", "o")] * l2_voter_count
     stage._cascade_decision_log = None  # disable JSONL write — the assertion
-                                        # runs *before* the log path is reached
+                                        # runs before the log path is reached
     stage._cascade_run_id = "test"
     stage._cascade_signature = "sig"
     stage._cascade_profile = "test"

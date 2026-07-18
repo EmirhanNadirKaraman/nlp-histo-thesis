@@ -1,6 +1,6 @@
 """Per-tier INVOCATION counting in ``map_theta_sweep._replay`` (cost columns).
 
-The cascade row reports ``early_accept_rate`` (L1+L2 *accepts* summed) and
+The cascade row reports ``early_accept_rate`` (L1+L2 accepts summed) and
 ``escalate_rate`` (L3 accepts). Cost needs the L1↔L2 split, which those two can't
 recover — hence the ``invoked`` counts. A tier is INVOKED when it actually runs:
 L1 on every chunk with L1 data; L2 only when L1 escalated; L3 only when L2
@@ -91,7 +91,7 @@ def test_l3_invoked_equals_l3_accept_invariant(_stub):
 
 def test_l2_invocation_not_recoverable_from_accept_rates(_stub):
     """The motivating gap: early_accept (l1+l2 accepts) + escalate (l3) can't yield
-    L2 invocations — but invoked["l2"] can. Here l2 *accepts*=2 yet L2 *ran* 3×."""
+    L2 invocations — but invoked["l2"] can. Here l2 accepts=2 yet L2 ran 3×."""
     _o, accept, _e, _n, invoked = mts._replay(
         _scripted_cache(), scorer=None, theta=0.6, reject_theta=0.1)
     assert accept["l2"] == 2 and invoked["l2"] == 3          # cC invoked L2 but resolved at L3

@@ -19,7 +19,7 @@ class PDFFiguresParser:
     PDFFigures 2.0 is a Scala-based tool that detects figures and tables
     in PDFs using layout analysis and extracts their captions.
 
-    Note: This is NOT a BasePDFParser subclass because it serves a different
+    Note: This is not a BasePDFParser subclass because it serves a different
     purpose (figure extraction rather than text extraction).
 
     Strategy:

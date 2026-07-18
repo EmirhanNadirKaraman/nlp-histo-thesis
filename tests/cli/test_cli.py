@@ -1,6 +1,6 @@
 """The public CLI: help is cheap and safe, dispatch reaches the right workflow.
 
-The load-bearing property here is *what --help does not do*. Printing help must not
+The load-bearing property here is what --help does not do. Printing help must not
 open a PostgreSQL connection, load scispaCy, initialise UMLS, construct a provider
 SDK client, or create a cache or output directory — otherwise `nlp-histo --help` on a
 fresh machine fails or, worse, quietly writes somewhere. The handlers import their

@@ -121,7 +121,7 @@ BEST_HYBRID_TABLE_IN_FIGURE_MODE = "drop"
 BEST_TATR_HEADER_ZONE_PTS   = 50.0
 BEST_HYBRID_HEADER_ZONE_PTS = 50.0
 
-# Stage 4 winner — *provisional* final detector family after footnote
+# Stage 4 winner — provisional final detector family after footnote
 # expansion + best Stages 2+3 family fixes.  Stage 4 picks BEST_BASE at
 # multiplier=1.2 across the three families.  Stage 5's 9-variant grid
 # (3 multipliers × 3 families) may surface a non-Docling family that
@@ -339,7 +339,7 @@ ALL_SWEEPS.extend([
 def _stage2(base_constant_name: str, mode: str):
     """Stage-2 variant: apply STAGE1_BASE_{TATR,HYBRID} + a TIF mode.
 
-    ``base_constant_name`` is the *name* of the module-level constant
+    ``base_constant_name`` is the name of the module-level constant
     (e.g. "STAGE1_BASE_TATR") so the variant tracks edits to the
     constant — the actual base name is dereferenced at config-build
     time (not at variant-spec build time).

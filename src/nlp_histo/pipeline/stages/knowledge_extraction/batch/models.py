@@ -86,7 +86,7 @@ class BatchHandle:
     pmcid: str
     phase: BatchPhase
 
-    # Jobs belonging to the *current* phase (replaced on each advance)
+    # Jobs belonging to the current phase (replaced on each advance)
     jobs: list[ProviderJob] = field(default_factory=list)
 
     # Original sentence provenance (needed for agreement re-computation)

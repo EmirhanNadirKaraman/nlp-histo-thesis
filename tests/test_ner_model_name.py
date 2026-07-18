@@ -2,7 +2,7 @@
 
 The bug: `ner.py` persists spaCy's ``nlp.meta["name"]`` — ``core_sci_lg`` — because the
 ``en_`` in ``en_core_sci_lg`` is ``meta["lang"]``, not part of ``meta["name"]``. Both
-consumers defaulted ``--model`` to the *package* name ``en_core_sci_lg``, which matches no
+consumers defaulted ``--model`` to the package name ``en_core_sci_lg``, which matches no
 row. So the documented §8 sequence exited 0 having silently produced nothing, against a
 corpus holding 1 792 440 entities.
 """

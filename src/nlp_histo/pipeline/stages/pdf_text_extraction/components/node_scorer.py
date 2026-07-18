@@ -2,7 +2,7 @@
 NodeScorer
 
 Applies keep/drop rules to Docling LayoutElements using pre-gathered
-TextNodeEvidence.  This module contains only *decision logic* — no I/O,
+TextNodeEvidence.  This module contains only decision logic — no I/O,
 no rendering, no fitz calls.
 
 Decision table

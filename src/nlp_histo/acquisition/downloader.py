@@ -244,7 +244,7 @@ def download_paper_aws(pmcid: str, corpus_dir: Path, *, overwrite: bool = False)
 
     Reproduces exactly what ``acquire unpack`` produces from a tarball — the XML as
     ``<PMCID>.nxml``, the PDF under the publisher's filename — so ``acquire organize``
-    consumes it unchanged and both sources reach the *same* document ID. AWS names its
+    consumes it unchanged and both sources reach the same document ID. AWS names its
     objects ``PMC8395919.1.pdf``; using that would mint ``PMC8395919.1`` as a new document
     ID and duplicate a paper the corpus already holds (B-119).
 
@@ -352,7 +352,7 @@ def candidate_urls(advertised: str) -> List[str]:
     """The URLs worth trying for an OA package the API advertises, in order.
 
     NCBI moved every legacy FTP tree under ``/pub/pmc/deprecated/`` (their readme, updated
-    2026-04-10) but ``oa.fcgi`` still advertises the *pre-move* paths, so the advertised
+    2026-04-10) but ``oa.fcgi`` still advertises the pre-move paths, so the advertised
     URL 404s for every paper — verified 0/5 across 2010–2025 publications, with the same
     file present at 7 556 375 bytes under ``deprecated/`` (B-118).
 
@@ -392,7 +392,7 @@ def download_file(url: str, filename: str | Path, *, quiet: bool = False) -> boo
     """Stream a single file to disk. Returns True only if a valid archive landed.
 
     A download that produced nothing usable is removed: leaving a zero-byte or corrupt
-    file behind would make the next run's ``target.exists()`` check *skip* it, so one bad
+    file behind would make the next run's ``target.exists()`` check skip it, so one bad
     fetch would poison every retry. Successful archives are never touched.
 
     ``quiet`` suppresses only the failure message — for callers trying several candidate

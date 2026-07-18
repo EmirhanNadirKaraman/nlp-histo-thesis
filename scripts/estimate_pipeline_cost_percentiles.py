@@ -13,7 +13,7 @@ Reproducibility
   with input=4733, output=2521 tokens for claude-sonnet-4-6.  All other
   voters are assumed to consume similar input tokens (same prompt) and
   similar output tokens (same structured AuditableSummary schema).
-- Sentence count per paper is *estimated* from total word count using the
+- Sentence count per paper is estimated from total word count using the
   observed ratio from PMC10047158 (78 sentences / 1335 words ≈ 0.0584).
 - Chunk count = ceil(n_sentences / stride) with stride = chunk_size - overlap.
 

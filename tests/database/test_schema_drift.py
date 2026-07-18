@@ -1,10 +1,10 @@
 """Static ORM-vs-migration drift characterization — fail-closed.
 
 Compares the schema surface implied by Alembic revisions 0001–0014 with the
-current ``database.models.Base.metadata`` and asserts the *exact* set of
+current ``database.models.Base.metadata`` and asserts the exact set of
 divergences that have been reviewed and approved (B-097 / B-098).
 
-**This is a characterization lint, not proof of PostgreSQL parity.** The
+This is a characterization lint, not proof of PostgreSQL parity. The
 revisions are parsed with :mod:`ast` — they are never imported or executed —
 and only the operation surface those revisions actually use is modelled.
 Anything else fails.
@@ -12,7 +12,7 @@ Anything else fails.
 Real (disposable) PostgreSQL migration testing is still required for:
 
 * operator classes and expression indexes;
-* server-default *equivalence* (we compare declarations, not resolved DDL);
+* server-default equivalence (we compare declarations, not resolved DDL);
 * enum evolution;
 * dialect-specific implicit behaviour;
 * data-dependent migration effects (e.g. the 0009 backfills);
@@ -148,7 +148,7 @@ _RAW_SQL_DATA_ONLY = {
 
 
 def _orm_server_default(col: sa.Column) -> str | None:
-    """DDL server default (``server_default=``) only — this *is* schema.
+    """DDL server default (``server_default=``) only — this is schema.
 
     ``Column(default=...)`` is client-side and is deliberately not returned here;
     see :func:`_orm_client_default`. The two must never compare equal.
@@ -162,7 +162,7 @@ def _orm_server_default(col: sa.Column) -> str | None:
 def _orm_client_default(col: sa.Column) -> str | None:
     """Client-side default (``Column(default=...)``) — applied by SQLAlchemy at INSERT.
 
-    This is **not** DDL: a table created from this metadata carries no ``DEFAULT``
+    This is not DDL: a table created from this metadata carries no ``DEFAULT``
     clause for the column. Tracked separately so an ORM client default can never be
     mistaken for an Alembic server default.
     """
@@ -484,7 +484,7 @@ APPROVED_TYPE_DIFFS = {
     ),
 }
 
-# Divergence categories. Kept distinct so a failure says *what kind* of drift it is.
+# Divergence categories. Kept distinct so a failure says what kind of drift it is.
 ORM_ONLY_COLUMN = "orm_only_column"
 ALEMBIC_ONLY_COLUMN = "alembic_only_column"
 TYPE_MISMATCH = "type_mismatch"
@@ -572,7 +572,7 @@ def _column_divergences() -> set[tuple]:
                 found.add((NULLABILITY_MISMATCH, tname, cname, a["nullable"], o["nullable"]))
 
             # Defaults. A client-side ORM default is never equivalent to a server default:
-            # when the values coincide we record the *ownership* mismatch; otherwise it is a
+            # when the values coincide we record the ownership mismatch; otherwise it is a
             # plain server-default mismatch.
             if a["server_default"] != o["server_default"]:
                 if o["server_default"] is None and o["client_default"] is not None \
@@ -726,7 +726,7 @@ def test_client_default_is_never_equivalent_to_a_server_default():
     assert a_status["server_default"] == "running" and a_status["client_default"] is None
     assert a_started["server_default"] == "now()" and a_started["client_default"] is None
 
-    # Equal *values* must still be reported as an ownership divergence, not folded away.
+    # Equal values must still be reported as an ownership divergence, not folded away.
     for col in ("status", "started_at"):
         assert (CLIENT_VS_SERVER_DEFAULT, "pipeline_runs", col,
                 orm["tables"]["pipeline_runs"]["columns"][col]["client_default"],

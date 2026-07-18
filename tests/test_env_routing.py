@@ -6,7 +6,7 @@ DB_NAME and python-dotenv loads with override=False. A one-PDF ingest was second
 writing into 977 papers; only a hand-written assert stopped it.
 
 The precedence itself is deliberate and documented (ENV_LOADING.md: environment beats
-file beats default), so these tests pin the *narrow* contract:
+file beats default), so these tests pin the narrow contract:
 
 * an EXPLICIT env file that disagrees about routing → error, before connecting;
 * ordinary automatic .env discovery → untouched, env still wins;

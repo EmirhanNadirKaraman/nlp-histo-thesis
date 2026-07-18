@@ -39,7 +39,7 @@ def grounding_module():
     assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     # grounding.py prepends its own dir to sys.path and does a bare ``import
-    # _lib``. If a prior test (e.g. scripts/eval/* loaders) left a *different*
+    # _lib``. If a prior test (e.g. scripts/eval/* loaders) left a different
     # module cached under the bare name ``_lib``, that stale module would win
     # and the sweep would fail with an AttributeError — an order-dependent bug.
     # Save the current ``_lib`` and clear it so the fresh import binds
@@ -142,7 +142,7 @@ def test_markdown_has_disclaimer_and_no_forbidden_phrasings(
 @pytest.fixture()
 def _stale_lib_pollution():
     """Simulate another test (e.g. a scripts/eval/* loader) having cached a
-    *different* module under the bare name ``_lib`` and never cleaned it up.
+    different module under the bare name ``_lib`` and never cleaned it up.
     This is the exact trigger for the historical order-dependent failure."""
     other = REPO_ROOT / "scripts" / "eval" / "_lib.py"
     spec = importlib.util.spec_from_file_location("_lib", other)
@@ -150,7 +150,7 @@ def _stale_lib_pollution():
     prev_lib = sys.modules.get("_lib", _LIB_UNSET)
     sys.modules["_lib"] = stale
     spec.loader.exec_module(stale)
-    # Sanity: this really is the *wrong* _lib (no sweep writer), as in the bug.
+    # Sanity: this really is the wrong _lib (no sweep writer), as in the bug.
     assert not hasattr(stale, "write_sweep_markdown")
     yield
     _restore_sys_module("_lib", prev_lib)
@@ -160,7 +160,7 @@ def test_disclaimer_is_order_independent_under_stale_lib(
     tmp_path: Path, _stale_lib_pollution, grounding_module
 ) -> None:
     """Regression for the ``_lib`` sys.modules collision: ``_stale_lib_pollution``
-    runs *before* ``grounding_module`` (fixture request order), so a stale
+    runs before ``grounding_module`` (fixture request order), so a stale
     ``_lib`` is cached when grounding.py is imported. The fixture's setup-time
     ``sys.modules.pop('_lib')`` rebinds the correct eval/sweeps/_lib.py, so the
     sweep runs and the disclaimer is present. Without that fix this raised
@@ -184,7 +184,7 @@ def test_disclaimer_is_order_independent_under_stale_lib(
 @pytest.fixture()
 def _known_lib_sentinel():
     """Cache a recognizable sentinel under ``_lib`` and, on teardown — which
-    runs *after* grounding_module's teardown (fixtures finalize in reverse
+    runs after grounding_module's teardown (fixtures finalize in reverse
     setup order) — assert the sentinel was restored. This proves the
     grounding_module fixture puts the prior ``_lib`` back rather than deleting
     it (i.e. it neither pollutes nor erases state for later tests)."""
@@ -205,7 +205,7 @@ def _known_lib_sentinel():
 def test_grounding_module_restores_prior_lib_on_teardown(
     tmp_path: Path, _known_lib_sentinel, grounding_module
 ) -> None:
-    """``_known_lib_sentinel`` sets ``_lib`` to a sentinel *before*
+    """``_known_lib_sentinel`` sets ``_lib`` to a sentinel before
     grounding_module runs. During the test the correct eval/sweeps/_lib.py is
     bound (sentinel cleared), so the sweep works; the restore is asserted by
     ``_known_lib_sentinel``'s teardown, which runs after grounding_module tears

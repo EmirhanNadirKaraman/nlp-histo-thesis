@@ -14,7 +14,7 @@ claim_embedding   (weight 0.40) — soft-alignment cosine of Finding.claim embed
 entity_overlap    (weight 0.25) — Jaccard of biomedical entity sets from Finding.claim
 evidence_overlap  (weight 0.10) — Jaccard of text_element_id sets from Finding.evidence
 
-Numeric and polarity signals are NOT included in v1.
+Numeric and polarity signals are not included in v1.
 
 Future design space (not implemented)
 --------------------------------------

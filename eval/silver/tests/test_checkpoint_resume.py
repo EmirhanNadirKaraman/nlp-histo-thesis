@@ -1,6 +1,6 @@
 """Tests for per-cell checkpoint/resume in the screen→refine harness.
 
-The load-bearing property is the *round-trip*: a cell key built from a cell dict
+The load-bearing property is the round-trip: a cell key built from a cell dict
 and from a reloaded CSV row must be identical (so resume skips exactly the done
 cells and never re-appends a duplicate). Also covered: the signature reacts to
 resolved weight VALUES (not just spec names), and a mismatch rotates the stale

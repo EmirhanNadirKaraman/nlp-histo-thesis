@@ -7,7 +7,7 @@ production path.
 
 Process Docling JSON results to create masked PDFs.
 
-Run this AFTER you've run Docling to mask tables/figures in PDFs.
+Run this after you've run Docling to mask tables/figures in PDFs.
 """
 
 import fitz  # PyMuPDF

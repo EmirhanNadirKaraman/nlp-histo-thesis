@@ -4,7 +4,7 @@
 Replays the FROZEN cascade config (θ0.9 / reject0.1, hybrid + entity-heavy scorer —
 the E06–E08 winner) on the heldout15 primer and scores MAP findings vs heldout15
 silver → ``strict_f1_optimal``. The headline generalization number: does the config
-calibrated on related15 (strict-F1 0.7135) hold on a *disjoint* 15-paper test set?
+calibrated on related15 (strict-F1 0.7135) hold on a disjoint 15-paper test set?
 
 ZERO voter API — replays the cached heldout15 primer (only cheap, one-time agreement
 embeddings, served from cache after the first run). It needs the heldout15 primer to

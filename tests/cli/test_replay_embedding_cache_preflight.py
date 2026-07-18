@@ -9,8 +9,8 @@ that is supposed to say where the data lives did not govern it.
 
 Two layers are tested here, because either alone is insufficient:
 
-* **preflight** — enumerable incompleteness is caught up front, non-zero, nothing written;
-* **cache-only** — any *unexpected* miss (race, malformed row, a preflight that did not
+* preflight — enumerable incompleteness is caught up front, non-zero, nothing written;
+* cache-only — any unexpected miss (race, malformed row, a preflight that did not
   enumerate some text) raises rather than billing.
 
 No test constructs a real provider or performs any network call.
@@ -26,13 +26,13 @@ from nlp_histo.workflows import replay
 from nlp_histo.workflows.replay import EmbeddingCacheIncompleteError
 
 
-# fixture: a minimal but *real* artifact tree
+# fixture: a minimal but real artifact tree
 
 def _write_voter_cache(root, claims: list[str]) -> None:
     """A voter cache whose findings carry exactly ``claims``.
 
     Field-for-field the shape of the real `eval/data/map_primer/voter_cache.json`:
-    l1/l2 map a voter id to a *list* of outputs, l3 to a single output, and every
+    l1/l2 map a voter id to a list of outputs, l3 to a single output, and every
     Finding carries the full required set. This must stay valid — `_required_claim_texts`
     silently skips rows that fail `AuditableSummary.model_validate`, exactly as the
     production pre-warm does, so an under-specified fixture would yield zero claims and
@@ -173,7 +173,7 @@ def test_corrupt_cache_is_rejected_not_ignored(tree) -> None:
 
     The sidecars must go too: SQLite in WAL mode keeps committed rows in
     ``<db>-wal`` until a checkpoint, so overwriting only the main file lets the next
-    connection *recover* the data and report a healthy cache — the corruption would be
+    connection recover the data and report a healthy cache — the corruption would be
     silently undone and this test would prove nothing.
     """
     root, _ = tree

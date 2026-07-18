@@ -377,7 +377,7 @@ def _run_demo(demo: dict) -> dict:
 
     # DEMO 2 caveat: SECTION_HEADER is exempt from scoring (NodeScorer._ALWAYS_KEEP),
     # so R-color never actually fires on the production "Key Points" headers.  The
-    # demo therefore shows the *evidence* (inv_char_frac=1.0 on a non-blank bbox)
+    # demo therefore shows the evidence (inv_char_frac=1.0 on a non-blank bbox)
     # rather than a behaviour difference; the false-positive risk it documents is
     # latent — it would have surfaced if R-color were applied to a TEXT/CAPTION
     # element with the same styling.  Disabling R-color by default closes the

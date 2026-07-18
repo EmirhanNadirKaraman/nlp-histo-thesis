@@ -92,7 +92,7 @@ class PyMuPDFMediaCropper:
                 When True, skip layout TABLE/RECONSTRUCTED_TABLE elements
                 whose bbox is ≥80% inside any FIGURE/PICTURE element on the
                 same page.  Mirrors the Step-2 `_drop_tables_inside_figures`
-                filter on the cropper's *supplementary source* — without
+                filter on the cropper's supplementary source — without
                 this, dropped detections re-enter via the layout TABLE
                 pass (see media_cropper.py docstring + runner.py drop site).
 

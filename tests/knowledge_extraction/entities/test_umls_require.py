@@ -5,7 +5,7 @@ returns ``None``, ``normalize_stage`` caches an empty CUI, and the chapter-9 rep
 exits 0 having written plausible-but-wrong 06/12 tables. The only signal was one
 WARNING line.
 
-These tests reproduce the failure with the **real** exception a machine with no DNS
+These tests reproduce the failure with the real exception a machine with no DNS
 raises — a ``requests.exceptions.ConnectionError`` wrapping urllib3's
 ``NameResolutionError`` over a ``socket.gaierror`` — manufactured by pointing
 ``socket.getaddrinfo`` at a ``gaierror`` and letting ``requests`` fail for real. The
@@ -77,13 +77,13 @@ def test_the_offline_fixture_is_a_real_requests_error_not_a_runtimeerror() -> No
 def _fail_load_offline(monkeypatch) -> None:
     """Make the linker load fail exactly where a disconnected machine fails.
 
-    Faithful to the observed production path: ``spacy.load`` **succeeds** —
+    Faithful to the observed production path: ``spacy.load`` succeeds —
     ``en_core_sci_lg`` is an installed package needing no network — and the failure
     happens at ``add_pipe("scispacy_linker")``, where scispaCy fetches the UMLS KB and
     issues the ETag ``requests.head``. The real log shows exactly that ordering
     ("UMLS: loading en_core_sci_lg" immediately followed by "linker unavailable").
 
-    Failing ``spacy.load`` instead would be a *different* bug: requests' ConnectionError
+    Failing ``spacy.load`` instead would be a different bug: requests' ConnectionError
     subclasses OSError, so get_nlp()'s ``except OSError: "not installed, trying next"``
     would swallow it and report "No scispaCy model found", losing the real cause.
     """

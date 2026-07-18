@@ -80,7 +80,7 @@ def _load_map_context(
 
     ``embed_cache_path`` should be passed explicitly by callers that own their own
     artifact tree (the chapter-9 replay resolves it from ``--artifact-root``). The
-    ``_FROZEN_*`` fallbacks below are anchored to the *repository*, which is wrong for
+    ``_FROZEN_*`` fallbacks below are anchored to the repository, which is wrong for
     anyone running against a copied tree — see B-112.
 
     ``strict_cache_only=True`` constructs no provider at all: every embedding must come

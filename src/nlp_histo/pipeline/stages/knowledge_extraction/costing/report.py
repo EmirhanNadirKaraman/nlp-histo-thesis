@@ -4,7 +4,7 @@ Cost report builder.
 Reads a list of ``LLMUsageRecord``s (or a JSONL path) and writes
 ``cost_report.md`` + ``cost_report.json``.
 
-Reports are strictly *derived* from the records.  Records are the source of
+Reports are strictly derived from the records.  Records are the source of
 truth — both the runtime path and ``scripts/estimate_cost_savings.py``
 produce identical reports from the same JSONL.
 
@@ -15,7 +15,7 @@ B: batching only. Same as A but with the batch discount applied.
 C: cascade only. Actual cascade routing as observed, no batch discount.
 D: actual run. Whatever happened — batched and/or cascaded.
 
-Baseline (Scenario A) output tokens are *counterfactual* — we estimate them
+Baseline (Scenario A) output tokens are counterfactual — we estimate them
 using, in order:
   1. observed L3-call output tokens for the same stage (if any),
   2. average voter output tokens for the same stage,

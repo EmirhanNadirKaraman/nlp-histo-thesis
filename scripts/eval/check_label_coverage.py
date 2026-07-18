@@ -13,7 +13,7 @@ Modes scanned per variant:
   * ``json_tables_docling``   — tables emitted by Docling-only variants
   * ``json_tables_full``      — tables emitted by TATR / Hybrid variants
 
-By default the *table* mode is auto-detected from the variant's
+By default the table mode is auto-detected from the variant's
 ``run_metadata/*_stats.json`` (config_used.table_detector) so docling
 variants only show ``json_tables_docling`` and TATR/Hybrid variants
 only show ``json_tables_full``.  Pass ``--all-modes`` to force every

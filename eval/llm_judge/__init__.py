@@ -3,7 +3,7 @@ eval.llm_judge — LLM-as-judge evaluation harness for the histopathology
 knowledge_extraction / rule-extraction pipeline.
 
 Uses Claude Opus as a silver-label judge / generator.
-Labels produced here are *proxy labels*, not clinical ground truth.
+Labels produced here are proxy labels, not clinical ground truth.
 
 Phase 1 tests:
   Q1  MAP finding precision + field correctness

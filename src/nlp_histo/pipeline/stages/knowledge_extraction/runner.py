@@ -1337,7 +1337,7 @@ class KnowledgeExtractionRunner:
 
 
 def _model_name(llm) -> str:
-    """Best-effort extraction of model name for config snapshots."""
+    """Model name for config snapshots; falls back to the class name."""
     for attr in ("model_name", "model", "model_id"):
         val = getattr(llm, attr, None)
         if val:

@@ -13,7 +13,7 @@ WHY A DEDICATED COSTER (not ``eval.silver.analysis.escalation_breakdown``)
 charges the FULL-ensemble per-tier prices (L2=9.6, L3=18). That is valid only
 for ``voter_subset="all"``. Dropping a voter changes the tier's voter set, so:
 
-  * dropping an L1 voter LOWERS the L1 price paid on *every* chunk — a real
+  * dropping an L1 voter LOWERS the L1 price paid on every chunk — a real
     saving ``escalation_breakdown`` ignores entirely (it omits the L1 term), and
   * dropping an L2 voter lowers the L2 price on the escalated chunks.
 

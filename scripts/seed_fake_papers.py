@@ -7,7 +7,7 @@ Run A's real papers produced 196 canonical rules but zero relations because
 ``_should_compare`` requires (category, relation_type, subject, outcome) to
 match exactly — 19,110 candidate pairs, all rejected at the gate. That's
 expected behaviour, not a bug, but it means the pipeline can't be
-*validated* against real corpora alone. These fakes inject paired claims
+validated against real corpora alone. These fakes inject paired claims
 designed to survive the gate:
 
     FAKE01.claim_1  ↔  FAKE02.claim_1  → SUPPORT     (same wording, intensified)

@@ -77,7 +77,7 @@ def _to_jsonable(obj: Any) -> Any:
         return [_to_jsonable(v) for v in obj]
     if isinstance(obj, (set, frozenset)):
         return [_to_jsonable(v) for v in sorted(obj, key=lambda x: str(x))]
-    # Best-effort fallback: object's __dict__, then repr
+    # Fallback: object's __dict__, then repr
     if hasattr(obj, "__dict__"):
         try:
             return _to_jsonable({k: v for k, v in vars(obj).items()
@@ -146,7 +146,7 @@ def write_json(path: Path, obj: Any) -> None:
 
 
 def write_csv(path: Path, rows: list[dict], columns: list[str]) -> int:
-    """Best-effort CSV writer. Returns rows written; logs and returns 0 on failure."""
+    """Write a CSV. Returns rows written; logs and returns 0 on failure."""
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", encoding="utf-8", newline="") as fh:
@@ -253,7 +253,7 @@ def compute_pipeline_config_hash(
 
 
 def _try_git_commit() -> str | None:
-    """Best-effort git HEAD lookup. Never raises."""
+    """Git HEAD lookup. Never raises."""
     try:
         out = subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -473,7 +473,7 @@ class RunArtifactWriter:
         *,
         pmcid: str | None = None,
     ) -> int:
-        """Best-effort CSV summary; never raises."""
+        """CSV summary; never raises."""
         path = self.stage_path(stage, pmcid, name)
         return write_csv(path, rows, columns)
 

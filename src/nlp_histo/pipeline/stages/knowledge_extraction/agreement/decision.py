@@ -43,7 +43,7 @@ class ChunkOutcome:
     valid_voter_indices: list[int] | None = None
     rejected: bool = False
     """True when this level's decision was ChunkDecision.REJECT (deferral score
-    <= reject_theta). Distinguishes a *reject* from a plain *escalate* among the
+    <= reject_theta). Distinguishes a reject from a plain escalate among the
     ``keep=False`` outcomes so the cascade can drop the chunk instead of
     escalating it (see ``MapConfig.reject_theta`` / the drop-on-reject policy).
     Always False on the empty-voter escalate path."""

@@ -6,13 +6,13 @@ exited 0. Observed live against NCBI.
 
 The contract these tests pin:
 
-* **failed > 0 → non-zero**, even alongside successes. A corpus quietly missing papers
+* failed > 0 → non-zero, even alongside successes. A corpus quietly missing papers
   NCBI said it had is worse than a red exit.
-* **skipped is not failed.** Outside the OA subset, or already on disk, are expected
+* skipped is not failed. Outside the OA subset, or already on disk, are expected
   answers — not denied requests.
-* **nothing requested → 0, but said out loud.** An empty run and a successful one must
+* nothing requested → 0, but said out loud. An empty run and a successful one must
   not look alike.
-* **a 200 is not an archive.** Zero bytes, an HTML error page, or a truncated stream all
+* a 200 is not an archive. Zero bytes, an HTML error page, or a truncated stream all
   count as failure — and are removed, because leaving them makes the next run's
   `target.exists()` skip them.
 """

@@ -123,7 +123,7 @@ class CacheOnlyViolation(RuntimeError):
 class NoLiveEmbedding:
     """Stands in for an embedder where every embedding must come from the cache.
 
-    Constructing it needs no API key and builds no client, so a workflow using it *cannot*
+    Constructing it needs no API key and builds no client, so a workflow using it cannot
     reach a provider — the guarantee is structural rather than a matter of an unset
     environment variable or a credential that happens to be absent.
 

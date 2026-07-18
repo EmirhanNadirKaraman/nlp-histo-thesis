@@ -11,7 +11,7 @@ import re
 UMLS_THRESHOLD: float = 0.85
 
 # UMLS semantic types that are never valid entity normalizations in a
-# histopathology / clinical text mining context.  A concept whose *only*
+# histopathology / clinical text mining context.  A concept whose only
 # semantic types fall in this set is discarded regardless of linker score.
 JUNK_SEMANTIC_TYPES: frozenset[str] = frozenset({
     "T001",  # Organism

@@ -2,13 +2,13 @@
 
 Two names, kept apart on purpose:
 
-* **PMC accession** — the bare NLM value, ``PMC8395919``.
-* **document ID** — this project's composite identifier,
+* PMC accession — the bare NLM value, ``PMC8395919``.
+* document ID — this project's composite identifier,
   ``PMC8395919_dermatopathology-08-00036``, which ``documents.pmcid`` stores and which
   977 corpus rows, the frozen replay artifacts and the silver labels are all keyed on.
 
 The hazard: AWS names its objects ``PMC8395919.1.pdf`` (``.1`` = article version). Taken
-naively as a stem, that mints ``PMC8395919.1`` — a *second* document for a paper the
+naively as a stem, that mints ``PMC8395919.1`` — a second document for a paper the
 corpus already has, appearing only as a duplicate row rather than an error. So the AWS
 route names the PDF from the JATS ``self-uri`` (the same name the tarball carried), and a
 shared parser strips any version suffix that still slips through.

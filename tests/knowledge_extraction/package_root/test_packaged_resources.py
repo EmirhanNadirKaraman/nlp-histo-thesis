@@ -1,7 +1,7 @@
 """The packaged runtime resource must be reachable the way an installed wheel reaches it.
 
 ``synonyms.yaml`` is the single source of truth for NORMALIZE's synonym dictionary
-and is read *at import time*. It is the only non-Python file the installed package
+and is read at import time. It is the only non-Python file the installed package
 loads at runtime, so it must be located through ``importlib.resources`` — an
 installed wheel has no repository tree, and a ``Path(__file__).parents[n]`` walk
 would resolve to the wrong directory (or outside the package entirely).
@@ -46,7 +46,7 @@ def test_normalize_stage_does_not_use_filesystem_depth_for_the_resource() -> Non
     """Guard the regression: no `__file__.parents[...]` walk may creep back in.
 
     Parses the AST rather than grepping the text, so prose in a comment or
-    docstring that merely *mentions* ``parents[...]`` cannot fail (or pass) this.
+    docstring that merely mentions ``parents[...]`` cannot fail (or pass) this.
     """
     import ast
     from pathlib import Path

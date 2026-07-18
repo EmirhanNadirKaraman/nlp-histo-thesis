@@ -149,7 +149,7 @@ def test_n0_always_escalates_regardless_of_policy(policy):
     assert bundle.confidence == pytest.approx(0.0)
 
 
-# N>=2 — policy must NOT intercept normal agreement logic
+# N>=2 — policy must not intercept normal agreement logic
 
 
 @pytest.mark.parametrize("policy", ["keep", "escalate"])

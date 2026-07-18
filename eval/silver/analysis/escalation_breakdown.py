@@ -2,9 +2,9 @@
 Augment cascade-sweep CSVs with per-tier escalation rates + a price-weighted cost.
 
 The MAP cascade sweeps (``run_new_summarization_sweeps.py`` /
-``map_theta_sweep.py``) log per-tier *invocation counts* — ``n_l1_invoked``,
+``map_theta_sweep.py``) log per-tier invocation counts — ``n_l1_invoked``,
 ``n_l2_invoked``, ``n_l3_invoked`` — and voter counts (``n_l1_voters``,
-``n_l2_voters``), but the only *named* cost column is ``escalate_rate`` (the
+``n_l2_voters``), but the only named cost column is ``escalate_rate`` (the
 L2→L3 marginal rate). This helper derives the rest so thesis tables / variant
 comparison can cite them directly.
 

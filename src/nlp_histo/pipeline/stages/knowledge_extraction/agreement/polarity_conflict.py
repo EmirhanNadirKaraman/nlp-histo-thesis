@@ -38,7 +38,7 @@ Scope fields intentionally EXCLUDED from v1 comparability:
     ``FindingScope.{disease_subtype, tissue_site, treatment_context, ...}``
     are not part of the comparability key. Same biomarker / different
     cohort / opposite direction will therefore hard-fail today — a
-    conservative *false-escalation* trade-off: an extra L3 call is cheap;
+    conservative false-escalation trade-off: an extra L3 call is cheap;
     a missed contradiction silently kept as L1 consensus is expensive.
     Scope-aware comparability is v2.
 

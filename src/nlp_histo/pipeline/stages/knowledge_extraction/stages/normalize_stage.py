@@ -50,7 +50,7 @@ def _load_synonyms() -> dict[str, str]:
     """Load the synonym dictionary from synonyms.yaml — the single source of truth.
 
     There is no hardcoded fallback: if the file is missing, unreadable, or not a
-    mapping, return an empty dict and log an error (synonyms come *only* from the
+    mapping, return an empty dict and log an error (synonyms come only from the
     YAML). PyYAML is a hard dependency, so an import failure is surfaced too.
     """
     try:

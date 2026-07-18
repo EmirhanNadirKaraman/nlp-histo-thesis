@@ -8,7 +8,7 @@ trades silver agreement for groundedness:
   * strict-F1  (vs Opus silver)                -- falls
   * precision  (vs Opus silver)                -- essentially flat
 
-i.e. raising the threshold drops *recall*, not precision: the findings it removes
+i.e. raising the threshold drops recall, not precision: the findings it removes
 are ungrounded, not silver-false. The pinned 0.5 threshold is marked.
 
 No recompute -- reads the existing sweep report only. No API/DB/NLI.

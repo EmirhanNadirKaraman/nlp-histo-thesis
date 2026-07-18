@@ -605,7 +605,7 @@ class BatchKnowledgeExtractionRunner:
                 )
                 # Cross-paper relate must run after canonical_rules are in DB.
                 # Gate on pipeline_run_db_id (B-084): with --no-db this run
-                # persists nothing and the DB holds a *different* corpus (e.g. a
+                # persists nothing and the DB holds a different corpus (e.g. a
                 # held-out split rebuilt against the related15 DB), so the
                 # incremental compare would pool the wrong rules — C(N,2) gate
                 # churn against the wrong corpus — and write 0-row deletes. The

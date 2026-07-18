@@ -1,6 +1,6 @@
 """Versioned Opus prompts for silver-label generation.
 
-The silver ``SYSTEM_PROMPT`` is *derived* from the voter MAP prompt
+The silver ``SYSTEM_PROMPT`` is derived from the voter MAP prompt
 (``pipeline.stages.knowledge_extraction.llm.prompts._MAP_SYSTEM``) so silver labels are
 extracted under the same instructions as the cascade voters — only the
 model tier differs. Two voter-only pieces are stripped, because silver inputs

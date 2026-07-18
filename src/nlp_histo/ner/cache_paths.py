@@ -11,7 +11,7 @@ installed package (read-only on many systems, and lost on every reinstall).
 Resolution order, most explicit first:
 
 1. an explicit path passed by the caller (function argument / CLI flag);
-2. the ``NLP_HISTO_ENTITY_CACHE`` environment variable (a *file* path);
+2. the ``NLP_HISTO_ENTITY_CACHE`` environment variable (a file path);
 3. a user-cache default: ``$XDG_CACHE_HOME/nlp-histo/entity_linking_cache.json``,
    falling back to ``~/.cache/nlp-histo/entity_linking_cache.json``.
 
@@ -20,7 +20,7 @@ importing this module or asking where the cache would go. The parent directory i
 created only by :func:`ensure_parent`, which the writer calls immediately before
 writing.
 
-The cache *format* and its keys are unchanged — only its location is now explicit.
+The cache format and its keys are unchanged — only its location is now explicit.
 An absent cache behaves exactly as before (empty mapping, recomputed on demand).
 """
 from __future__ import annotations

@@ -30,7 +30,7 @@ class PairMetric(Protocol):
 
 
 class SetMetric(Protocol):
-    """Score a *set* of papers; higher = better according to the metric."""
+    """Score a set of papers; higher = better according to the metric."""
     def score(self, papers: list[PaperFingerprint]) -> float: ...
 
 
@@ -75,7 +75,7 @@ class Relatedness:
     """Weighted Jaccard relatedness across entity buckets.
 
     The score sits in roughly [0, 1] when the bucket weights sum to ~1; values
-    outside that range are unusual but acceptable. The penalty is *subtracted*
+    outside that range are unusual but acceptable. The penalty is subtracted
     when the two papers share zero diseases — it's the strongest signal that
     two papers aren't comparable.
     """
@@ -190,7 +190,7 @@ class Hardness:
 
     The implementation is intentionally explicit: each sub-score has a clear
     formula and a reason string so the rationale block in the export can show
-    *why* a paper is considered hard.
+    why a paper is considered hard.
     """
     config: HardnessConfig = field(default_factory=HardnessConfig)
 

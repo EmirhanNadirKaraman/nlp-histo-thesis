@@ -119,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     n = flatten(args.json, csv_path)
     # Report a repo-relative path when the output is under the repo, else the path as given.
     # `relative_to` needs both sides absolute and nested; a plain relative --csv-out (what a
-    # reader naturally passes) is neither, and the bare call raised *after* the CSV was
+    # reader naturally passes) is neither, and the bare call raised after the CSV was
     # already written — a crash on success (B-126).
     try:
         shown = csv_path.resolve().relative_to(_REPO_ROOT)

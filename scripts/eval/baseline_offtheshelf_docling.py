@@ -5,15 +5,15 @@ document-extraction rubric eval (E01).
 
 Motivation
 ----------
-The sweep's ``01_docling`` variant is *not* vanilla Docling: it runs the full
+The sweep's ``01_docling`` variant is not vanilla Docling: it runs the full
 document-extraction pipeline (two-pass ghost-text filtering, region masking,
-artifact filtering, caption *nearest-matching*, icon/size filtering, sub-figure
+artifact filtering, caption nearest-matching, icon/size filtering, sub-figure
 merging, 200-DPI cropping) with only the table-handling knobs disabled. So the
 ``01_docling`` rubric numbers credit pipeline post-processing (caption matching,
 masking, cropping) to "Docling".
 
-This script produces a clean baseline: stock Docling's *own* figure/table
-detection and *own* native captions, with none of the pipeline scaffolding —
+This script produces a clean baseline: stock Docling's own figure/table
+detection and own native captions, with none of the pipeline scaffolding —
 no masking, no two-pass, no ``nearest_caption``, no footnote-expand, no size/icon
 filtering, no sub-figure merge. It crops each native ``PictureItem`` /
 ``TableItem`` bbox straight from the PDF and writes the same on-disk artifacts the

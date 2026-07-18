@@ -12,7 +12,7 @@ Classification of a flagged finding (the citation the filter would drop on):
   te_id_mismatch        right paper, wrong text_element_id
   cross_doc_in_source   cites a DIFFERENT paper whose id appears in the shown
                         source text — a reference the model latched onto
-  cross_doc_external    cites a DIFFERENT paper NOT in the shown text — a
+  cross_doc_external    cites a DIFFERENT paper not in the shown text — a
                         foreign/external source. This is the SYMPTOM only: it can
                         be a data-pipeline bug (e.g. B-081 contamination: real
                         findings mis-filed from another paper) OR a genuine model
@@ -24,7 +24,7 @@ Writes a markdown + CSV under eval/reports/citation_filter_stats/ and prints a
 summary + examples. Offline (no API, no scorer); optional --db resolves each
 flagged te_id to its real paper.
 
-NOTE: this is the *all-voter* citation-quality rate. What the citation filter
+NOTE: this is the all-voter citation-quality rate. What the citation filter
 removes from the PRODUCTION FUNNEL is the selected-set number — measure that with
 legacy/scripts/probes/_replay_contamination.py after the cascade config is frozen.
 

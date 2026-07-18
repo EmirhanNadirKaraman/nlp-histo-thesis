@@ -2,17 +2,17 @@
 
 Two small pieces, both from B-113:
 
-Conflict detection. ``NLP_HISTO_ENV_FILE`` chooses *which* file is read; it does not
+Conflict detection. ``NLP_HISTO_ENV_FILE`` chooses which file is read; it does not
 make that file's values win. python-dotenv loads with ``override=False``, and that
 precedence — environment beats file beats default — is deliberate and documented
 (``ENV_LOADING.md``): it is how you override one value for one command. The failure mode
-is not the ordering but the *silence*: setting ``NLP_HISTO_ENV_FILE`` reads as "use this
+is not the ordering but the silence: setting ``NLP_HISTO_ENV_FILE`` reads as "use this
 configuration", and when an inherited ``DB_NAME`` quietly wins, a command aimed at a
 scratch database writes to production instead. That happened during the 2026-07-16 ingest
 verification and was caught only by a hand-written assertion.
 
 So: when — and only when — an env file was named explicitly, a disagreement about
-*where the connection points* is an error rather than a silent substitution. Ordinary
+where the connection points is an error rather than a silent substitution. Ordinary
 automatic ``.env`` discovery is untouched, and so is the documented env-wins behaviour.
 
 Target rendering. ``format_target()`` is the single place that formats a resolved
@@ -40,7 +40,7 @@ class EnvRoutingConflict(RuntimeError):
 def _parse_env_file(path: Path) -> dict[str, str]:
     """Read ``KEY=VALUE`` pairs without mutating the environment.
 
-    Must run *before* ``load_dotenv``: afterwards the file's values are indistinguishable
+    Must run before ``load_dotenv``: afterwards the file's values are indistinguishable
     from inherited ones, and the conflict is exactly what we are trying to see. Uses
     python-dotenv's parser when available so quoting/escaping match what will actually be
     loaded; falls back to a minimal reader otherwise.

@@ -1,6 +1,6 @@
 """Finding-level citation/provenance filter (B-080).
 
-The production counterpart to the *dormant* router-only ``ProvenanceValidator``
+The production counterpart to the dormant router-only ``ProvenanceValidator``
 gate. The legacy L1→L2→L3 cascade (``enable_router=False``, the production path)
 runs no citation validation — a MAP finding can cite a sentence position or
 ``text_element_id`` that does not exist in its chunk and still ship. This filter
@@ -8,7 +8,7 @@ closes that gap by dropping such findings from the SELECTED chunk summary, in
 every cascade path and at every escalation level (L1/L2/L3).
 
 It reuses the exact ``ProvenanceValidator`` logic so the check is identical to
-what the router would apply, then keeps only the *structural* citation failures
+what the router would apply, then keeps only the structural citation failures
 as hard drops:
 
   INVALID_SENTENCE_ID        — citation not parseable as ``S{n}|PMCID|te_id``
@@ -16,7 +16,7 @@ as hard drops:
   CROSS_DOCUMENT_SOURCE_ERROR — cited PMCID != document PMCID
   INVALID_TEXT_ELEMENT_ID    — cited ``te_id`` != the te_id at that sentence
 
-These are *exact* integer/string comparisons against the chunk source index, so
+These are exact integer/string comparisons against the chunk source index, so
 they carry no false-positive risk. The fuzzy ``FABRICATED_VERBATIM_SUPPORT``
 check (verbatim quote unrecognisable in the cited sentence) is opt-in via
 ``check_verbatim`` — off by default because it is a SequenceMatcher ratio, not an
@@ -25,7 +25,7 @@ exact match, and the grounding NLI filter already covers claim↔support quality
 ORDERING CONTRACT — must run before ``replace_verbatim_from_db``. The fabrication
 check fuzzy-matches ``verbatim_support`` against the cited single *source
 sentence*; after DB replacement ``verbatim_support`` is the full cited
-*paragraph* and a sentence-vs-paragraph ratio would mis-fire. Both call sites
+paragraph and a sentence-vs-paragraph ratio would mis-fire. Both call sites
 (``MapStage._cascade`` and the offline ``_replay``) validate pre-replacement.
 """
 from __future__ import annotations

@@ -10,7 +10,7 @@ historical reason the sync runner's cost report came out as ``$0.00000``
 even on real calls.
 
 Callbacks (``UsageCollector`` / ``_make_token_callback`` in
-``scripts/run_paper.py``) are kept as a *fallback* signal and a side
+``scripts/run_paper.py``) are kept as a fallback signal and a side
 channel for traces; the records here are the source of truth for cost.
 """
 from __future__ import annotations

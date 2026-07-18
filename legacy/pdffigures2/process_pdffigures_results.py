@@ -2,7 +2,7 @@
 """
 Process PDFFigures2 JSON results to create masked PDFs.
 
-Run this AFTER you've run PDFFigures2 to mask tables/figures in PDFs.
+Run this after you've run PDFFigures2 to mask tables/figures in PDFs.
 """
 
 import json

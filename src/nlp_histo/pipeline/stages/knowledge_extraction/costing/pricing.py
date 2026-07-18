@@ -165,7 +165,7 @@ class PriceBook:
             return None
         if model in self._prices:
             return self._prices[model]
-        # Best-effort fuzzy match: strip version suffixes like "@20251001"
+        # Fuzzy match: strip version suffixes like "@20251001"
         # and try the bare name. Never invent a price for an unrecognized model.
         stripped = model.split("@", 1)[0]
         if stripped in self._prices:

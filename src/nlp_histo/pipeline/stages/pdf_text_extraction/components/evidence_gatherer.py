@@ -2,7 +2,7 @@
 PyMuPDFEvidenceGatherer
 
 Attaches supporting evidence from PyMuPDF (fitz) to Docling LayoutElements.
-PyMuPDF is a *support* role here — it validates Docling nodes but never
+PyMuPDF is a support role here — it validates Docling nodes but never
 contributes layout nodes of its own to the final output.
 
 Three categories of evidence are produced for every element:

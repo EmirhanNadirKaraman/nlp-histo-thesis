@@ -129,7 +129,7 @@ class ScoredNode:
 @dataclass
 class HeaderAnchor:
     """
-    The top-most *accepted* body-text element on a page; used to determine
+    The top-most accepted body-text element on a page; used to determine
     where the header zone ends.
 
     ``top_y_fitz`` is the y-coordinate of the element's top edge in fitz

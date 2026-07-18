@@ -148,7 +148,7 @@ class ScorerSpec:
 
     ``kind`` selects the similarity strategy; ``weights`` is an ``AgreementConfig``
     (H-EMB-01 soft-alignment knobs). Both the embedding and hybrid strategies read
-    the weights via ``_align``, so a single spec list can compare scorers *and*
+    the weights via ``_align``, so a single spec list can compare scorers and
     weight variants. Append entries to vary weights, e.g.
     ``ScorerSpec("embedding_tau030", "embedding", AgreementConfig(tau=0.30))``.
     """
@@ -722,7 +722,7 @@ def _replay(
         distinct from where it RESOLVED: ``l1`` runs on every chunk with L1 data;
         ``l2`` only when L1 escalated; ``l3`` only when L2 escalated (or had no data).
         Needed for cost (cost ∝ invocations × voters/tier); ``early_accept_rate``
-        sums l1+l2 *accepts* and so can't recover the L1↔L2 split on its own.
+        sums l1+l2 accepts and so can't recover the L1↔L2 split on its own.
         Invariant: ``invoked["l3"] == accept_counts["l3"]``.
     """
     from nlp_histo.pipeline.stages.knowledge_extraction.agreement import AgreementChecker

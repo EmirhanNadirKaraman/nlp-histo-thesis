@@ -82,7 +82,7 @@ def test_prompt_lists_match_enums():
     for v in ("morphology", "IHC", "molecular_genetics", "staging",
               "treatment", "prognosis", "demographic"):
         assert v in src, f"category value {v!r} missing from MAP prompt"
-    # Prompt must NOT instruct null direction
+    # Prompt must not instruct null direction
     assert "direction: null" not in src, "MAP prompt still uses 'direction: null'"
     assert "or null when not applicable" not in src
 
@@ -211,7 +211,7 @@ def test_demographics_alias_repair():
 
 
 def test_bad_finding_logged_when_dropped():
-    """Malformed item passed inside an AuditableSummary should be dropped *and* logged."""
+    """Malformed item passed inside an AuditableSummary should be dropped and logged."""
     from nlp_histo.pipeline.stages.knowledge_extraction.models import AuditableSummary, AuditMetadata
 
     # Reset log dir to a temp location to make this test self-contained

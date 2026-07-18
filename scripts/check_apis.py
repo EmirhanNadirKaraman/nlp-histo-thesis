@@ -189,7 +189,7 @@ def cmd_sync_real() -> int:
     Exercises the full sync prompt-schema mechanism — real MAP system prompt,
     structured-output tool/schema, and the parse into AuditableSummary — over the
     DIRECT-API factories (same keys as batch). Note Gemini sync goes through its
-    OpenAI-compatible endpoint, a *different* mechanism from the Gemini batch path
+    OpenAI-compatible endpoint, a different mechanism from the Gemini batch path
     (native response_schema), so this genuinely adds coverage.
     """
     from nlp_histo.evaluation.jsonl_utils import read_jsonl

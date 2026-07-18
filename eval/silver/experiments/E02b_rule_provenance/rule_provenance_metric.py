@@ -6,7 +6,7 @@ Quantifies the knowledge-extraction provenance claim of
 emitted ``FinalRule`` can be traced back to at least one real source paragraph.
 
 E02 measures *document/media* provenance (paragraphs' ``unique_path``, figure/
-table caption+crop+bbox). This experiment measures the *rule* side, walking the
+table caption+crop+bbox). This experiment measures the rule side, walking the
 four-link chain the thesis documents, entirely over persisted ``sum_*`` rows:
 
   A. FinalRule  -> CanonicalRule   ``sum_final_rules.canonical_id``
@@ -22,7 +22,7 @@ four-link chain the thesis documents, entirely over persisted ``sum_*`` rows:
   E. TextElement -> Document        ``text_elements.document_id`` -> PMCID
                                     (FK NOT NULL — structurally guaranteed).
 
-IDs (``canonical_id`` / ``normal_id``) are unique *per* ``pipeline_run_id``, so
+IDs (``canonical_id`` / ``normal_id``) are unique per ``pipeline_run_id``, so
 every resolution is run-scoped. Provenance is a per-run structural property, so
 the carry-rate is computed per run and the production run set (the
 ``related15`` papers) is headlined; the per-run table shows it is not

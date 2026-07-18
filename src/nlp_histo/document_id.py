@@ -15,7 +15,7 @@ post-thesis migration debt, not a fix.
 
 What this module guards is narrower: an NLM version suffix must never reach the
 database. AWS names its objects ``PMC8395919.1.pdf`` (``.1`` = article version), and a
-naive ``Path.stem`` would mint ``PMC8395919.1`` as a *new* document ID — a duplicate of a
+naive ``Path.stem`` would mint ``PMC8395919.1`` as a new document ID — a duplicate of a
 paper the corpus already has under its FTP-derived ID.
 """
 from __future__ import annotations
@@ -49,7 +49,7 @@ def canonical_document_id(raw: str) -> str:
 def pmc_accession(document_id: str) -> str | None:
     """The bare accession inside a document ID, or ``None`` if there isn't one.
 
-    ``PMC8395919_dermatopathology-08-00036`` → ``PMC8395919``. For identity *comparison*
+    ``PMC8395919_dermatopathology-08-00036`` → ``PMC8395919``. For identity comparison
     across sources — never for storage: the composite ID is what the corpus uses.
     """
     m = re.match(r"^(PMC\d+)", document_id)

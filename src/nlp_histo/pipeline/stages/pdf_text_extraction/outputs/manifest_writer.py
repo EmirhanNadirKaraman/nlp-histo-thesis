@@ -5,16 +5,16 @@ A manifest is the single artifact a thesis-mode comparison reads when diffing
 two configurations.  It contains:
 
 * run_id, started_at, finished_at
-* git SHA + dirty flag (best-effort)
+* git SHA + dirty flag (omitted when git is unavailable)
 * host, python version
 * the full PipelineConfig snapshot + a deterministic ``config_digest``
 * input description (pdf_dir, glob, max_docs, attempted PMCID list)
 * aggregated per-document stats summary (counts, reason histogram, wall time)
 * per-document status / wall_seconds breakdown
 
-Observability-only — must NOT influence extraction behavior.  All recording
-operations and the final write are best-effort: failure to write a manifest
-must not raise into the runner.
+Observability-only — must not influence extraction behavior.  All recording
+operations and the final write never raise: failure to write a manifest
+must not propagate into the runner.
 """
 from __future__ import annotations
 
@@ -43,10 +43,10 @@ def make_run_id() -> str:
 
 
 def _git_info() -> Dict[str, Any]:
-    """Best-effort git SHA + dirty flag. Returns ``{}`` when git metadata is unavailable.
+    """Git SHA + dirty flag. Returns ``{}`` when git metadata is unavailable.
 
     Provenance, not configuration: an installed wheel is not inside a checkout, so
-    there is nothing to walk up to. Ask git about the *working directory* instead of
+    there is nothing to walk up to. Ask git about the working directory instead of
     counting parents from ``__file__`` — outside a repository git simply exits
     non-zero and the manifest records no git fields (schema unchanged; consumers
     already treat them as optional). Never runs at import.

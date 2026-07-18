@@ -13,7 +13,7 @@ TWO questions, TWO comparisons — do not conflate them:
   * DECISION ("should we drop model X?"):  baseline N=3 vs drop-X N=2.
     The N=3→2 change IS the real consequence of dropping X. Headline metric =
     ``strict_f1_optimal`` (does removing it improve silver-measured quality),
-    with ``escalate_rate`` for cost; ``early_accept_rate`` is the *why*.
+    with ``escalate_rate`` for cost; ``early_accept_rate`` is the why.
   * ATTRIBUTION ("which voter is most disagreeable?"):  the N=2 drops WITHIN a
     level, ranked against each other (N cancels). The drop with the HIGHEST
     ``early_accept_rate`` leaves the best-agreeing remaining pair → the dropped

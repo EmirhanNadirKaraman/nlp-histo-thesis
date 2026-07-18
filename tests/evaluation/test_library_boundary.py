@@ -93,7 +93,7 @@ def test_matcher_cache_default_is_not_cwd_relative(monkeypatch, tmp_path) -> Non
     It used to be ``Path("eval/data/embedding_cache_openai.sqlite")`` — pinned in this
     file while the value was still frozen. The path pass replaced it with an explicit
     resolver (argument > env var > user cache dir), because a cwd-relative default
-    misses away from the repository root, and a miss means *paid* embedding calls.
+    misses away from the repository root, and a miss means paid embedding calls.
     The repository experiment drivers now pass their frozen sqlite paths explicitly,
     so their behaviour — and their avoidance of paid calls — is unchanged.
     """

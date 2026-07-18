@@ -4,7 +4,7 @@ Three deliverables per run, named after ``--output-version``, split across two
 destinations:
 
   - ``{version}.yaml``           — minimal pmcid-only roster; written into the
-                                   *roster* directory ``export_dir``
+                                   roster directory ``export_dir``
                                    (CLI ``--export-dir``, default
                                    ``configs/paper_selection/``)
   - ``{version}_rationale.json`` — full rationale + breakdowns

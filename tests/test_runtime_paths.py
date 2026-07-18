@@ -1,7 +1,7 @@
 """Runtime paths must survive being installed — no repository beside the package.
 
 Each test here corresponds to a way the package used to reach for the repository tree
-and would have failed (usually *silently*) once installed:
+and would have failed (usually silently) once installed:
 
 * ``.env`` was located relative to ``__file__``. After the src-layout move that
   resolved to ``src/nlp_histo/.env``, which does not exist — so DB_CONFIG silently

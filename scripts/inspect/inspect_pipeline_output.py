@@ -602,7 +602,7 @@ def _enrich_final_rule(
 
 # Paragraph context lookup (DB-backed, best-effort)
 #
-# The rule card wants to surface the *full paragraph* containing the
+# The rule card wants to surface the full paragraph containing the
 # representative verbatim sentence — that's ``text_elements.text_content``
 # joined by ``CanonicalRule.representative_text_element_id``. We do this
 # once per ``build_context`` invocation (batched + dedup'd) so the HTML
@@ -668,7 +668,7 @@ def _lookup_paragraphs(rules: list[dict]) -> dict[str, str | None]:
 # NLI input reconstruction
 #
 # Mirrors ``pipeline/stages/knowledge_extraction/stages/relate_stage.py::
-# _build_nli_text`` so the inspector can show the *exact text* that the
+# _build_nli_text`` so the inspector can show the exact text that the
 # RELATE / corpus_relate NLI saw for each rule. The full pipeline records
 # ``predicate_text`` on the rule (always) plus the newer ``scope`` and
 # ``representative_verbatim`` fields (when present); this helper combines
@@ -1312,7 +1312,7 @@ def render_batch(
 
     # Build a global canonical_id → enrichment map across all 15 papers so the
     # batch-index corpus-relations table can show scope tags, NLI input
-    # strings, verbatim quotes, and paragraph context for *both sides* of a
+    # strings, verbatim quotes, and paragraph context for both sides of a
     # cross-paper pair — not just the local one. Populated incrementally
     # below as each paper's context is built.
     global_rule_lookup: dict[str, dict] = {}
