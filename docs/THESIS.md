@@ -157,16 +157,20 @@ detail section in [`BUGS.md`](BUGS.md) if it closes a bug.
   as regenerable output; decide alongside the other frozen-artifact paths in the module.
   See [`BUGS.md`](BUGS.md) B-108.
 
-- [ ] **B-102 — clean-room reproducibility: anchor the cwd-relative data paths.**
-  `eval/silver/analysis/map_theta_sweep.py:94` sets `PRIMER_DIR = Path("eval/data/map_primer")`
-  — a bare cwd-relative path — so `scripts/thesis/run_chapter9_offline_replay.py` silently
-  requires the repository root as its working directory (imports resolve from anywhere; only
-  the *data* lookup fails, with a confusing missing-cache error). Found during the Phase-11C
-  bootstrap validation and deliberately left unfixed there. In the clean-room reproducibility
-  pass: anchor it to `REPO_ROOT` via `eval/paths.py`, audit the sibling cwd-relative defaults
-  in the same module (e.g. the `eval/reports/` output path), and decide explicitly whether
-  repo-root-cwd is a documented+asserted contract or a bug to remove.
-  Detail: [B-102](BUGS.md#bug-102--chapter-9-offline-replay-requires-the-repo-root-as-cwd).
+- [x] **B-102 — clean-room reproducibility: cwd-relative data paths anchored
+  (2026-07-18, `cd74038`).** `map_theta_sweep`'s `PRIMER_DIR` was a bare relative path,
+  and because `PRIMER_PATH` / `CACHE_PATH` are default argument values on eight functions
+  that bind at import time, every one of those defaults followed the caller's cwd — so the
+  chapter-9 replay silently required the repository root and failed with a missing-cache
+  error rather than a path error. `PRIMER_DIR`, `SOURCE_PATH` and `SILVER_PATH` are now
+  anchored to `REPO_ROOT` via `eval/paths.py`, matching the frozen embedding caches that
+  already were. The open question — contract or bug — was decided **a bug for inputs, a
+  contract for outputs**: `REPORTS_DIR` stays caller-relative by design, and explicit CLI
+  overrides keep caller-relative semantics. Regression tests in
+  `tests/test_map_theta_sweep_paths.py` import the module from a temporary directory
+  **outside the repository**, the condition that used to break. Byte-identical E14
+  `--theta-frontier` output across the parent and the fix, zero billable calls, frozen
+  inputs unchanged. Detail: [B-102](BUGS.md#bug-102--chapter-9-offline-replay-requires-the-repo-root-as-cwd).
 
 - [x] **B-099 / Phase 8 — fresh-database reproducibility: SHIPPED & VERIFIED
   (2026-07-13).** A supervisor can build a new database from an empty PostgreSQL
