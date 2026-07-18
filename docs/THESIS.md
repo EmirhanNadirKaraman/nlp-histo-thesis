@@ -150,7 +150,7 @@ detail section in [`BUGS.md`](BUGS.md) if it closes a bug.
   See [`BUGS.md`](BUGS.md) B-109.
 
 - [x] **B-108 — `eval/sweeps/grounding.py` no longer overwrites a tracked artifact
-  (2026-07-18, `7f1bef2`).** The §12 command rewrote the tracked
+  (2026-07-18, `6256807`).** The §12 command rewrote the tracked
   `eval/results/grounding_sweep.md` — a 2026-05-16 / 5-paper snapshot — with numbers from
   whatever sat in `out/summaries` (now 15 papers), matching no published table. Of the
   three options, **default the output to an untracked path** was chosen: pinning the input
@@ -161,7 +161,7 @@ detail section in [`BUGS.md`](BUGS.md) if it closes a bug.
   See [`BUGS.md`](BUGS.md) B-108.
 
 - [x] **B-102 — clean-room reproducibility: cwd-relative data paths anchored
-  (2026-07-18, `cd74038`).** `map_theta_sweep`'s `PRIMER_DIR` was a bare relative path,
+  (2026-07-18, `99f8aaf`).** `map_theta_sweep`'s `PRIMER_DIR` was a bare relative path,
   and because `PRIMER_PATH` / `CACHE_PATH` are default argument values on eight functions
   that bind at import time, every one of those defaults followed the caller's cwd — so the
   chapter-9 replay silently required the repository root and failed with a missing-cache
