@@ -1,8 +1,8 @@
 # Bug catalogue — nlp-histo
 
 Per-bug write-ups with status, evidence, diagnosis, fix, and verification.
-Carry-forward work items live in [`THESIS.md`](THESIS.md#todos); permanent
-design calls live in [`THESIS.md`](THESIS.md#decisions-log).
+Carry-forward work items live in [`THESIS.md`](docs/THESIS.md#todos); permanent
+design calls live in [`THESIS.md`](docs/THESIS.md#decisions-log).
 
 > **Two notes on links and paths in this file.** Some entries cite
 > `docs/readmes/` (archived working notes), `out/` (generated artifacts), or
@@ -751,7 +751,7 @@ out to be wrong.
 
 ### Fix
 
-[`pipeline/stages/summarization/current_stages/group_stage.py:57`](../src/nlp_histo/pipeline/stages/knowledge_extraction/stages/group_stage.py#L57)
+[`pipeline/stages/summarization/current_stages/group_stage.py:57`](src/nlp_histo/pipeline/stages/knowledge_extraction/stages/group_stage.py#L57)
 — added `pmcid` to the hash input:
 
 ```python
@@ -769,7 +769,7 @@ def _group_id(subject, outcome, relation_type, category="",
 `canonical_id` inherits the change because it derives from `group_id`:
 `CR_{_sha8(group_id)}_{direction}`. Cross-paper matching still works — it is
 performed by the
-[`_should_compare_cross_paper`](../src/nlp_histo/pipeline/stages/knowledge_extraction/stages/corpus_relate.py)
+[`_should_compare_cross_paper`](src/nlp_histo/pipeline/stages/knowledge_extraction/stages/corpus_relate.py)
 gate (which keys on CUIs or normalised entity strings), not on `canonical_id`
 equality.
 
@@ -824,7 +824,7 @@ Built a one-page PDF with three text rows:
 | C   | ExtGState fill_opacity `ca=0`             |
 
 Output from
-[`scripts/verify_ghost_text_detection.py`](../scripts/verify_ghost_text_detection.py):
+[`scripts/verify_ghost_text_detection.py`](scripts/verify_ghost_text_detection.py):
 
 ```
 row            visually_blank  brightness  dark_frac  inv_char_frac  render_skipped
@@ -891,7 +891,7 @@ false positives whenever a publisher inverts header type colours.
 ### 2.3 — Policy decisions
 
 Two defaults changed in
-[`pipeline/stages/pdf_text_extraction/config.py`](../src/nlp_histo/pipeline/stages/pdf_text_extraction/config.py):
+[`pipeline/stages/pdf_text_extraction/config.py`](src/nlp_histo/pipeline/stages/pdf_text_extraction/config.py):
 
 | Setting                         | Before | After | Reason                                                                                                        |
 |---------------------------------|--------|-------|---------------------------------------------------------------------------------------------------------------|
@@ -900,7 +900,7 @@ Two defaults changed in
 
 ### 2.4 — Before/after demonstrations
 
-[`scripts/thesis_demo_ghost_text.py`](../scripts/thesis_demo_ghost_text.py)
+[`scripts/thesis_demo_ghost_text.py`](scripts/thesis_demo_ghost_text.py)
 runs both demos and writes JSON + PNG artifacts under
 `out/thesis_demo/ghost_text/`.
 
@@ -919,7 +919,7 @@ Rendered crop of the phantom region (page 2, header strip outlined in red —
 note that the visible text in that strip is the journal banner
 "Dermatopathology", not the body sentence Docling reported):
 
-![Phantom bbox on page 2 of PMC10047158](../out/thesis_demo/ghost_text/demo1_phantom_false_negative_p2.png)
+![Phantom bbox on page 2 of PMC10047158](out/thesis_demo/ghost_text/demo1_phantom_false_negative_p2.png)
 
 #### Demo 2 — legitimate white-on-dark header (latent R-color false positive)
 
@@ -943,11 +943,11 @@ before such an element appears.
 Rendered crops of three "Key Points" banners (red outline = bbox; the white
 ink reads as ≈ 73 % dark pixels against the coloured background):
 
-![Key Points banner on page 3 of PMC7158325](../out/thesis_demo/ghost_text/demo2_key_points_false_positive_p3.png)
+![Key Points banner on page 3 of PMC7158325](out/thesis_demo/ghost_text/demo2_key_points_false_positive_p3.png)
 
-![Key Points banner on page 4 of PMC7158325](../out/thesis_demo/ghost_text/demo2_key_points_false_positive_p4.png)
+![Key Points banner on page 4 of PMC7158325](out/thesis_demo/ghost_text/demo2_key_points_false_positive_p4.png)
 
-![Key Points banner on page 27 of PMC7158325](../out/thesis_demo/ghost_text/demo2_key_points_false_positive_p27.png)
+![Key Points banner on page 27 of PMC7158325](out/thesis_demo/ghost_text/demo2_key_points_false_positive_p27.png)
 
 ### Reproducibility
 
@@ -1200,7 +1200,7 @@ but the sync runner was left behind.
 
 Commit `b03d4f6` mirrored the batch implementation:
 
-* Added [`KnowledgeExtractionRunner._pipeline_config_hash()`](../src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py)
+* Added [`KnowledgeExtractionRunner._pipeline_config_hash()`](src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py)
   (runner.py:1640-1684) — composes cascade signature, grounding +
   entailment + contradiction + theta + reject-theta + similarity
   thresholds, voter / level-2 / escalation / scorer model identifiers,
@@ -1253,13 +1253,13 @@ real fresh-work figure and reported zero skips.
 
 ### Fix
 
-* `_load_result` ([`runner.py:1717`](../src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py))
+* `_load_result` ([`runner.py:1717`](src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py))
   now mutates the in-memory dict it returns: `data["status"] = "skipped"`
   immediately before the `return`. The on-disk JSON is **not** rewritten
   — the file still says `"success"` because that run *did* succeed.
   `"skipped"` is purely an in-memory marker on the caller's copy
   describing how the value was obtained on this call.
-* `process_batch` ([`runner.py:793`](../src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py))
+* `process_batch` ([`runner.py:793`](src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py))
   counts the new key explicitly:
   `n_skip = sum(1 for r in results if r["status"] == "skipped")`.
 * Three downstream consumers updated to treat `"skipped"` as equivalent
@@ -1268,7 +1268,7 @@ real fresh-work figure and reported zero skips.
     print branch.
   * ``scripts/run_single_doc.py:69, 90`` (removed) —
     write artifacts + print result.
-  * [`scripts/run_paper_single_model.py:486, 523`](../scripts/run_paper_single_model.py)
+  * [`scripts/run_paper_single_model.py:486, 523`](scripts/run_paper_single_model.py)
     — `n_ok` count, which feeds the `n_ok >= 2` corpus-relate gate at
     line 532. Without this update, a corpus run resumed against fully
     cached papers would silently skip CORPUS_RELATE.
@@ -1305,7 +1305,7 @@ Summarisation, `KnowledgeExtractionRunner`.
 ### Symptom
 
 The runner stored every paper's intermediate state on `self`:
-[`runner.py:288-302`](../src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py)
+[`runner.py:288-302`](src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py)
 defined `_scored_map_findings`, `_normal_findings`, `_finding_groups`,
 `_canonical_rules`, `_relations`, `_relate_raw_pairs`,
 `_relate_skipped_pairs`, `_final_rules` — all keyed by `pmcid`.
@@ -1325,7 +1325,7 @@ points across `process()`).
 
 Option (a) chosen — `pop` the per-paper entries from all eight dicts in
 the `finally` block of `process()`
-([`runner.py:775-794`](../src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py)).
+([`runner.py:775-794`](src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py)).
 Runs after the result dict is materialised (line 684) and saved
 (line 729), so external callers see the same payload. Survives error
 paths and `KeyboardInterrupt` because it's in `finally`. `pop(pmcid,
@@ -1358,7 +1358,7 @@ fix only touches the eight per-paper state dicts.
 
 ### Symptom
 
-[`components/artifact_filter.py:59`](../src/nlp_histo/pipeline/stages/pdf_text_extraction/components/artifact_filter.py)
+[`components/artifact_filter.py:59`](src/nlp_histo/pipeline/stages/pdf_text_extraction/components/artifact_filter.py)
 rebuilt the filtered `List[LayoutElement]` via
 `[el for i, el in enumerate(elements) if element_dicts[i] in filtered_dicts]`
 — a list-`__contains__` membership check on dicts. Two issues. (1) The
@@ -1372,7 +1372,7 @@ dropped with no log or error.
 ### Diagnosis
 
 Today
-[`parsers/layout_utils.filter_artifacts`](../src/nlp_histo/parsers/layout_utils.py)
+[`parsers/layout_utils.filter_artifacts`](src/nlp_histo/parsers/layout_utils.py)
 returns the dicts unchanged (it appends references to `kept`, never
 constructs new dicts), so the bug was dormant. But the abstraction
 boundary didn't enforce that — a contributor adding any normalisation
@@ -1407,7 +1407,7 @@ ever needs to (e.g. to wrap dicts), the lookup falls back via a
 
 ### Verification
 
-[`tests/pdf_text_extraction/test_artifact_filter.py`](../tests/pdf_text_extraction/test_artifact_filter.py)
+[`tests/pdf_text_extraction/test_artifact_filter.py`](tests/pdf_text_extraction/test_artifact_filter.py)
 — two tests:
 
 1. `test_filter_drops_empty_text` — sanity: an empty-text element is
@@ -1507,7 +1507,7 @@ else (`PipelineRunner`, `PipelineConfig`, `BlacklistManager`,
 PDF extraction, two-pass extractor.
 
 **Symptom.**
-[`components/two_pass_extractor.py:382-398`](../src/nlp_histo/pipeline/stages/pdf_text_extraction/components/two_pass_extractor.py)
+[`components/two_pass_extractor.py:382-398`](src/nlp_histo/pipeline/stages/pdf_text_extraction/components/two_pass_extractor.py)
 constructs the header strip with `docling_y1 = page_h` (Docling
 coordinates, y=0 at bottom) and `docling_y2 = page_h - fitz_header_bottom`
 (fitz coordinates, y=0 at top). The two are adjacent lines named with
@@ -1531,7 +1531,7 @@ batch index template.
 sorted correctly.
 
 **Diagnosis.**
-[`scripts/templates/pipeline_batch_index.html.jinja2:276`](../scripts/inspect/templates/pipeline_batch_index.html.jinja2)
+[`scripts/templates/pipeline_batch_index.html.jinja2:276`](scripts/inspect/templates/pipeline_batch_index.html.jinja2)
 read `parseFloat(a.dataset.nilBa)` instead of `dataset.nliBa`. HTML5
 `dataset` camel-cases dashed attributes (`data-nli-ba` → `nliBa`), so the
 typed key resolved to `undefined` and `parseFloat(undefined) → NaN → 0` —
@@ -1551,7 +1551,7 @@ Inspector batch index template.
 "badge-blue" tag (just text on the default body background).
 
 **Diagnosis.**
-[`pipeline_batch_index.html.jinja2:194`](../scripts/inspect/templates/pipeline_batch_index.html.jinja2)
+[`pipeline_batch_index.html.jinja2:194`](scripts/inspect/templates/pipeline_batch_index.html.jinja2)
 applies class `badge-blue` for SCOPE_QUALIFY rows, but the stylesheet
 (lines 44-48) only defined `badge-green/red/orange/gray/cyan`. CSS class
 selector silently does nothing for an undefined class.
@@ -1576,7 +1576,7 @@ Summarisation MAP — `Finding` Pydantic model + `sum_map_findings` table.
 When an LLM voter emitted a `relation_type` not in
 `RelationTypeEnum` (e.g. `"associates_with"`, `"correlation"`), the
 `_coerce_invalid_relation_type` field-validator in
-[`pipeline/stages/summarization/models.py`](../src/nlp_histo/pipeline/stages/knowledge_extraction/models.py)
+[`pipeline/stages/summarization/models.py`](src/nlp_histo/pipeline/stages/knowledge_extraction/models.py)
 silently rewrote it to `RelationTypeEnum.unclear`. Same story for
 `direction` and (post-B-016) for `category` legacy `"demographics"`. The
 row in `sum_map_findings` then carried only the coerced enum value;
@@ -1614,10 +1614,10 @@ Two failure modes:
    OpenAI strict schema, so the prompt schema is unchanged.
 2. **DB schema.** Added nullable `Text` columns
    `raw_relation_type`, `raw_direction`, `raw_category` on
-   [`SumMapFinding`](../src/nlp_histo/database/models.py) via Alembic
-   [`0011_add_raw_llm_columns_to_sum_map_findings.py`](../alembic/versions/0011_add_raw_llm_columns_to_sum_map_findings.py).
+   [`SumMapFinding`](src/nlp_histo/database/models.py) via Alembic
+   [`0011_add_raw_llm_columns_to_sum_map_findings.py`](alembic/versions/0011_add_raw_llm_columns_to_sum_map_findings.py).
 3. **Plumbing.** `KnowledgeExtractionRunner._persist_map_findings`
-   ([`runner.py:1127`](../src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py))
+   ([`runner.py:1127`](src/nlp_histo/pipeline/stages/knowledge_extraction/runner.py))
    passes `f.raw_relation_type` / `f.raw_direction` / `f.raw_category`
    into the row dict.
 
@@ -1634,7 +1634,7 @@ pre-existing failure) all still pass.
 
 * Raw values only land on `sum_map_findings`. They do *not* propagate
   to `sum_normal_findings`, `sum_finding_groups`, `sum_canonical_rules`
-  yet — see TODO under [B-015 propagation](THESIS.md#todos).
+  yet — see TODO under [B-015 propagation](docs/THESIS.md#todos).
 * `confidence` is a strict `Literal`; out-of-vocab values cause the whole
   finding to be dropped before this capture runs (see
   `_drop_invalid_findings` and `bad_findings.jsonl`). So there is no
@@ -4143,7 +4143,7 @@ removed overlap term.
 
 ### Fix
 
-[`scripts/estimate_selection_cost.py:per_chunk_input_tokens`](../scripts/estimate_selection_cost.py)
+[`scripts/estimate_selection_cost.py:per_chunk_input_tokens`](scripts/estimate_selection_cost.py)
 rewritten to compute total sentence-occurrences exactly the way
 `_make_chunks` produces chunks, then divide by `n_chunks`:
 
@@ -4186,7 +4186,7 @@ actually mirrors `KnowledgeExtractionRunner.load_paper_from_db`
   `[10, 10, …, 10, 4]`. Total = 124. Average = 124/13 ≈ 9.54.
   Pre-fix returned ~7.69; post-fix returns 9.54.
 * Regression test:
-  [`tests/test_estimate_selection_cost.py`](../tests/scripts/test_estimate_selection_cost.py)
+  [`tests/test_estimate_selection_cost.py`](tests/scripts/test_estimate_selection_cost.py)
   pins the formula against the worked example plus edge cases
   (empty input, exactly one chunk, no overlap, overlap-out-of-range
   validation).
@@ -4219,7 +4219,7 @@ changes.
 
 ### Fix
 
-[`scripts/estimate_pipeline_cost_percentiles.py`](../scripts/estimate_pipeline_cost_percentiles.py):
+[`scripts/estimate_pipeline_cost_percentiles.py`](scripts/estimate_pipeline_cost_percentiles.py):
 
 * Removed `import json`, `import statistics` — neither was referenced.
 * Removed `estimate_non_llm_stages` (line 278 pre-fix) and
@@ -4398,7 +4398,7 @@ runs (pipeline_runs ids 38–48, all status='success', 5 distinct papers):
 |  43 | PMC10100421_HIS-82-393   | **0** |    0 |   185 |   2 |   185 |      0 |
 
 Each paper's `sum_rejection_summaries.map_findings_total` records 100–230 MAP
-findings produced. Discovered during the [B-005 end-to-end verification TODO](THESIS.md#todos)
+findings produced. Discovered during the [B-005 end-to-end verification TODO](docs/THESIS.md#todos)
 (L36) on 2026-05-16.
 
 ### Evidence
@@ -5092,7 +5092,7 @@ Pending fix + re-run. Pre-fix verification of the diagnosis: the canonical split
 independently (`eval/silver/split.py`, seed=42, dev_fraction=0.8) yields 221/52 and 1243/353,
 while the recorded EXP F denominators (silver 1596, pipeline 1920, matched 1533) match the full
 273-case corpus exactly — proving no test filter reached the metric. Tracked in
-[`THESIS.md`](THESIS.md#todos).
+[`THESIS.md`](docs/THESIS.md#todos).
 
 ### Resolution (2026-06-12) — Won't fix; held-out split abandoned by design — **SUPERSEDED 2026-06-15**
 > **Superseded 2026-06-15.** This Won't-fix resolution was reversed: the held-out split is back,

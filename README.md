@@ -169,10 +169,10 @@ nlp-histo replay chapter9 --artifact-root .                     # offline, free
 The commands work from **any** directory — the package no longer needs the repository
 as its working directory in order to import.
 
-**Reproducing the thesis from scratch:** [`docs/REPRODUCE.md`](docs/REPRODUCE.md) — one
+**Reproducing the thesis from scratch:** [`docs/REPRODUCE.md`](REPRODUCE.md) — one
 linear sequence, read top to bottom, no prior knowledge of the project assumed. Full command
-reference: [`docs/HOW_TO_RUN.md`](docs/HOW_TO_RUN.md); layout and the ships/doesn't-ship
-boundary: [`docs/STRUCTURE.md`](docs/STRUCTURE.md).
+reference: [`docs/HOW_TO_RUN.md`](HOW_TO_RUN.md); layout and the ships/doesn't-ship
+boundary: [`docs/STRUCTURE.md`](STRUCTURE.md).
 
 `eval/` (the thesis experiments and frozen artifacts) and `scripts/` are
 **repository-only** — they are not installed and never enter the wheel. They import
@@ -304,20 +304,20 @@ cd ..
 
 The production summariser is `src/nlp_histo/pipeline/stages/knowledge_extraction/`,
 driven via `nlp-histo knowledge` (sync or async batch). See
-[`docs/HOW_TO_RUN.md`](docs/HOW_TO_RUN.md) §9 for the full recipe.
+[`docs/HOW_TO_RUN.md`](HOW_TO_RUN.md) §9 for the full recipe.
 
 Which direct-API keys `.env` needs **depends on the profile** — `real`/`real_5` use all
 three (`OPENAI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`), `cheap` needs only
 OpenAI + Google, and `haiku_only` only Anthropic. `--dry-run` prints the exact set for
 the invocation you are about to run; treat it as the authority (see
-[B-120](docs/BUGS.md)).
+[B-120](BUGS.md)).
 
 > **This costs money.** `--dry-run` resolves the full config and contacts no paid
 > host — use it to check an invocation for free.
 
 The PMCID is **positional**. A mode (`--sync` or `--batch`), a `--profile NAME`, and
 `--health-check yes|no` are all required and have no defaults — that is deliberate, and
-it is what stops a paid run starting by accident (see [B-105](docs/BUGS.md)). Valid
+it is what stops a paid run starting by accident (see [B-105](BUGS.md)). Valid
 profiles are `cheap`, `real`, `real_5`, `haiku_only` (defined in
 `src/nlp_histo/pipeline/stages/knowledge_extraction/batch/voter_configs.py` via
 `get_profile`).

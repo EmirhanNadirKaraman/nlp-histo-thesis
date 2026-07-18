@@ -345,3 +345,36 @@ eval/prompts/relation_pairs/*_prompt.txt
 # Phase 1 eval-harness outputs (keep eval/results/.gitkeep)
 eval/results/*.csv
 eval/results/*.json
+
+# manifest file from the archive
+MANIFEST.json
+
+# Markdown is local-only by default: working notes, module docs and drafts stay
+# on disk and out of the repository. Every exception is listed below, and they
+# must come AFTER this rule -- the last matching pattern wins.
+*.md
+
+# The documents a reader is meant to receive.
+!/README.md
+!/BUGS.md
+!/REPRODUCE.md
+!/HOW_TO_RUN.md
+!/STRUCTURE.md
+# The decisions log and carry-forward TODOs.
+!/docs/THESIS.md
+# Frozen reports that scripts read as DATA, not prose: stage6_PR.md is parsed by
+# run_summarization_experiments.py (HOW_TO_RUN section 12), so untracking it
+# would break that command.
+!/reports/stage6_PR.md
+!/reports/stage7_PR.md
+# The tracked 5-paper grounding snapshot HOW_TO_RUN points at, which B-108
+# exists to protect from being overwritten.
+!/eval/results/grounding_sweep.md
+# Claude Code skill definitions: these are the skills themselves, not notes
+# about them -- the tooling reads them.
+!/.agents/skills/**/*.md
+
+# Re-assert the two negations that already existed above, which `*.md` would
+# otherwise override: both are read by REPRODUCE.md Step 8 (B-125).
+!/eval/reports/RESULTS.md
+!/eval/reports/E01_doc_extraction/*_PR.md
