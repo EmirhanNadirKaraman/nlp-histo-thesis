@@ -19,7 +19,7 @@ Beyond P/R/F1 vs silver, each row reports deferral safety: early_accept_rate
 (silver precision restricted to those early-accepted chunks) — the pair that
 tells you whether a low theta is prematurely accepting bad chunks.
 
-CAVEAT: the replay drives the LEGACY AgreementChecker path, NOT MapOutputRouter
+CAVEAT: the replay drives the LEGACY AgreementChecker path, not MapOutputRouter
 (production runs this same legacy L1->L2->L3 cascade — enable_router=false; the
 MapOutputRouter L1->L3-skip path is an opt-in experiment, see B-062).
 Every row is stamped cascade_path="legacy_agreement_checker"; re-validate any
@@ -46,7 +46,7 @@ Notes
 -----
 - All three levels (L1, L2, L3) are submitted simultaneously for every case and
   every chunk so that we can replay any (theta, reject_theta, scorer) combination
-  without additional API calls. The cache MUST have L3 populated — a sweep run
+  without additional API calls. The cache must have L3 populated — a sweep run
   warns loudly if it doesn't, because escalated chunks would contribute no findings.
 - The agreement embedder uses OpenAI text-embedding-3-small by default; pass
   --embedder gemini to use the Gemini embedding model instead.

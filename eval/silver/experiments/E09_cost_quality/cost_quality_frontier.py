@@ -6,7 +6,7 @@ the E06/E07 winner) and the ECONOMY config (openai/hybrid/soft_max, the E06c
 Pareto economy point) sit on the strict-F1-vs-cost frontier — using the per-tier
 INVOCATION columns (n_l{1,2,3}_invoked) added this session, not just escalate_rate.
 
-Cost model (PRIMARY axis): price-weighted per-tier cost per chunk
+Cost model (primary axis): price-weighted per-tier cost per chunk
     cost ∝ Σ_tier  n_tier_invoked × Σ_{voter∈tier} price(voter)
 priced from configs/model_prices.json (USD/1M tokens, input+output). Justification
 for not needing per-call token counts: every tier summarises the SAME chunk into
@@ -118,7 +118,7 @@ def _load(path: Path, structure: str, voter_subset: str | None) -> list[dict]:
 
 
 def _pareto(rows: list[dict], cost_key: str) -> set:
-    """Indices of rows NOT dominated on (cost↓, strict_f1↑)."""
+    """Indices of rows not dominated on (cost↓, strict_f1↑)."""
     pts = [(i, _f(r, cost_key), _f(r, "strict_f1_optimal")) for i, r in enumerate(rows)]
     keep = set()
     for i, c, q in pts:

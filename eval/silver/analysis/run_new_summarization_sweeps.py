@@ -11,7 +11,7 @@ DESIGN — screen→refine (dependency-aware)
 ``alignment_strategy`` is a *structural* knob: under one-to-one alignments
 (``greedy``/``hungarian``) three of the four soft-align weights go inert (only
 ``tau`` survives), and the best embedder/scorer can differ by alignment. So the
-structure block ``{embedder, scorer, alignment}`` is decided JOINTLY first — at
+structure block ``{embedder, scorer, alignment}`` is decided jointly first — at
 default weights, on a cheap coarse threshold grid — and only the surviving
 finalist structures are weight-tuned. This avoids tuning weights that a later-
 chosen alignment would discard, while a finalist set (not just the single
@@ -26,7 +26,7 @@ E-numbered subfolder ``eval/reports/E##_<stage>/`` (see docs/EXPERIMENTS.md):
                            COARSE theta/reject grid. Identifies promising structures,
                            not final configs (top-K ∪ within --keep-within ∪ Pareto
                            ∪ economy ∪ knee, + a diversity add). → paste FINALIST_STRUCTURES.
-  2. family_refine         Refines ONLY the finalist structures: applicable weights ×
+  2. family_refine         Refines only the finalist structures: applicable weights ×
                            the FULL theta/reject grid (weight × theta swept jointly).
                            soft_max → tau/count_alpha/reuse/contradiction (+ blend);
                            greedy/hungarian → tau only (+ blend, pre-alignment signal).
@@ -58,15 +58,15 @@ Stages 3–4 (voter_subset) are OPTIONAL — skip them and BEST_VOTER_SUBSET sta
 (only meaningful at lower theta, where the cheap voters actually drive decisions).
 
 METRIC / MATCHER — selection uses optimal / Hungarian one-to-one semantic
-matching (max embedding-similarity assignment) as the PRIMARY matcher: metric
+matching (max embedding-similarity assignment) as the primary matcher: metric
 ``strict_f1_optimal``, tie-break lower ``escalate_rate``, then ``f1_optimal``,
 then simpler/closer-to-default config. ``greedy`` matching is reported (``*_greedy``
-columns) as a sensitivity diagnostic only — it NEVER selects. NOTE: "optimal" is
-optimal *by embedding similarity*, NOT a globally optimal strict-F1 assignment.
+columns) as a sensitivity diagnostic only — it never selects. NOTE: "optimal" is
+optimal *by embedding similarity*, not a globally optimal strict-F1 assignment.
 
 CALIBRATION SPLIT — runs on ``--split all`` by default because the silver
 calibration set is small and a stable point estimate is wanted. ``--split
-dev``/``test`` stay available for sensitivity/debugging but are NOT the default.
+dev``/``test`` stay available for sensitivity/debugging but are not the default.
 Sweep scores are CALIBRATION metrics, not unbiased held-out performance. The
 held-out final evaluation is a SEPARATE runbook step (pin → ``run_paper.py
 --sync`` → ``export_pipeline`` → ``evaluate --matcher optimal``); only that score
@@ -127,13 +127,13 @@ from nlp_histo.pipeline.stages.knowledge_extraction.config import AgreementConfi
 # Pin-as-you-go winners. Edit after each stage. Current values = the E06 family_refine
 # QUALITY winner (gemini/hybrid/greedy, entity-heavy blend, θ=0.9): strict_f1_optimal
 # 0.7133 at escalate_rate 0.962 — CONFIRMED by map_theta (E07) at the full score fn.
-# The cheap "economy" operating point is NOT pinned here; it lives in the E06 frontier
+# The cheap "economy" operating point is not pinned here; it lives in the E06 frontier
 # CSV / VOTER_SUBSET_SCREEN_CONFIGS (run voter_subset stages to pursue it).
 FINALIST_STRUCTURES: list[tuple[str, str, str]] = [   # (embedder, scorer_kind, alignment)
     # E05 structure_screen 2026-06-21 (sweep_20260621T134042) — 12 finalists,
     # ranked by strict_f1_optimal at each structure's max-F1 cell. Annotations =
     # the operating point that earned each finalist's reason (economy/knee show
-    # their CHEAP θ, not the max-F1 θ).
+    # their cheap θ, not the max-F1 θ).
     # All 12 structures kept (hungarian RESTORED 2026-06-21): greedy≈hungarian was measured
     # equivalent only at DEFAULT weights (E05, max|ΔstrictF1|=0.0015); family_refine sweeps
     # NON-default weights, so we run both one-to-one aligners here rather than defend that
@@ -176,16 +176,16 @@ BEST_REJECT_THETA = 0.20            # E07 (5-voter) — reject=0.2 weakly domina
 #                                     (0.1,0.2], so 0.2 rejects it. (The 6-voter config had the empty band at (0.1,0.2] → reject 0.1;
 #                                     dropping haiku shifted the agreement-score distribution.) Must be < BEST_THETA. Noise-level.
 
-BEST_VOTER_SUBSET = "drop_l2_2"     # SELECTED on calibration (related15, E06c, 2026-06-22): drop Claude-Haiku
+BEST_VOTER_SUBSET = "drop_l2_2"     # Selected on calibration (related15, E06c, 2026-06-22): drop Claude-Haiku
 #                                     from L2 → 5-voter cascade. E06c (full θ×reject grid): quality/drop_l2_2
 #                                     owns the max-F1 operating point, 0.7147 vs all 0.7131 (+0.0016 = NOISE,
 #                                     within E11's ±0.004 CI) at −18% per-chunk cost. So this is an
 #                                     F1-EQUIVALENT, cheaper config; selected for (1) cost and (2) evaluator-
 #                                     independence — the 5-voter L1/L2 ensemble is entirely non-Anthropic, so
 #                                     its agreement with the Opus-silver labeler is not a same-provider artifact
-#                                     (L3 is still Sonnet). NOT an F1 claim.
+#                                     (L3 is still Sonnet). Not an F1 claim.
 #                                     Decision made ENTIRELY on calibration. E14 REPORTS the 5-voter held-out
-#                                     generalization once (descriptive) — it does NOT gate this pin; choosing
+#                                     generalization once (descriptive) — it does not gate this pin; choosing
 #                                     the config on the held-out set would be test-set selection.
 #                                     map_theta/map_gates (E07/E08) replay this drop_l2_2 SELECTION over the
 #                                     6-voter primer. _make_voters() and E12 (LOO) stay on the full 6 voters
@@ -237,7 +237,7 @@ COARSE_THETA_GRID = [0.70, 0.75, 0.80, 0.85, 0.90]
 COARSE_REJECT_GRID = [0.10, 0.20]
 
 # family_refine — reject ENDPOINTS {0.0, 0.2}: the no-rejection baseline and the grid's most
-# aggressive setting, swept jointly with EVERY weight config so reject sensitivity is tested
+# aggressive setting, swept jointly with every weight config so reject sensitivity is tested
 # off-default HERE (not extrapolated from default-weight screening). Semantics: reject rejects
 # primary <= reject_theta. reject=0.0 → only primary==0.0, and EXP_1 showed rej=-1.0 ≡ rej=0.0
 # (2026-05-26) → no gate chunk scores exactly 0, so 0.0 = reject NOTHING. The only score mass in
@@ -295,7 +295,7 @@ _FINALIST_EMPTY_MSG = (
     "  3. Re-run: python -m eval.silver.analysis.run_new_summarization_sweeps --stage family_refine"
 )
 
-# Voter-subset / leave-one-voter-out (targeted, AFTER family_refine)
+# Voter-subset / leave-one-voter-out (targeted, after family_refine)
 # Single-voter drops only (no combined L1+L2 drops yet). drop_lN_i removes the
 # i-th voter of level N (stable index → model; see docs/EXPERIMENTS.md).
 VOTER_SUBSET_GRID = (
@@ -437,9 +437,9 @@ _CSV_FIELDS = [
     "w_category", "w_embedding", "w_entity", "w_evidence", "weights_sum",
     "theta", "reject_theta",
     "legacy_single_voter_policy", "force_escalate_on_polarity_conflict", "cascade_path",
-    # PRIMARY matcher = optimal / Hungarian (selection runs on strict_f1_optimal):
+    # Primary matcher = optimal / Hungarian (selection runs on strict_f1_optimal):
     "strict_f1_optimal", "f1_optimal", "precision_optimal", "recall_optimal", "n_matched_optimal",
-    # DIAGNOSTIC matcher = greedy (reported, never selected on):
+    # Diagnostic matcher = greedy (reported, never selected on):
     "strict_f1_greedy", "f1_greedy", "precision_greedy", "recall_greedy", "n_matched_greedy",
     "n_silver", "n_pipeline",
     "early_accept_rate", "escalate_rate", "early_accept_precision",
@@ -485,7 +485,7 @@ def _refine_specs(emb: str, scorer: str, alignment: str) -> list[ScorerSpec]:
     """family_refine: APPLICABLE weight variants for one finalist structure.
 
     - ``tau`` always (min valid-pair similarity, used by every alignment).
-    - ``count_alpha``/``reuse_weight``/``contradiction_weight`` ONLY under
+    - ``count_alpha``/``reuse_weight``/``contradiction_weight`` only under
       ``soft_max`` — inert for one-to-one, so not swept there.
     - hybrid blend presets under ANY alignment (they shape the pre-alignment
       category/entity/evidence sub-signals). The ``default`` blend equals the
@@ -671,7 +671,7 @@ def _stage_plan(stage: str):
         spec = ScorerSpec(BEST_SCORER, BEST_SCORER, _pinned_agreement(BEST_ALIGNMENT))
         # E08b — the SHIPPED config's θ-curve: re-sweep θ × reject at the gate E08 chose
         # (BEST_SINGLE_VOTER_POLICY / BEST_FORCE_ESCALATE_POLARITY). CHARACTERIZATION for E09's frontier
-        # + the headline — NOT a θ re-selection (θ0.9 was selected by E07 at the default gate and is
+        # + the headline — not a θ re-selection (θ0.9 was selected by E07 at the default gate and is
         # gate-invariant). Same pins as map_theta; only the gate differs. → E09 reads this stage's CSV.
         return ([BEST_EMBEDDER], [spec], list(THETA_GRID), list(REJECT_THETA_GRID),
                 (BEST_SINGLE_VOTER_POLICY,), (BEST_FORCE_ESCALATE_POLARITY,),
@@ -717,9 +717,9 @@ def _deviation(row: dict) -> int:
 
 
 def _rank(row: dict, metric: str) -> tuple[float, float, float, int]:
-    """Selection key: higher PRIMARY metric (an optimal-matcher metric), then LOWER
+    """Selection key: higher primary metric (an optimal-matcher metric), then lower
     cost_frac (price-weighted escalation), then higher f1_optimal, then SIMPLER config (fewer deviations
-    from defaults). Greedy metrics NEVER enter the key."""
+    from defaults). Greedy metrics never enter the key."""
     return (
         float(row[metric]),
         -_cost_frac(row),
@@ -749,18 +749,18 @@ def _select_finalists(rows: list[dict], metric: str, top_k: int, keep_within: fl
     so structure_screen keeps BOTH the quality corner (high F1, expensive) AND the
     economy/knee end (low cost).
 
-    COST AXIS is ``_cost_frac`` (price-weighted L1→L2 + L2→L3 escalation), NOT bare
+    COST AXIS is ``_cost_frac`` (price-weighted L1→L2 + L2→L3 escalation), not bare
     ``escalate_rate`` — the latter counts only L3 reach and is blind to the L2 cost an
     L2-heavy variant pays (L2 ≈ 5.5× L1/call). ``escalate_rate`` stays a reported column.
 
     CELL-LEVEL is load-bearing: the cost axis (cost_frac) is driven by THETA, not
     by structure identity, so the Pareto frontier is computed over the FULL cells
-    (structure × theta × reject) — NOT per-structure bests, which would collapse every
+    (structure × theta × reject) — not per-structure bests, which would collapse every
     structure to its θ=0.9 (most-expensive) cell and discard the entire cheap-θ economy
     frontier. A structure becomes a finalist if it TOUCHES the frontier at any cell.
     ``top-k`` / ``within-best`` stay QUALITY picks (per-structure max-metric).
 
-    Selection uses ONLY ``metric`` (an optimal-matcher metric) + ``cost_frac`` —
+    Selection uses only ``metric`` (an optimal-matcher metric) + ``cost_frac`` —
     never a greedy metric. Returns ``[(struct, [reasons], {reason: cell})]`` ranked
     best-first by the structure's max-metric. struct = (embedder, scorer_kind, alignment).
     Reasons (additive): top-k, within-best, pareto, economy, knee, diversity:<axis>.
@@ -804,7 +804,7 @@ def _select_finalists(rows: list[dict], metric: str, top_k: int, keep_within: fl
     cheapest_front: dict[tuple, dict] = {}
     for r in sorted(frontier, key=c):                      # lowest escalate first
         cheapest_front.setdefault(_cell_struct(r), r)
-    # Cap preserving the CHEAP end: prioritise frontier structures NOT already kept by a
+    # Cap preserving the cheap end: prioritise frontier structures not already kept by a
     # quality reason (top-k/within-best), cheapest first. Quality-first trimming would drop
     # exactly the cost-efficient structures (e.g. gemini/embedding) this stage exists to keep.
     by_cost = sorted(cheapest_front, key=lambda s: c(cheapest_front[s]))
@@ -843,7 +843,7 @@ def _stage_voter_subset(stage: str) -> str:
 
 
 def _iter_cells(stage: str):
-    """Yield one dict per cell — the SINGLE enumeration source shared by --list-variants,
+    """Yield one dict per cell — the single enumeration source shared by --list-variants,
     the run loop, and the checkpoint keys, so the listed count, what actually runs, and the
     resume keys can never drift apart. Every cell carries a ``voter_subset``."""
     if stage == "voter_subset_screen":
@@ -999,7 +999,7 @@ def _read_checkpoint_rows(path: Path) -> list[dict]:
 
 
 def _checkpoint_state(stage: str, signature: str, fresh: bool) -> tuple[list[dict], bool]:
-    """Return (done_rows, resume). Resume ONLY when both files exist AND the
+    """Return (done_rows, resume). Resume only when both files exist AND the
     signature matches; otherwise rotate any stale files aside and start fresh
     (writing a new meta sidecar)."""
     ckpt, meta = _ckpt_csv(stage), _ckpt_meta(stage)
@@ -1150,7 +1150,7 @@ def _fmt_best(r: dict, metric: str) -> str:
 
 
 # Display the operating point that earns a finalist's MOST cost-relevant reason, so
-# an "economy" finalist shows its CHEAP θ — not its max-F1 θ.
+# an "economy" finalist shows its cheap θ — not its max-F1 θ.
 _REASON_DISPLAY_PRIORITY = ("economy", "knee", "pareto", "within-best", "top-k")
 
 

@@ -30,7 +30,7 @@ def _score_buckets(
 
 
 def _field_accuracy(rows: list[dict], field_name: str) -> float | None:
-    """Fraction of rows where the field was NOT in fields_changed."""
+    """Fraction of rows where the field was not in fields_changed."""
     if not rows:
         return None
     correct = sum(1 for r in rows if field_name not in r.get("fields_changed", []))

@@ -16,9 +16,9 @@ Gold-label mapping (dataset keeps canonical labels; mapped to the classifier's
 {SUPPORT, CONTRADICT, UNRELATED} space for scoring):
   SUPPORTING → SUPPORT, CONTRADICTING → CONTRADICT, UNRELATED → UNRELATED.
 
-PRIMARY reported result = the default RelateConfig thresholds (0.50/0.50). The
-entailment×contradiction threshold sweep is DIAGNOSTIC sensitivity analysis only
-— it does NOT tune RelateConfig or the frozen pipeline (per the thesis: no
+Primary reported result = the default RelateConfig thresholds (0.50/0.50). The
+entailment×contradiction threshold sweep is diagnostic sensitivity analysis only
+— it does not tune RelateConfig or the frozen pipeline (per the thesis: no
 hyperparameter is tuned on this set).
 
 Note: ``_classify_pair`` has a corpus-structural same-polarity guard that reads
@@ -239,7 +239,7 @@ def main() -> None:
                 "accuracy": round(pd[d]["accuracy"], 4), "class": d, "support": pd[d]["n"],
             })
 
-    # DIAGNOSTIC threshold sweep (NOT tuning — does not change RelateConfig)
+    # Diagnostic threshold sweep (not tuning — does not change RelateConfig)
     print("\n── DIAGNOSTIC threshold sweep (sensitivity only; pipeline NOT retuned) ──")
     for mode in MODES:
         scored = cached[mode]

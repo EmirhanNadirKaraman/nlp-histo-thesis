@@ -20,7 +20,7 @@ TWO questions, TWO comparisons — do not conflate them:
     voter was the most disagreeable one.
 
 Offline replay over the primed voter cache + warm embedding cache — this is a
-DIAGNOSTIC, not calibration; no API beyond embedding-cache misses (a LOO reuses a
+Diagnostic, not calibration; no API beyond embedding-cache misses (a LOO reuses a
 subset of already-embedded claims, so misses are negligible). L3 is excluded: it
 is the escalation fallback, not an agreement voter.
 
