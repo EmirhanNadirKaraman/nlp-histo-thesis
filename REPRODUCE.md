@@ -107,13 +107,14 @@ This is the recommended path. You download the artifacts and the corpus once, th
 command runs against them for free.
 
 **Start the download now** — the artifact archive is 1.2 GB and you will not need it until
-Step 5, so kick it off before you read on. There are **four files** to fetch (two archives
-and their `.sha256` sidecars):
+Step 5, so kick it off before you read on. There are **five files** to fetch (two archives,
+their `.sha256` sidecars, and a manifest):
 
 | File | Size | What it is |
 |---|---|---|
 | `nlp-histo-replay-artifacts-181545a.tar.gz` | 1.2 GB | Frozen outputs of the paid LLM pipeline + the embedding caches |
 | `nlp-histo-replay-artifacts-181545a.tar.gz.sha256` | tiny | Checksum for the archive |
+| `nlp-histo-replay-artifacts-181545a.tar.gz.manifest.json` | tiny | Inventory of the archive's contents; not needed to reproduce |
 | `nlp-histo-corpus.sql.gz` | 49 MB | The PostgreSQL corpus: 977 papers, 35,896 text elements, 1.79M entities |
 | `nlp-histo-corpus.sql.gz.sha256` | tiny | Checksum for the corpus dump |
 
@@ -122,28 +123,30 @@ Both locations hold the identical set — use whichever is faster:
 * **Primary — LRZ Sync+Share:** <https://syncandshare.lrz.de/getlink/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles>
 * **Mirror — Google Drive:** <https://drive.google.com/drive/folders/1uo-iGOb3df11LqjQRbCwoyRsiVDMJkpY?usp=sharing>
 
-Put all four files in one directory. This guide calls it `~/nlp-histo-bundles`; anywhere
+Put all five files in one directory. This guide calls it `~/nlp-histo-bundles`; anywhere
 works, and the rest of Track A assumes that path.
 
-**From a browser**, open either link and download all four files into `~/nlp-histo-bundles`.
+**From a browser**, open either link and download all five files into `~/nlp-histo-bundles`.
 
-**From the command line**, the LRZ link fetches the whole folder — all four files — as one
+**From the command line**, the LRZ link fetches the whole folder — all five files — as one
 zip:
 
 ```bash
 mkdir -p ~/nlp-histo-bundles && cd ~/nlp-histo-bundles
 curl -L -o bundle.zip \
   "https://syncandshare.lrz.de/dl/fiBHdDWVJLKMxYP5JicFvd/nlp-histo-bundles.dir"
-unzip bundle.zip        # yields the four files above
+unzip bundle.zip        # yields the five files above
 ```
 
-The Google Drive mirror is per-file, and a 1.2 GB file triggers Drive's virus-scan
-interstitial — a plain `curl` silently saves that HTML warning page under the archive's
-name. If you use Drive from the command line, pass the confirm token:
+The Google Drive mirror is per-file — this command fetches only the archive, so you still
+need the browser or LRZ for the `.sha256` that Step 5 checks it against. A 1.2 GB file also
+triggers Drive's virus-scan interstitial, and a plain `curl` silently saves that HTML
+warning page under the archive's name. If you use Drive from the command line, pass the
+confirm token:
 
 ```bash
 curl -L -o nlp-histo-replay-artifacts-181545a.tar.gz \
-  "https://drive.usercontent.google.com/download?id=1SOWdAhhy0ZFqwlMjG3X3EFvgNQyKhIxW&export=download&confirm=t"
+  "https://drive.usercontent.google.com/download?id=1oVRfvSp0mnSor-oisxCzb-KqBoFj5YDw&export=download&confirm=t"
 ```
 
 Either way, Step 5 verifies what you got before anything trusts it.
