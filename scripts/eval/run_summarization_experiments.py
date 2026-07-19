@@ -1277,7 +1277,7 @@ def _b2_replay_cascade(
     if isinstance(polarity_flag, str):
         polarity_flag = polarity_flag.lower() == "true"
 
-    case_outputs, accept, _early, _polconf = _replay(
+    case_outputs, accept, _early, _polconf, _invoked = _replay(
         voter_cache, scorer,
         theta=float(pfm["theta"]),
         reject_theta=float(pfm["reject_theta"]),

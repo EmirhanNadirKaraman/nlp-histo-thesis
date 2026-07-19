@@ -260,18 +260,17 @@ Takes about five minutes. On first run it downloads two models (~3 GB: the scisp
 knowledge base and a biomedical NLI model). That download is free, and it is cached — later
 runs skip it.
 
-**What you should see:** it works through twelve analyses and ends with `done.`. Exit code
+**What you should see:** it works through eleven analyses and ends with `done.`. Exit code
 0.
 
 ```bash
 ls out/replay-check/*.csv | wc -l
 ```
 
-**Expect 9.**
+**Expect 10.**
 
-Two of the twelve analyses do not produce a CSV, by design and for reasons that predate
-this work: `04_theta_heatmap` reports `status=missing` (its inputs are not in the tree) and
-`10_cascade_vs_sonnet_gap_ci` fails with a known pre-existing error. Nine CSVs is success.
+Eleven analyses run and ten write a CSV. `09_provenance_example` is the exception: it
+emits a JSON record rather than a table, by design. Ten CSVs is success.
 
 **If the exit code is not 0**, it will be one of these, and the message says which:
 
@@ -290,7 +289,7 @@ Nothing here fails silently: a non-zero exit always names the cause.
 
 **Comparing against the published tables.** The repository ships the frozen thesis output at
 `out/thesis_results/results_offline_replay/` (the CSVs are tracked in git — you already have
-them from Step 1). Your nine CSVs should be byte-identical to these. Diff all nine at once:
+them from Step 1). Your ten CSVs should be byte-identical to these. Diff all ten at once:
 
 ```bash
 for f in out/replay-check/*.csv; do
@@ -300,10 +299,11 @@ done
 ```
 
 Every line should print `OK` with no `diff` output above it — that is the reproduction
-confirmed. (The reference directory also holds `04_theta_heatmap.csv` and
-`10_cascade_vs_sonnet_gap_ci_per_case.csv`, which your run does not produce — they are the
-two analyses noted above whose inputs are not in the shipped tree. Your nine are the ones
-that matter.)
+confirmed, ten for ten. (The reference directory also holds `04_theta_heatmap.csv`, which
+your run does not produce. That analysis is no longer registered: it needed joint-sweep
+CSVs that are not in the shipped tree, and nothing cites its output — the thesis presents
+a theta curve and a pinned-config table, never a heatmap. The file is kept as a record of
+what it once produced.)
 
 ## Step 8 (optional) — The evaluation experiments
 

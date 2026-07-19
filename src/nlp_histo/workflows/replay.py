@@ -811,6 +811,9 @@ def analyse_polarity_conflict_counts() -> AnalysisResult:
 def analyse_theta_heatmap() -> AnalysisResult:
     """Heatmap of strict_f1 over (theta, reject_theta) for one scorer,
     extracted from the existing joint-sweep CSV in eval/reports/.
+
+    Not in ANALYSES: its exp_{1,4} inputs are gone and nothing cites its output.
+    Kept so it can be re-registered if those sweeps are ever regenerated.
     """
     name = "04_theta_heatmap"
     reports_dir = _REPO_ROOT / "eval" / "reports"
@@ -1709,7 +1712,7 @@ def _build_cascade_outputs(voter_cache, agreement_embed_fn, dev_filter):
         weights=agreement_cfg,
     )
     scorer = _build_scorer(spec, agreement_embed_fn)
-    case_outputs, accept_counts, early_chunks, n_pol = _replay(
+    case_outputs, accept_counts, early_chunks, n_pol, _invoked = _replay(
         voter_cache, scorer, theta=0.9, reject_theta=0.2,
         single_voter_policy="keep",
         force_escalate_on_polarity_conflict=True,
@@ -2405,7 +2408,12 @@ ANALYSES: list[tuple[str, Callable[[], AnalysisResult]]] = [
     ("01_provenance_carry_rate",          analyse_provenance_carry_rate),
     ("02_grounding_retention",            analyse_grounding_retention),
     ("03_polarity_conflict_counts",       analyse_polarity_conflict_counts),
-    ("04_theta_heatmap",                  analyse_theta_heatmap),
+    # 04_theta_heatmap is deregistered, not deleted. It needs
+    # eval/reports/exp_{1,4}_*_scorer_full_*.csv, which are not on disk, were
+    # never tracked, and appear in no commit; regenerating them means a full
+    # joint sweep. Nothing cites its output -- the thesis presents a theta curve
+    # (E07, figure 01_theta_strict_f1) and a pinned-config table, never a
+    # theta x reject_theta heatmap. Registered again if those inputs return.
     ("05_bootstrap_ci_cascade_vs_sonnet", analyse_bootstrap_ci),
     ("06_exp_f_test_split",               analyse_exp_f_test_split),
     ("07_nli_input_ab",                   analyse_nli_ab),

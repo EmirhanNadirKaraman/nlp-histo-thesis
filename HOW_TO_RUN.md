@@ -9,7 +9,7 @@
 **Already oriented? Read §0, then follow the numbered sections in order.** Each one says what
 it produces and what success looks like. Nothing below costs money except §9, which is marked.
 
-**Fastest useful result:** §0 (get the bundle) → §2 (install) → §10 (replay) → nine tables
+**Fastest useful result:** §0 (get the bundle) → §2 (install) → §10 (replay) → ten tables
 identical to the thesis. No database, no API key, no cost. Budget an hour: the 1.2 GB
 download and the ~4 GB dependency install dominate, and the replay itself is ~5 minutes.
 
@@ -32,7 +32,7 @@ Follow these in order. Every command is run **from the repository root**.
 | 7 | `nlp-histo ingest` | text + figures + tables in the database, `out/` | `ok=N fail=0` | ~30 s/paper |
 | 8 | `nlp-histo ner extract` → `merge` → `export` | `entities` rows; `umls_entities_lg/`, `disease_entities_lg/` | `Summary: N Processed … 0 Errors`, then `✓ Saved N files` | slow on a cold cache |
 | 9 | `nlp-histo knowledge` | `sum_*` tables, `out/summaries/` | per-paper JSON written | **⚠ costs money** |
-| 10 | `nlp-histo replay results` | 9 CSVs in `out/thesis_results/…` | exit 0, nine files | ~5 min |
+| 10 | `nlp-histo replay results` | 10 CSVs in `out/thesis_results/…` | exit 0, ten files | ~5 min |
 | 11 | `pytest` · `ruff check .` | — | `1720 passed`, `All checks passed!` | 3–4 min |
 
 **Exit codes are meaningful, not decorative.** Non-zero always means *stop and read*, never
@@ -96,7 +96,7 @@ out/summaries/{summaries,cascade_decisions}/   10 MB
 out/summaries/corpus_relations*.json
 ```
 
-Unpack it over the clone so the paths match, then → **§10**. Expect 9 CSVs, byte-identical
+Unpack it over the clone so the paths match, then → **§10**. Expect 10 CSVs, byte-identical
 to the published tables.
 
 ### Path B — work with the corpus (adds the database)
@@ -166,7 +166,7 @@ tar -xzf nlp-histo-replay-artifacts-181545a.tar.gz -C /path/to/nlp-histo
 # ── artifact preflight (fails loudly and itemised if anything is missing) ────
 cd /path/to/nlp-histo
 nlp-histo replay results --artifact-root . --output-dir /tmp/replay-out
-#   exit 0 → 9 CSVs;  exit 2 → artifact tree unusable;  exit 3 → UMLS unreachable;
+#   exit 0 → 10 CSVs;  exit 2 → artifact tree unusable;  exit 3 → UMLS unreachable;
 #   exit 4 → an embedding cache is incomplete
 ```
 
@@ -706,15 +706,20 @@ artifacts works and costs nothing. *(Earlier revisions of this file claimed "rou
 2.8 GB", which was unsourced and matched no measurable scope, and then "≈ 640 MB", which
 was measured before the gemini cache became required.)*
 
-**A complete run writes exactly 9 CSVs.** Two files in the historical results directory
-do not regenerate, for reasons that predate this packaging work:
+**A complete run writes exactly 10 CSVs** from eleven analyses.
+`09_provenance_example` emits a JSON record rather than a table, by design.
 
-* `04_theta_heatmap.csv` — needs `eval/reports/exp_{1,4}_*_scorer_full_*.csv`, which are
-  no longer in the tree; the analysis reports `status=missing` and writes nothing.
-* `10_cascade_vs_sonnet_gap_ci_per_case.csv` — fails with
-  `ValueError: too many values to unpack (expected 4)`: `map_theta_sweep._replay()` now
-  returns 5 values and the replay unpacks 4. Verified to be a pre-existing mismatch at
-  the branch point, untouched by the packaging migration, and not fixed here.
+`10_cascade_vs_sonnet_gap_ci_per_case.csv` used to be absent, failing with
+`ValueError: too many values to unpack (expected 4)` because `map_theta_sweep._replay()`
+returns 5 values and two callers unpacked 4. Both were corrected; the analysis regenerates
+and its reference file was refreshed, since the committed one dated from the code state
+before that mismatch appeared.
+
+`04_theta_heatmap` is no longer registered. It needed
+`eval/reports/exp_{1,4}_*_scorer_full_*.csv`, which are not on disk, were never tracked
+and appear in no commit, and nothing cites its output: the thesis presents a theta curve
+(E07) and a pinned-config table, never a theta-by-reject-theta heatmap. Its historical CSV
+is kept in the reference directory as a record.
 
 Outputs default to `<artifact-root>/out/thesis_results/results_offline_replay/`.
 
@@ -811,7 +816,7 @@ assurance is worth less than an honest inventory, so here is the inventory.
 | 7 | `ingest` | **verified end-to-end** on one 8-page PDF into an isolated database — exit 0, 33 s, 14 text elements + 10 figures, matching the established corpus exactly |
 | 8 | `ner extract` / `merge` / `export` | **verified end-to-end** on that document — 865 entities (749 with UMLS CUIs) → 762 merged files → 89 disease CUIs. `merge`/`export` produced nothing before the B-115 fix |
 | 9 | both `knowledge` commands, `--dry-run` | verified (exit 0, no provider contacted) |
-| 10 | `replay results` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable |
+| 10 | `replay results` | verified — 9/9 CSVs byte-identical; exit 3 when UMLS is unreachable (re-run 2026-07-19 after the unpack fix: 10/10, nine byte-identical and `10_…` refreshed) |
 | 11 | `pytest`, `ruff check .` | verified — 1697 passed, 0 failed; ruff clean (re-run 2026-07-19: 1720 passed) |
 | 12 | E04, `sweeps/grounding.py`, E14 (incl. `--theta-frontier`), `map_theta_sweep --help` | verified free (0 cache misses, no paid host). `E14 --theta-frontier` reproduces **byte-identically** to the 2026-06-25 baseline |
 
