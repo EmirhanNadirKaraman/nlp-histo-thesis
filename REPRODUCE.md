@@ -45,14 +45,15 @@ You do **not** need an API key for Track A. You do **not** need the PDFs for eit
 ## Step 1 — Get the code
 
 ```bash
-git clone -b refactor/python-packaging \
-  https://gitlab.lrz.de/00000000014B8E24/nlp-histo.git nlp-histo
+git clone https://gitlab.lrz.de/00000000014B8E24/nlp-histo.git nlp-histo
 cd nlp-histo
 ```
 
-The `-b` is deliberate: the work lives on the `refactor/python-packaging` branch. Clone
-without it and you may land on a branch that predates the current layout — no
-`src/nlp_histo/`, and none of the commands below will exist.
+No `-b` is needed: `main` is the default branch and carries the current work. Earlier
+revisions of this guide pinned `refactor/python-packaging`, which was correct while the
+packaging migration lived on a branch; that branch has since been merged and is now many
+commits behind. Cloning it today gets a tree whose own instructions point at a bundle that
+is no longer published.
 
 Check you got the right thing:
 
