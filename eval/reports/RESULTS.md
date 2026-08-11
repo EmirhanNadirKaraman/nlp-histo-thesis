@@ -166,11 +166,79 @@ economy — the shipped config's own θ-curve IS the frontier, voter-consistent 
 - **quality** θ0.9/r0.2 → **0.7160 @ cost/chunk 23.66** (esc 0.956)
 - **knee** (λ=0.20) θ0.8/r0.2 → **0.7067 @ 21.80** (esc 0.867)
 - **economy** θ0.3/r0.0 → **0.5433 @ 3.38** (esc 0.068)
+- **balanced** (ε-constraint, floor 0.60; added 2026-08-09) θ0.7/r0.2 → **0.6575 @ 16.40** (esc 0.622)
 Per-tier-cost frontier == escalate-rate frontier (robust to cost model).
 **Interpretation:** monotone with **clear diminishing returns** — knee→quality buys < 1 strict-F1
 point for ~10 % more cost. Escalation is the dominant cost lever. The cascade frontier is itself
 dominated by single models (E10/E11): single-Sonnet ties the quality point at lower cost.
-**Artifact:** `E09_cost_quality/frontier_20260622T165135.csv`
+**Artifact:** `E09_cost_quality/frontier_20260622T165135.csv` (frozen, 3 points) ·
+`E09_cost_quality/frontier_20260809T133949.csv` (re-run with `balanced`; anchor θ0.9/r0.2 = 0.7160 OK)
+
+## E09b — λ sensitivity of the knee operating point
+**What:** the `knee` is `argmax(strict_f1_optimal − λ·cost)` with `COST_LAMBDA = 0.20`, a value
+pinned in commit `e13dc1c` (2026-06-17) with no recorded rationale and never swept. This asks for
+which λ the selected cell stays the same. Score is linear in λ per cell, so the argmax over λ is
+the upper envelope of a line arrangement — band edges are solved exactly as chord slopes, not
+sampled. Pure re-analysis of two frozen CSVs; no API calls, no cost.
+**Result (2026-08-09):** the shipped λ reproduces both documented knees exactly, so the method is
+validated — but **both bands are narrow at the top**:
+- **E09 frontier** (`cost_norm`): knee = θ0.8/r0.2, sf1 **0.7067 @ 21.80** — stable for
+  λ ∈ **[0.1186, 0.2102)**. Headroom −0.0814 / **+0.0102**. Only three cells ever win: quality
+  (λ < 0.1186), knee, then economy (λ ≥ 0.2102) — there is no smooth family of knees.
+- **E06 structures** (`cost_frac`, 1 020 cells): knee = `blend_embedding_heavy` θ0.8/r0.0,
+  sf1 **0.6744 @ cost 0.6324** — stable for λ ∈ **[0.1909, 0.2081)**. Headroom −0.0091 / **+0.0081**.
+**Interpretation:** λ = 0.20 sits ~5 % below the E09 breakpoint and ~4 % below the E06 one. At
+λ ≥ 0.2102 the E09 knee collapses onto the economy cell (0.5433 @ 3.38) and the designation stops
+being a knee at all. The band edges are the frontier's own chord slopes — 0.2102 is the marginal
+quality-per-cost from economy→knee, 0.1186 from knee→quality — so the narrowness is a property of
+the frontier's near-linearity, not of the code. **This does not touch the shipped configuration:**
+production is the *quality* point (θ0.9/r0.2, argmax strict-F1), which is λ-independent. λ selects
+a reporting point and, in E06, one of three candidates entering the E06b voter screen — the arm
+that was ultimately adopted is the quality arm.
+**Follow-up — the binding limit is the method, not the value of λ (2026-08-09).** Weighted-sum
+scalarization can only ever return a vertex of the **upper convex hull** of the (cost, F1) point
+set; any Pareto point in a concave stretch is below some chord and is never the argmax for *any*
+λ ∈ [0, ∞). On the E09 frontier: 11 distinct cells, **7 Pareto-optimal, but only 3 on the hull** —
+exactly the three bands the λ sweep found. The other four Pareto points are permanently
+unreachable:
+
+| cell | strict-F1 | $/chunk | vs quality |
+|---|---|---|---|
+| θ0.4/r0.0 | 0.5444 | 3.53 | — |
+| θ0.5/r0.0 | 0.5531 | 4.82 | 79.6 % cheaper, −0.1629 F1 |
+| θ0.6/r0.2 | 0.5960 | 9.48 | 59.9 % cheaper, −0.1200 F1 |
+| θ0.7/r0.2 | 0.6575 | 16.40 | 30.7 % cheaper, −0.0585 F1 |
+
+And the knee is barely a middle ground: θ0.8 sits at **92 % of the quality cost** (21.80 vs 23.66)
+for 0.0093 less F1, so the whole \$3.38–\$21.80 span is unrepresented by the three reported points.
+The **ε-constraint** method — already used for the `economy` point (Haimes 1971) — reaches the
+concave region directly: floor 0.60 → θ0.7 at 30.7 % cheaper for 0.0585 F1; floor 0.58 → θ0.6 at
+59.9 % cheaper for 0.1200 F1. This is the textbook weighted-sum limitation stated in Boyd, the
+source the thesis already cites for the scalarization. **Still no effect on the shipped config**
+(the λ-independent quality point); it affects only how the frontier is summarised.
+**Follow-up 2 — ε-constraint floor sweep (2026-08-09).** Same treatment for the *other* selection
+constant: `point(ε) = argmin cost s.t. strict_f1 ≥ ε`, solved exactly (the pick changes precisely
+when ε crosses a Pareto cell's F1, so no floor can fall between grid points).
+
+| ε floor range | cell | strict-F1 | $/chunk | esc | vs quality | λ can reach it? |
+|---|---|---|---|---|---|---|
+| (0.0000, 0.5433] | θ0.3/r0.0 | 0.5433 | 3.38 | 0.068 | 85.7 % cheaper, −0.1727 | yes ← `economy` |
+| (0.5433, 0.5444] | θ0.4/r0.0 | 0.5444 | 3.53 | 0.074 | 85.1 % cheaper, −0.1716 | **no** |
+| (0.5444, 0.5531] | θ0.5/r0.0 | 0.5531 | 4.82 | 0.124 | 79.6 % cheaper, −0.1629 | **no** |
+| (0.5531, 0.5960] | θ0.6/r0.2 | 0.5960 | 9.48 | 0.317 | 59.9 % cheaper, −0.1200 | **no** |
+| (0.5960, 0.6575] | θ0.7/r0.2 | 0.6575 | 16.40 | 0.622 | 30.7 % cheaper, −0.0585 | **no** ← `balanced` |
+| (0.6575, 0.7067] | θ0.8/r0.2 | 0.7067 | 21.80 | 0.867 | 7.9 % cheaper, −0.0093 | yes (= the knee) |
+| (0.7067, 0.7160] | θ0.9/r0.2 | 0.7160 | 23.66 | 0.956 | — (is quality) | yes |
+
+**ε-constraint reaches all 7 Pareto cells; the weighted sum reaches only the 3 hull vertices.** Any
+floor above 0.7160 is infeasible. Shipped floors: `economy` ε=0.50 → θ0.3, unchanged for
+ε ∈ (0, 0.5433] (headroom −0.5000/+0.0433); `balanced` ε=0.60 → θ0.7, unchanged for
+ε ∈ (0.5960, 0.6575] (headroom **−0.0040**/+0.0575). Note the asymmetry: 0.60 sits just 0.004 above
+the θ0.6 boundary, so a marginally lower floor buys θ0.6 at 9.48 — that is a different *choice*
+(cheaper, −0.12 F1), not a degeneracy like the λ collapse.
+**Artifact:** `E09_cost_quality/lambda_sensitivity_20260809.csv` ·
+`E09_cost_quality/epsilon_floor_sweep_20260809.csv` · `scripts/eval/lambda_sensitivity.py` ·
+`scripts/eval/epsilon_floor_sweep.py`
 
 ## E10 — single-model baselines vs cascade (5-voter)
 **What:** each of the 7 voter models run ALONE (no voting, no escalation) vs the frozen **5-voter**

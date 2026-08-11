@@ -1,0 +1,506 @@
+[
+  {
+    "key": "01_footnotes",
+    "title": "Fault mode 1 \u2014 footnotes cut off below the table crop",
+    "pdf": "eval/pdfs/PMC11649516_HIS-86-236.pdf",
+    "page": 5,
+    "png": "presentation/assets/fault_modes/pages/01_footnotes_p05.png",
+    "zoom": "presentation/assets/fault_modes/zooms/01_footnotes_p05_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/01_footnotes_p05_full.png",
+    "boxes": [
+      [
+        "delta",
+        [
+          62.4,
+          586.0,
+          547.8,
+          639.0
+        ],
+        ""
+      ],
+      [
+        "baseline",
+        [
+          62.4,
+          111.1,
+          547.8,
+          586.0
+        ],
+        "baseline crop ends here"
+      ],
+      [
+        "pipeline",
+        [
+          62.4,
+          111.1,
+          547.8,
+          639.0
+        ],
+        "pipeline crop \u2014 footnotes absorbed"
+      ]
+    ]
+  },
+  {
+    "key": "02_split_table",
+    "title": "Fault mode 2 \u2014 table split across pages 3-4, never emitted (page 3)",
+    "pdf": "eval/pdfs/PMC11674653_dermatopathology-11-00035.pdf",
+    "page": 3,
+    "png": "presentation/assets/fault_modes/pages/02_split_table_p03.png",
+    "zoom": "presentation/assets/fault_modes/zooms/02_split_table_p03_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/02_split_table_p03_full.png",
+    "boxes": [
+      [
+        "recovered",
+        [
+          166.6,
+          648.7,
+          326.6,
+          759.8
+        ],
+        "recovered by TATR"
+      ]
+    ]
+  },
+  {
+    "key": "02_split_table",
+    "title": "Fault mode 2 \u2014 table split across pages 3-4, never emitted (page 4)",
+    "pdf": "eval/pdfs/PMC11674653_dermatopathology-11-00035.pdf",
+    "page": 4,
+    "png": "presentation/assets/fault_modes/pages/02_split_table_p04.png",
+    "zoom": "presentation/assets/fault_modes/zooms/02_split_table_p04_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/02_split_table_p04_full.png",
+    "boxes": [
+      [
+        "recovered",
+        [
+          168.3,
+          109.4,
+          323.7,
+          405.6
+        ],
+        "recovered by TATR"
+      ]
+    ]
+  },
+  {
+    "key": "03_missed_table",
+    "title": "Fault mode 3 \u2014 single table never emitted by the baseline",
+    "pdf": "eval/pdfs/PMC8420544_CYT-33-93.pdf",
+    "page": 3,
+    "png": "presentation/assets/fault_modes/pages/03_missed_table_p03.png",
+    "zoom": "presentation/assets/fault_modes/zooms/03_missed_table_p03_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/03_missed_table_p03_full.png",
+    "boxes": [
+      [
+        "recovered",
+        [
+          51.2,
+          71.9,
+          280.9,
+          422.4
+        ],
+        "recovered by TATR"
+      ]
+    ]
+  },
+  {
+    "key": "04_table_caption",
+    "title": "Fault mode 4 \u2014 table caption not attached",
+    "pdf": "eval/pdfs/PMC11863984_main.pdf",
+    "page": 3,
+    "png": "presentation/assets/fault_modes/pages/04_table_caption_p03.png",
+    "zoom": "presentation/assets/fault_modes/zooms/04_table_caption_p03_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/04_table_caption_p03_full.png",
+    "boxes": [
+      [
+        "pipeline",
+        [
+          36.2,
+          73.9,
+          558.4,
+          162.1
+        ],
+        "caption now attached"
+      ]
+    ]
+  },
+  {
+    "key": "05_spurious_table",
+    "title": "Fault mode 5 \u2014 author byline emitted as a table",
+    "pdf": "eval/pdfs/PMC8420544_CYT-33-93.pdf",
+    "page": 1,
+    "png": "presentation/assets/fault_modes/pages/05_spurious_table_p01.png",
+    "zoom": "presentation/assets/fault_modes/zooms/05_spurious_table_p01_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/05_spurious_table_p01_full.png",
+    "boxes": [
+      [
+        "suppressed",
+        [
+          44.8,
+          219.3,
+          538.8,
+          270.9
+        ],
+        "emitted by Docling \u2014 suppressed by the pipeline"
+      ]
+    ]
+  },
+  {
+    "key": "06_table_in_figure",
+    "title": "Fault mode 6 \u2014 a table detected inside a figure",
+    "pdf": "eval/pdfs/PMC11791726_HIS-86-485.pdf",
+    "page": 9,
+    "png": "presentation/assets/fault_modes/pages/06_table_in_figure_p09.png",
+    "zoom": "presentation/assets/fault_modes/zooms/06_table_in_figure_p09_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/06_table_in_figure_p09_full.png",
+    "boxes": [
+      [
+        "suppressed",
+        [
+          49.8,
+          248.7,
+          520.6,
+          380.0
+        ],
+        "nested table \u2014 suppressed"
+      ]
+    ]
+  },
+  {
+    "key": "07_icons",
+    "title": "Fault mode 7 \u2014 decorative icons emitted as figures",
+    "pdf": "eval/pdfs/PMC10297671_dermatopathology-10-00024.pdf",
+    "page": 1,
+    "png": "presentation/assets/fault_modes/pages/07_icons_p01.png",
+    "zoom": "presentation/assets/fault_modes/zooms/07_icons_p01_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/07_icons_p01_full.png",
+    "boxes": [
+      [
+        "suppressed",
+        [
+          34.4,
+          49.2,
+          212.6,
+          85.1
+        ],
+        "178x36 pt"
+      ],
+      [
+        "suppressed",
+        [
+          188.4,
+          167.1,
+          202.4,
+          177.3
+        ],
+        "14x10 pt"
+      ],
+      [
+        "suppressed",
+        [
+          286.6,
+          166.2,
+          308.7,
+          177.5
+        ],
+        "22x11 pt"
+      ],
+      [
+        "suppressed",
+        [
+          34.4,
+          456.6,
+          87.1,
+          475.0
+        ],
+        "53x18 pt"
+      ],
+      [
+        "suppressed",
+        [
+          34.3,
+          655.8,
+          93.1,
+          677.4
+        ],
+        "59x22 pt"
+      ],
+      [
+        "suppressed",
+        [
+          515.5,
+          54.3,
+          558.9,
+          83.4
+        ],
+        "43x29 pt"
+      ]
+    ]
+  },
+  {
+    "key": "08_figure_caption",
+    "title": "Fault mode 8 \u2014 figure caption not attached",
+    "pdf": "eval/pdfs/PMC10297671_dermatopathology-10-00024.pdf",
+    "page": 2,
+    "png": "presentation/assets/fault_modes/pages/08_figure_caption_p02.png",
+    "zoom": "presentation/assets/fault_modes/zooms/08_figure_caption_p02_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/08_figure_caption_p02_full.png",
+    "boxes": [
+      [
+        "pipeline",
+        [
+          81.4,
+          133.4,
+          512.8,
+          369.8
+        ],
+        "caption now attached"
+      ]
+    ]
+  },
+  {
+    "key": "09_side_caption",
+    "title": "Fault mode 9 \u2014 caption sits to the right of the figure",
+    "pdf": "eval/pdfs/PMC12129649_NEUP-45-177.pdf",
+    "page": 4,
+    "png": "presentation/assets/fault_modes/pages/09_side_caption_p04.png",
+    "zoom": "presentation/assets/fault_modes/zooms/09_side_caption_p04_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/09_side_caption_p04_full.png",
+    "boxes": [
+      [
+        "pipeline",
+        [
+          54.4,
+          75.1,
+          423.8,
+          315.1
+        ],
+        "caption now attached"
+      ]
+    ]
+  },
+  {
+    "key": "10_ghost_text",
+    "title": "Fault mode 10 \u2014 invisible / hidden text nodes rejected (page 5)",
+    "pdf": "eval/pdfs/PMC10296831_dermatopathology-10-00026.pdf",
+    "page": 5,
+    "png": "presentation/assets/fault_modes/pages/10_ghost_text_p05.png",
+    "zoom": "presentation/assets/fault_modes/zooms/10_ghost_text_p05_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/10_ghost_text_p05_full.png",
+    "boxes": [
+      [
+        "ghost",
+        [
+          38.4,
+          36.3,
+          98.4,
+          44.5
+        ],
+        "visually blank region \u2014 invisible text layer"
+      ],
+      [
+        "ghost",
+        [
+          98.6,
+          36.3,
+          116.5,
+          44.5
+        ],
+        "visually blank region \u2014 invisible text layer"
+      ],
+      [
+        "ghost",
+        [
+          116.6,
+          36.3,
+          118.6,
+          44.5
+        ],
+        "visually blank region \u2014 invisible text layer"
+      ],
+      [
+        "ghost",
+        [
+          118.5,
+          36.3,
+          128.5,
+          44.5
+        ],
+        "visually blank region \u2014 invisible text layer"
+      ],
+      [
+        "ghost",
+        [
+          128.6,
+          36.3,
+          136.5,
+          44.5
+        ],
+        "visually blank region \u2014 invisible text layer"
+      ],
+      [
+        "ghost",
+        [
+          557.9,
+          36.3,
+          563.9,
+          44.5
+        ],
+        "visually blank region \u2014 invisible text layer"
+      ]
+    ]
+  },
+  {
+    "key": "10b_ghost_text_header",
+    "title": "Fault mode 10b \u2014 invisible running header read as body text (page 2)",
+    "pdf": "eval/pdfs/PMC11755463_dermatopathology-12-00002.pdf",
+    "page": 2,
+    "png": "presentation/assets/fault_modes/pages/10b_ghost_text_header_p02.png",
+    "zoom": "presentation/assets/fault_modes/zooms/10b_ghost_text_header_p02_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/10b_ghost_text_header_p02_full.png",
+    "boxes": [
+      [
+        "ghost",
+        [
+          51.6,
+          8.7,
+          108.0,
+          16.3
+        ],
+        "Dermatopathology"
+      ],
+      [
+        "ghost",
+        [
+          109.9,
+          8.7,
+          125.0,
+          16.3
+        ],
+        "2025"
+      ],
+      [
+        "ghost",
+        [
+          125.0,
+          8.7,
+          126.9,
+          16.3
+        ],
+        ","
+      ],
+      [
+        "ghost",
+        [
+          128.7,
+          8.7,
+          136.3,
+          16.3
+        ],
+        "12"
+      ],
+      [
+        "ghost",
+        [
+          136.3,
+          8.7,
+          138.2,
+          16.3
+        ],
+        ","
+      ],
+      [
+        "ghost",
+        [
+          140.0,
+          8.7,
+          143.9,
+          16.3
+        ],
+        "x"
+      ],
+      [
+        "ghost",
+        [
+          145.8,
+          8.7,
+          160.9,
+          16.3
+        ],
+        "FOR"
+      ],
+      [
+        "ghost",
+        [
+          162.8,
+          8.7,
+          181.4,
+          16.3
+        ],
+        "PEER"
+      ]
+    ]
+  },
+  {
+    "key": "11_text_merge",
+    "title": "Fault mode 11 \u2014 paragraph split into two fragments, correctly rejoined",
+    "pdf": "eval/pdfs/PMC11791726_HIS-86-485.pdf",
+    "page": 5,
+    "png": "presentation/assets/fault_modes/pages/11_text_merge_p05.png",
+    "zoom": "presentation/assets/fault_modes/zooms/11_text_merge_p05_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/11_text_merge_p05_full.png",
+    "boxes": [
+      [
+        "frag1",
+        [
+          299.1,
+          704.1,
+          465.5,
+          714.0
+        ],
+        "raw fragment 1 ends"
+      ],
+      [
+        "frag2",
+        [
+          299.1,
+          668.2,
+          422.4,
+          678.1
+        ],
+        "raw fragment 2 begins"
+      ]
+    ]
+  },
+  {
+    "key": "12_text_merge_error",
+    "title": "Merge ERROR \u2014 body text glued to the copyright footer",
+    "pdf": "eval/pdfs/PMC12129649_NEUP-45-177.pdf",
+    "page": 5,
+    "png": "presentation/assets/fault_modes/pages/12_text_merge_error_p05.png",
+    "zoom": "presentation/assets/fault_modes/zooms/12_text_merge_error_p05_zoom.png",
+    "fullpage": "presentation/assets/fault_modes/fullpages/12_text_merge_error_p05_full.png",
+    "boxes": [
+      [
+        "frag1",
+        [
+          365.2,
+          724.4,
+          540.0,
+          733.9
+        ],
+        "raw fragment 1 ends"
+      ],
+      [
+        "frag2",
+        [
+          46.3,
+          740.1,
+          199.8,
+          749.7
+        ],
+        "raw fragment 2 begins"
+      ]
+    ]
+  }
+]

@@ -473,7 +473,7 @@ class TwoPassTextExtractor:
             mask_bboxes.append(node.element.bbox)
             n_nodes += 1
 
-        # 5. Figure, table, and structural-chrome regions
+        # 4. Figure, table, and structural-chrome regions
         # Mirrors Step 3 of the standard pipeline: mask figure/table bboxes so
         # that Pass-2 Docling does not return their interior text as body TEXT
         # elements.  Controlled by TwoPassConfig.mask_figures / mask_tables.

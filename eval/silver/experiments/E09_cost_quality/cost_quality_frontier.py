@@ -44,6 +44,16 @@ from eval.silver.analysis.run_new_summarization_sweeps import (
 
 COST_LAMBDA = 0.20      # knee = argmax(strict_f1 − λ·cost_norm); matches structure_screen
 MIN_ECONOMY_F1 = 0.50   # economy = cheapest operating point on the curve clearing this strict-F1 floor
+MIN_BALANCED_F1 = 0.60  # balanced = cheapest operating point clearing this strict-F1 floor
+# Why `balanced` exists (2026-08-09, E09b). The `knee` is chosen by weighted-sum scalarization,
+# which can only ever return a vertex of the UPPER CONVEX HULL of the (cost, strict_f1) point set:
+# a Pareto point lying in a concave stretch is below some chord and therefore loses to its
+# neighbours for EVERY λ ∈ [0, ∞). On this curve 7 cells are Pareto-optimal but only 3 sit on the
+# hull, so θ0.4/θ0.5/θ0.6/θ0.7 are unreachable by any λ — and the knee (θ0.8, 21.80) sits at 92 %
+# of the quality cost, leaving the whole 3.38–21.80 span unrepresented. `balanced` uses the
+# ε-constraint method instead (same method as `economy`, different floor), which reads the concave
+# region directly. Floor 0.60 selects θ0.7: ~31 % cheaper than quality for ~0.059 strict-F1.
+# Reporting only — the shipped config is the λ-independent `quality` point and is unaffected.
 # Verification anchor: the SHIPPED operating point (BEST_THETA/BEST_REJECT_THETA, escalate gate) must
 # reproduce the E08 5-voter strict-F1 (0.7160). 2026-06-22: this experiment builds the frontier from the
 # SHIPPED config's OWN θ-curve — the E08b stage (map_theta_shipped: θ×reject re-swept at the chosen gate,
@@ -170,12 +180,16 @@ def main() -> None:
     quality_pt = max(rows, key=lambda r: _f(r, "strict_f1_optimal"))
     eligible = [r for r in rows if _f(r, "strict_f1_optimal") >= MIN_ECONOMY_F1]
     economy_pt = min(eligible or rows, key=lambda r: r["cost_per_chunk"])
+    eligible_bal = [r for r in rows if _f(r, "strict_f1_optimal") >= MIN_BALANCED_F1]
+    balanced_pt = min(eligible_bal, key=lambda r: r["cost_per_chunk"]) if eligible_bal else None
     knee_pt = max(rows, key=lambda r: _f(r, "strict_f1_optimal") - COST_LAMBDA * r["cost_norm"])
     for r in rows:
         r["operating_point"] = ""
     quality_pt["operating_point"] = (quality_pt["operating_point"] + "|quality").strip("|")
     economy_pt["operating_point"] = (economy_pt["operating_point"] + "|economy").strip("|")
     knee_pt["operating_point"] = (knee_pt["operating_point"] + "|knee").strip("|")
+    if balanced_pt is not None:
+        balanced_pt["operating_point"] = (balanced_pt["operating_point"] + "|balanced").strip("|")
 
     # print frontier (cost-sorted)
     print(f"\n{'struct':8}{'θ':>5}{'rej':>5}{'strF1':>8}{'cost/ch':>9}{'cnorm':>7}"
@@ -192,7 +206,11 @@ def main() -> None:
     print(f"\nrobustness: cost-frontier vs escalate-frontier identical? {same}"
           + ("" if same else f"  (cost-only:{sorted(fr_cost-fr_esc)}  esc-only:{sorted(fr_esc-fr_cost)})"))
     print("operating points:")
-    for tag, r in (("quality", quality_pt), ("economy", economy_pt), ("knee", knee_pt)):
+    _pts = [("quality", quality_pt), ("knee", knee_pt)]
+    if balanced_pt is not None:
+        _pts.append((f"balanced(eps>={MIN_BALANCED_F1})", balanced_pt))
+    _pts.append(("economy", economy_pt))
+    for tag, r in _pts:
         print(f"  {tag:8} {r['structure']}/θ{_f(r,'theta'):.2f}/r{_f(r,'reject_theta'):.2f}  "
               f"strict_f1={_f(r,'strict_f1_optimal'):.4f}  cost/chunk={r['cost_per_chunk']:.2f}  "
               f"esc={_f(r,'escalate_rate'):.3f}")

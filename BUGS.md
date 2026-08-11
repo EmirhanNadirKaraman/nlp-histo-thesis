@@ -176,6 +176,8 @@ design calls live in [`THESIS.md`](docs/THESIS.md#decisions-log).
 | B-126 | Fixed (2026-07-17) | Low | Eval, `E01_doc_extraction/flatten_to_csv.py:120` | **E01's `flatten_to_csv` wrote its CSV correctly and then crashed on the success message — a `ValueError` traceback on exit 1 despite a complete, correct output file.** The final line does `csv_path.relative_to(_REPO_ROOT)`, but `_REPO_ROOT` is absolute while `--csv-out` (or the default derived from a relative `--json`) is a **relative** path — and `Path("eval/reports/…").relative_to("/abs/repo")` raises. So the natural invocation a reader copies from the docs (`flatten_to_csv --json eval/reports/…_PR.json`) printed a stack trace and returned non-zero, even though the reshaped CSV was already on disk and byte-identical to the frozen one. Surfaced while wiring E01 into REPRODUCE.md Step 8 as the PDF-free, report-level reproduction of the doc-extraction rubric. **Fixed** by resolving the path before `relative_to` and falling back to the path as-given when it is outside the repo (`try/except ValueError`). Verified: both the relative `--csv-out` and default invocations now exit 0, and the regenerated CSV is byte-identical to the committed `figtable_extraction_sweep_rerun_27pdf_20260604_PR.csv` (winner var18: tables 40→83.8 %, figures 84 %). ruff clean. | [Bug 126](#bug-126--flatten_to_csv-crashed-on-its-own-success-message) |
 
 | B-127 | Observed (2026-07-18) | Low | Eval tooling, `eval/sweeps/_lib.py` × `scripts/eval/_lib.py` × `sys.modules["_lib"]` | **Two different `_lib` modules compete for one entry in `sys.modules`, so import order decides which one a caller gets.** Both `eval/sweeps/grounding.py` and `scripts/eval/compute_proxy_metrics.py` insert their own directory at `sys.path[0]` and then `import _lib`; whichever executes first claims `sys.modules["_lib"]` for the rest of the process, and the second silently receives the other package's module. Reproduced 2026-07-18 while adding a B-108 regression test: a module-scope `from eval.sweeps import grounding` made `tests/eval/test_compute_proxy_metrics.py::test_meta_json_has_required_fields` fail under some `pytest-randomly` orderings while passing in isolation. Mitigated in tests only — the existing fixtures load these scripts by file path and pop `sys.modules["_lib"]` on teardown, and the new B-108 test was rewritten to match. **No wrong result has been demonstrated from the standalone production scripts**, each of which runs in its own process where only one `_lib` is ever imported. Open as a latent hazard: the real fix is package-relative imports (`from . import _lib`) instead of `sys.path` mutation, deliberately deferred as an import-architecture change. | [Bug 127](#bug-127--two-_lib-modules-share-one-sysmodules-entry) |
+| B-128 | Observed (2026-07-25) | Medium | Doc extraction, `components/media_cropper.py:150-168` (sub-figure merge) × `docs/histo_thesis/chapters/06_conclusion_and_future_work/01_contributions.tex:8` | **The sub-figure merge branch is unreachable, so one of the three mechanisms the thesis credits for the figure-extraction gain has never executed.** The cropper walks PICTURE elements, asks `nearest_caption(el, available_captions)` for each, and merges a panel into an existing figure only when the caption it finds is **already claimed** (`if cap_key and cap_key in claimed_captions`). But claiming a caption also removes it from `available_captions` in the same block, so `nearest_caption` can never return a claimed caption and the condition is never true — both it and its `else` (far-away → emit without caption) are dead. Verified three ways: the real `PyMuPDFMediaCropper.crop()` instrumented over all 27 rubric PDFs emits **76 figures with `union_bbox()` called 0 times** (that function is reachable only from the merge branch); a faithful replay of the loop over all **977** corpus papers enters the branch **0 times** (7,544 PICTURE elements → 4,479 survive `min_figure_pts=50` → 4,479 emitted, matching the corpus figure count exactly); and a synthetic ideal case — two 100×100 pt panels 10 pt apart sharing one caption, i.e. precisely what `subfigure_proximity_pts=20` exists for — emits **2 crops, not 1**. **No reported number changes**: code that never ran cannot have affected a measurement, so figure strict-F1 0.447 → 0.840 stands exactly as published; what is wrong is the *attribution*, which names decorative-icon filtering, sub-figure merging **and** caption matching where only two did the work (63 crops removed by the 50-pt filter, 16 caption labels corrected). Second-order consequence, unquantified: when two panels do compete for one caption the loser silently receives the *next nearest available* caption or none, rather than being merged — a plausible contributor to the residual 9.7 % caption-precision gap, but not demonstrated. **Deliberately not fixed** — see the detail section: repairing it changes emitted figure crops, which would diverge from the frozen rubric artifacts the thesis numbers rest on. Found 2026-07-25 while building fault-mode examples for the defense presentation. | [Bug 128](#bug-128--the-sub-figure-merge-branch-is-unreachable) |
+
 Add new rows here when you discover something. Bump the ID monotonically (`B-051`, `B-052`, …). Put the long write-up in a new `## Bug N — …` section below.
 
 ---
@@ -9574,3 +9576,153 @@ production scripts.** Each runs standalone in its own process, where only one `_
 imported. The demonstrated failure is confined to a shared-process test session. Anything that
 imports both trees in one process — a future test, a notebook, an aggregate driver — is exposed
 until the imports are made explicit.
+
+---
+
+## Bug 128 — the sub-figure merge branch is unreachable
+
+**Status / Severity / Surface** — Observed (2026-07-25) · Medium · Document extraction.
+`src/nlp_histo/pipeline/stages/pdf_text_extraction/components/media_cropper.py:150-168`
+(sub-figure merge) × `CroppingConfig.subfigure_proximity_pts` ×
+`docs/histo_thesis/chapters/06_conclusion_and_future_work/01_contributions.tex:8` and
+`chapters/01_introduction/06_summary_of_findings.tex:7` (the attribution sentence).
+
+### Symptom
+
+The thesis attributes the figure-extraction improvement to three post-processing mechanisms:
+
+> "For figures, the main gain comes from three post-processing stages: decorative icon
+> filtering, sub-figure merging, and custom caption matching (instead of Docling's default
+> caption matcher), raising strict figure-F1 from $0.447$ to $0.840$."
+
+Sub-figure merging cannot have contributed. The branch that performs it never executes — not on
+the 27-PDF rubric set, not on the 977-paper corpus, and not on a synthetic input constructed
+specifically to trigger it.
+
+### Evidence
+
+**1 — the real cropper, instrumented.** `union_bbox()` is called from exactly one place in the
+figure path: the merge branch. Wrapping it and running the genuine
+`PyMuPDFMediaCropper.crop()` over all 27 rubric PDFs:
+
+```
+REAL PyMuPDFMediaCropper.crop() over 27 rubric PDFs
+  figure crops emitted             : 76      <- matches tab:figure-emission-metrics
+  sub-figure merge branch entered  : 0
+  union_bbox() ever called         : 0
+```
+
+**2 — replay over the full corpus.** Re-implementing the loop verbatim against the real
+`nearest_caption` from `parsers/layout_utils.py`, over every pass-1 layout in `out/docling_full/`:
+
+```
+documents analysed                     977
+PICTURE elements                      7544
+... surviving min_figure_pts = 50     4479   (icon filter drops 3065)
+figures emitted                       4479   (net collapse 0)
+times a caption was already claimed      0   <- entry to the merge branch
+```
+
+The replay reproducing 4,479 — the corpus figure count reported in the thesis — confirms the
+element set matches what the cropper actually sees, so the zero is trustworthy rather than an
+artifact of reading the wrong layout.
+
+**3 — synthetic ideal case.** Two 100×100 pt panels 10 pt apart sharing one caption directly
+below, which is exactly the configuration `subfigure_proximity_pts = 20` exists to collapse:
+
+```
+panel x=100: nearest_caption -> FOUND; already claimed? False
+   caption claimed and REMOVED from available (available now: 0)
+panel x=210: nearest_caption -> None;  already claimed? n/a
+
+figures emitted: 2   (sub-figure merging would give 1)
+```
+
+### Diagnosis
+
+The loop keeps two structures: `available_captions` (candidates) and `claimed_captions`
+(caption-key → owning figure). The merge fires only when a figure's nearest caption is one that
+another figure already owns:
+
+```python
+cap_el  = nearest_caption(el, available_captions)   # searches ONLY unclaimed captions
+cap_key = _caption_key(cap_el) if cap_el else None
+if cap_key and cap_key in claimed_captions:         # <- the merge branch
+    ...
+    if gap <= self._config.subfigure_proximity_pts:
+        existing["bbox"] = union_bbox(existing["bbox"], b)
+        continue
+    else:
+        cap_el = None; caption = ""; parsed_num = None
+...
+if cap_key is not None:
+    claimed_captions[cap_key] = num
+    available_captions = [c for c in available_captions
+                          if _caption_key(c) != cap_key]      # <- removed here
+```
+
+Claiming and removing happen together, so a claimed caption is never again in the list
+`nearest_caption` searches. `cap_key in claimed_captions` is therefore unsatisfiable, and both
+the merge branch and its `else` are dead. `min_figure_pts` is checked earlier with `continue`,
+so the ordering cannot mask a merge either.
+
+Note this is independent of `merge_figures_by_caption` (default `False`, line 167) — that flag
+only controls figure *numbering*. The geometric merge at line 155 is the mechanism the thesis
+describes, and it is unconditional in intent.
+
+### Impact
+
+**No reported number changes.** Code that never executed cannot have influenced a measurement.
+`tab:figure-emission-metrics` (crop 89.9 %, mask 100.0 %, caption 90.3 %, strict-F1 84.0 %,
+139 → 76 emitted crops) is unaffected, as is the RQ1 conclusion. The frozen sweep artifacts,
+`eval/annotations/`, and every replay remain valid.
+
+What is wrong is one *explanatory* clause. The measured 0.447 → 0.840 decomposes, on the rubric
+set, as **63 crops removed by the 50-pt icon filter** (59 rated `icon` + 4 `incorrect`) and
+**16 caption labels corrected** (11 figures with no caption, 5 with the caption to the side).
+Sub-figure merging contributes nothing measurable.
+
+Second-order and **not demonstrated**: when two panels do compete for one caption, the loser now
+falls through to the next-nearest *available* caption — possibly the wrong one — or to no caption
+at all, instead of being merged into its owner. This is a plausible contributor to the residual
+9.7 % figure-caption gap, but no instance has been isolated, and on this corpus Docling generally
+emits multi-panel figures as a single PICTURE element, which is why the mechanism is redundant
+here in the first place.
+
+### Fix (deferred — this is a mitigation-free `Observed`, not a `Won't fix`)
+
+The correct repair is to test membership against the *full* caption set rather than the
+unclaimed remainder — resolve the nearest caption over `all_captions`, then check whether that
+key is already claimed:
+
+```python
+cap_el  = nearest_caption(el, all_captions)          # not available_captions
+cap_key = _caption_key(cap_el) if cap_el else None
+if cap_key and cap_key in claimed_captions:
+    ...                                              # merge branch now reachable
+```
+
+Deliberately **not applied now**. Changing it changes which figure crops the pipeline emits, and
+the thesis's document-extraction numbers rest on frozen artifacts (`out/sweeps/`,
+`eval/annotations/`) that were human-annotated against the *current* behaviour. A silent fix
+would leave the code and the frozen rubric describing different systems, which is precisely the
+failure mode the reproducibility design exists to prevent.
+
+Whoever applies it must pair it with: a re-run of the 32-variant sweep, re-annotation of any
+changed figure crops, and a note in the Decisions log. Until then the honest position is that the
+mechanism is implemented but inert, and the thesis's three-mechanism sentence over-counts by one.
+
+### Verification
+
+All three checks above are free, local and repeatable — no API calls, no network:
+
+```bash
+# 1. instrument the real cropper (wraps media_cropper.union_bbox, 27 rubric PDFs)
+# 2. replay the loop over out/docling_full/ for all 977 papers
+# 3. synthetic two-panel case
+```
+
+Reproduced 2026-07-25. The presentation deliverable carries the same evidence on a slide
+(`presentation/PRESENTATION.md`, expansion slide **E7**) and in
+`presentation/FAULT_MODES.md` §B1, where it is recorded as the one mechanism for which no
+worked example could be produced.
